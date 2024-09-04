@@ -5,7 +5,7 @@ class SchoolPlugin extends Plugin
     protected function __construct()
     {
         parent::__construct(
-            '1.0',
+            '1.5.0',
             'Alex Aragon <alex.aragon@tunqui.pe>',
             [
                 'tool_enable' => 'boolean'
