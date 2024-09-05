@@ -9,14 +9,9 @@ $nameTools = $plugin->get_lang('DashboardSchool');
 api_block_anonymous_users();
 
 if ($enable) {
-
-    //if (api_is_platform_admin()) {
-        $tpl = new Template($nameTools, true, true, false, false, true, false);
-        $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
-        $content = $plugin->fetch('school/view/school_start.tpl');
-        $plugin->assign('content', $content);
-        $plugin->display_blank_template();
-
-        //echo $html;
-    //}
+    $tpl = new Template($nameTools, true, true, false, false, true, false);
+    $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
+    $content = $plugin->fetch('school/view/school_start.tpl');
+    $plugin->assign('content', $content);
+    $plugin->display_blank_template();
 }

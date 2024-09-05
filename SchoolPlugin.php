@@ -67,12 +67,44 @@ class SchoolPlugin extends Plugin
         if ($isTestMode) {
             $this->twig->addExtension(new Twig_Extension_Debug());
         }
-
+        $js_file_to_string = '';
         $css[] = api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH) . 'school/css/style.css');
+
         $css_file_to_string = null;
         foreach ($css as $file) {
             $css_file_to_string .= api_get_css($file);
         }
+
+        $bowerJsFiles = [
+            'modernizr/modernizr.js',
+            'jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
+            'moment/min/moment-with-locales.js',
+            'jquery-timeago/jquery.timeago.js',
+            'mediaelement/build/mediaelement-and-player.min.js',
+            'jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js',
+            'image-map-resizer/js/imageMapResizer.min.js',
+            'jquery.scrollbar/jquery.scrollbar.min.js',
+            'readmore-js/readmore.min.js',
+            'bootstrap-select/dist/js/bootstrap-select.min.js',
+            'select2/dist/js/select2.min.js',
+            'js-cookie/src/js.cookie.js',
+        ];
+
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/vendor/jquery/jquery.min.js').'"></script>'."\n";
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/vendor/bootstrap/js/bootstrap.bundle.min.js').'"></script>'."\n";
+
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/vendor/jquery-easing/jquery.easing.min.js').'"></script>'."\n";
+
+
+        /*foreach ($bowerJsFiles as $file) {
+            $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH).'assets/'.$file).'"></script>'."\n";
+        }*/
+
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/sb-admin-2.min.js').'"></script>'."\n";
+
+        $vendor = api_get_path(WEB_PLUGIN_PATH).'school/vendor/';
+        $this->assign('assets', $vendor);
+        $this->assign('js_files', $js_file_to_string);
         $this->assign('css_files', $css_file_to_string);
 
     }
