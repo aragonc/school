@@ -3,7 +3,7 @@
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-
+use Chamilo\CoreBundle\Component\Utils\ChamiloApi;
 class SchoolPlugin extends Plugin
 {
     public $twig = null;
@@ -102,11 +102,26 @@ class SchoolPlugin extends Plugin
 
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/sb-admin-2.min.js').'"></script>'."\n";
 
+
+        $this->assign('logo', self::display_logo());
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/vendor/';
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
         $this->assign('css_files', $css_file_to_string);
 
+    }
+
+    public function display_logo(): string
+    {
+        $institution = api_get_setting('Institution');
+        $siteName = api_get_setting('siteName');
+        $logoPath = ChamiloApi::getPlatformLogoPath();
+        $imageAttributes = [
+            'title' => $siteName,
+            'class' => 'logo-site',
+            'id' => 'header-logo',
+        ];
+        return Display::img($logoPath, $institution, $imageAttributes);
     }
 
     /**
