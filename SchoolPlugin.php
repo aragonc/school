@@ -103,7 +103,9 @@ class SchoolPlugin extends Plugin
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/sb-admin-2.min.js').'"></script>'."\n";
 
 
-        $this->assign('logo', self::display_logo());
+        $this->assign('logo_svg', self::display_logo());
+        $this->assign('logo_icon', self::display_logo_icon());
+        $this->assign('menus', self::getMenus());
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/vendor/';
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
@@ -113,9 +115,14 @@ class SchoolPlugin extends Plugin
 
     public function display_logo(): string
     {
+        $theme = api_get_visual_theme();
+        $themeDir = \Template::getThemeDir($theme);
+        $customLogoPathSvg = $themeDir."images/header-logo-vector.svg";
+        $logoPath = api_get_path(WEB_CSS_PATH).$customLogoPathSvg;
+        //var_dump($logoPath);
         $institution = api_get_setting('Institution');
         $siteName = api_get_setting('siteName');
-        $logoPath = ChamiloApi::getPlatformLogoPath();
+        //$logoPath = ChamiloApi::getPlatformLogoPath();
         $imageAttributes = [
             'title' => $siteName,
             'class' => 'logo-site',
@@ -124,6 +131,21 @@ class SchoolPlugin extends Plugin
         return Display::img($logoPath, $institution, $imageAttributes);
     }
 
+    public function display_logo_icon(): string
+    {
+        $theme = api_get_visual_theme();
+        $themeDir = \Template::getThemeDir($theme);
+        $customLogoPathSvg = $themeDir."images/header-logo-icon.svg";
+        $logoPath = api_get_path(WEB_CSS_PATH).$customLogoPathSvg;
+        $institution = api_get_setting('Institution');
+        $siteName = api_get_setting('siteName');
+        $imageAttributes = [
+            'title' => $siteName,
+            'class' => 'logo-site',
+            'id' => 'header-icon',
+        ];
+        return Display::img($logoPath, $institution, $imageAttributes);
+    }
     /**
      * @return string
      */
@@ -195,5 +217,108 @@ class SchoolPlugin extends Plugin
     {
         $tpl = $this->twig->loadTemplate('school/view/layout/blank.tpl');
         $this->display($tpl);
+    }
+
+    public function getMenus(): array
+    {
+        return [
+            [
+                'id' => 1,
+                'label' => 'Mis Capacitaciones',
+                'current' => false,
+                'icon' => 'book',
+                'class' => 'show',
+                'items' => [
+                    [
+                        'id' => 101,
+                        'label' => 'Actuales (3)',
+                        'current' => true,
+                        'class' => 'active',
+                        'url' => '/capacitaciones/actuales'
+                    ],
+                    [
+                        'id' => 102,
+                        'label' => 'Anteriores (4)',
+                        'current' => false,
+                        'class' => '',
+                        'url' => '/capacitaciones/anteriores'
+                    ]
+                ]
+            ],
+            [
+                'id' => 2,
+                'label' => 'Mis Notificaciones',
+                'current' => false,
+                'icon' => 'bell',
+                'class' => '',
+                'items' => [
+                    [
+                        'id' => 201,
+                        'label' => 'No Leídas (1)',
+                        'current' => false,
+                        'class' => '',
+                        'url' => '/notificaciones/no-leidas'
+                    ],
+                    [
+                        'id' => 202,
+                        'label' => 'Ver todas',
+                        'current' => false,
+                        'class' => '',
+                        'url' => '/notificaciones'
+                    ]
+                ]
+            ],
+            [
+                'id' => 3,
+                'label' => 'Mis Certificados',
+                'current' => false,
+                'icon' => 'file',
+                'url' => '#',
+                'class' => '',
+                'items' => []
+            ],
+            [
+                'id' => 4,
+                'label' => 'Solicitudes',
+                'current' => false,
+                'icon' => 'envelope',
+                'url' => '#',
+                'class' => '',
+                'items' => []
+            ],
+            [
+                'id' => 5,
+                'label' => 'Ayuda',
+                'current' => false,
+                'icon' => 'question-circle',
+                'url' => '#',
+                'class' => '',
+                'items' => []
+            ],
+            [
+                'id' => 6,
+                'label' => 'Comprar',
+                'current' => false,
+                'icon' => 'shopping-cart',
+                'class' => '',
+                'items' => [
+                    [
+                        'id' => 601,
+                        'label' => 'Cursos',
+                        'current' => false,
+                        'class' => '',
+                        'url' => '/comprar/cursos'
+                    ],
+                    [
+                        'id' => 602,
+                        'label' => 'Diplomados',
+                        'current' => false,
+                        'class' => '',
+                        'url' => '/comprar/diplomados'
+                    ]
+                ]
+            ]
+        ];
+
     }
 }

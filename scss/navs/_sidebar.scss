@@ -140,8 +140,8 @@
         letter-spacing: 0.05rem;
         z-index: 1;
 
-        .sidebar-brand-icon i {
-            font-size: 2rem;
+        .sidebar-brand-icon {
+            display: none;
         }
 
         .sidebar-brand-big {
@@ -326,8 +326,8 @@
             }
 
             .sidebar-brand {
-                .sidebar-brand-icon i {
-                    font-size: 2rem;
+                .sidebar-brand-icon{
+                    display: inline;
                 }
 
                 .sidebar-brand-big {
