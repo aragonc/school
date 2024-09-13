@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Blank</title>
+    <title> {{_s.institution }} - {{_s.site_name }}</title>
 
     <!-- Custom fonts for this template-->
     <link href="{{ assets }}/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -22,7 +22,6 @@
 </head>
 
 <body id="page-top">
-
 {% block content %}
     {{ content }}
 {% endblock %}

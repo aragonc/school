@@ -18,3 +18,10 @@
 @import "login.scss";
 @import "error.scss";
 @import "footer.scss";
+
+.bg-sidebar{
+  background: $white;
+  .sidebar-brand{
+    background: $blue-primary;
+  }
+}

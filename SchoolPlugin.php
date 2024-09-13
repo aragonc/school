@@ -103,6 +103,10 @@ class SchoolPlugin extends Plugin
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/sb-admin-2.min.js').'"></script>'."\n";
 
 
+        // Setting system variables
+        $this->set_system_parameters();
+
+        //$this->assign('title-page', '');
         $this->assign('logo_svg', self::display_logo());
         $this->assign('logo_icon', self::display_logo_icon());
         $this->assign('menus', self::getMenus());
@@ -145,6 +149,25 @@ class SchoolPlugin extends Plugin
             'id' => 'header-icon',
         ];
         return Display::img($logoPath, $institution, $imageAttributes);
+    }
+
+    public function set_system_parameters()
+    {
+        // Get the interface language from global.inc.php
+        global $language_interface;
+
+        $_s = [
+            'software_name' => api_get_configuration_value('software_name'),
+            'system_version' => api_get_configuration_value('system_version'),
+            'site_name' => api_get_setting('siteName'),
+            'institution' => api_get_setting('Institution'),
+            'institution_url' => api_get_setting('InstitutionUrl'),
+            'date' => api_format_date('now', DATE_FORMAT_LONG),
+            'timezone' => api_get_timezone(),
+            'gamification_mode' => api_get_setting('gamification_mode'),
+            'language_interface' => $language_interface,
+        ];
+        $this->assign('_s', $_s);
     }
     /**
      * @return string
@@ -225,7 +248,7 @@ class SchoolPlugin extends Plugin
             [
                 'id' => 1,
                 'label' => 'Mis Capacitaciones',
-                'current' => false,
+                'current' => true,
                 'icon' => 'book',
                 'class' => 'show',
                 'items' => [
