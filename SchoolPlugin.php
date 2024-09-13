@@ -105,11 +105,11 @@ class SchoolPlugin extends Plugin
 
         // Setting system variables
         $this->set_system_parameters();
+        $this->setSidebar();
+        $this->setNavBar();
 
         //$this->assign('title-page', '');
-        $this->assign('logo_svg', self::display_logo());
-        $this->assign('logo_icon', self::display_logo_icon());
-        $this->assign('menus', self::getMenus());
+
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/vendor/';
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
@@ -242,6 +242,20 @@ class SchoolPlugin extends Plugin
         $this->display($tpl);
     }
 
+    public function setSidebar()
+    {
+        $this->assign('logo_svg', self::display_logo());
+        $this->assign('logo_icon', self::display_logo_icon());
+        $this->assign('menus', self::getMenus());
+        $content = $this->fetch('school/view/layout/sidebar.tpl');
+        $this->assign('sidebar', $content);
+    }
+
+    public function setNavBar()
+    {
+        $content = $this->fetch('school/view/layout/navbar.tpl');
+        $this->assign('navbar', $content);
+    }
     public function getMenus(): array
     {
         return [
