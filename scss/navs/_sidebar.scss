@@ -435,7 +435,7 @@
     .nav-item {
         .nav-link {
             color: fade-out($gray-900, 0.2);
-
+            font-weight: 700;
             i {
                 color: fade-out($gray-900, 0.7);
             }

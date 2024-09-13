@@ -3,11 +3,11 @@
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use Chamilo\CoreBundle\Component\Utils\ChamiloApi;
 class SchoolPlugin extends Plugin
 {
     public $twig = null;
     public $params = [];
+    public $user_is_logged_in = false;
     protected function __construct()
     {
         parent::__construct(
@@ -102,9 +102,9 @@ class SchoolPlugin extends Plugin
 
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/sb-admin-2.min.js').'"></script>'."\n";
 
-
         // Setting system variables
         $this->set_system_parameters();
+        $this->set_user_parameters();
         $this->setSidebar();
         $this->setNavBar();
 
@@ -169,6 +169,28 @@ class SchoolPlugin extends Plugin
         ];
         $this->assign('_s', $_s);
     }
+
+    private function set_user_parameters()
+    {
+        $user_info = [];
+        $user_info['logged'] = 0;
+        $this->user_is_logged_in = false;
+        if (api_user_is_login()) {
+            $user_info = api_get_user_info(api_get_user_id(), true, false,true, true);
+            $user_info['logged'] = 1;
+
+            $user_info['is_admin'] = 0;
+            if (api_is_platform_admin()) {
+                $user_info['is_admin'] = 1;
+            }
+
+            $user_info['messages_count'] = MessageManager::getCountNewMessages();
+            $this->user_is_logged_in = true;
+        }
+        // Setting the $_u array that could be use in any template
+        $this->assign('_u', $user_info);
+    }
+
     /**
      * @return string
      */
