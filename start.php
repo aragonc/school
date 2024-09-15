@@ -9,6 +9,8 @@ $nameTools = $plugin->get_lang('DashboardSchool');
 api_block_anonymous_users();
 
 if ($enable) {
+    $userId = api_get_user_id();
+
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
     $plugin->setTitle($plugin->get_lang('MyTrainings'));
     $content = $plugin->fetch('school_start.tpl');

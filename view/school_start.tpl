@@ -13,7 +13,16 @@
 
 </ul>
 <div class="tab-content" id="myTabContent">
-    <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">...</div>
+    <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
+
+        <h2>{{ get_svg_icon('courses','demo')|raw }} Cursos Online</h2>
+
+        <h2>Diplomados</h2>
+
+
+        <h2>Escuelas</h2>
+
+    </div>
     <div class="tab-pane fade" id="previous_courses" role="tabpanel" aria-labelledby="previous_courses-tab">...</div>
 </div>
 

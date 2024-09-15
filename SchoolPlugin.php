@@ -3,6 +3,7 @@
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+
 class SchoolPlugin extends Plugin
 {
     public $twig = null;
@@ -62,11 +63,16 @@ class SchoolPlugin extends Plugin
             ];
         }
 
+
+
         $this->twig = new Twig_Environment($loader, $options);
 
         if ($isTestMode) {
             $this->twig->addExtension(new Twig_Extension_Debug());
         }
+
+        // Añadir la función personalizada get_svg_icon
+        $this->twig->addFunction('get_svg_icon', new Twig_SimpleFunction('get_svg_icon', [$this, 'get_svg_icon']));
 
         $filters = [
             'var_dump',
@@ -116,6 +122,10 @@ class SchoolPlugin extends Plugin
                 'name' => 'remove_xss',
                 'callable' => 'Security::remove_XSS',
             ],
+            /*[
+                'name' => 'get_icon',
+                'callable' => 'self::get_svg_icon',
+            ]*/
         ];
 
         foreach ($filters as $filter) {
@@ -194,7 +204,16 @@ class SchoolPlugin extends Plugin
         return $this->title;
     }
 
+    public function get_svg_icon($iconName, $altText = '') {
+        $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
 
+        if (file_exists($icon_path)) {
+            $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.svg';
+            echo Display::img($iconPathWeb,$altText);
+        } else {
+            echo '<!-- Icono no encontrado -->';
+        }
+    }
     public function display_logo(): string
     {
         $theme = api_get_visual_theme();
