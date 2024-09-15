@@ -15,9 +15,10 @@
         <li class="nav-item dropdown no-arrow mx-1">
             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-bell fa-fw"></i>
-                <!-- Counter - Alerts -->
-                <span class="badge badge-danger badge-counter">3+</span>
+                <div class="badge-bell">
+                    <i class="fas fa-bell fa-fw text-white"></i>
+                    <span class="badge badge-danger badge-counter">3+</span>
+                </div>
             </a>
             <!-- Dropdown - Alerts -->
             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
@@ -87,7 +88,7 @@
                             <img class="img-circle" src="{{ _u.avatar_medium }}" alt="{{ _u.complete_name }}"/>
                             <p class="name">{{ _u.firstname }} {{ _u.lastname }}</p>
                         </a>
-                        <p><em class="fa fa-envelope-o" aria-hidden="true"></em> {{ _u.email }}</p>
+                        <p><i class="fas fa-envelope fa-fw"></i> {{ _u.email }}</p>
                     </div>
                 </div>
 
