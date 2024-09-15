@@ -5,3 +5,6 @@ $strings['plugin_comment'] = 'Plugin creado para una extensión de Chamilo Schoo
 $strings['tool_enable'] = 'Habilitar plugin';
 $strings['Logout'] = 'Cerrar sesión';
 $strings['EditProfile'] = 'Editar perfil';
+$strings['MyTrainings'] = 'Mis Capacitaciones';
+$strings['Current'] = 'Actuales';
+$strings['Previous'] = 'Anteriores';

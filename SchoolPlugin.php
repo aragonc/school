@@ -8,6 +8,7 @@ class SchoolPlugin extends Plugin
     public $twig = null;
     public $params = [];
     public $user_is_logged_in = false;
+    public $title = null;
     protected function __construct()
     {
         parent::__construct(
@@ -17,6 +18,7 @@ class SchoolPlugin extends Plugin
                 'tool_enable' => 'boolean'
             ]
         );
+
         $this->isAdminPlugin = true;
 
         $urlId = api_get_current_access_url_id();
@@ -163,6 +165,7 @@ class SchoolPlugin extends Plugin
         // Setting system variables
         $this->set_system_parameters();
         $this->set_user_parameters();
+        $this->assign('title_string', $this->title);
         $this->setSidebar();
         //$this->setNavBar();
 
@@ -173,6 +176,24 @@ class SchoolPlugin extends Plugin
         $this->assign('css_files', $css_file_to_string);
 
     }
+
+    /**
+     * @param null $title
+     */
+    public function setTitle($title): void
+    {
+        $this->title = $title;
+        $this->assign('title_string', $title);
+    }
+
+    /**
+     * @return null
+     */
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
 
     public function display_logo(): string
     {

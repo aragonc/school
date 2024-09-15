@@ -10,6 +10,7 @@ api_block_anonymous_users();
 
 if ($enable) {
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
+    $plugin->setTitle($plugin->get_lang('MyTrainings'));
     $content = $plugin->fetch('school_start.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
