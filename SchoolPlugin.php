@@ -62,10 +62,69 @@ class SchoolPlugin extends Plugin
 
         $this->twig = new Twig_Environment($loader, $options);
 
-
         if ($isTestMode) {
             $this->twig->addExtension(new Twig_Extension_Debug());
         }
+
+        $filters = [
+            'var_dump',
+            'get_plugin_lang',
+            'get_lang',
+            'api_get_path',
+            'api_get_local_time',
+            'api_convert_and_format_date',
+            'api_is_allowed_to_edit',
+            'api_get_user_info',
+            'api_get_configuration_value',
+            'api_get_setting',
+            'api_get_plugin_setting',
+            [
+                'name' => 'return_message',
+                'callable' => 'Display::return_message_and_translate',
+            ],
+            [
+                'name' => 'display_page_header',
+                'callable' => 'Display::page_header_and_translate',
+            ],
+            [
+                'name' => 'display_page_subheader',
+                'callable' => 'Display::page_subheader_and_translate',
+            ],
+            [
+                'name' => 'icon',
+                'callable' => 'Display::get_icon_path',
+            ],
+            [
+                'name' => 'img',
+                'callable' => 'Display::get_image',
+            ],
+            [
+                'name' => 'format_date',
+                'callable' => 'api_format_date',
+            ],
+            [
+                'name' => 'get_template',
+                'callable' => 'api_find_template',
+            ],
+            [
+                'name' => 'date_to_time_ago',
+                'callable' => 'Display::dateToStringAgoAndLongDate',
+            ],
+            [
+                'name' => 'remove_xss',
+                'callable' => 'Security::remove_XSS',
+            ],
+        ];
+
+        foreach ($filters as $filter) {
+            if (is_array($filter)) {
+                $this->twig->addFilter(new Twig_SimpleFilter($filter['name'], $filter['callable']));
+            } else {
+                $this->twig->addFilter(new Twig_SimpleFilter($filter, $filter));
+            }
+        }
+
+
         $js_file_to_string = '';
         $css[] = api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH) . 'school/css/style.css');
 

@@ -41,7 +41,7 @@
   .dropdown {
     position: static;
     .dropdown-menu {
-      width: calc(100% - #{$grid-gutter-width});
+      width: calc(100% - #{$grid-menu-width});
       right: $grid-gutter-width / 2;
     }
   }
@@ -96,7 +96,7 @@
     .dropdown {
       position: relative;
       .dropdown-menu {
-        width: auto;
+        width: 240px;
         right: 0;
       }
     }
