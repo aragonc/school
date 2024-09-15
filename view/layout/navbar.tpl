@@ -62,8 +62,6 @@
             </div>
         </li>
 
-        
-
         <div class="topbar-divider d-none d-sm-block"></div>
 
         <!-- Nav Item - User Information -->
@@ -104,7 +102,8 @@
 
                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                   Cerrar sesión
+                    {{ 'Logout'|get_plugin_lang('SchoolPlugin') }}
+                    Cerrar sesion
                 </a>
 
             </div>

@@ -22,9 +22,7 @@ class SchoolPlugin extends Plugin
         $urlId = api_get_current_access_url_id();
 
         $template_paths = [
-            api_get_path(SYS_CODE_PATH).'template/overrides', // user defined templates
-            api_get_path(SYS_CODE_PATH).'template', //template folder
-            api_get_path(SYS_PLUGIN_PATH), // plugin folder
+            api_get_path(SYS_PLUGIN_PATH).'school/view', // plugin folder
         ];
 
         $cache_folder = api_get_path(SYS_ARCHIVE_PATH).'twig/'.$urlId.'/';
@@ -63,6 +61,7 @@ class SchoolPlugin extends Plugin
         }
 
         $this->twig = new Twig_Environment($loader, $options);
+
 
         if ($isTestMode) {
             $this->twig->addExtension(new Twig_Extension_Debug());
@@ -106,9 +105,8 @@ class SchoolPlugin extends Plugin
         $this->set_system_parameters();
         $this->set_user_parameters();
         $this->setSidebar();
-        $this->setNavBar();
+        //$this->setNavBar();
 
-        //$this->assign('title-page', '');
 
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/vendor/';
         $this->assign('assets', $vendor);
@@ -248,11 +246,16 @@ class SchoolPlugin extends Plugin
     {
         echo $this->twig->render($template, $this->params);
     }
-    public function get_template($name): string
+    public function find_template($name): string
     {
-        return api_find_template($name);
+        return self::findTemplateFilePath($name);
     }
 
+    public static function findTemplateFilePath($name): string
+    {
+        $sysTemplatePath = api_get_path(SYS_PLUGIN_PATH);
+        return $sysTemplatePath."school/view/layout/$name";
+    }
     /**
      * @throws RuntimeError
      * @throws SyntaxError
@@ -260,7 +263,8 @@ class SchoolPlugin extends Plugin
      */
     public function display_blank_template()
     {
-        $tpl = $this->twig->loadTemplate('school/view/layout/blank.tpl');
+
+        $tpl = $this->twig->loadTemplate('layout/blank.tpl');
         $this->display($tpl);
     }
 
@@ -269,13 +273,13 @@ class SchoolPlugin extends Plugin
         $this->assign('logo_svg', self::display_logo());
         $this->assign('logo_icon', self::display_logo_icon());
         $this->assign('menus', self::getMenus());
-        $content = $this->fetch('school/view/layout/sidebar.tpl');
+        $content = $this->fetch('/layout/sidebar.tpl');
         $this->assign('sidebar', $content);
     }
 
     public function setNavBar()
     {
-        $content = $this->fetch('school/view/layout/navbar.tpl');
+        $content = $this->fetch('/layout/navbar.tpl');
         $this->assign('navbar', $content);
     }
     public function getMenus(): array
