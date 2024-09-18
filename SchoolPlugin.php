@@ -170,7 +170,7 @@ class SchoolPlugin extends Plugin
             $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH).'assets/'.$file).'"></script>'."\n";
         }*/
 
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/sb-admin-2.min.js').'"></script>'."\n";
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/main.js').'"></script>'."\n";
 
         // Setting system variables
         $this->set_system_parameters();

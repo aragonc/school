@@ -8,3 +8,6 @@ $strings['EditProfile'] = 'Editar perfil';
 $strings['MyTrainings'] = 'Mis Capacitaciones';
 $strings['Current'] = 'Actuales';
 $strings['Previous'] = 'Anteriores';
+$strings['OnlineCourses'] = 'Cursos online';
+$strings['Diplomas'] = 'Diplomados';
+$strings['Schools'] = 'Escuelas';

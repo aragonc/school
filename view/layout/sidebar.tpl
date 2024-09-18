@@ -14,11 +14,6 @@
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
-    <!-- Heading -->
-    <div class="sidebar-heading">
-        Menu general
-    </div>
-
     <!-- Nav Item - Pages Collapse Menu -->
     {% for menu in menus %}
     {% if menu.items %}
