@@ -12,7 +12,7 @@
     </li>
 
 </ul>
-<div class="tab-content" id="myTabContent">
+<div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
 
         {% for category in categories %}
@@ -23,7 +23,7 @@
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
                                 <div class="p-2">{{ category.category_image }}</div>
-                                <div class="p-2"><h4>{{ category.category_name }}</h4></div>
+                                <div class="p-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
                             </div>
                         </div>
                         <div class="col-md-auto">
@@ -38,7 +38,7 @@
             </div>
             <div class="accordion" id="sessions_accordion">
                 {% for session in category.sessions %}
-                <div class="card">
+                <div class="card pl-4 pr-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
                         <h2 class="mb-0">
                             <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
@@ -49,11 +49,13 @@
 
                     <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
                         <div class="card-body">
-                            <ul>
+                            <ul class="list-courses">
                                 {% for course in session.courses %}
-                                <li>
-                                    <a href="{{ course.url }}" title="{{ course.title }}">
+                                <li class="course-box">
+                                    <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                        {% if course.number != 0 %}
                                         <span class="badge badge-warning">{{ course.number }}</span>
+                                        {% endif %}
                                         {{ course.icon }} {{ course.title }}
                                     </a>
                                 </li>

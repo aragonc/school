@@ -432,7 +432,7 @@ class SchoolPlugin extends Plugin
                     $categories[$row['id_category']] = [
                         'category_id' => $row['id_category'],
                         'category_name' => $row['category'],
-                        'category_image' => self::get_svg_icon($nameImage, $row['category']),
+                        'category_image' => self::get_svg_icon($nameImage, $row['category'], 50),
                         'sessions' => []
                     ];
                 }
