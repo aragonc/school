@@ -206,12 +206,12 @@ class SchoolPlugin extends Plugin
         return $this->title;
     }
 
-    public function get_svg_icon($iconName, $altText = ''): string
+    public function get_svg_icon($iconName, $altText = '', $size = 64): string
     {
         $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
         if (file_exists($icon_path)) {
             $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.svg';
-            $img = Display::img($iconPathWeb,$altText);
+            $img = Display::img($iconPathWeb,$altText,['width' => $size, 'height' => $size]);
         } else {
             $img = '<!-- Icono no encontrado -->';
         }
@@ -426,6 +426,7 @@ class SchoolPlugin extends Plugin
             foreach ($result as $row) {
                 $courseList = UserManager::get_courses_list_by_session($userID, $row['id']);
                 $row['courses'] = $courseList;
+                $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
                 if (!isset($categories[$row['id_category']])) {
                     $nameImage = 'category_'.$row['id_category'];
                     $categories[$row['id_category']] = [

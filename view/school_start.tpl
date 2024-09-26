@@ -22,7 +22,7 @@
             </div>
             {% for session in category.sessions %}
                 <div id="session_{{ session.id }}" class="session">
-                    <h3>{{ session.name }}</h3>
+                    <h4>{{ session.session_image }} {{ session.name }}</h4>
                 </div>
             {% endfor %}
 
