@@ -52,7 +52,10 @@
                             <ul>
                                 {% for course in session.courses %}
                                 <li>
-                                    {{ course.icon }} {{ course.title }}
+                                    <a href="{{ course.url }}" title="{{ course.title }}">
+                                        <span class="badge badge-warning">{{ course.number }}</span>
+                                        {{ course.icon }} {{ course.title }}
+                                    </a>
                                 </li>
                                 {% endfor %}
                             </ul>

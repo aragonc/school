@@ -494,6 +494,7 @@ class SchoolPlugin extends Plugin
                 $count++;
                 $result_row['status'] = 5;
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
+                $result_row['url'] = '#';
                 if (!in_array($result_row['real_id'], $courses)) {
                     $position = $result_row['position'];
                     $insertionOrder = $result_row['insertion_order'];
