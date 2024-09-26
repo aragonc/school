@@ -20,11 +20,44 @@
             <div id="category_{{ category.category_id }}" class="category">
                 {{ category.category_image }} {{ category.category_name }}
             </div>
+
+        <div class="accordion" id="sessions_accordion">
             {% for session in category.sessions %}
-                <div id="session_{{ session.id }}" class="session">
-                    <h4>{{ session.session_image }} {{ session.name }}</h4>
+            <div class="card">
+                <div class="card-header" id="heading_session_{{ session.id }}">
+                    <h2 class="mb-0">
+                        <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
+                            {{ session.session_image }} {{ session.name }}
+                        </button>
+                    </h2>
                 </div>
+
+                <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
+                    <div class="card-body">
+
+                        <ul>
+                            {% for course in session.courses %}
+                            <li>
+                                {{ course.title }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
             {% endfor %}
+        </div>
+
+
+
+
+
+
+                <div id="session_" class="session">
+                    <h4></h4>
+                </div>
+
 
         {% endfor %}
 
