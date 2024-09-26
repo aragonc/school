@@ -16,17 +16,18 @@
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
 
 
-        <h2>{{ get_svg_icon('courses','OnlineCourses'|get_plugin_lang('SchoolPlugin'))|raw }} {{ 'OnlineCourses'|get_plugin_lang('SchoolPlugin') }}</h2>
+        {% for category in categories %}
+            <div id="category_{{ category.category_id }}" class="category">
+                {{ category.category_image }} {{ category.category_name }}
+            </div>
+            {% for session in category.sessions %}
+                <div id="session_{{ session.id }}" class="session">
+                    <h3>{{ session.name }}</h3>
+                </div>
+            {% endfor %}
 
-
-
-        {% for session in sessions %}
-            {{ dump(session) }}
         {% endfor %}
 
-        <h2>{{ get_svg_icon('graduates','Diplomas'|get_plugin_lang('SchoolPlugin'))|raw }} {{ 'Diplomas'|get_plugin_lang('SchoolPlugin') }}</h2>
-
-        <h2>{{ get_svg_icon('school','Schools'|get_plugin_lang('SchoolPlugin'))|raw }} {{ 'Schools'|get_plugin_lang('SchoolPlugin') }}</h2>
 
     </div>
     <div class="tab-pane fade" id="previous_courses" role="tabpanel" aria-labelledby="previous_courses-tab">...</div>

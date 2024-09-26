@@ -427,11 +427,11 @@ class SchoolPlugin extends Plugin
                 $courseList = UserManager::get_courses_list_by_session($userID, $row['id']);
                 $row['courses'] = $courseList;
                 if (!isset($categories[$row['id_category']])) {
-                    $nameImage = 'category_'.$row['id_category'].'.svg';
+                    $nameImage = 'category_'.$row['id_category'];
                     $categories[$row['id_category']] = [
-                        'id_category' => $row['id_category'],
-                        'category' => $row['category'],
-                        'image' => self::get_svg_icon($nameImage),
+                        'category_id' => $row['id_category'],
+                        'category_name' => $row['category'],
+                        'category_image' => self::get_svg_icon($nameImage, $row['category']),
                         'sessions' => []
                     ];
                 }
