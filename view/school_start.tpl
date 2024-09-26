@@ -38,7 +38,7 @@
                         <ul>
                             {% for course in session.courses %}
                             <li>
-                                {{ course.title }}
+                                {{ course.icon }} {{ course.title }}
                             </li>
                             {% endfor %}
                         </ul>

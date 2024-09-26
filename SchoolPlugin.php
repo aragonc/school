@@ -424,7 +424,7 @@ class SchoolPlugin extends Plugin
         }
         if (Database::num_rows($result) > 0) {
             foreach ($result as $row) {
-                $courseList = UserManager::get_courses_list_by_session($userID, $row['id']);
+                $courseList = self::getCoursesListBySession($userID, $row['id']);
                 $row['courses'] = $courseList;
                 $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
                 if (!isset($categories[$row['id_category']])) {
@@ -443,6 +443,166 @@ class SchoolPlugin extends Plugin
         }
         return $categories;
 
+    }
+
+    public function getCoursesListBySession($user_id, $session_id): array
+    {
+        // Database Table Definitions
+        $tbl_session = Database::get_main_table(TABLE_MAIN_SESSION);
+        $tableCourse = Database::get_main_table(TABLE_MAIN_COURSE);
+        $tbl_session_course_user = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
+        $tbl_session_course = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
+
+        $user_id = (int) $user_id;
+        $session_id = (int) $session_id;
+        // We filter the courses from the URL
+        $join_access_url = $where_access_url = '';
+        if (api_get_multiple_access_url()) {
+            $urlId = api_get_current_access_url_id();
+            if ($urlId != -1) {
+                $tbl_url_session = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
+                $join_access_url = " ,  $tbl_url_session url_rel_session ";
+                $where_access_url = " AND access_url_id = $urlId AND url_rel_session.session_id = $session_id ";
+            }
+        }
+
+        $sql = "SELECT DISTINCT
+                    c.title,
+                    c.visibility,
+                    c.id as real_id,
+                    c.code as course_code,
+                    sc.id as insertion_order,
+                    sc.position,
+                    c.unsubscribe
+                FROM $tbl_session_course_user as scu
+                INNER JOIN $tbl_session_course sc
+                ON (scu.session_id = sc.session_id AND scu.c_id = sc.c_id)
+                INNER JOIN $tableCourse as c
+                ON (scu.c_id = c.id)
+                $join_access_url
+                WHERE
+                    scu.user_id = $user_id AND
+                    scu.session_id = $session_id
+                    $where_access_url ORDER BY sc.position ASC ";
+        $myCourseList = [];
+        $courses = [];
+        $result = Database::query($sql);
+
+        $count = 0;
+        if (Database::num_rows($result) > 0) {
+            while ($result_row = Database::fetch_array($result, 'ASSOC')) {
+                $count++;
+                $result_row['status'] = 5;
+                $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
+                if (!in_array($result_row['real_id'], $courses)) {
+                    $position = $result_row['position'];
+                    $insertionOrder = $result_row['insertion_order'];
+                    if(!$position == '0'){
+                        $myCourseList[$position] = $result_row;
+                    } else {
+                        if($count <= 1){
+                            $myCourseList[0] = $result_row;
+                            $myCourseList[0]['number'] = 0;
+                            if($myCourseList[0]['course_code'] == 'INDUCCION'){
+                                $myCourseList[0]['icon'] = self::get_svg_icon('induccion', $result_row['title'],32);
+                            }
+
+                        } else {
+                            $myCourseList[$insertionOrder] = $result_row;
+                            $myCourseList[$insertionOrder]['number'] = $count-1;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (api_is_allowed_to_create_course()) {
+            $sql = "SELECT DISTINCT
+                        c.title,
+                        c.visibility,
+                        c.id as real_id,
+                        c.code as course_code,
+                        sc.id as insertion_order,
+                        sc.position,
+                        c.unsubscribe
+                    FROM $tbl_session_course_user as scu
+                    INNER JOIN $tbl_session as s
+                    ON (scu.session_id = s.id)
+                    INNER JOIN $tbl_session_course sc
+                    ON (scu.session_id = sc.session_id AND scu.c_id = sc.c_id)
+                    INNER JOIN $tableCourse as c
+                    ON (scu.c_id = c.id)
+                    $join_access_url
+                    WHERE
+                      s.id = $session_id AND
+                      (
+                        (scu.user_id = $user_id AND scu.status = 2) OR
+                        s.id_coach = $user_id
+                      )
+                    $where_access_url ORDER BY sc.position ASC ";
+
+            $result = Database::query($sql);
+
+            if (Database::num_rows($result) > 0) {
+                while ($result_row = Database::fetch_array($result, 'ASSOC')) {
+                    $result_row['status'] = 2;
+                    if (!in_array($result_row['real_id'], $courses)) {
+                        $position = $result_row['position'];
+                        if (!isset($myCourseList[$position])) {
+                            $myCourseList[$position] = $result_row;
+                        } else {
+                            $myCourseList[] = $result_row;
+                        }
+                        $courses[] = $result_row['real_id'];
+                    }
+                }
+            }
+        }
+
+        if (api_is_drh()) {
+            $sessionList = SessionManager::get_sessions_followed_by_drh($user_id);
+            $sessionList = array_keys($sessionList);
+            if (in_array($session_id, $sessionList)) {
+                $courseList = SessionManager::get_course_list_by_session_id($session_id);
+                if (!empty($courseList)) {
+                    foreach ($courseList as $course) {
+                        if (!in_array($course['id'], $courses)) {
+                            $position = $course['position'];
+                            if (!isset($myCourseList[$position])) {
+                                $myCourseList[$position] = $course;
+                            } else {
+                                $myCourseList[] = $course;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            //check if user is general coach for this session
+            $sessionInfo = api_get_session_info($session_id);
+            if ($sessionInfo['id_coach'] == $user_id) {
+                $courseList = SessionManager::get_course_list_by_session_id($session_id);
+                if (!empty($courseList)) {
+                    foreach ($courseList as $course) {
+                        if (!in_array($course['id'], $courses)) {
+                            $position = $course['position'];
+                            if (!isset($myCourseList[$position])) {
+                                $myCourseList[$position] = $course;
+                            } else {
+                                $myCourseList[] = $course;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($myCourseList)) {
+            ksort($myCourseList);
+        }
+
+
+        return $myCourseList;
     }
 
     private static function merge_session_data($sessionDataStudent, $sessionDataCoach): array
