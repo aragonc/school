@@ -1,5 +1,6 @@
 <?php
 
+use Doctrine\ORM\Query\QueryException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -10,6 +11,7 @@ class SchoolPlugin extends Plugin
     public $params = [];
     public $user_is_logged_in = false;
     public $title = null;
+
     protected function __construct()
     {
         parent::__construct(
@@ -204,20 +206,21 @@ class SchoolPlugin extends Plugin
         return $this->title;
     }
 
-    public function get_svg_icon($iconName, $altText = '') {
+    public function get_svg_icon($iconName, $altText = ''): string
+    {
         $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
-
         if (file_exists($icon_path)) {
             $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.svg';
-            echo Display::img($iconPathWeb,$altText);
+            $img = Display::img($iconPathWeb,$altText);
         } else {
-            echo '<!-- Icono no encontrado -->';
+            $img = '<!-- Icono no encontrado -->';
         }
+        return $img;
     }
     public function display_logo(): string
     {
         $theme = api_get_visual_theme();
-        $themeDir = \Template::getThemeDir($theme);
+        $themeDir = Template::getThemeDir($theme);
         $customLogoPathSvg = $themeDir."images/header-logo-vector.svg";
         $logoPath = api_get_path(WEB_CSS_PATH).$customLogoPathSvg;
         //var_dump($logoPath);
@@ -235,7 +238,7 @@ class SchoolPlugin extends Plugin
     public function display_logo_icon(): string
     {
         $theme = api_get_visual_theme();
-        $themeDir = \Template::getThemeDir($theme);
+        $themeDir = Template::getThemeDir($theme);
         $customLogoPathSvg = $themeDir."images/header-logo-icon.svg";
         $logoPath = api_get_path(WEB_CSS_PATH).$customLogoPathSvg;
         $institution = api_get_setting('Institution');
@@ -381,6 +384,75 @@ class SchoolPlugin extends Plugin
         $content = $this->fetch('/layout/navbar.tpl');
         $this->assign('navbar', $content);
     }
+
+    public function getSessionsByCategory($userID): array
+    {
+        $categories = null;
+        $accessUrlId = api_get_current_access_url_id();
+        $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
+        $table_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
+        $table_session_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+        $table_access_url_session = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
+        $sql = "
+            SELECT
+                s.id,
+                s.id_coach,
+                s.session_category_id AS 'id_category',
+                sc.name AS 'category',
+                s.name,
+                s.description,
+                s.nbr_courses,
+                s.nbr_users,
+                s.display_start_date,
+                s.display_end_date,
+                CASE
+                    WHEN s.id_coach = srs.user_id THEN 'true'
+                    ELSE 'false'
+                END AS coach
+            FROM $table_session s
+            INNER JOIN $table_session_user srs ON srs.session_id = s.id
+            INNER JOIN $table_session_category sc ON sc.id = s.session_category_id
+            INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
+            WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId;
+        ";
+
+
+        $result = Database::query($sql);
+
+        if (empty($result)) {
+            return [];
+        }
+        if (Database::num_rows($result) > 0) {
+            foreach ($result as $row) {
+                $courseList = UserManager::get_courses_list_by_session($userID, $row['id']);
+                $row['courses'] = $courseList;
+                if (!isset($categories[$row['id_category']])) {
+                    $nameImage = 'category_'.$row['id_category'].'.svg';
+                    $categories[$row['id_category']] = [
+                        'id_category' => $row['id_category'],
+                        'category' => $row['category'],
+                        'image' => self::get_svg_icon($nameImage),
+                        'sessions' => []
+                    ];
+                }
+
+                $categories[$row['id_category']]['sessions'][] = $row;
+            }
+
+        }
+        return $categories;
+
+    }
+
+    private static function merge_session_data($sessionDataStudent, $sessionDataCoach): array
+    {
+        $sessionData = [];
+        foreach (array_merge($sessionDataStudent, $sessionDataCoach) as $row) {
+            $sessionData[$row['id']] = $row;
+        }
+        return $sessionData;
+    }
+
     public function getMenus(): array
     {
         return [
