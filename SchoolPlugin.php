@@ -405,6 +405,7 @@ class SchoolPlugin extends Plugin
                 s.nbr_users,
                 s.display_start_date,
                 s.display_end_date,
+                DATE(srs.registered_at) AS 'registered_at',
                 CASE
                     WHEN s.id_coach = srs.user_id THEN 'true'
                     ELSE 'false'
@@ -415,7 +416,6 @@ class SchoolPlugin extends Plugin
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
             WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId;
         ";
-
 
         $result = Database::query($sql);
 

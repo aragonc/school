@@ -11,3 +11,6 @@ $strings['Previous'] = 'Anteriores';
 $strings['OnlineCourses'] = 'Cursos online';
 $strings['Diplomas'] = 'Diplomados';
 $strings['Schools'] = 'Escuelas';
+$strings['RegistrationDate'] = 'Fecha de inscripción';
+$strings['Certificate'] = 'Certificado';
+$strings['CertificateRegularStudent'] = 'Certificado de alumno regular';

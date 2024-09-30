@@ -19,7 +19,7 @@
             <div id="category_{{ category.category_id }}" class="category">
 
                 <div class="container-fluid">
-                    <div class="row  align-items-center">
+                    <div class="row align-items-center">
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
                                 <div class="p-2">{{ category.category_image }}</div>
@@ -27,10 +27,10 @@
                             </div>
                         </div>
                         <div class="col-md-auto">
-                            Fecha de compra
+                            {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
                         <div class="col col-lg-2">
-                            Certificado
+                            {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
                     </div>
                 </div>
@@ -40,11 +40,25 @@
                 {% for session in category.sessions %}
                 <div class="card pl-4 pr-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
-                        <h2 class="mb-0">
-                            <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
-                                {{ session.session_image }} {{ session.name }}
-                            </button>
-                        </h2>
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h2 class="mb-0">
+                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
+                                        {{ session.session_image }} {{ session.name }}
+                                    </button>
+                                </h2>
+                            </div>
+                            <div class="col-md-auto">
+                                {{ session.registered_at }}
+                            </div>
+                            <div class="col col-lg-2">
+                                <a class="btn btn-primary" href="#" role="button">
+                                    <i class="fas fa-download"></i>
+                                    {{ 'CertificateRegularStudent'|get_plugin_lang('SchoolPlugin') }}
+                                </a>
+                            </div>
+                        </div>
+
                     </div>
 
                     <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
