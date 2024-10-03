@@ -385,6 +385,42 @@ class SchoolPlugin extends Plugin
         $this->assign('navbar', $content);
     }
 
+    public function getSessionsByCategoryCount($userID, $history = false): array
+    {
+        $categories = [];
+        $accessUrlId = api_get_current_access_url_id();
+        $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
+        $table_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
+        $table_session_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+        $table_access_url_session = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
+
+        $sql = "
+            SELECT
+                COUNT(*) AS total_courses
+            FROM $table_session s
+            INNER JOIN $table_session_user srs ON srs.session_id = s.id
+            INNER JOIN $table_session_category sc ON sc.id = s.session_category_id
+            INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
+            WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
+        if($history){
+            $sql .= " AND s.display_end_date <= CURDATE();";
+        } else {
+            $sql .= " AND s.display_end_date >= CURDATE();";
+        }
+        $result = Database::query($sql);
+
+        if (empty($result)) {
+            return [];
+        }
+        $total = 0;
+        if (Database::num_rows($result) > 0) {
+            foreach ($result as $row) {
+                $total = $row['total_courses'];
+            }
+        }
+        return $total;
+
+    }
     public function getSessionsByCategory($userID, $history = false): array
     {
         $categories = [];
@@ -447,6 +483,8 @@ class SchoolPlugin extends Plugin
         return $categories;
 
     }
+
+
 
     public function getCoursesListBySession($user_id, $session_id): array
     {
@@ -678,7 +716,7 @@ class SchoolPlugin extends Plugin
                 'label' => 'Mis Certificados',
                 'current' => false,
                 'icon' => 'file',
-                'url' => '/certificates',
+                'url' => '/certified',
                 'class' => '',
                 'items' => []
             ],
