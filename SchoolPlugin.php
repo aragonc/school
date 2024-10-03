@@ -636,14 +636,14 @@ class SchoolPlugin extends Plugin
                         'label' => 'Actuales (3)',
                         'current' => true,
                         'class' => 'active',
-                        'url' => '/capacitaciones/actuales'
+                        'url' => '/dashboard'
                     ],
                     [
                         'id' => 102,
                         'label' => 'Anteriores (4)',
                         'current' => false,
                         'class' => '',
-                        'url' => '/capacitaciones/anteriores'
+                        'url' => '/previous'
                     ]
                 ]
             ],
