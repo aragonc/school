@@ -14,3 +14,5 @@ $strings['Schools'] = 'Escuelas';
 $strings['RegistrationDate'] = 'Fecha de inscripción';
 $strings['Certificate'] = 'Certificado';
 $strings['CertificateRegularStudent'] = 'Certificado de alumno regular';
+$strings['NotCurrentTrainingTaking'] = 'No tienes disponible ningun curso actualmente.';
+$strings['NotCompletedCourses'] = 'Aun no tienes cursos terminados.';

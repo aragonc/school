@@ -387,7 +387,7 @@ class SchoolPlugin extends Plugin
 
     public function getSessionsByCategory($userID, $history = false): array
     {
-        $categories = null;
+        $categories = [];
         $accessUrlId = api_get_current_access_url_id();
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
         $table_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);

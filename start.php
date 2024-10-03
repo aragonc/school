@@ -11,8 +11,10 @@ api_block_anonymous_users();
 if ($enable) {
     $userId = api_get_user_id();
     $sessionsCategories = $plugin->getSessionsByCategory($userId);
+    $imgSection = $plugin->get_svg_icon('girl','Cursos Anteriores', 500);
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
     $plugin->assign('categories', $sessionsCategories);
+    $plugin->assign('img_section', $imgSection);
     $plugin->setTitle($plugin->get_lang('MyTrainings'));
     $content = $plugin->fetch('school_dashboard.tpl');
     $plugin->assign('content', $content);

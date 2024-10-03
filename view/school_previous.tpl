@@ -1,4 +1,4 @@
-
+{% if categories %}
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link" href="/dashboard">
@@ -79,6 +79,12 @@
     </div>
 
 </div>
+{% else %}
+<div class="text-center">
+    <h4>{{ 'NotCompletedCourses'|get_plugin_lang('SchoolPlugin') }}</h4>
+    {{ img_section }}
+</div>
+{% endif %}
 
 
 
