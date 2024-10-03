@@ -385,7 +385,7 @@ class SchoolPlugin extends Plugin
         $this->assign('navbar', $content);
     }
 
-    public function getSessionsByCategory($userID): array
+    public function getSessionsByCategory($userID, $history = false): array
     {
         $categories = null;
         $accessUrlId = api_get_current_access_url_id();
@@ -414,9 +414,12 @@ class SchoolPlugin extends Plugin
             INNER JOIN $table_session_user srs ON srs.session_id = s.id
             INNER JOIN $table_session_category sc ON sc.id = s.session_category_id
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
-            WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId;
-        ";
-
+            WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
+        if($history){
+            $sql .= " AND s.display_end_date <= CURDATE();";
+        } else {
+            $sql .= " AND s.display_end_date >= CURDATE();";
+        }
         $result = Database::query($sql);
 
         if (empty($result)) {
