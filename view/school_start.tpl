@@ -27,10 +27,14 @@
                             </div>
                         </div>
                         <div class="col-md-auto">
-                            {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
+                            <div class="section-col-table">
+                                {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
+                            </div>
                         </div>
                         <div class="col col-lg-2">
-                            {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
+                            <div class="section-col-table">
+                                {{ 'CertificateRegularStudent'|get_plugin_lang('SchoolPlugin') }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -48,13 +52,12 @@
                                     </button>
                                 </h2>
                             </div>
-                            <div class="col-md-auto">
+                            <div class="col-md-auto text-center">
                                 {{ session.registered_at }}
                             </div>
-                            <div class="col col-lg-2">
+                            <div class="col col-lg-2 text-center">
                                 <a class="btn btn-primary" href="#" role="button">
                                     <i class="fas fa-download"></i>
-                                    {{ 'CertificateRegularStudent'|get_plugin_lang('SchoolPlugin') }}
                                 </a>
                             </div>
                         </div>
@@ -65,7 +68,7 @@
                         <div class="card-body">
                             <ul class="list-courses">
                                 {% for course in session.courses %}
-                                <li class="course-box">
+                                <li class="course-box box-{{ course.ribbon }}">
                                     <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
                                         {% if course.number != 0 %}
                                         <span class="badge badge-warning">{{ course.number }}</span>

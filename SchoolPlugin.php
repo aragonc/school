@@ -495,6 +495,12 @@ class SchoolPlugin extends Plugin
                 $result_row['status'] = 5;
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['url'] = '#';
+                if ($count % 2 == 0) {
+                    $result_row['ribbon'] = 'even';
+                } else {
+                    $result_row['ribbon'] = 'odd';
+                }
+
                 if (!in_array($result_row['real_id'], $courses)) {
                     $position = $result_row['position'];
                     $insertionOrder = $result_row['insertion_order'];
@@ -622,7 +628,7 @@ class SchoolPlugin extends Plugin
                 'id' => 1,
                 'label' => 'Mis Capacitaciones',
                 'current' => true,
-                'icon' => 'book',
+                'icon' => 'book-open',
                 'class' => 'show',
                 'items' => [
                     [
@@ -677,7 +683,7 @@ class SchoolPlugin extends Plugin
                 'id' => 4,
                 'label' => 'Solicitudes',
                 'current' => false,
-                'icon' => 'envelope',
+                'icon' => 'inbox',
                 'url' => '#',
                 'class' => '',
                 'items' => []

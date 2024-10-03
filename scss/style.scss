@@ -19,6 +19,9 @@
 @import "error.scss";
 @import "footer.scss";
 
+.page-container{
+  max-width: 1440px;
+}
 .bg-sidebar{
   background: $white;
   box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
@@ -84,6 +87,8 @@
   .card-body{
     .list-courses{
       list-style: none;
+      padding: 0;
+      margin: 0;
       .course-box{
         padding: .5rem 1rem;
         .badge{
@@ -112,4 +117,21 @@
   padding: 0;
   margin: 0;
   font-size: 1.3rem;
+}
+.title-page{
+  font-size: 1.5rem;
+  color: $gray-800;
+  font-weight: 700;
+}
+.box-odd{
+  background-color: $gray-odd;
+}
+.box-even{
+  background-color: $gray-even;
+}
+.section-col-table{
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 16px;
 }

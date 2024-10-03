@@ -29,10 +29,10 @@
             {% include 'layout/navbar.tpl' %}
 
             <!-- Begin Page Content -->
-            <div class="container-fluid">
+            <div class="container page-container">
                 {% if title_string %}
                 <!-- Page Heading -->
-                <h1 class="h3 mb-4 text-gray-800">
+                <h1 class="title-page mb-4">
                     {{ title_string }}
                 </h1>
                 {% endif %}

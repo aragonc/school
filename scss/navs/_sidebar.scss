@@ -227,6 +227,10 @@
                 border-radius: 10px;
                 font-size: 12px;
 
+                &:hover{
+                  background-color: $gray-300;
+                }
+
                 i {
                     font-size: 1rem;
                     margin-right: 0.25rem;
@@ -312,9 +316,9 @@
 
                 .nav-link {
                     text-align: center;
-                    padding: 0.75rem 1rem;
+                    padding: 0.70rem;
                     //width: $sidebar-collapsed-width;
-                    width: 3.5rem;
+                    width: 3rem;
                     margin: auto;
                     border-radius: 10px;
                     background: $bgcolor;
