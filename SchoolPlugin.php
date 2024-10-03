@@ -678,7 +678,7 @@ class SchoolPlugin extends Plugin
                 'label' => 'Mis Certificados',
                 'current' => false,
                 'icon' => 'file',
-                'url' => '#',
+                'url' => '/certificates',
                 'class' => '',
                 'items' => []
             ],

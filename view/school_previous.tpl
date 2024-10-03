@@ -11,13 +11,10 @@
         </a>
     </li>
 </ul>
-
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
-
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
-
                 <div class="container-fluid">
                     <div class="row align-items-center">
                         <div class="col">
@@ -34,7 +31,6 @@
 
                     </div>
                 </div>
-
             </div>
             <div class="accordion" id="sessions_accordion">
                 {% for session in category.sessions %}
@@ -52,9 +48,7 @@
                                 {{ session.registered_at }}
                             </div>
                         </div>
-
                     </div>
-
                     <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
                         <div class="card-body">
                             <ul class="list-courses">
@@ -75,9 +69,7 @@
                 {% endfor %}
             </div>
         {% endfor %}
-
     </div>
-
 </div>
 {% else %}
 <div class="text-center">
