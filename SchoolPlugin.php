@@ -11,6 +11,7 @@ class SchoolPlugin extends Plugin
     public $params = [];
     public $user_is_logged_in = false;
     public $title = null;
+    public $currentSection = null;
 
     protected function __construct()
     {
@@ -19,7 +20,7 @@ class SchoolPlugin extends Plugin
             'Alex Aragon <alex.aragon@tunqui.pe>',
             [
                 'tool_enable' => 'boolean'
-            ]
+            ],
         );
 
         $this->isAdminPlugin = true;
@@ -64,8 +65,6 @@ class SchoolPlugin extends Plugin
                 //If set to false, Twig will silently ignore invalid variables
             ];
         }
-
-
 
         $this->twig = new Twig_Environment($loader, $options);
 
@@ -177,9 +176,8 @@ class SchoolPlugin extends Plugin
         // Setting system variables
         $this->set_system_parameters();
         $this->set_user_parameters();
-        $this->assign('title_string', $this->title);
-        $this->setSidebar();
-        //$this->setNavBar();
+        //$this->assign('title_string', $this->title);
+        //$this->setSidebar();
 
 
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/vendor/';
@@ -187,7 +185,25 @@ class SchoolPlugin extends Plugin
         $this->assign('js_files', $js_file_to_string);
         $this->assign('css_files', $css_file_to_string);
 
+
     }
+
+    /**
+     * @return mixed
+     */
+    public function getCurrentSection()
+    {
+        return $this->currentSection;
+    }
+
+    /**
+     * @param mixed $currentSection
+     */
+    public function setCurrentSection($currentSection): void
+    {
+        $this->currentSection = $currentSection;
+    }
+
 
     /**
      * @param null $title
@@ -195,16 +211,10 @@ class SchoolPlugin extends Plugin
     public function setTitle($title): void
     {
         $this->title = $title;
-        $this->assign('title_string', $title);
+        $this->assign('title_string', $this->title);
+
     }
 
-    /**
-     * @return null
-     */
-    public function getTitle()
-    {
-        return $this->title;
-    }
 
     public function get_svg_icon($iconName, $altText = '', $size = 64): string
     {
@@ -370,11 +380,11 @@ class SchoolPlugin extends Plugin
         $this->display($tpl);
     }
 
-    public function setSidebar()
+    public function setSidebar($section = '')
     {
         $this->assign('logo_svg', self::display_logo());
         $this->assign('logo_icon', self::display_logo_icon());
-        $this->assign('menus', self::getMenus());
+        $this->assign('menus', self::getMenus($section));
         $content = $this->fetch('/layout/sidebar.tpl');
         $this->assign('sidebar', $content);
     }
@@ -662,35 +672,22 @@ class SchoolPlugin extends Plugin
         return $sessionData;
     }
 
-    public function getMenus(): array
+    public function getMenus(string $currentSection = ''): array
     {
+        //var_dump($currentSection === 'dashboard');
         return [
             [
                 'id' => 1,
-                'label' => 'Mis Capacitaciones',
-                'current' => true,
+                'label' => $this->get_lang('MyTrainings'),
+                'current' => $currentSection === 'dashboard',
                 'icon' => 'book-open',
-                'class' => 'show',
-                'items' => [
-                    [
-                        'id' => 101,
-                        'label' => 'Actuales (3)',
-                        'current' => true,
-                        'class' => 'active',
-                        'url' => '/dashboard'
-                    ],
-                    [
-                        'id' => 102,
-                        'label' => 'Anteriores (4)',
-                        'current' => false,
-                        'class' => '',
-                        'url' => '/previous'
-                    ]
-                ]
+                'class' => $currentSection === 'dashboard' ? 'active':'',
+                'url' => '/dashboard',
+                'items' => []
             ],
             [
                 'id' => 2,
-                'label' => 'Mis Notificaciones',
+                'label' => $this->get_lang('MyNotifications'),
                 'current' => false,
                 'icon' => 'bell',
                 'class' => '',

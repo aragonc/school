@@ -5,7 +5,8 @@ $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 //$htmlHeadXtra[] = api_get_css(api_get_path(WEB_PLUGIN_PATH) . 'school/css/style.css');
-
+$plugin->setCurrentSection('dashboard');
+$plugin->setSidebar('dashboard');
 api_block_anonymous_users();
 
 if ($enable) {

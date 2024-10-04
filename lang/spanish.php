@@ -6,6 +6,7 @@ $strings['tool_enable'] = 'Habilitar plugin';
 $strings['Logout'] = 'Cerrar sesión';
 $strings['EditProfile'] = 'Editar perfil';
 $strings['MyTrainings'] = 'Mis Capacitaciones';
+$strings['MyNotifications'] = 'Mis Notificaciones';
 $strings['Current'] = 'Actuales';
 $strings['CurrentCourses'] = 'Cursos Actuales';
 $strings['Previous'] = 'Anteriores';
