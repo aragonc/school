@@ -710,11 +710,11 @@ class SchoolPlugin extends Plugin
             ],
             [
                 'id' => 3,
-                'label' => 'Mis Certificados',
+                'label' => $this->get_lang('MyCertificates'),
                 'current' => false,
                 'icon' => 'file',
                 'url' => '/certified',
-                'class' => '',
+                'class' => $currentSection === 'certificates' ? 'active':'',
                 'items' => []
             ],
             [

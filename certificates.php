@@ -5,6 +5,7 @@ $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 $certificateId = $_GET['id'] ?? 0;
+$plugin->setSidebar('certificates');
 
 api_block_anonymous_users();
 
