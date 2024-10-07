@@ -135,3 +135,13 @@
   font-weight: 800;
   line-height: 16px;
 }
+.row-date{
+  width: 150px;
+  display: inline-block;
+}
+.nav-tabs{
+  border-bottom: 1px solid #FFF;
+  .nav-link{
+    border: none;
+  }
+}

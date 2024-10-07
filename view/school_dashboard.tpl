@@ -1,12 +1,12 @@
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link active" href="/dashboard">
-            {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-primary">{{ total_courses }}</span>
+            {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_courses }}</span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link " href="/previous" >
-            {{ 'Previous'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-primary">{{ total_history }}</span>
+            {{ 'Previous'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_history }}</span>
         </a>
     </li>
 </ul>
@@ -50,7 +50,7 @@
                                 </h2>
                             </div>
                             <div class="col-md-auto text-center">
-                                {{ session.registered_at }}
+                                <span class="row-date">{{ session.registered_at }}</span>
                             </div>
                             <div class="col col-lg-2 text-center">
                                 <a class="btn btn-primary" href="#" role="button">

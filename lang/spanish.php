@@ -23,3 +23,4 @@ $strings['CompletedTrainings'] = 'Si quieres ver tus capacitaciones ya realizada
 $strings['MyCertificates'] = 'Mis Certificados';
 $strings['ClickHere'] = 'Haz clic aquí';
 $strings['HereWillBeYourTrainings'] = 'Aquí estarán tus capacitaciones';
+$strings['SelectEndYourCurrentSession'] = 'Selecciona "Cerrar sesión" a continuación si estás listo para finalizar tu sesión actual.';

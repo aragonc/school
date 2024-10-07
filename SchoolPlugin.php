@@ -184,7 +184,7 @@ class SchoolPlugin extends Plugin
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
         $this->assign('css_files', $css_file_to_string);
-
+        $this->assign('logout_link', api_get_path(WEB_PATH).'index.php?logout=logout&uid='.api_get_user_id());
 
     }
 
