@@ -11,6 +11,7 @@
         </div>
     </a>
 
+    <div class="pb-5"></div>
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
 

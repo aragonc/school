@@ -24,3 +24,6 @@ $strings['MyCertificates'] = 'Mis Certificados';
 $strings['ClickHere'] = 'Haz clic aquí';
 $strings['HereWillBeYourTrainings'] = 'Aquí estarán tus capacitaciones';
 $strings['SelectEndYourCurrentSession'] = 'Selecciona "Cerrar sesión" a continuación si estás listo para finalizar tu sesión actual.';
+$strings['SeeCourses'] = 'Ver cursos';
+$strings['SeeDiplomas'] = 'Ver diplomados';
+$strings['CatalogueOfCoursesAndDiplomas'] = 'Te invitamos a revisar nuestro catálogo de cursos y diplomados.';
