@@ -4,11 +4,13 @@
             {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_courses }}</span>
         </a>
     </li>
+    {% if total_history > 0 %}
     <li class="nav-item">
         <a class="nav-link " href="/previous" >
             {{ 'Previous'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_history }}</span>
         </a>
     </li>
+    {% endif %}
 </ul>
 
 <div class="tab-content" id="tab_courses">
