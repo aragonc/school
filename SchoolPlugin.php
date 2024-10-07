@@ -395,9 +395,8 @@ class SchoolPlugin extends Plugin
         $this->assign('navbar', $content);
     }
 
-    public function getSessionsByCategoryCount($userID, $history = false): array
+    public function getSessionsByCategoryCount($userID, $history = false): int
     {
-        $categories = [];
         $accessUrlId = api_get_current_access_url_id();
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
         $table_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
@@ -420,7 +419,7 @@ class SchoolPlugin extends Plugin
         $result = Database::query($sql);
 
         if (empty($result)) {
-            return [];
+            return 0;
         }
         $total = 0;
         if (Database::num_rows($result) > 0) {
@@ -433,6 +432,7 @@ class SchoolPlugin extends Plugin
     }
     public function getSessionsByCategory($userID, $history = false): array
     {
+        $total = 0;
         $categories = [];
         $accessUrlId = api_get_current_access_url_id();
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
@@ -472,6 +472,7 @@ class SchoolPlugin extends Plugin
             return [];
         }
         if (Database::num_rows($result) > 0) {
+            $total = Database::num_rows($result);
             foreach ($result as $row) {
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
                 $row['courses'] = $courseList;
@@ -485,12 +486,15 @@ class SchoolPlugin extends Plugin
                         'sessions' => []
                     ];
                 }
-
                 $categories[$row['id_category']]['sessions'][] = $row;
             }
 
         }
-        return $categories;
+
+        return [
+            'total' => $total,
+            'categories' => $categories
+        ];
 
     }
 

@@ -1,23 +1,21 @@
-{% if categories %}
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link active" href="/dashboard">
-            {{ 'Current'|get_plugin_lang('SchoolPlugin') }}
+            {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-primary">{{ total_courses }}</span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link " href="/previous" >
-            {{ 'Previous'|get_plugin_lang('SchoolPlugin') }}
+            {{ 'Previous'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-primary">{{ total_history }}</span>
         </a>
     </li>
 </ul>
 
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
-
+        {% if categories %}
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
-
                 <div class="container-fluid">
                     <div class="row align-items-center">
                         <div class="col">
@@ -38,7 +36,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
             <div class="accordion" id="sessions_accordion">
                 {% for session in category.sessions %}
@@ -61,9 +58,7 @@
                                 </a>
                             </div>
                         </div>
-
                     </div>
-
                     <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
                         <div class="card-body">
                             <ul class="list-courses">
@@ -84,15 +79,18 @@
                 {% endfor %}
             </div>
         {% endfor %}
+        {% else %}
+            <div class="p-5 text-center">
 
+                <h4>{{ 'NoTrainingInProgress'|get_plugin_lang('SchoolPlugin') }}</h4>
+                <p>{{ 'CompletedTrainings'|get_plugin_lang('SchoolPlugin') }} <a href="/previous">{{ 'ClickHere'|get_plugin_lang('SchoolPlugin') }}</a></p>
+                {{ img_section }}
+
+            </div>
+        {% endif %}
     </div>
+</div>
 
-</div>
-{% else %}
-<div class="text-center">
-    <h4>{{ 'NotCurrentTrainingTaking'|get_plugin_lang('SchoolPlugin') }}</h4>
-    {{ img_section }}
-</div>
-{% endif %}
+
 
 

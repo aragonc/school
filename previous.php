@@ -13,7 +13,7 @@ if ($enable) {
     $sessionsCategories = $plugin->getSessionsByCategory($userId, true);
     $imgSection = $plugin->get_svg_icon('girl',$plugin->get_lang('PreviousCourses'), 500);
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
-    $plugin->assign('categories', $sessionsCategories);
+    $plugin->assign('categories', $sessionsCategories['categories']);
     $plugin->assign('img_section', $imgSection);
     $plugin->setTitle($plugin->get_lang('MyTrainings'));
     $content = $plugin->fetch('school_previous.tpl');
