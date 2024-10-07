@@ -223,9 +223,10 @@
                 display: block;
                 text-align: left;
                 padding: 0.5rem 1rem;
-                width: $sidebar-link-width;
+                width: 205px;
                 border-radius: 10px;
                 font-size: 12px;
+                height: 2.5rem;
 
                 &:hover{
                   background-color: $gray-300;
@@ -238,7 +239,10 @@
 
                 span {
                     font-size: 0.85rem;
-                    display: inline;
+                    display: inline-block;
+                    opacity: 1;
+                    visibility: visible;
+                    transition: opacity 0.8s;
                 }
 
                 // Accordion Arrow Icon
@@ -318,14 +322,20 @@
                     text-align: center;
                     padding: 0.70rem;
                     //width: $sidebar-collapsed-width;
-                    width: 3rem;
+                    width: 2.5rem;
+                    height: 2.5rem;
                     margin: auto;
                     border-radius: 10px;
                     background: $bgcolor;
 
                     span {
                         font-size: 0.85rem;
-                        display: none;
+                        opacity: 0;
+                        visibility: hidden;
+                        width: 200px;
+                        display: inline-block;
+                        position: absolute;
+                        top: 5px;
                     }
 
                     i {
