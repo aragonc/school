@@ -2,12 +2,12 @@
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link" href="/dashboard">
-            {{ 'Current'|get_plugin_lang('SchoolPlugin') }}
+            {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-primary">{{ total_courses }}</span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link active" href="/previous" >
-            {{ 'Previous'|get_plugin_lang('SchoolPlugin') }}
+            {{ 'Previous'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-primary">{{ total_history }}</span>
         </a>
     </li>
 </ul>
