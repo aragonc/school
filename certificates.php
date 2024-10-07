@@ -13,6 +13,7 @@ if ($enable) {
     $userId = api_get_user_id();
 
     $certificate = new Certificate($certificateId, $userId);
+
     $certificateData = $certificate->get($certificateId);
 
     $imgSection = $plugin->get_svg_icon('girl','Cursos Anteriores', 500);
