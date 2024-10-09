@@ -692,7 +692,6 @@ class SchoolPlugin extends Plugin
     {
         $userId = (int) $userId;
         $sessionList = [];
-        $coursesByCategory = [];
         $sessions = self::get_sessions_by_user($userId, true);
 
         foreach ($sessions as $session) {
@@ -777,8 +776,8 @@ class SchoolPlugin extends Plugin
                 ];
             }
             $groupedSessions[$category_id]['sessions'][] = [
-                'session_id' => $session['session_id'],
-                'session_title' => $session['session_title'],
+                'id' => $session['session_id'],
+                'name' => $session['session_title'],
                 'course' => $session['course'],
                 'score' => $session['score'],
                 'date' => $session['date'],
