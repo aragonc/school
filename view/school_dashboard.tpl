@@ -16,10 +16,11 @@
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         {% if categories %}
+        <div class="pt-4 pb-4">
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
                 <div class="container-fluid">
-                    <div class="row align-items-center">
+                    <div class="row align-items-center pb-3">
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
                                 <div class="p-2">{{ category.category_image }}</div>
@@ -81,6 +82,7 @@
                 {% endfor %}
             </div>
         {% endfor %}
+        </div>
         {% else %}
             <div class="p-5 text-center">
 

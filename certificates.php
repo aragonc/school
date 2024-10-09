@@ -12,9 +12,13 @@ api_block_anonymous_users();
 if ($enable) {
     $userId = api_get_user_id();
 
-    $certificate = new Certificate($certificateId, $userId);
-
-    $certificateData = $certificate->get($certificateId);
+    //$courseList = GradebookUtils::getUserCertificatesInCourses($userId);
+    //var_dump($courseList);
+    $sessionList = $plugin->getCertificatesInSessions($userId);
+    var_dump($sessionList);
+    //$certificates = $plugin->getCertificates($userId);
+    //var_dump($certificates);
+    //$certificateData = $certificate->get($certificateId);
 
     $imgSection = $plugin->get_svg_icon('girl','Cursos Anteriores', 500);
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');

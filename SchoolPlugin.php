@@ -667,15 +667,127 @@ class SchoolPlugin extends Plugin
         return $myCourseList;
     }
 
-    private static function merge_session_data($sessionDataStudent, $sessionDataCoach): array
+    public function get_sessions_by_user(
+        $userId,
+        $alls = false
+    ): array
     {
-        $sessionData = [];
-        foreach (array_merge($sessionDataStudent, $sessionDataCoach) as $row) {
-            $sessionData[$row['id']] = $row;
+        $sessionCategories = self::getSessionsByCategory($userId,true);
+
+        $sessionArray = [];
+        if (!empty($sessionCategories['categories'])) {
+            foreach ($sessionCategories['categories'] as $category) {
+                if (isset($category['sessions'])) {
+                    foreach ($category['sessions'] as $session) {
+                        $sessionArray[] = $session;
+                    }
+                }
+            }
         }
-        return $sessionData;
+
+        return $sessionArray;
     }
 
+    public function getCertificatesInSessions($userId, $includeNonPublicCertificates = true): array
+    {
+        $userId = (int) $userId;
+        $sessionList = [];
+        $coursesByCategory = [];
+        $sessions = self::get_sessions_by_user($userId, true);
+
+        foreach ($sessions as $session) {
+            if (empty($session['courses'])) {
+                continue;
+            }
+
+            $sessionCourses = SessionManager::get_course_list_by_session_id($session['id']);
+
+            if (empty($sessionCourses)) {
+                continue;
+            }
+
+            foreach ($sessionCourses as $course) {
+                if (!$includeNonPublicCertificates) {
+                    $allowPublicCertificates = api_get_course_setting('allow_public_certificates');
+                    if (empty($allowPublicCertificates)) {
+                        continue;
+                    }
+                }
+
+                $category = Category::load(
+                    null,
+                    null,
+                    $course['code'],
+                    null,
+                    null,
+                    $session['id']
+                );
+
+                if (empty($category)) {
+                    continue;
+                }
+
+                if (!isset($category[0])) {
+                    continue;
+                }
+
+                /** @var Category $category */
+                $category = $category[0];
+
+                if (empty($category->getGenerateCertificates())) {
+                    continue;
+                }
+
+                $categoryId = $category->get_id();
+                $certificateInfo = GradebookUtils::get_certificate_by_user_id(
+                    $categoryId,
+                    $userId
+                );
+
+                if (empty($certificateInfo)) {
+                    continue;
+                }
+
+                $sessionList[] = [
+                    'session_id' => intval($session['id']),
+                    'session_title' => $session['name'],
+                    'session_category_id' => $session['id_category'],
+                    'session_category' => $session['category'],
+                    'course' => $course['title'],
+                    'score' => $certificateInfo['score_certificate'],
+                    'date' => api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT),
+                    'link' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}",
+                    'link_pdf' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}&user_id={$userId}&action=export",
+                ];
+            }
+        }
+
+        $groupedSessions = [];
+        foreach ($sessionList as $session) {
+            $category_id = $session['session_category_id'];
+            $category_name = $session['session_category'];
+            $nameImage = 'category_'.$session['session_category_id'];
+
+            if (!isset($groupedSessions[$category_id])) {
+                $groupedSessions[$category_id] = [
+                    'category_id' => $category_id,
+                    'category_name' => $category_name,
+                    'category_image' => self::get_svg_icon($nameImage, $category_name, 50),
+                    'sessions' => []
+                ];
+            }
+            $groupedSessions[$category_id]['sessions'][] = [
+                'session_id' => $session['session_id'],
+                'session_title' => $session['session_title'],
+                'course' => $session['course'],
+                'score' => $session['score'],
+                'date' => $session['date'],
+                'link' => $session['link'],
+                'link_pdf' => $session['link_pdf']
+            ];
+        }
+        return $groupedSessions;
+    }
     public function getMenus(string $currentSection = ''): array
     {
         //var_dump($currentSection === 'dashboard');

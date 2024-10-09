@@ -12,6 +12,7 @@ api_block_anonymous_users();
 if ($enable) {
     $userId = api_get_user_id();
     $sessionsCategories = $plugin->getSessionsByCategory($userId);
+    var_dump($sessionsCategories['categories']);
     $countCourses = $sessionsCategories['total'];
     $countHistory = $plugin->getSessionsByCategoryCount($userId, true);
     $total = $countCourses + $countHistory;
