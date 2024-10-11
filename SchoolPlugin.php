@@ -752,7 +752,7 @@ class SchoolPlugin extends Plugin
                     'session_title' => $session['name'],
                     'session_category_id' => $session['id_category'],
                     'session_category' => $session['category'],
-                    'course' => $course['title'],
+                    'courses' => $course['title'],
                     'score' => $certificateInfo['score_certificate'],
                     'date' => api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT),
                     'link' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}",

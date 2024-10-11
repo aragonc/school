@@ -27,3 +27,5 @@ $strings['SelectEndYourCurrentSession'] = 'Selecciona "Cerrar sesión" a continu
 $strings['SeeCourses'] = 'Ver cursos';
 $strings['SeeDiplomas'] = 'Ver diplomados';
 $strings['CatalogueOfCoursesAndDiplomas'] = 'Te invitamos a revisar nuestro catálogo de cursos y diplomados.';
+$strings['DownloadPDF'] = 'Descargar PDF';
+$strings['Share'] = 'Compartir';
