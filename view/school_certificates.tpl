@@ -1,3 +1,4 @@
+{% if categories %}
 <div class="card">
     <div class="card-body">
 
@@ -74,7 +75,11 @@
             {% endfor %}
         </div>
         {% endfor %}
-
-
     </div>
 </div>
+{% else %}
+    <div class="p-5 text-center">
+        <h3>{{ 'HereAreYourCertificates'|get_plugin_lang('SchoolPlugin') }}</h3>
+        {{ img_section }}
+    </div>
+{% endif %}

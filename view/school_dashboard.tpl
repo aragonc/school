@@ -85,8 +85,7 @@
         </div>
         {% else %}
             <div class="p-5 text-center">
-
-                <h4>{{ 'NoTrainingInProgress'|get_plugin_lang('SchoolPlugin') }}</h4>
+                <h3>{{ 'NoTrainingInProgress'|get_plugin_lang('SchoolPlugin') }}</h3>
                 <p>{{ 'CompletedTrainings'|get_plugin_lang('SchoolPlugin') }} <a href="/previous">{{ 'ClickHere'|get_plugin_lang('SchoolPlugin') }}</a></p>
                 {{ img_section }}
 

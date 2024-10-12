@@ -29,3 +29,4 @@ $strings['SeeDiplomas'] = 'Ver diplomados';
 $strings['CatalogueOfCoursesAndDiplomas'] = 'Te invitamos a revisar nuestro catálogo de cursos y diplomados.';
 $strings['DownloadPDF'] = 'Descargar PDF';
 $strings['Share'] = 'Compartir';
+$strings['HereAreYourCertificates'] = 'Aquí estarán tus certificados';
