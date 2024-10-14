@@ -30,3 +30,4 @@ $strings['CatalogueOfCoursesAndDiplomas'] = 'Te invitamos a revisar nuestro cat�
 $strings['DownloadPDF'] = 'Descargar PDF';
 $strings['Share'] = 'Compartir';
 $strings['HereAreYourCertificates'] = 'Aquí estarán tus certificados';
+$strings['OnlineCourses'] = 'Cursos online';

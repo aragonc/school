@@ -408,7 +408,7 @@ class SchoolPlugin extends Plugin
                 COUNT(*) AS total_courses
             FROM $table_session s
             INNER JOIN $table_session_user srs ON srs.session_id = s.id
-            INNER JOIN $table_session_category sc ON sc.id = s.session_category_id
+            LEFT JOIN $table_session_category sc ON sc.id = s.session_category_id
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
             WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
         if($history){
@@ -481,7 +481,8 @@ class SchoolPlugin extends Plugin
                 $row['courses'] = $courseList;
                 $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
                 if(is_null($row['id_category'])){
-                    $row['id_category'] = -1;
+                    $row['id_category'] = 4;
+                    $row['category'] = self::get_lang('OnlineCourses');
                 }
                 if (!isset($categories[$row['id_category']])) {
                     $nameImage = 'category_'.$row['id_category'];
