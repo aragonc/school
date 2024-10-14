@@ -412,9 +412,9 @@ class SchoolPlugin extends Plugin
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
             WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
         if($history){
-            $sql .= " AND s.display_end_date <= CURDATE();";
+            $sql .= " AND s.access_end_date <= CURDATE();";
         } else {
-            $sql .= " AND s.display_end_date >= CURDATE();";
+            $sql .= " AND s.access_end_date >= CURDATE();";
         }
         $result = Database::query($sql);
 
@@ -451,6 +451,8 @@ class SchoolPlugin extends Plugin
                 s.nbr_users,
                 s.display_start_date,
                 s.display_end_date,
+                s.access_start_date,
+                s.access_end_date,
                 DATE(srs.registered_at) AS 'registered_at',
                 CASE
                     WHEN s.id_coach = srs.user_id THEN 'true'
@@ -458,14 +460,15 @@ class SchoolPlugin extends Plugin
                 END AS coach
             FROM $table_session s
             INNER JOIN $table_session_user srs ON srs.session_id = s.id
-            INNER JOIN $table_session_category sc ON sc.id = s.session_category_id
+            LEFT JOIN $table_session_category sc ON sc.id = s.session_category_id
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
             WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
         if($history){
-            $sql .= " AND s.display_end_date <= CURDATE();";
+            $sql .= " AND s.access_end_date <= CURDATE();";
         } else {
-            $sql .= " AND s.display_end_date >= CURDATE();";
+            $sql .= " AND s.access_end_date >= CURDATE();";
         }
+
         $result = Database::query($sql);
 
         if (empty($result)) {
@@ -477,6 +480,9 @@ class SchoolPlugin extends Plugin
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
                 $row['courses'] = $courseList;
                 $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
+                if(is_null($row['id_category'])){
+                    $row['id_category'] = -1;
+                }
                 if (!isset($categories[$row['id_category']])) {
                     $nameImage = 'category_'.$row['id_category'];
                     $categories[$row['id_category']] = [
