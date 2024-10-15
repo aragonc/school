@@ -708,12 +708,12 @@ class SchoolPlugin extends Plugin
 
             $sessionCourses = SessionManager::get_course_list_by_session_id($session['id']);
 
-
             if (empty($sessionCourses)) {
                 continue;
             }
             $courseList = [];
             $count = 0;
+            $dateCertificateSession = '';
             foreach ($sessionCourses as $course) {
                 $count++;
                 if (!$includeNonPublicCertificates) {
@@ -774,6 +774,7 @@ class SchoolPlugin extends Plugin
                         'link_pdf' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}&user_id={$userId}&action=export",
                     ],
                 ];
+                $dateCertificateSession = api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT);
             }
             if(empty($courseList)){
                 continue;
@@ -783,6 +784,7 @@ class SchoolPlugin extends Plugin
                 'session_title' => $session['name'],
                 'session_category_id' => $session['id_category'],
                 'session_category' => $session['category'],
+                'session_date_certificate' => $dateCertificateSession,
                 'courses' => $courseList
                 ];
 
@@ -805,6 +807,7 @@ class SchoolPlugin extends Plugin
             $groupedSessions[$category_id]['sessions'][] = [
                 'id' => $session['session_id'],
                 'name' => $session['session_title'],
+                'date_certificate' => $session['session_date_certificate'],
                 'courses' => $session['courses']
             ];
         }

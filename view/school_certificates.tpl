@@ -8,8 +8,8 @@
                 <div class="row align-items-center pb-3">
                     <div class="col">
                         <div class="d-flex flex-row align-items-center">
-                            <div class="p-2">{{ category.category_image }}</div>
-                            <div class="p-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
+                            <div class="p-1">{{ category.category_image }}</div>
+                            <div class="p-1"><h4 class="category-name">{{ category.category_name }}</h4></div>
                         </div>
                     </div>
                     <div class="col-md-auto">
@@ -30,7 +30,7 @@
                 </div>
             </div>
         </div>
-        <div class="accordion" id="sessions_accordion">
+        <div id="sessions_accordion_{{ category.category_id }}" class="accordion pb-4">
 
             {% for session in category.sessions %}
 
@@ -45,10 +45,10 @@
                             </h2>
                         </div>
                         <div class="col-md-auto text-center">
-                            <span class="row-date">{{ session.courses.certificate.date }}</span>
+                            <span class="row-date">{{ session.date_certificate }}</span>
                         </div>
                         <div class="col-md-auto text-center">
-                            <a class="btn btn-primary" href="#" role="button">
+                            <a class="btn btn-primary btb-download" href="#" role="button">
                                 <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                             </a>
                         </div>
@@ -57,19 +57,30 @@
                         </div>
                     </div>
                 </div>
-                <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
-                    <div class="card-body">
-                        <ul class="list-courses">
-                            {% for course in session.courses %}
-                            <li class="course-box box-{{ course.ribbon }}">
-                                {% if course.number != 0 %}
-                                <span class="badge badge-warning">{{ course.number }}</span>
-                                {% endif %}
-                                {{ course.icon }} {{ course.title }}
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+                <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">
+
+                        {% for course in session.courses %}
+
+                        <div class="course-box box-{{ course.ribbon }} pt-1 pb-1">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    {{ course.icon }} {{ course.title }}
+                                </div>
+                                <div class="col-md-auto text-center">
+                                    <span class="row-date">{{ course.certificate.date }}</span>
+                                </div>
+                                <div class="col-md-auto text-center">
+                                    <a class="btn btn-primary btb-download" href="#" role="button">
+                                        <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
+                                    </a>
+                                </div>
+                                <div class="col col-lg-2 text-center">
+
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
                 </div>
             </div>
             {% endfor %}

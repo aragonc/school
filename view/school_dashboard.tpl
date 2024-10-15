@@ -40,7 +40,7 @@
                     </div>
                 </div>
             </div>
-            <div class="accordion" id="sessions_accordion">
+            <div class="accordion" id="sessions_accordion_{{ category.category_id }}">
                 {% for session in category.sessions %}
                 <div class="card pl-4 pr-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
@@ -56,13 +56,13 @@
                                 <span class="row-date">{{ session.registered_at }}</span>
                             </div>
                             <div class="col col-lg-2 text-center">
-                                <a class="btn btn-primary" href="#" role="button">
+                                <a class="btn btn-primary btb-download" href="#" role="button">
                                     <i class="fas fa-download"></i>
                                 </a>
                             </div>
                         </div>
                     </div>
-                    <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
+                    <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">
                         <div class="card-body">
                             <ul class="list-courses">
                                 {% for course in session.courses %}
