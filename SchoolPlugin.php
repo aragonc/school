@@ -708,11 +708,14 @@ class SchoolPlugin extends Plugin
 
             $sessionCourses = SessionManager::get_course_list_by_session_id($session['id']);
 
+
             if (empty($sessionCourses)) {
                 continue;
             }
-
+            $courseList = [];
+            $count = 0;
             foreach ($sessionCourses as $course) {
+                $count++;
                 if (!$includeNonPublicCertificates) {
                     $allowPublicCertificates = api_get_course_setting('allow_public_certificates');
                     if (empty($allowPublicCertificates)) {
@@ -753,19 +756,36 @@ class SchoolPlugin extends Plugin
                 if (empty($certificateInfo)) {
                     continue;
                 }
-
-                $sessionList[] = [
-                    'session_id' => intval($session['id']),
-                    'session_title' => $session['name'],
-                    'session_category_id' => $session['id_category'],
-                    'session_category' => $session['category'],
-                    'courses' => $course['title'],
-                    'score' => $certificateInfo['score_certificate'],
-                    'date' => api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT),
-                    'link' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}",
-                    'link_pdf' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}&user_id={$userId}&action=export",
+                if ($count % 2 == 0) {
+                    $ribbon = 'even';
+                } else {
+                    $ribbon = 'odd';
+                }
+                $courseList[] = [
+                    'id' => $course['id'],
+                    'title' => $course['title'],
+                    'code' => $course['code'],
+                    'ribbon' => $ribbon,
+                    'icon' => self::get_svg_icon('course', $course['title'],32),
+                    'certificate' => [
+                        'score' => $certificateInfo['score_certificate'],
+                        'date' => api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT),
+                        'link' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}",
+                        'link_pdf' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}&user_id={$userId}&action=export",
+                    ],
                 ];
             }
+            if(empty($courseList)){
+                continue;
+            }
+            $sessionList[] = [
+                'session_id' => intval($session['id']),
+                'session_title' => $session['name'],
+                'session_category_id' => $session['id_category'],
+                'session_category' => $session['category'],
+                'courses' => $courseList
+                ];
+
         }
 
         $groupedSessions = [];
@@ -785,11 +805,7 @@ class SchoolPlugin extends Plugin
             $groupedSessions[$category_id]['sessions'][] = [
                 'id' => $session['session_id'],
                 'name' => $session['session_title'],
-                'course' => $session['course'],
-                'score' => $session['score'],
-                'date' => $session['date'],
-                'link' => $session['link'],
-                'link_pdf' => $session['link_pdf']
+                'courses' => $session['courses']
             ];
         }
         return $groupedSessions;

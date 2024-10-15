@@ -14,7 +14,7 @@
                     </div>
                     <div class="col-md-auto">
                         <div class="section-col-table">
-                            {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
+                            {{ 'IssueDate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
                     </div>
                     <div class="col-md-auto">
@@ -31,7 +31,9 @@
             </div>
         </div>
         <div class="accordion" id="sessions_accordion">
+
             {% for session in category.sessions %}
+
             <div class="card pl-4 pr-4">
                 <div class="card-header" id="heading_session_{{ session.id }}">
                     <div class="row align-items-center">
@@ -43,7 +45,7 @@
                             </h2>
                         </div>
                         <div class="col-md-auto text-center">
-                            <span class="row-date">{{ session.registered_at }}</span>
+                            <span class="row-date">{{ session.courses.certificate.date }}</span>
                         </div>
                         <div class="col-md-auto text-center">
                             <a class="btn btn-primary" href="#" role="button">
@@ -60,12 +62,10 @@
                         <ul class="list-courses">
                             {% for course in session.courses %}
                             <li class="course-box box-{{ course.ribbon }}">
-                                <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
-                                    {% if course.number != 0 %}
-                                    <span class="badge badge-warning">{{ course.number }}</span>
-                                    {% endif %}
-                                    {{ course.icon }} {{ course.title }}
-                                </a>
+                                {% if course.number != 0 %}
+                                <span class="badge badge-warning">{{ course.number }}</span>
+                                {% endif %}
+                                {{ course.icon }} {{ course.title }}
                             </li>
                             {% endfor %}
                         </ul>

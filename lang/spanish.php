@@ -31,3 +31,4 @@ $strings['DownloadPDF'] = 'Descargar PDF';
 $strings['Share'] = 'Compartir';
 $strings['HereAreYourCertificates'] = 'Aquí estarán tus certificados';
 $strings['OnlineCourses'] = 'Cursos online';
+$strings['IssueDate'] = 'Fecha de emisión';

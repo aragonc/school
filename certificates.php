@@ -13,7 +13,6 @@ if ($enable) {
 
     $userId = api_get_user_id();
     $categories = $plugin->getCertificatesInSessions($userId);
-
     $imgSection = $plugin->get_svg_icon('certificates','Cursos Anteriores', 500);
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
     $plugin->assign('img_section', $imgSection);
