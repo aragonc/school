@@ -145,6 +145,22 @@
     border: none;
   }
 }
-.btb-download{
-  font-size: 12px;
+.btn-download{
+  font-size: 14px;
+  border-radius: 50px;
+  background-color: $brand-one;
+  border-color: $brand-one;
+}
+.btn-share{
+  background-color: $brand-four;
+  border-color: $brand-four;
+  border-radius: 50px;
+  .circle-linkedin{
+    width: 22px;
+    height: 22px;
+    background-color: $white;
+    border-radius: 50px;
+    display: inline-block;
+    color: $brand-four;
+  }
 }

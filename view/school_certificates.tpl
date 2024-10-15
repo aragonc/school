@@ -13,16 +13,16 @@
                         </div>
                     </div>
                     <div class="col-md-auto">
-                        <div class="section-col-table">
+                        <div class="section-col-table pl-4 pr-4">
                             {{ 'IssueDate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
                     </div>
                     <div class="col-md-auto">
-                        <div class="section-col-table">
+                        <div class="section-col-table pl-4 pr-4">
                             {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
                     </div>
-                    <div class="col col-lg-2">
+                    <div class="col-md-auto">
                         <div class="section-col-table">
                             {{ 'Share'|get_plugin_lang('SchoolPlugin') }}
                         </div>
@@ -35,7 +35,7 @@
             {% for session in category.sessions %}
 
             <div class="card pl-4 pr-4">
-                <div class="card-header" id="heading_session_{{ session.id }}">
+                <div class="card-header pt-1 pb-1" id="heading_session_{{ session.id }}">
                     <div class="row align-items-center">
                         <div class="col">
                             <h2 class="mb-0">
@@ -48,12 +48,14 @@
                             <span class="row-date">{{ session.date_certificate }}</span>
                         </div>
                         <div class="col-md-auto text-center">
-                            <a class="btn btn-primary btb-download" href="#" role="button">
+                            <a class="btn btn-primary btn-download" href="#" role="button">
                                 <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                             </a>
                         </div>
-                        <div class="col col-lg-2 text-center">
-
+                        <div class="col-md-auto text-center">
+                            <a class="btn btn-primary btn-share" href="#" role="button">
+                                <i class="fas fa-share-alt"></i> <span class="circle-linkedin"><i class="fab fa-linkedin-in"></i></span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -66,16 +68,19 @@
                                 <div class="col">
                                     {{ course.icon }} {{ course.title }}
                                 </div>
+
                                 <div class="col-md-auto text-center">
                                     <span class="row-date">{{ course.certificate.date }}</span>
                                 </div>
                                 <div class="col-md-auto text-center">
-                                    <a class="btn btn-primary btb-download" href="#" role="button">
+                                    <a class="btn btn-primary btn-download" href="#" role="button">
                                         <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                                     </a>
                                 </div>
-                                <div class="col col-lg-2 text-center">
-
+                                <div class="col-md-auto text-center">
+                                    <a class="btn btn-primary btn-share" href="#" role="button">
+                                        <i class="fas fa-share-alt"></i> <span class="circle-linkedin"><i class="fab fa-linkedin-in"></i></span>
+                                    </a>
                                 </div>
                             </div>
                         </div>

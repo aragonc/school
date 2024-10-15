@@ -56,7 +56,7 @@
                                 <span class="row-date">{{ session.registered_at }}</span>
                             </div>
                             <div class="col col-lg-2 text-center">
-                                <a class="btn btn-primary btb-download" href="#" role="button">
+                                <a class="btn btn-primary btn-download" href="#" role="button">
                                     <i class="fas fa-download"></i>
                                 </a>
                             </div>
