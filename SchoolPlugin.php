@@ -784,6 +784,7 @@ class SchoolPlugin extends Plugin
                 'session_title' => $session['name'],
                 'session_category_id' => $session['id_category'],
                 'session_category' => $session['category'],
+                'session_image' => self::get_svg_icon('course', $session['name'],32),
                 'session_date_certificate' => $dateCertificateSession,
                 'courses' => $courseList
                 ];
@@ -807,6 +808,7 @@ class SchoolPlugin extends Plugin
             $groupedSessions[$category_id]['sessions'][] = [
                 'id' => $session['session_id'],
                 'name' => $session['session_title'],
+                'session_image' => $session['session_image'],
                 'date_certificate' => $session['session_date_certificate'],
                 'courses' => $session['courses']
             ];
