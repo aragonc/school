@@ -12,7 +12,7 @@ $validPassword = false;
 $plugin = SchoolPlugin::create();
 
 switch ($action) {
-    case 'certificate_html':
+    case 'export_pdf':
         $html = '';
         $certificate = new Certificate($certificateId, $userId);
 

@@ -73,7 +73,7 @@
                                     <span class="row-date">{{ course.certificate.date }}</span>
                                 </div>
                                 <div class="col-md-auto text-center">
-                                    <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" role="button">
+                                    <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" target="_blank" role="button">
                                         <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                                     </a>
                                 </div>

@@ -770,7 +770,7 @@ class SchoolPlugin extends Plugin
                     'certificate' => [
                         'score' => $certificateInfo['score_certificate'],
                         'date' => api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT),
-                        'link_html' => api_get_path(WEB_PLUGIN_PATH)."school/src/process.php?action=certificate_html&id={$certificateInfo['id']}",
+                        'link_html' => api_get_path(WEB_PLUGIN_PATH)."school/src/process.php?action=export_pdf&id={$certificateInfo['id']}",
                         'link_pdf' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}&user_id={$userId}&action=export",
                     ],
                 ];
