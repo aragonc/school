@@ -98,8 +98,13 @@
                                     <div class="d-flex flex-row pb-2 pt-2">
                                     {% if course.number != 0 %}
                                         <span class="badge badge-warning">{{ course.number }}</span>
+                                    {% else %}
+                                        <span class="badge badge-transparent"></span>
                                     {% endif %}
-                                    {{ course.icon }}
+                                        <div class="pr-1 pl-1">
+                                            {{ course.icon }}
+                                        </div>
+
                                     <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
                                         {{ course.title }}
                                     </a>
