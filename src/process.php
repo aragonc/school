@@ -290,8 +290,7 @@ switch ($action) {
         $pdfImage->clear();
         $pdfImage->destroy();
 
-
-        $certificateURLUser = $archiveCacheUserURL.$fileName;
+        $certificateURLUser = $archiveCacheUserURL.$fileName.'.jpg';
         $linkedinShareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' . $certificateURLUser;
         header('Location: '.$linkedinShareUrl);
         exit();
