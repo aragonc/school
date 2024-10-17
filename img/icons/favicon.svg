@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 16.933333 16.933333"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.2 (1:1.3.2+202404261509+091e20ef0f)"
+   sodipodi:docname="favicon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="6.9950794"
+     inkscape:cx="34.238353"
+     inkscape:cy="37.311942"
+     inkscape:window-width="1920"
+     inkscape:window-height="963"
+     inkscape:window-x="0"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath1901">
+      <path
+         d="M 0,1080 H 1920 V 0 H 0 Z"
+         transform="translate(-30.555751,-1063.8544)"
+         id="path1901" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath1903">
+      <path
+         d="M 0,1080 H 1920 V 0 H 0 Z"
+         transform="translate(-35.493751,-1047.092)"
+         id="path1903" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath1905">
+      <path
+         d="M 0,1080 H 1920 V 0 H 0 Z"
+         transform="translate(-36.076501,-1042.9397)"
+         id="path1905" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath1899">
+      <path
+         d="M 0,1080 H 1920 V 0 H 0 Z"
+         id="path1899" />
+    </clipPath>
+  </defs>
+  <g
+     inkscape:label="Capa 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="opacity:1;fill:#697eea;fill-opacity:1;stroke:none;stroke-width:0.264019"
+       id="rect1"
+       width="16.933332"
+       height="16.933332"
+       x="0"
+       y="0"
+       ry="3.5861106" />
+    <g
+       id="g6863"
+       style="fill:#ffffff;fill-opacity:1"
+       transform="matrix(0.5833489,0,0,0.5833489,-7540.2613,-15.216732)">
+      <path
+         id="path1902"
+         d="m 0,0 h -11.657 c -1.423,0 -2.673,1.049 -2.814,2.465 -0.068,0.682 0.116,1.32 0.468,1.832 l 0.227,0.313 2.834,3.405 c 0.569,0.739 1.457,1.176 2.389,1.176 0.02,0 0.04,0 0.06,-0.001 L 2.76,9.187 C 3.073,9.181 3.348,8.957 3.406,8.631 3.44,8.438 3.378,8.24 3.256,8.086 2.827,7.54 1.283,5.578 0.55,4.648 0.304,4.335 -0.073,4.153 -0.472,4.153 h -11.229 c -0.66,0 -1.263,-0.437 -1.409,-1.081 -0.208,-0.917 0.488,-1.734 1.37,-1.734 h 11.411 c 0.242,0 0.47,0.112 0.618,0.303 L 2.912,5.038 C 3.114,5.299 3.477,5.406 3.769,5.253 4.15,5.053 4.243,4.573 3.993,4.249 L 1.147,0.563 C 0.872,0.208 0.449,0 0,0"
+         style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+         transform="matrix(1.3333333,0,0,-1.3333333,12947.325,43.877333)"
+         clip-path="url(#clipPath1903)" />
+      <path
+         id="path1904"
+         d="m 0,0 h -12.231 c -1.412,0 -2.662,1.028 -2.819,2.431 -0.183,1.64 1.09,3.036 2.689,3.059 0.34,0.004 0.656,-0.239 0.701,-0.577 0.056,-0.414 -0.269,-0.767 -0.674,-0.761 -0.427,0.008 -0.856,-0.132 -1.095,-0.486 -0.76,-1.126 0.036,-2.328 1.107,-2.328 h 11.984 c 0.248,0 0.481,0.118 0.628,0.318 L 2.797,4.995 C 2.994,5.264 3.361,5.378 3.657,5.226 4.035,5.033 4.136,4.559 3.896,4.232 L 1.167,0.591 C 0.894,0.219 0.461,0 0,0"
+         style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+         transform="matrix(1.3333333,0,0,-1.3333333,12948.102,49.413733)"
+         clip-path="url(#clipPath1905)" />
+    </g>
+  </g>
+</svg>

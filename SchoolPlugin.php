@@ -215,7 +215,15 @@ class SchoolPlugin extends Plugin
 
     }
 
-
+    public function get_favicon($iconName): string
+    {
+        $iconPathWeb = '';
+        $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
+        if (file_exists($icon_path)) {
+            $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.svg';
+        }
+        return $iconPathWeb;
+    }
     public function get_svg_icon($iconName, $altText = '', $size = 64): string
     {
         $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
@@ -384,6 +392,7 @@ class SchoolPlugin extends Plugin
     {
         $this->assign('logo_svg', self::display_logo());
         $this->assign('logo_icon', self::display_logo_icon());
+        $this->assign('favicon', self::get_favicon('favicon'));
         $this->assign('menus', self::getMenus($section));
         $content = $this->fetch('/layout/sidebar.tpl');
         $this->assign('sidebar', $content);
@@ -478,6 +487,8 @@ class SchoolPlugin extends Plugin
             $total = Database::num_rows($result);
             foreach ($result as $row) {
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
+                $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
+                $row['registered_at'] = $dateRegister;
                 $row['courses'] = $courseList;
                 $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
                 if(is_null($row['id_category'])){
