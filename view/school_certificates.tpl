@@ -78,7 +78,7 @@
                                     </a>
                                 </div>
                                 <div class="col-md-auto text-center">
-                                    <a class="btn btn-primary btn-share" href="#" role="button">
+                                    <a class="btn btn-primary btn-share" href="{{ course.certificate.link_share }}" role="button">
                                         <i class="fas fa-share-alt"></i> <span class="circle-linkedin"><i class="fab fa-linkedin-in"></i></span>
                                     </a>
                                 </div>

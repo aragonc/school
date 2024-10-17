@@ -5,21 +5,34 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // include autoloader
 //api_block_anonymous_users();
 $action = $_REQUEST['action'] ?? null;
-$userId = $_GET['user_id'] ?? 0;
 $certificateId = $_GET['id'] ?? 0;
-
+$userId = api_get_user_id();
 $validPassword = false;
 $plugin = SchoolPlugin::create();
+
+$certificate = new Certificate($certificateId, $userId);
+$certId = (int) $certificateId;
+$infoCertificate = EasyCertificatePlugin::getCertificateData($certId, $userId);
+
+$archivePath = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/';
+if (!is_dir($archivePath)) {
+    mkdir($archivePath, api_get_permissions_for_new_directories());
+}
+$archiveCacheUserURL = api_get_path(WEB_ARCHIVE_PATH) . 'certificates/'.$userId.'/';
+$archiveCacheUser = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/'.$userId.'/';
+
+if (!is_dir($archiveCacheUser)) {
+    mkdir($archiveCacheUser, api_get_permissions_for_new_directories());
+}
 
 switch ($action) {
     case 'export_pdf':
         $html = '';
-        $certificate = new Certificate($certificateId, $userId);
 
-        $certId = (int) $certificateId;
-        $userId = !empty($userId) ? $userId : api_get_user_id();
-
-        $infoCertificate = EasyCertificatePlugin::getCertificateData($certId, $userId);
+        if(empty($infoCertificate)){
+            echo 'No certificate data found';
+            exit;
+        }
 
         $users = [api_get_user_info($userId)];
         $courseInfo = api_get_course_info($infoCertificate['course_code']);
@@ -240,15 +253,12 @@ switch ($action) {
 
             $template->assign('back_content', $laterContent);
             $content = $template->fetch('easycertificate/template/certificate.tpl');
-            $fileName = 'certificate_' . $courseInfo['code'] . '_' . $user['complete_name'] . '_' . $currentLocalTime;
+            $fileName = 'certificate_' . $courseInfo['code'] . '_' . $userId.'.pdf';
 
         }
 
-        $archivePath = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/';
-        if (!is_dir($archivePath)) {
-            mkdir($archivePath, api_get_permissions_for_new_directories());
-        }
 
+        /* generar pdf */
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => $archivePath,
             'allow_output_buffering' => true,
@@ -260,7 +270,21 @@ switch ($action) {
         ]);
 
         $mpdf->WriteHTML($content);
-        $mpdf->Output($fileName .'.pdf', 'D');
+        $mpdf->Output($archiveCacheUser.$fileName, \Mpdf\Output\Destination::FILE);
 
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . $fileName . '"');
+        header('Content-Transfer-Encoding: binary');
+        header('Accept-Ranges: bytes');
+        readfile($archiveCacheUser . $fileName);
+        break;
+    case 'share':
+
+        $fileName = 'certificate_' . $infoCertificate['course_code'] . '_' . $userId.'.pdf';
+        $certificateURLUser = $archiveCacheUserURL.$fileName;
+        $linkedinShareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' . urlencode($certificateURLUser);
+        header('Location: '.$linkedinShareUrl);
+        exit();
+        //var_dump($certificateURLUser);
     default;
 }
