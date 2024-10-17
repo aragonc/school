@@ -16,11 +16,11 @@
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         {% if categories %}
-        <div class="pt-4 pb-4">
+        <div class="pt-2 pb-4">
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
                 <div class="container-fluid">
-                    <div class="row align-items-center pb-3">
+                    <div class="row align-items-center pb-3 pt-3">
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
                                 <div class="p-2">{{ category.category_image }}</div>
@@ -34,7 +34,7 @@
                         </div>
                         <div class="col col-lg-2">
                             <div class="section-col-table">
-                                {{ 'CertificateRegularStudent'|get_plugin_lang('SchoolPlugin') }}
+                                {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                             </div>
                         </div>
                     </div>
@@ -59,7 +59,7 @@
                                     </div>
                                     <div class="col-md-auto text-center">
                                         <a class="btn btn-primary btn-download" href="#" target="_blank" role="button">
-                                            <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
+                                            <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
                                         </a>
                                     </div>
 
@@ -84,7 +84,7 @@
                             </div>
                             <div class="col-md-auto text-center pr-4">
                                 <a class="btn btn-primary btn-download" href="#" role="button">
-                                    <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
+                                    <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
                                 </a>
                             </div>
                         </div>
@@ -95,7 +95,7 @@
                         <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-5">
                             <div class="row align-items-center">
                                 <div class="col">
-                                    <div class="d-flex flex-row pb-2 pt-2">
+                                    <div class="d-flex flex-row pb-1 pt-1">
                                     {% if course.number != 0 %}
                                         <span class="badge badge-warning">{{ course.number }}</span>
                                     {% else %}

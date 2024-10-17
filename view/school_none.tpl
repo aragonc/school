@@ -8,7 +8,7 @@
 <div class="card">
     <div class="card-body">
         <div class="p-5 text-center">
-            <h4>{{ 'HereWillBeYourTrainings'|get_plugin_lang('SchoolPlugin') }}</h4>
+            <h3>{{ 'HereWillBeYourTrainings'|get_plugin_lang('SchoolPlugin') }}</h3>
             <p>{{ 'CatalogueOfCoursesAndDiplomas'|get_plugin_lang('SchoolPlugin') }}</p>
             {{ img_section }}
         </div>

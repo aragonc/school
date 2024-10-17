@@ -121,8 +121,15 @@
     </div>
 </div>
 {% else %}
-    <div class="p-5 text-center">
-        <h3>{{ 'HereAreYourCertificates'|get_plugin_lang('SchoolPlugin') }}</h3>
-        {{ img_section }}
-    </div>
+
+        <div class="card">
+            <div class="card-body ">
+                <div class="p-5 text-center">
+                <h3>{{ 'HereAreYourCertificates'|get_plugin_lang('SchoolPlugin') }}</h3>
+                {{ img_section }}
+                </div>
+            </div>
+        </div>
+
+
 {% endif %}
