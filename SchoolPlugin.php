@@ -788,6 +788,7 @@ class SchoolPlugin extends Plugin
                 'session_category' => $session['category'],
                 'session_image' => self::get_svg_icon('course', $session['name'],32),
                 'session_date_certificate' => $dateCertificateSession,
+                'number_courses' => count($courseList),
                 'courses' => $courseList
                 ];
 
@@ -812,6 +813,7 @@ class SchoolPlugin extends Plugin
                 'name' => $session['session_title'],
                 'session_image' => $session['session_image'],
                 'date_certificate' => $session['session_date_certificate'],
+                'number_courses' => $session['number_courses'],
                 'courses' => $session['courses']
             ];
         }
