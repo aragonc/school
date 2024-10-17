@@ -161,10 +161,10 @@ class SchoolPlugin extends Plugin
             'js-cookie/src/js.cookie.js',
         ];
 
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/vendor/jquery/jquery.min.js').'"></script>'."\n";
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/vendor/bootstrap/js/bootstrap.bundle.min.js').'"></script>'."\n";
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery/jquery.min.js').'"></script>'."\n";
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/bootstrap/js/bootstrap.bundle.min.js').'"></script>'."\n";
 
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/vendor/jquery-easing/jquery.easing.min.js').'"></script>'."\n";
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery-easing/jquery.easing.min.js').'"></script>'."\n";
 
 
         /*foreach ($bowerJsFiles as $file) {
@@ -180,7 +180,7 @@ class SchoolPlugin extends Plugin
         //$this->setSidebar();
 
 
-        $vendor = api_get_path(WEB_PLUGIN_PATH).'school/vendor/';
+        $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
         $this->assign('css_files', $css_file_to_string);
@@ -770,11 +770,12 @@ class SchoolPlugin extends Plugin
                     'certificate' => [
                         'score' => $certificateInfo['score_certificate'],
                         'date' => api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT),
-                        'link' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}",
+                        'link_html' => api_get_path(WEB_PLUGIN_PATH)."school/src/process.php?action=certificate_html&id={$certificateInfo['id']}",
                         'link_pdf' => api_get_path(WEB_PATH)."certificates/index.php?id={$certificateInfo['id']}&user_id={$userId}&action=export",
                     ],
                 ];
                 $dateCertificateSession = api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT);
+
             }
             if(empty($courseList)){
                 continue;
@@ -814,6 +815,24 @@ class SchoolPlugin extends Plugin
             ];
         }
         return $groupedSessions;
+    }
+
+    public function getUsersWithCourseCertificates($courseCode, $sessionId, $userID): array
+    {
+        $users = [];
+        $certificateTable = Database::get_main_table(TABLE_MAIN_GRADEBOOK_CERTIFICATE);
+        $categoryTable = Database::get_main_table(TABLE_MAIN_GRADEBOOK_CATEGORY);
+        $sql = "SELECT cer.user_id AS user_id
+            FROM $certificateTable cer
+            INNER JOIN $categoryTable cat
+            ON (cer.cat_id = cat.id)
+            WHERE cat.course_code = '$courseCode' AND cat.session_id = $sessionId";
+        print_r($sql);
+        $rs = Database::query($sql);
+        while ($row = Database::fetch_assoc($rs)) {
+            $users[] = api_get_user_info($row['user_id']);
+        }
+        return $users;
     }
     public function getMenus(string $currentSection = ''): array
     {
