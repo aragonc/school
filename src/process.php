@@ -253,7 +253,7 @@ switch ($action) {
 
             $template->assign('back_content', $laterContent);
             $content = $template->fetch('easycertificate/template/certificate.tpl');
-            $fileName = 'certificate_' . $courseInfo['code'] . '_' . $userId;
+            $fileName = 'certificate_' . $courseInfo['code'] . '_' . $userId . '.pdf';
 
         }
 
@@ -268,7 +268,7 @@ switch ($action) {
         ]);
 
         $mpdf->WriteHTML($content);
-        $mpdf->Output($archiveCacheUser.$fileName.'.pdf', \Mpdf\Output\Destination::FILE);
+        $mpdf->Output($archiveCacheUser.$fileName, \Mpdf\Output\Destination::FILE);
 
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="' . $fileName . '"');
