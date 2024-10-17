@@ -1,0 +1,17 @@
+{
+    "name": "aragonc/school",
+    "autoload": {
+        "psr-4": {
+            "Aragonc\\School\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Alex Aragon",
+            "email": "aragcar@gmail.com"
+        }
+    ],
+    "require": {
+        "mpdf/mpdf": "^8.0"
+    }
+}
