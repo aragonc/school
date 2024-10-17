@@ -489,6 +489,7 @@ class SchoolPlugin extends Plugin
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
                 $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
                 $row['registered_at'] = $dateRegister;
+                $row['number_courses'] = count($courseList);
                 $row['courses'] = $courseList;
                 $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
                 if(is_null($row['id_category'])){

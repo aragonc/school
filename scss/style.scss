@@ -85,30 +85,31 @@
     }
   }
   .card-body{
-    .list-courses{
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      .course-box{
-        padding: .5rem 1rem;
-        .badge{
-          font-size: 1.2rem;
-          font-weight: 800;
-          border-radius: 50px;
-        }
-        .badge-warning{
-          color: #000;
-          background-color: #f6c23e;
-        }
-        .course-link{
-          display: inline-block;
-          width: 100%;
-          color: $gray-700;
-        }
-      }
-    }
+
   }
 }
+
+.course-box{
+  padding: .5rem 1rem;
+  .badge{
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 50px;
+    width: 32px;
+    height: 32px;
+    line-height: 25px;
+  }
+  .badge-warning{
+    color: #000;
+    background-color: #f6c23e;
+  }
+  .course-link{
+    display: inline-block;
+    width: 100%;
+    color: $gray-700;
+  }
+}
+
 #tab_courses.tab-content{
   background-color: #FFF;
 }

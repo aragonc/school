@@ -42,6 +42,33 @@
             </div>
             <div class="accordion" id="sessions_accordion_{{ category.category_id }}">
                 {% for session in category.sessions %}
+
+                {% if session.number_courses <=1 %}
+                    {% for course in session.courses %}
+                        <div class="card pl-4 pr-4">
+                            <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                            {{ course.icon }} <span class="course-title">{{ session.name }}</span>
+                                        </a>
+                                    </div>
+
+                                    <div class="col-md-auto text-center">
+                                        <span class="row-date">{{ session.registered_at }}</span>
+                                    </div>
+                                    <div class="col-md-auto text-center">
+                                        <a class="btn btn-primary btn-download" href="#" target="_blank" role="button">
+                                            <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
+                                        </a>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+
                 <div class="card pl-4 pr-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
                         <div class="row align-items-center">
@@ -55,30 +82,37 @@
                             <div class="col-md-auto text-center">
                                 <span class="row-date">{{ session.registered_at }}</span>
                             </div>
-                            <div class="col col-lg-2 text-center">
+                            <div class="col-md-auto text-center pr-4">
                                 <a class="btn btn-primary btn-download" href="#" role="button">
-                                    <i class="fas fa-download"></i>
+                                    <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                                 </a>
                             </div>
                         </div>
                     </div>
                     <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">
-                        <div class="card-body">
-                            <ul class="list-courses">
-                                {% for course in session.courses %}
-                                <li class="course-box box-{{ course.ribbon }}">
-                                    <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
-                                        {% if course.number != 0 %}
+
+                        {% for course in session.courses %}
+                        <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-5">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div class="d-flex flex-row pb-2 pt-2">
+                                    {% if course.number != 0 %}
                                         <span class="badge badge-warning">{{ course.number }}</span>
-                                        {% endif %}
-                                        {{ course.icon }} {{ course.title }}
+                                    {% endif %}
+                                    {{ course.icon }}
+                                    <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                        {{ course.title }}
                                     </a>
-                                </li>
-                                {% endfor %}
-                            </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        {% endfor %}
+
                     </div>
                 </div>
+
+                {% endif %}
                 {% endfor %}
             </div>
         {% endfor %}
