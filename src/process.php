@@ -292,7 +292,7 @@ switch ($action) {
 
 
         $certificateURLUser = $archiveCacheUserURL.$fileName;
-        $linkedinShareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' . urlencode($certificateURLUser);
+        $linkedinShareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' . $certificateURLUser;
         header('Location: '.$linkedinShareUrl);
         exit();
         //var_dump($certificateURLUser);
