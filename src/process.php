@@ -253,12 +253,10 @@ switch ($action) {
 
             $template->assign('back_content', $laterContent);
             $content = $template->fetch('easycertificate/template/certificate.tpl');
-            $fileName = 'certificate_' . $courseInfo['code'] . '_' . $userId.'.pdf';
+            $fileName = 'certificate_' . $courseInfo['code'] . '_' . $userId;
 
         }
 
-
-        /* generar pdf */
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => $archivePath,
             'allow_output_buffering' => true,
@@ -270,7 +268,7 @@ switch ($action) {
         ]);
 
         $mpdf->WriteHTML($content);
-        $mpdf->Output($archiveCacheUser.$fileName, \Mpdf\Output\Destination::FILE);
+        $mpdf->Output($archiveCacheUser.$fileName.'.pdf', \Mpdf\Output\Destination::FILE);
 
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="' . $fileName . '"');
@@ -280,7 +278,19 @@ switch ($action) {
         break;
     case 'share':
 
-        $fileName = 'certificate_' . $infoCertificate['course_code'] . '_' . $userId.'.pdf';
+        //generar imagen
+        $fileName = 'certificate_' . $infoCertificate['course_code'] . '_' . $userId;
+
+        $pdfImage = new Imagick();
+        $pdfImage->readImage($archiveCacheUser.$fileName.'.pdf');
+        $pdfImage->setResolution(300, 300);
+        $pdfImage->setIteratorIndex(0);
+        $pdfImage->setImageFormat('jpg');
+        $pdfImage->writeImage($archiveCacheUser.$fileName.'.jpg');
+        $pdfImage->clear();
+        $pdfImage->destroy();
+
+
         $certificateURLUser = $archiveCacheUserURL.$fileName;
         $linkedinShareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' . urlencode($certificateURLUser);
         header('Location: '.$linkedinShareUrl);
