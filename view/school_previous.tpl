@@ -35,6 +35,29 @@
             </div>
             <div class="accordion" id="sessions_accordion">
                 {% for session in category.sessions %}
+
+                {% if session.number_courses <=1 %}
+
+                    {% for course in session.courses %}
+                    <div class="card pl-4 pr-4 mb-2">
+                        <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                        {{ course.icon }} <span class="course-title">{{ session.name }}</span>
+                                    </a>
+                                </div>
+
+                                <div class="col-md-auto text-center">
+                                    <span class="row-date">{{ session.registered_at }}</span>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                {% else %}
                 <div class="card pl-4 pr-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
                         <div class="row align-items-center">
@@ -51,22 +74,30 @@
                         </div>
                     </div>
                     <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
-                        <div class="card-body">
-                            <ul class="list-courses">
-                                {% for course in session.courses %}
-                                <li class="course-box box-{{ course.ribbon }}">
-                                    <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
-                                        {% if course.number != 0 %}
-                                        <span class="badge badge-warning">{{ course.number }}</span>
-                                        {% endif %}
-                                        {{ course.icon }} {{ course.title }}
-                                    </a>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
+                        {% for course in session.courses %}
+                            <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-5">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="d-flex flex-row pb-1 pt-1">
+                                            {% if course.number != 0 %}
+                                            <span class="badge badge-warning">{{ course.number }}</span>
+                                            {% else %}
+                                            <span class="badge badge-transparent"></span>
+                                            {% endif %}
+                                            <div class="pr-1 pl-1">
+                                                {{ course.icon }}
+                                            </div>
+                                            <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                                {{ course.title }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
+                {% endif %}
                 {% endfor %}
             </div>
         {% endfor %}
