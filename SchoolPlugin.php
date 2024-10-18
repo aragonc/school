@@ -867,23 +867,9 @@ class SchoolPlugin extends Plugin
                 'label' => $this->get_lang('MyNotifications'),
                 'current' => false,
                 'icon' => 'bell',
-                'class' => '',
-                'items' => [
-                    [
-                        'id' => 201,
-                        'label' => 'No Leídas (1)',
-                        'current' => false,
-                        'class' => '',
-                        'url' => '/notificaciones/no-leidas'
-                    ],
-                    [
-                        'id' => 202,
-                        'label' => 'Ver todas',
-                        'current' => false,
-                        'class' => '',
-                        'url' => '/notificaciones'
-                    ]
-                ]
+                'class' => $currentSection === 'notifications' ? 'active':'',
+                'url' => '/notifications',
+                'items' => []
             ],
             [
                 'id' => 3,
