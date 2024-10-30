@@ -32,4 +32,11 @@ $strings['Share'] = 'Compartir';
 $strings['HereAreYourCertificates'] = 'Aquí estarán tus certificados';
 $strings['OnlineCourses'] = 'Cursos online';
 $strings['IssueDate'] = 'Fecha de emisión';
-
+$strings['User'] = 'Usuario';
+$strings['Message'] = 'Mensaje';
+$strings['Program'] = 'Programa';
+$strings['Date'] = 'Fecha';
+$strings['Type'] = 'Tipo';
+$strings['Action'] = 'Acción';
+$strings['Unread'] = 'No Leídas';
+$strings['SeeAll'] = 'Ver Todas';

@@ -19,6 +19,7 @@
         <div class="pt-2 pb-4">
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
+
                 <div class="container-fluid">
                     <div class="row align-items-center pb-3 pt-3">
                         <div class="col">
@@ -27,12 +28,12 @@
                                 <div class="p-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
                             </div>
                         </div>
-                        <div class="col-md-auto">
+                        <div class="col-md-auto d-none d-sm-block">
                             <div class="section-col-table">
                                 {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
                             </div>
                         </div>
-                        <div class="col col-lg-2">
+                        <div class="col col-lg-2 d-none d-sm-block">
                             <div class="section-col-table">
                                 {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                             </div>

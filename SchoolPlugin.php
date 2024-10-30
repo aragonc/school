@@ -832,26 +832,85 @@ class SchoolPlugin extends Plugin
         return $groupedSessions;
     }
 
-    public function getUsersWithCourseCertificates($courseCode, $sessionId, $userID): array
+    public function getMessages($status = 1): array
     {
-        $users = [];
-        $certificateTable = Database::get_main_table(TABLE_MAIN_GRADEBOOK_CERTIFICATE);
-        $categoryTable = Database::get_main_table(TABLE_MAIN_GRADEBOOK_CATEGORY);
-        $sql = "SELECT cer.user_id AS user_id
-            FROM $certificateTable cer
-            INNER JOIN $categoryTable cat
-            ON (cer.cat_id = cat.id)
-            WHERE cat.course_code = '$courseCode' AND cat.session_id = $sessionId";
-        print_r($sql);
-        $rs = Database::query($sql);
-        while ($row = Database::fetch_assoc($rs)) {
-            $users[] = api_get_user_info($row['user_id']);
+        $messageTable = Database::get_main_table(TABLE_MESSAGE);
+        $sql = "SELECT
+                m.id,
+                m.title,
+                m.msg_status,
+                m.send_date,
+                m.type,
+                m.user_sender_id,
+                m.user_receiver_id,
+                m.c_id,
+                m.session_id
+                FROM $messageTable m
+                WHERE user_receiver_id = 1 AND msg_status IN ('1') ORDER BY send_date DESC LIMIT 0, 20";
+        $result = Database::query($sql);
+        $messageList = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+
+            $userInfo = api_get_user_info($row['user_sender_id']);
+
+            $typeMessage = $row['type'];
+            $title = Security::remove_XSS($row['title'], STUDENT, true);
+            $title = cut($title, 80, true);
+            $msgTypeLang = '';
+
+            switch ($typeMessage){
+                case MESSAGE_TYPE_COURSE_WORK:
+                    $icon = Display::return_icon('work.png');
+                    $msgTypeLang = Display::label($icon.get_lang('StudentPublications'), null,'msg-work') ;
+                    break;
+                case MESSAGE_TYPE_COURSE_EXERCISE:
+                    $icon = Display::return_icon('quiz.png');
+                    $msgTypeLang = Display::label($icon.get_lang('Exercise'), null,'msg-exercise');
+                    break;
+                case MESSAGE_TYPE_COURSE_FORUM:
+                    $icon = Display::return_icon('forum.png');
+                    $msgTypeLang = Display::label($icon.get_lang('Forum'),null,'msg-forum');
+                    break;
+                case MESSAGE_TYPE_COURSE_ANNOUNCEMENT:
+                    $icon = Display::return_icon('valves.png');
+                    $msgTypeLang = Display::label($icon.get_lang('Announcements'),null,'msg-announcement');
+                    break;
+                case MESSAGE_TYPE_COURSE_SURVEY:
+                    $icon = Display::return_icon('survey.png');
+                    $msgTypeLang = Display::label($icon.get_lang('Survey'),null,'msg-survey');
+                    break;
+                case MESSAGE_TYPE_SESSION_ANNOUNCEMENT:
+                    $icon = Display::return_icon('session.png');
+                    $msgTypeLang = Display::label($icon.get_lang('Session'),null,'msg-session');
+                    break;
+            }
+
+            $sessionName = api_get_session_name($row['session_id']);
+            $courseName = null;
+            if(!is_null($row['c_id'])){
+                $courseInfo = api_get_course_info_by_id($row['c_id']);
+                $courseName = $courseInfo['title'];
+            }
+
+            $sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
+            $messageList[] = [
+                'id' => $row['id'],
+                'title' => $title,
+                'status' => $row['msg_status'],
+                'send_date' => $sendDate,
+                'type' => $msgTypeLang,
+                'user_sender_id' => $userInfo['complete_name_with_username'],
+                'user_receiver_id' => $row['user_receiver_id'],
+                'course_id' => $row['c_id'],
+                'course_title' => $courseName,
+                'session_id' => $row['session_id'],
+                'session_title' => $sessionName,
+            ];
         }
-        return $users;
+        return $messageList;
     }
     public function getMenus(string $currentSection = ''): array
     {
-        //var_dump($currentSection === 'dashboard');
         return [
             [
                 'id' => 1,

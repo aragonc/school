@@ -9,8 +9,10 @@ api_block_anonymous_users();
 
 if ($enable) {
     $userId = api_get_user_id();
+    $messages = $plugin->getMessages();
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
     $plugin->setTitle($plugin->get_lang('MyNotifications'));
+    $plugin->assign('messages', $messages);
     $content = $plugin->fetch('school_notifications.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
