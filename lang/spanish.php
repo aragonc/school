@@ -40,3 +40,5 @@ $strings['Type'] = 'Tipo';
 $strings['Action'] = 'Acción';
 $strings['Unread'] = 'No Leídas';
 $strings['SeeAll'] = 'Ver Todas';
+$strings['Next'] = 'Siguiente';
+$strings['Previous'] = 'Anterior';

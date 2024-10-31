@@ -832,8 +832,21 @@ class SchoolPlugin extends Plugin
         return $groupedSessions;
     }
 
-    public function getMessages($status = 1): array
+    public function getMessagesCount($userID, $status=1)
     {
+        $messageTable = Database::get_main_table(TABLE_MESSAGE);
+        $sql = "SELECT
+                COUNT(*) AS total_messages
+                FROM $messageTable m
+                WHERE user_receiver_id = $userID AND msg_status = $status";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        return $row['total_messages'];
+    }
+
+    public function getMessages($userID, $page = 1, $perPage = 10, $status = 1): array
+    {
+        $offset = ($page - 1) * $perPage;
         $messageTable = Database::get_main_table(TABLE_MESSAGE);
         $sql = "SELECT
                 m.id,
@@ -846,16 +859,16 @@ class SchoolPlugin extends Plugin
                 m.c_id,
                 m.session_id
                 FROM $messageTable m
-                WHERE user_receiver_id = 1 AND msg_status IN ('1') ORDER BY send_date DESC LIMIT 0, 20";
+                WHERE user_receiver_id = $userID AND msg_status = $status ORDER BY send_date DESC LIMIT $offset, $perPage";
         $result = Database::query($sql);
+
         $messageList = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
 
             $userInfo = api_get_user_info($row['user_sender_id']);
-
             $typeMessage = $row['type'];
             $title = Security::remove_XSS($row['title'], STUDENT, true);
-            $title = cut($title, 80, true);
+            $title = cut($title, 80);
             $msgTypeLang = '';
 
             switch ($typeMessage){
@@ -892,13 +905,23 @@ class SchoolPlugin extends Plugin
                 $courseName = $courseInfo['title'];
             }
 
+            if(is_null($userInfo['avatar'])){
+                $avatar =  self::get_svg_icon('avatar', $userInfo['complete_name_with_username'] , 50);
+            } else {
+                $avatar = Display::img($userInfo['avatar'],$userInfo['complete_name_with_username'],['width' => 50, 'height' => 50, 'class' => 'rounded-circle user-avatar']);
+            }
+
+            $inputID = '<input type="checkbox" name="id[]" value="'.$row['id'].'" />';
+
             $sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
             $messageList[] = [
                 'id' => $row['id'],
-                'title' => $title,
+                'check_id' => $inputID,
+                'title' => '<a href="/notifications/view/'.$row['id'].'">'.$title.'</a>',
                 'status' => $row['msg_status'],
                 'send_date' => $sendDate,
                 'type' => $msgTypeLang,
+                'user_avatar' => $avatar,
                 'user_sender_id' => $userInfo['complete_name_with_username'],
                 'user_receiver_id' => $row['user_receiver_id'],
                 'course_id' => $row['c_id'],
@@ -907,7 +930,91 @@ class SchoolPlugin extends Plugin
                 'session_title' => $sessionName,
             ];
         }
-        return $messageList;
+
+        $sqlTotal = "SELECT COUNT(*) as total_messages FROM $messageTable m WHERE user_receiver_id = $userID AND msg_status = $status";
+        $result = Database::query($sqlTotal);
+        $row = Database::fetch_array($result, 'ASSOC');
+        $totalMessages = $row['total_messages'];
+        $totalPages = ceil($totalMessages / $perPage);
+
+        return [
+            'messages' => $messageList,
+            'pagination' => [
+                'currentPage' => $page,
+                'totalPages' => $totalPages,
+                'totalMessages' => $totalMessages,
+            ]
+        ];
+
+    }
+
+    public function viewMessage($messageId, $type): array
+    {
+        $messageId = (int) $messageId;
+
+        if (empty($messageId) || empty($type)) {
+            return [];
+        }
+        $status = 0;
+        $currentUserId = api_get_user_id();
+        $table = Database::get_main_table(TABLE_MESSAGE);
+        switch ($type) {
+            case MessageManager::MESSAGE_TYPE_OUTBOX:
+                $status = MESSAGE_STATUS_OUTBOX;
+                $userCondition = " user_sender_id = $currentUserId AND ";
+                break;
+            case MessageManager::MESSAGE_TYPE_INBOX:
+                $status = MESSAGE_STATUS_NEW;
+                $userCondition = " user_receiver_id = $currentUserId AND ";
+
+                $query = "UPDATE $table SET
+                          msg_status = '".MESSAGE_STATUS_NEW."'
+                          WHERE id = $messageId ";
+                Database::query($query);
+                break;
+            case MessageManager::MESSAGE_TYPE_PROMOTED:
+                $status = MESSAGE_STATUS_PROMOTED;
+                $userCondition = " user_receiver_id = $currentUserId AND ";
+                break;
+        }
+        if (empty($row)) {
+            return [];
+        }
+
+        if (empty($userCondition)) {
+            return [];
+        }
+
+        $query = "SELECT * FROM $table
+                  WHERE
+                    id = $messageId AND
+                    $userCondition
+                    msg_status = $status";
+        $result = Database::query($query);
+        $row = Database::fetch_array($result, 'ASSOC');
+
+        $typeMessage = !empty($row['type'])? $row['type'] : 0;
+
+        $user_sender_id = $row['user_sender_id'];
+
+        // get file attachments by message id
+        $files_attachments = MessageManager::getAttachmentLinkList($messageId, $type);
+
+        $row['content'] = str_replace('</br>', '<br />', $row['content']);
+        $title = Security::remove_XSS($row['title'], STUDENT, true);
+        $content = Security::remove_XSS($row['content'], STUDENT, true);
+        $sendDate= Display::dateToStringAgoAndLongDate($row['send_date']);
+
+        return [
+            'message_title' => $title,
+            'message_content' => $content,
+            'message_send_date' => $sendDate,
+            'message_type' => $typeMessage,
+            'message_status' => $status,
+            'message_files_attachments' => $files_attachments,
+            'message_user_sender_id' => $user_sender_id,
+        ];
+
     }
     public function getMenus(string $currentSection = ''): array
     {
