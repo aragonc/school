@@ -1,12 +1,12 @@
 <ul class="nav nav-tabs">
     <li class="nav-item">
-        <a class="nav-link active" href="/dashboard">
+        <a class="nav-link active" href="/notifications">
             {{ 'Unread'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_unread }}</span>
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link " href="/previous" >
-            {{ 'SeeAll'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_history }}</span>
+        <a class="nav-link " href="/notifications?action=all" >
+            {{ 'SeeAll'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_messages }}</span>
         </a>
     </li>
 </ul>

@@ -832,13 +832,18 @@ class SchoolPlugin extends Plugin
         return $groupedSessions;
     }
 
-    public function getMessagesCount($userID, $status=1)
+    public function getMessagesCount($userID, $all = false, $status = 1)
     {
         $messageTable = Database::get_main_table(TABLE_MESSAGE);
         $sql = "SELECT
                 COUNT(*) AS total_messages
                 FROM $messageTable m
-                WHERE user_receiver_id = $userID AND msg_status = $status";
+                WHERE user_receiver_id = $userID ";
+
+        if(!$all){
+            $sql.= " AND msg_status = $status";
+        }
+
         $result = Database::query($sql);
         $row = Database::fetch_array($result, 'ASSOC');
         return $row['total_messages'];
@@ -917,7 +922,7 @@ class SchoolPlugin extends Plugin
             $messageList[] = [
                 'id' => $row['id'],
                 'check_id' => $inputID,
-                'title' => '<a href="/notifications/view/'.$row['id'].'">'.$title.'</a>',
+                'title' => '<a href="/notifications?action=view&id='.$row['id'].'">'.$title.'</a>',
                 'status' => $row['msg_status'],
                 'send_date' => $sendDate,
                 'type' => $msgTypeLang,
@@ -950,22 +955,22 @@ class SchoolPlugin extends Plugin
 
     public function viewMessage($messageId, $type): array
     {
-        $messageId = (int) $messageId;
-
         if (empty($messageId) || empty($type)) {
             return [];
         }
-        $status = 0;
+
         $currentUserId = api_get_user_id();
         $table = Database::get_main_table(TABLE_MESSAGE);
+        $status = 0;
+
         switch ($type) {
             case MessageManager::MESSAGE_TYPE_OUTBOX:
                 $status = MESSAGE_STATUS_OUTBOX;
-                $userCondition = " user_sender_id = $currentUserId AND ";
+                $userCondition = " m.user_sender_id = $currentUserId AND ";
                 break;
             case MessageManager::MESSAGE_TYPE_INBOX:
                 $status = MESSAGE_STATUS_NEW;
-                $userCondition = " user_receiver_id = $currentUserId AND ";
+                $userCondition = " m.user_receiver_id = $currentUserId AND ";
 
                 $query = "UPDATE $table SET
                           msg_status = '".MESSAGE_STATUS_NEW."'
@@ -974,25 +979,23 @@ class SchoolPlugin extends Plugin
                 break;
             case MessageManager::MESSAGE_TYPE_PROMOTED:
                 $status = MESSAGE_STATUS_PROMOTED;
-                $userCondition = " user_receiver_id = $currentUserId AND ";
+                $userCondition = " m.user_receiver_id = $currentUserId AND ";
                 break;
         }
-        if (empty($row)) {
-            return [];
-        }
-
         if (empty($userCondition)) {
             return [];
         }
-
-        $query = "SELECT * FROM $table
+        $query = "SELECT * FROM $table m
                   WHERE
-                    id = $messageId AND
+                    m.id = $messageId AND
                     $userCondition
-                    msg_status = $status";
+                    m.msg_status = $status";
+
         $result = Database::query($query);
         $row = Database::fetch_array($result, 'ASSOC');
-
+        if (empty($row)) {
+            return [];
+        }
         $typeMessage = !empty($row['type'])? $row['type'] : 0;
 
         $user_sender_id = $row['user_sender_id'];
@@ -1004,15 +1007,21 @@ class SchoolPlugin extends Plugin
         $title = Security::remove_XSS($row['title'], STUDENT, true);
         $content = Security::remove_XSS($row['content'], STUDENT, true);
         $sendDate= Display::dateToStringAgoAndLongDate($row['send_date']);
+        $sessionName = api_get_session_name($row['session_id']);
+        var_dump($sessionName);
+        $message = [
+            'title' => $title,
+            'content' => $content,
+            'send_date' => $sendDate,
+            'type' => $typeMessage,
+            'status' => $status,
+            'files_attachments' => $files_attachments,
+            'user_sender_id' => $user_sender_id,
+            'session_title' => $sessionName,
+        ];
 
         return [
-            'message_title' => $title,
-            'message_content' => $content,
-            'message_send_date' => $sendDate,
-            'message_type' => $typeMessage,
-            'message_status' => $status,
-            'message_files_attachments' => $files_attachments,
-            'message_user_sender_id' => $user_sender_id,
+            'message' => $message,
         ];
 
     }
