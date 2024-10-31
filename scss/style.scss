@@ -169,3 +169,18 @@
   font-weight: bold;
   color: $gray-800;
 }
+.message{
+  .title{
+    font-weight: 800;
+    font-size: 1.5em;
+    color: $gray-900;
+  }
+  .program{
+    display: inline-block;
+    width: 100%;
+    padding: .5rem 1rem;
+    background-color: $blue-primary;
+    color: $white;
+    border-radius: 5px;
+  }
+}

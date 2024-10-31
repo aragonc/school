@@ -999,6 +999,34 @@ class SchoolPlugin extends Plugin
         $typeMessage = !empty($row['type'])? $row['type'] : 0;
 
         $user_sender_id = $row['user_sender_id'];
+        $fromUser = api_get_user_info($user_sender_id);
+        $name = '';
+        if (!empty($user_sender_id) && !empty($fromUser)) {
+            $name = $fromUser['complete_name_with_username'];
+            $userImage = Display::img(
+                $fromUser['avatar_small'],
+                $name,
+                ['title' => $name, 'class' => 'img-responsive img-circle', 'style' => 'max-width:35px'],
+                false
+            );
+        }
+
+        $receiverUserInfo = [];
+        if (!empty($row['user_receiver_id'])) {
+            $receiverUserInfo = api_get_user_info($row['user_receiver_id']);
+        }
+        $messageInfo = '';
+        switch ($type) {
+            case MessageManager::MESSAGE_TYPE_INBOX:
+                $messageInfo= get_lang('From').':&nbsp;'.$name.'</b> '.api_strtolower(get_lang('To')).' <b>'.
+                    get_lang('Me').'</b>';
+                break;
+            case MessageManager::MESSAGE_TYPE_OUTBOX:
+
+                $messageInfo= get_lang('From').':&nbsp;'.$name.'</b> '.api_strtolower(get_lang('To')).' <b>'.
+                    $receiverUserInfo['complete_name_with_username'].'</b>';
+                break;
+        }
 
         // get file attachments by message id
         $files_attachments = MessageManager::getAttachmentLinkList($messageId, $type);
@@ -1008,16 +1036,17 @@ class SchoolPlugin extends Plugin
         $content = Security::remove_XSS($row['content'], STUDENT, true);
         $sendDate= Display::dateToStringAgoAndLongDate($row['send_date']);
         $sessionName = api_get_session_name($row['session_id']);
-        var_dump($sessionName);
+
         $message = [
             'title' => $title,
             'content' => $content,
             'send_date' => $sendDate,
+            'info'=> $messageInfo,
             'type' => $typeMessage,
             'status' => $status,
             'files_attachments' => $files_attachments,
             'user_sender_id' => $user_sender_id,
-            'session_title' => $sessionName,
+            'session_title' => self::get_svg_icon('course_white', $title,32) .' | '. $sessionName,
         ];
 
         return [
