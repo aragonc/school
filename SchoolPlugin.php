@@ -849,7 +849,7 @@ class SchoolPlugin extends Plugin
         return $row['total_messages'];
     }
 
-    public function getMessages($userID, $page = 1, $perPage = 10, $status = 1): array
+    public function getMessages($userID, $page = 1, $perPage = 10, $all = false, $status = 1): array
     {
         $offset = ($page - 1) * $perPage;
         $messageTable = Database::get_main_table(TABLE_MESSAGE);
@@ -864,7 +864,14 @@ class SchoolPlugin extends Plugin
                 m.c_id,
                 m.session_id
                 FROM $messageTable m
-                WHERE user_receiver_id = $userID AND msg_status = $status ORDER BY send_date DESC LIMIT $offset, $perPage";
+                WHERE user_receiver_id = $userID ";
+
+        if(!$all){
+            $sql.= " AND msg_status = $status ";
+        }
+
+        $sql .= " ORDER BY send_date DESC LIMIT $offset, $perPage";
+
         $result = Database::query($sql);
 
         $messageList = [];
@@ -936,7 +943,12 @@ class SchoolPlugin extends Plugin
             ];
         }
 
-        $sqlTotal = "SELECT COUNT(*) as total_messages FROM $messageTable m WHERE user_receiver_id = $userID AND msg_status = $status";
+        $sqlTotal = "SELECT COUNT(*) as total_messages FROM $messageTable m WHERE user_receiver_id = $userID ";
+
+        if(!$all){
+            $sqlTotal.= " AND msg_status = $status ";
+        }
+
         $result = Database::query($sqlTotal);
         $row = Database::fetch_array($result, 'ASSOC');
         $totalMessages = $row['total_messages'];
@@ -1000,13 +1012,13 @@ class SchoolPlugin extends Plugin
 
         $user_sender_id = $row['user_sender_id'];
         $fromUser = api_get_user_info($user_sender_id);
-        $name = '';
+        $name = $userImage = '';
         if (!empty($user_sender_id) && !empty($fromUser)) {
             $name = $fromUser['complete_name_with_username'];
             $userImage = Display::img(
                 $fromUser['avatar_small'],
                 $name,
-                ['title' => $name, 'class' => 'img-responsive img-circle', 'style' => 'max-width:35px'],
+                ['title' => $name, 'class' => 'rounded-circle user-avatar', 'style' => 'max-width:32px'],
                 false
             );
         }
@@ -1018,11 +1030,9 @@ class SchoolPlugin extends Plugin
         $messageInfo = '';
         switch ($type) {
             case MessageManager::MESSAGE_TYPE_INBOX:
-                $messageInfo= get_lang('From').':&nbsp;'.$name.'</b> '.api_strtolower(get_lang('To')).' <b>'.
-                    get_lang('Me').'</b>';
+                $messageInfo = '<strong>'.get_lang('From').'</strong>:&nbsp;'.$userImage.'&nbsp;'.$name.' <strong>'.api_strtolower(get_lang('To')).'</strong> '.get_lang('Me');
                 break;
             case MessageManager::MESSAGE_TYPE_OUTBOX:
-
                 $messageInfo= get_lang('From').':&nbsp;'.$name.'</b> '.api_strtolower(get_lang('To')).' <b>'.
                     $receiverUserInfo['complete_name_with_username'].'</b>';
                 break;
@@ -1034,7 +1044,7 @@ class SchoolPlugin extends Plugin
         $row['content'] = str_replace('</br>', '<br />', $row['content']);
         $title = Security::remove_XSS($row['title'], STUDENT, true);
         $content = Security::remove_XSS($row['content'], STUDENT, true);
-        $sendDate= Display::dateToStringAgoAndLongDate($row['send_date']);
+        $sendDate = Display::dateToStringAgoAndLongDate($row['send_date']);
         $sessionName = api_get_session_name($row['session_id']);
 
         $message = [
@@ -1046,6 +1056,7 @@ class SchoolPlugin extends Plugin
             'status' => $status,
             'files_attachments' => $files_attachments,
             'user_sender_id' => $user_sender_id,
+            'user_avatar' => $userImage,
             'session_title' => self::get_svg_icon('course_white', $title,32) .' | '. $sessionName,
         ];
 
