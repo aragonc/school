@@ -31,12 +31,12 @@
                         </thead>
                         <tbody>
                         {% for message in list.messages %}
-                        <tr>
+                        <tr class="{{ message.row }}">
                             <th scope="row">{{ message.check_id }}</th>
                             <td>{{ message.user_avatar }}</td>
                             <td>{{ message.title }}</td>
-                            <td>{{ message.session_title }}</td>
-                            <td>{{ message.send_date }}</td>
+                            <td><div class="{{ message.class }}">{{ message.session_title }}</div></td>
+                            <td><div class="{{ message.class }}">{{ message.send_date }}</div></td>
                             <td>{{ message.type }}</td>
                             <td></td>
                         </tr>

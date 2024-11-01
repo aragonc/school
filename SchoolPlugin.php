@@ -885,28 +885,28 @@ class SchoolPlugin extends Plugin
 
             switch ($typeMessage){
                 case MESSAGE_TYPE_COURSE_WORK:
-                    $icon = Display::return_icon('work.png');
-                    $msgTypeLang = Display::label($icon.get_lang('StudentPublications'), null,'msg-work') ;
+                    $icon = Display::return_icon('work.png', get_lang('StudentPublications'));
+                    $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_EXERCISE:
-                    $icon = Display::return_icon('quiz.png');
-                    $msgTypeLang = Display::label($icon.get_lang('Exercise'), null,'msg-exercise');
+                    $icon = Display::return_icon('quiz.png', get_lang('Exercise'));
+                    $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_FORUM:
-                    $icon = Display::return_icon('forum.png');
-                    $msgTypeLang = Display::label($icon.get_lang('Forum'),null,'msg-forum');
+                    $icon = Display::return_icon('forum.png', get_lang('Forum'));
+                    $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_ANNOUNCEMENT:
-                    $icon = Display::return_icon('valves.png');
-                    $msgTypeLang = Display::label($icon.get_lang('Announcements'),null,'msg-announcement');
+                    $icon = Display::return_icon('valves.png', get_lang('Announcements'));
+                    $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_SURVEY:
-                    $icon = Display::return_icon('survey.png');
-                    $msgTypeLang = Display::label($icon.get_lang('Survey'),null,'msg-survey');
+                    $icon = Display::return_icon('survey.png', get_lang('Survey'));
+                    $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_SESSION_ANNOUNCEMENT:
-                    $icon = Display::return_icon('session.png');
-                    $msgTypeLang = Display::label($icon.get_lang('Session'),null,'msg-session');
+                    $icon = Display::return_icon('session.png', get_lang('Session'));
+                    $msgTypeLang = $icon;
                     break;
             }
 
@@ -923,13 +923,20 @@ class SchoolPlugin extends Plugin
                 $avatar = Display::img($userInfo['avatar'],$userInfo['complete_name_with_username'],['width' => 50, 'height' => 50, 'class' => 'rounded-circle user-avatar']);
             }
 
+            $class = 'message-read';
+            $rowClass = 'table-read';
+            if($row['msg_status'] == 1){
+                $class = 'message-unread';
+                $rowClass = 'table-unread';
+            }
+
             $inputID = '<input type="checkbox" name="id[]" value="'.$row['id'].'" />';
 
             $sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
             $messageList[] = [
                 'id' => $row['id'],
                 'check_id' => $inputID,
-                'title' => '<a href="/notifications?action=view&id='.$row['id'].'">'.$title.'</a>',
+                'title' => '<a class="'.$class.'" href="/notifications?action=view&id='.$row['id'].'">'.$title.'</a>',
                 'status' => $row['msg_status'],
                 'send_date' => $sendDate,
                 'type' => $msgTypeLang,
@@ -940,6 +947,8 @@ class SchoolPlugin extends Plugin
                 'course_title' => $courseName,
                 'session_id' => $row['session_id'],
                 'session_title' => $sessionName,
+                'class' => $class,
+                'row' => $rowClass
             ];
         }
 
