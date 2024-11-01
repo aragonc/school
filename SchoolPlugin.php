@@ -885,15 +885,14 @@ class SchoolPlugin extends Plugin
 
             switch ($typeMessage){
                 case MESSAGE_TYPE_COURSE_WORK:
-                    $icon = Display::return_icon('work.png', get_lang('StudentPublications'));
-                    $msgTypeLang = $icon;
+                    $msgTypeLang = '<i class="fas fa-pencil-alt fa-lg"></i>';
                     break;
                 case MESSAGE_TYPE_COURSE_EXERCISE:
                     $icon = Display::return_icon('quiz.png', get_lang('Exercise'));
                     $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_FORUM:
-                    $icon = Display::return_icon('forum.png', get_lang('Forum'));
+                    $icon = '<i class="fas fa-comments fa-lg"></i>';
                     $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_ANNOUNCEMENT:
@@ -905,8 +904,7 @@ class SchoolPlugin extends Plugin
                     $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_SESSION_ANNOUNCEMENT:
-                    $icon = Display::return_icon('session.png', get_lang('Session'));
-                    $msgTypeLang = $icon;
+                    $msgTypeLang = '<i class="fas fa-bell fa-lg"></i>';
                     break;
             }
 
@@ -1014,6 +1012,7 @@ class SchoolPlugin extends Plugin
 
         $result = Database::query($query);
         $row = Database::fetch_array($result, 'ASSOC');
+
         if (empty($row)) {
             return [];
         }

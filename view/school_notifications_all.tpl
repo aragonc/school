@@ -17,7 +17,7 @@
         <div class="card">
             <div class="card-body">
                 <nav class="table-responsive">
-                    <table class="table table-borderless">
+                    <table id="table-message" class="table table-borderless">
                         <thead>
                         <tr>
                             <th scope="col">#</th>

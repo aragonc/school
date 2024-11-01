@@ -184,8 +184,15 @@
     border-radius: 5px;
   }
 }
+.table-read, .table-read > th, .table-read > td {
+  background-color: #f9f9f9;
+  border-bottom: 4px solid #FFF;
+  vertical-align: middle;
+}
 .table-unread, .table-unread > th, .table-unread > td {
   background-color: #f2f2f2;
+  border-bottom: 4px solid #FFF;
+  vertical-align: middle;
 }
 .message-unread{
   font-weight: 800;
@@ -196,4 +203,21 @@
 }
 .message-read{
   color: $gray-800;
+}
+#table-message{
+  .fa-pencil-alt{
+    &:before{
+      color: #4e4957;
+    }
+  }
+  .fa-bell{
+    &:before{
+      color: $blue-primary;
+    }
+  }
+  .fa-comments{
+    &:before{
+      color: #0b2d4f;
+    }
+  }
 }
