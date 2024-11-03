@@ -38,7 +38,7 @@
                             <td><div class="{{ message.class }}">{{ message.session_title }}</div></td>
                             <td><div class="{{ message.class }}">{{ message.send_date }}</div></td>
                             <td>{{ message.type }}</td>
-                            <td></td>
+                            <td>{{ message.action }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>

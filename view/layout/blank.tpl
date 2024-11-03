@@ -86,5 +86,58 @@
 
 <!-- Bootstrap core JavaScript-->
 {{ js_files }}
+<script>
+    $(document).ready(function () {
+        function loadNotifications() {
+            $.ajax({
+                url: 'http://aula-virtual.test/plugin/school/src/ajax.php?action=check_notifications',
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    // Actualizar la cantidad de notificaciones
+                    $('#badge-counter').text(data.count_messages > 0 ? data.count_messages : '0');
+
+                    // Limpiar la lista de notificaciones
+                    $('#notifications').empty();
+
+
+                    // Renderizar las notificaciones
+                    if (data.messages.length > 0) {
+                        data.messages.forEach(function (message) {
+                            $('#notifications').append(`
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="mr-3">
+                                    <div class="icon-circle bg-primary">
+                                        <i class="fas fa-file-alt text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">${message.date}</div>
+                                    <span class="font-weight-bold">${message.content}</span>
+                                </div>
+                            </a>
+                        `);
+                        });
+                    } else {
+                        $('#notifications').append(`
+                        <a class="dropdown-item text-center small text-gray-500" href="#">
+                             {{ 'YouHaveNoNewNotifications'|get_plugin_lang('SchoolPlugin') }}
+                        </a>
+                    `);
+                    }
+                },
+                error: function () {
+                    console.error('Failed to fetch notifications.');
+                }
+            });
+
+
+        }
+        loadNotifications();
+        setInterval(loadNotifications, 30000);
+
+    });
+</script>
+
 </body>
 </html>

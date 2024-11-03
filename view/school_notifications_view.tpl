@@ -11,7 +11,7 @@
 
 
             <div class="info pt-2 pb-3">
-                <i class="far fa-envelope"></i> {{ box.message.info }} - <i class="far fa-calendar"></i> {{ box.message.send_date }}
+                {{ box.message.info }} - <i class="far fa-calendar"></i> {{ box.message.send_date }}
             </div>
             <div class="program">{{ box.message.session_title }}</div>
             <div class="content pt-5 pb-2">{{ box.message.content }}</div>

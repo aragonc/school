@@ -215,6 +215,16 @@
       color: $blue-primary;
     }
   }
+  .fa-envelope{
+    &:before{
+      color: #0b2d4f;
+    }
+  }
+  .fa-envelope-open{
+    &:before{
+      color: #0b2d4f;
+    }
+  }
   .fa-comments{
     &:before{
       color: #0b2d4f;

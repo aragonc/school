@@ -923,9 +923,11 @@ class SchoolPlugin extends Plugin
 
             $class = 'message-read';
             $rowClass = 'table-read';
+            $action = '<i class="far fa-envelope-open fa-lg"></i>';
             if($row['msg_status'] == 1){
                 $class = 'message-unread';
                 $rowClass = 'table-unread';
+                $action = '<i class="fas fa-envelope fa-lg"></i>';
             }
 
             $inputID = '<input type="checkbox" name="id[]" value="'.$row['id'].'" />';
@@ -946,7 +948,8 @@ class SchoolPlugin extends Plugin
                 'session_id' => $row['session_id'],
                 'session_title' => $sessionName,
                 'class' => $class,
-                'row' => $rowClass
+                'row' => $rowClass,
+                'action' => $action,
             ];
         }
 
@@ -1022,7 +1025,7 @@ class SchoolPlugin extends Plugin
         $fromUser = api_get_user_info($user_sender_id);
         $name = $userImage = '';
         if (!empty($user_sender_id) && !empty($fromUser)) {
-            $name = $fromUser['complete_name_with_username'];
+            $name = $fromUser['firstName'].' '.$fromUser['lastName'];
             $userImage = Display::img(
                 $fromUser['avatar_small'],
                 $name,
@@ -1038,7 +1041,7 @@ class SchoolPlugin extends Plugin
         $messageInfo = '';
         switch ($type) {
             case MessageManager::MESSAGE_TYPE_INBOX:
-                $messageInfo = '<strong>'.get_lang('From').'</strong>:&nbsp;'.$userImage.'&nbsp;'.$name.' <strong>'.api_strtolower(get_lang('To')).'</strong> '.get_lang('Me');
+                $messageInfo = '<strong>'.get_lang('From').'</strong>:&nbsp;'.$userImage.'&nbsp;'.$name;
                 break;
             case MessageManager::MESSAGE_TYPE_OUTBOX:
                 $messageInfo= get_lang('From').':&nbsp;'.$name.'</b> '.api_strtolower(get_lang('To')).' <b>'.

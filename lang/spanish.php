@@ -42,3 +42,5 @@ $strings['Unread'] = 'No Leídas';
 $strings['SeeAll'] = 'Ver Todas';
 $strings['Next'] = 'Siguiente';
 $strings['Previous'] = 'Anterior';
+$strings['YourRecentNotifications'] = 'Últimas Notificaciones';
+$strings['YouHaveNoNewNotifications'] = 'No tienes nuevas notificaciones';
