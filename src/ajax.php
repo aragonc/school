@@ -12,7 +12,7 @@ switch ($action) {
         $messages = $plugin->getMessages($userId,1,5);
         $jsonResponse  = [
             'count_messages' => $countMessages,
-            'messages' => $messages
+            'messages' => $messages['messages']
         ];
 
         header('Content-Type: application/json');

@@ -936,7 +936,8 @@ class SchoolPlugin extends Plugin
             $messageList[] = [
                 'id' => $row['id'],
                 'check_id' => $inputID,
-                'title' => '<a class="'.$class.'" href="/notifications?action=view&id='.$row['id'].'">'.$title.'</a>',
+                'link' => '/notifications?action=view&id='.$row['id'],
+                'title' => $title,
                 'status' => $row['msg_status'],
                 'send_date' => $sendDate,
                 'type' => $msgTypeLang,

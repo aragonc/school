@@ -99,31 +99,34 @@
 
                     // Limpiar la lista de notificaciones
                     $('#notifications').empty();
-
+                    console.log(data);
 
                     // Renderizar las notificaciones
                     if (data.messages.length > 0) {
+
                         data.messages.forEach(function (message) {
                             $('#notifications').append(`
-                            <a class="dropdown-item d-flex align-items-center" href="#">
+                            <a class="dropdown-item d-flex align-items-center" href="${message.link}">
                                 <div class="mr-3">
-                                    <div class="icon-circle bg-primary">
-                                        <i class="fas fa-file-alt text-white"></i>
-                                    </div>
+                                    ${message.user_avatar}
                                 </div>
                                 <div>
-                                    <div class="small text-gray-500">${message.date}</div>
-                                    <span class="font-weight-bold">${message.content}</span>
+                                    <div class="small text-gray-500">${message.send_date}</div>
+                                    <span class="font-weight-bold">${message.title}</span>
                                 </div>
                             </a>
                         `);
                         });
+                        $('#notifications').append(`
+                        <a href="/notifications" class="dropdown-item text-center small text-gray-800" href="#">
+                             {{ 'SeeAll'|get_plugin_lang('SchoolPlugin') }}
+                        </a>`);
+
                     } else {
                         $('#notifications').append(`
-                        <a class="dropdown-item text-center small text-gray-500" href="#">
+                        <a class="dropdown-item text-center small text-gray-800" href="#">
                              {{ 'YouHaveNoNewNotifications'|get_plugin_lang('SchoolPlugin') }}
-                        </a>
-                    `);
+                        </a>`);
                     }
                 },
                 error: function () {
