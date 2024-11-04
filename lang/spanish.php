@@ -44,4 +44,8 @@ $strings['Next'] = 'Siguiente';
 $strings['Previous'] = 'Anterior';
 $strings['YourRecentNotifications'] = 'Últimas Notificaciones';
 $strings['YouHaveNoNewNotifications'] = 'No tienes nuevas notificaciones';
-
+$strings['SelectAll'] = 'Seleccionar todos';
+$strings['CancelSelected'] = 'Anular seleccionados';
+$strings['Actions'] = 'Acciones';
+$strings['MarkAsUnread'] = 'Marcar como no leído';
+$strings['MarkAsRead'] = 'Marcar como leído';

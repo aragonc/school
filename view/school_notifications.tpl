@@ -47,16 +47,16 @@
                     <div id="action-bar" class="d-flex justify-content-between align-items-start">
 
                         <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
-                            <button type="button" class="btn btn-outline-secondary">Seleccionat todo</button>
-                            <button type="button" class="btn btn-outline-secondary">Anular seleccionar todos</button>
+                            <button type="button" class="btn btn-outline-secondary">{{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}</button>
+                            <button type="button" class="btn btn-outline-secondary">{{ 'CancelSelected'|get_plugin_lang('SchoolPlugin') }}</button>
 
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                    Acciones
+                                    {{ 'Actions'|get_plugin_lang('SchoolPlugin') }}
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="#">Seleccionat todo</a>
-                                    <a class="dropdown-item" href="#">Anular seleccionar todos</a>
+                                    <a class="dropdown-item" href="#">{{ 'MarkAsUnread'|get_plugin_lang('SchoolPlugin') }}</a>
+                                    <a class="dropdown-item" href="#">{{ 'MarkAsRead'|get_plugin_lang('SchoolPlugin') }}</a>
                                 </div>
                             </div>
                         </div>
