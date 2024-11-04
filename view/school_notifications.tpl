@@ -34,7 +34,7 @@
                         <tr class="{{ message.row }}">
                             <th scope="row">{{ message.check_id }}</th>
                             <td>{{ message.user_avatar }}</td>
-                            <td>{{ message.title }}</td>
+                            <td><a class="{{ message.class }}" href="{{ message.link }}">{{ message.title }}</a></td>
                             <td><div class="{{ message.class }}">{{ message.session_title }}</div></td>
                             <td><div class="{{ message.class }}">{{ message.send_date }}</div></td>
                             <td>{{ message.type }}</td>
@@ -44,25 +44,46 @@
                         </tbody>
                     </table>
 
-                    <nav>
-                        <ul class="pagination">
-                        {% if list.pagination.currentPage > 1 %}
-                            <li class="page-item"><a class="page-link" href="?page={{ list.pagination.currentPage - 1 }}">{{ 'Previous'|get_plugin_lang('SchoolPlugin') }}</a></li>
+                    <div id="action-bar" class="d-flex justify-content-between align-items-start">
+
+                        <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+                            <button type="button" class="btn btn-outline-secondary">Seleccionat todo</button>
+                            <button type="button" class="btn btn-outline-secondary">Anular seleccionar todos</button>
+
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="#">Seleccionat todo</a>
+                                    <a class="dropdown-item" href="#">Anular seleccionar todos</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if list.pagination.currentPage >= 2 %}
+                        <nav>
+                            <ul class="pagination">
+                                {% if list.pagination.currentPage > 1 %}
+                                <li class="page-item"><a class="page-link" href="?page={{ list.pagination.currentPage - 1 }}">{{ 'Previous'|get_plugin_lang('SchoolPlugin') }}</a></li>
+                                {% endif %}
+
+                                {% for i in 1..list.pagination.totalPages %}
+                                {% if i == list.pagination.currentPage %}
+                                <li class="page-item disabled"><a class="page-link"><strong>{{ i }}</strong></a></li>
+                                {% else %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                                {% endif %}
+                                {% endfor %}
+
+                                {% if list.pagination.currentPage < list.pagination.totalPages %}
+                                <li class="page-item"><a class="page-link" href="?page={{ list.pagination.currentPage + 1 }}">{{ 'Next'|get_plugin_lang('SchoolPlugin') }}</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
                         {% endif %}
 
-                        {% for i in 1..list.pagination.totalPages %}
-                        {% if i == list.pagination.currentPage %}
-                            <li class="page-item disabled"><a class="page-link"><strong>{{ i }}</strong></a></li>
-                        {% else %}
-                            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-                        {% endif %}
-                        {% endfor %}
-
-                        {% if list.pagination.currentPage < list.pagination.totalPages %}
-                            <li class="page-item"><a class="page-link" href="?page={{ list.pagination.currentPage + 1 }}">{{ 'Next'|get_plugin_lang('SchoolPlugin') }}</a></li>
-                        {% endif %}
-                        </ul>
-                    </nav>
+                    </div>
 
 
                 </div>
