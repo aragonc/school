@@ -61,7 +61,7 @@
                             </div>
                         </div>
 
-                        {% if list.pagination.currentPage >= 2 %}
+                        {% if list.pagination.totalPages >= 2 %}
                         <nav>
                             <ul class="pagination">
                                 {% if list.pagination.currentPage > 1 %}
