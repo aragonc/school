@@ -24,7 +24,7 @@
         {% else %}
     <li class="nav-item ">
         {% endif %}
-        <a class="nav-link" href="#" title="{{ menu.label }}" data-toggle="collapse" data-target="#collapse-{{ menu.id }}" aria-expanded="true"
+        <a id="menu-{{ menu.name }}" class="nav-link" href="#" title="{{ menu.label }}" data-toggle="collapse" data-target="#collapse-{{ menu.id }}" aria-expanded="true"
            aria-controls="collapse-{{ menu.id }}">
             <i class="fas fa-fw fa-{{ menu.icon }}"></i>
             <span>{{ menu.label }}</span>
@@ -34,7 +34,7 @@
              data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 {% for submenu in menu.items %}
-                <a class="collapse-item" href="{{ submenu.url }}">{{ submenu.label }}</a>
+                <a id="submenu-{{ submenu.name }}" class="collapse-item" href="{{ submenu.url }}">{{ submenu.label }}</a>
                 {% endfor %}
             </div>
         </div>
@@ -42,7 +42,7 @@
     </li>
     {% else %}
     <li class="nav-item {{ menu.class }}">
-        <a class="nav-link" href="{{ menu.url }}" title="{{ menu.label }}">
+        <a id="menu-{{ menu.name }}" class="nav-link" href="{{ menu.url }}" title="{{ menu.label }}">
             <i class="fas fa-fw fa-{{ menu.icon }}"></i>
             <span>{{ menu.label }}</span>
         </a>

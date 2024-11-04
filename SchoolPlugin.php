@@ -1082,6 +1082,7 @@ class SchoolPlugin extends Plugin
         return [
             [
                 'id' => 1,
+                'name' => 'dashboard',
                 'label' => $this->get_lang('MyTrainings'),
                 'current' => $currentSection === 'dashboard',
                 'icon' => 'book-open',
@@ -1091,6 +1092,7 @@ class SchoolPlugin extends Plugin
             ],
             [
                 'id' => 2,
+                'name' => 'notifications',
                 'label' => $this->get_lang('MyNotifications'),
                 'current' => false,
                 'icon' => 'bell',
@@ -1100,6 +1102,7 @@ class SchoolPlugin extends Plugin
             ],
             [
                 'id' => 3,
+                'name' => 'certificates',
                 'label' => $this->get_lang('MyCertificates'),
                 'current' => false,
                 'icon' => 'file',
@@ -1109,6 +1112,7 @@ class SchoolPlugin extends Plugin
             ],
             [
                 'id' => 4,
+                'name' => 'requests',
                 'label' => 'Solicitudes',
                 'current' => false,
                 'icon' => 'inbox',
@@ -1118,6 +1122,7 @@ class SchoolPlugin extends Plugin
             ],
             [
                 'id' => 5,
+                'name' => 'help',
                 'label' => 'Ayuda',
                 'current' => false,
                 'icon' => 'question-circle',
@@ -1127,6 +1132,7 @@ class SchoolPlugin extends Plugin
             ],
             [
                 'id' => 6,
+                'name' => 'buy',
                 'label' => 'Comprar',
                 'current' => false,
                 'icon' => 'shopping-cart',
@@ -1134,6 +1140,7 @@ class SchoolPlugin extends Plugin
                 'items' => [
                     [
                         'id' => 601,
+                        'name' => 'courses',
                         'label' => 'Cursos',
                         'current' => false,
                         'class' => '',
@@ -1141,6 +1148,7 @@ class SchoolPlugin extends Plugin
                     ],
                     [
                         'id' => 602,
+                        'name' => 'graduates',
                         'label' => 'Diplomados',
                         'current' => false,
                         'class' => '',

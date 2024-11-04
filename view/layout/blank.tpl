@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -89,17 +89,18 @@
 <script>
     $(document).ready(function () {
         function loadNotifications() {
+            let count = 0;
             $.ajax({
                 url: 'http://aula-virtual.test/plugin/school/src/ajax.php?action=check_notifications',
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
                     // Actualizar la cantidad de notificaciones
-                    $('#badge-counter').text(data.count_messages > 0 ? data.count_messages : '0');
-
+                    count = data.count_messages > 0 ? data.count_messages : '0';
+                    $('.badge-counter').text(count);
+                    $('#menu-notifications').append('<span id="counter-sidebar" class="badge badge-danger badge-counter">' + count + '</span>');
                     // Limpiar la lista de notificaciones
                     $('#notifications').empty();
-                    console.log(data);
 
                     // Renderizar las notificaciones
                     if (data.messages.length > 0) {
