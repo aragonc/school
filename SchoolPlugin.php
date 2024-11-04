@@ -269,7 +269,34 @@ class SchoolPlugin extends Plugin
         return Display::img($logoPath, $institution, $imageAttributes);
     }
 
-    public function set_system_parameters()
+    private function getWebPaths(): array
+    {
+        $queryString = empty($_SERVER['QUERY_STRING']) ? '' : $_SERVER['QUERY_STRING'];
+        $requestURI = empty($_SERVER['REQUEST_URI']) ? '' : $_SERVER['REQUEST_URI'];
+
+        return [
+            'web' => api_get_path(WEB_PATH),
+            'web_url' => api_get_web_url(),
+            'web_relative' => api_get_path(REL_PATH),
+            'web_course' => api_get_path(WEB_COURSE_PATH),
+            'web_main' => api_get_path(WEB_CODE_PATH),
+            'web_css' => api_get_path(WEB_CSS_PATH),
+            /*'web_css_theme' => api_get_path(WEB_CSS_PATH),*/
+            'web_ajax' => api_get_path(WEB_AJAX_PATH),
+            'web_img' => api_get_path(WEB_IMG_PATH),
+            'web_plugin' => api_get_path(WEB_PLUGIN_PATH),
+            'web_lib' => api_get_path(WEB_LIBRARY_PATH),
+            'web_upload' => api_get_path(WEB_UPLOAD_PATH),
+            'web_self' => api_get_self(),
+            'self_basename' => basename(api_get_self()),
+            'web_query_vars' => api_htmlentities($queryString),
+            'web_self_query_vars' => api_htmlentities($requestURI),
+            'web_cid_query' => api_get_cidreq(),
+            'web_rel_code' => api_get_path(REL_CODE_PATH),
+        ];
+    }
+
+    public function set_system_parameters(): void
     {
         // Get the interface language from global.inc.php
         global $language_interface;
@@ -285,10 +312,11 @@ class SchoolPlugin extends Plugin
             'gamification_mode' => api_get_setting('gamification_mode'),
             'language_interface' => $language_interface,
         ];
+        $this->assign('_p', $this->getWebPaths());
         $this->assign('_s', $_s);
     }
 
-    private function set_user_parameters()
+    private function set_user_parameters(): void
     {
         $user_info = [];
         $user_info['logged'] = 0;

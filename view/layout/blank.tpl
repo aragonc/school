@@ -45,7 +45,6 @@
             <!-- /.container-fluid -->
         </div>
         <!-- End of Main Content -->
-
         <!-- Footer
         <footer class="sticky-footer bg-white">
             <div class="container my-auto">
@@ -90,8 +89,9 @@
     $(document).ready(function () {
         function loadNotifications() {
             let count = 0;
+            let url_platform = '{{ _p.web_plugin }}';
             $.ajax({
-                url: 'http://aula-virtual.test/plugin/school/src/ajax.php?action=check_notifications',
+                url: url_platform + 'school/src/ajax.php?action=check_notifications',
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
