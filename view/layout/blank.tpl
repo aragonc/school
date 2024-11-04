@@ -95,16 +95,22 @@
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
-                    // Actualizar la cantidad de notificaciones
-                    count = data.count_messages > 0 ? data.count_messages : '0';
-                    $('.badge-counter').text(count);
-                    $('#menu-notifications').append('<span id="counter-sidebar" class="badge badge-danger badge-counter">' + count + '</span>');
-                    // Limpiar la lista de notificaciones
-                    $('#notifications').empty();
 
-                    // Renderizar las notificaciones
+                    count = data.count_messages > 0 ? data.count_messages : '0';
                     if (data.messages.length > 0) {
 
+                        $('.badge-counter').text(count).show();
+                        $('#counter-sidebar').remove();
+                        $('#menu-notifications').append('<span id="counter-sidebar" class="badge badge-danger badge-counter">' + count + '</span>');
+
+                    } else {
+                        $('.badge-counter').hide();
+                        $('#counter-sidebar').remove();
+                    }
+
+                    $('#notifications').empty();
+
+                    if (data.messages.length > 0) {
                         data.messages.forEach(function (message) {
                             $('#notifications').append(`
                             <a class="dropdown-item d-flex align-items-center" href="${message.link}">
