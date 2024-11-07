@@ -194,6 +194,9 @@
   border-bottom: 4px solid #FFF;
   vertical-align: middle;
 }
+.row_selected, .row_selected > th, .row_selected > td {
+  background-color: #FFFFCC;
+}
 .message-unread{
   font-weight: 800;
   color: $gray-800;

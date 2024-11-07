@@ -115,6 +115,15 @@
         }
     }
 
+    // Table highlight.
+    $("form .table input:checkbox").click(function () {
+        if ($(this).is(":checked")) {
+            $(this).parentsUntil("tr").parent().addClass("row_selected");
+        } else {
+            $(this).parentsUntil("tr").parent().removeClass("row_selected");
+        }
+    });
+
     $(document).ready(function () {
 
         function loadNotifications() {
