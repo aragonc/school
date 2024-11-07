@@ -17,7 +17,8 @@
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <form id="form_message_inbox_id" method="post" action="" name="form_message_inbox">
+                    <form id="form_message_inbox_id" method="post" action="{{ _p.web }}notifications" name="form_message_inbox">
+                    <input type="hidden" name="action">
                     <table id="table-message" class="table table-borderless">
                         <thead>
                         <tr>
@@ -48,16 +49,16 @@
                     <div id="action-bar" class="d-flex justify-content-between align-items-start">
 
                         <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
-                            <a onclick="javascript: setCheckboxTable(true, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}</a>
-                            <a onclick="javascript: setCheckboxTable(false, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'CancelSelected'|get_plugin_lang('SchoolPlugin') }}</a>
+                            <a href="#" onclick="javascript: setCheckboxTable(true, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}</a>
+                            <a href="#" onclick="javascript: setCheckboxTable(false, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'CancelSelected'|get_plugin_lang('SchoolPlugin') }}</a>
 
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                                     {{ 'Actions'|get_plugin_lang('SchoolPlugin') }}
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="#">{{ 'MarkAsUnread'|get_plugin_lang('SchoolPlugin') }}</a>
-                                    <a class="dropdown-item" href="#">{{ 'MarkAsRead'|get_plugin_lang('SchoolPlugin') }}</a>
+                                    <a data-action="mark_as_unread" onclick="javascript:action_click_table(this, 'form_message_inbox_id');" class="dropdown-item" href="#">{{ 'MarkAsUnread'|get_plugin_lang('SchoolPlugin') }}</a>
+                                    <a data-action="mark_as_read" onclick="javascript:action_click_table(this, 'form_message_inbox_id');" class="dropdown-item" href="#">{{ 'MarkAsRead'|get_plugin_lang('SchoolPlugin') }}</a>
                                 </div>
                             </div>
                         </div>

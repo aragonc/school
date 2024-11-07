@@ -103,6 +103,18 @@
         return false;
     }
 
+    function action_click_table(element, table_id) {
+        let form = $("#"+table_id);
+        if (!confirm('{{ "ConfirmYourChoice"|get_lang | escape('js')}}')) {
+            return false;
+        } else {
+            let action =$(element).attr("data-action");
+            $('#'+table_id+' input[name="action"] ').attr("value", action);
+            form.submit();
+            return false;
+        }
+    }
+
     $(document).ready(function () {
 
         function loadNotifications() {

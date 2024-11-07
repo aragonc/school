@@ -49,3 +49,4 @@ $strings['CancelSelected'] = 'Anular seleccionados';
 $strings['Actions'] = 'Acciones';
 $strings['MarkAsUnread'] = 'Marcar como no leído';
 $strings['MarkAsRead'] = 'Marcar como leído';
+$strings['ConfirmYourChoice'] = 'Confirmar tu selección';
