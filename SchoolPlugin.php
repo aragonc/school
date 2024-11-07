@@ -178,6 +178,8 @@ class SchoolPlugin extends Plugin
         $this->set_user_parameters();
         //$this->assign('title_string', $this->title);
         //$this->setSidebar();
+        $this->assign('flash_messages', Display::getFlashToString());
+        Display::cleanFlashMessages();
 
 
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';

@@ -31,6 +31,9 @@
 
             <!-- Begin Page Content -->
             <div class="container page-container">
+
+                {{ flash_messages }}
+
                 {% if title_string %}
                 <!-- Page Heading -->
                 <h1 class="title-page mb-4">

@@ -5,7 +5,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link active" href="/notifications?view=all" >
+        <a class="nav-link active" href="/notifications?action=all" >
             {{ 'SeeAll'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_messages }}</span>
         </a>
     </li>
@@ -73,12 +73,12 @@
                                     {% if i == list.pagination.currentPage %}
                                     <li class="page-item disabled"><a class="page-link"><strong>{{ i }}</strong></a></li>
                                     {% else %}
-                                    <li class="page-item"><a class="page-link" href="?view=all&page={{ i }}">{{ i }}</a></li>
+                                    <li class="page-item"><a class="page-link" href="?action=all&page={{ i }}">{{ i }}</a></li>
                                     {% endif %}
                                     {% endfor %}
 
                                     {% if list.pagination.currentPage < list.pagination.totalPages %}
-                                    <li class="page-item"><a class="page-link" href="?view=all&page={{ list.pagination.currentPage + 1 }}">{{ 'Next'|get_plugin_lang('SchoolPlugin') }}</a></li>
+                                    <li class="page-item"><a class="page-link" href="?action=all&page={{ list.pagination.currentPage + 1 }}">{{ 'Next'|get_plugin_lang('SchoolPlugin') }}</a></li>
                                     {% endif %}
                                 </ul>
                             </nav>
