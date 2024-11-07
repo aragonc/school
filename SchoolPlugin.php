@@ -915,14 +915,14 @@ class SchoolPlugin extends Plugin
 
             switch ($typeMessage){
                 case MESSAGE_TYPE_COURSE_WORK:
-                    $msgTypeLang = '<i class="fas fa-pencil-alt fa-lg"></i>';
+                    $msgTypeLang = '<span title="'.$this->get_lang('CourseActivityMessage').'"><i class="fas fa-pencil-alt fa-lg"></i></span>';
                     break;
                 case MESSAGE_TYPE_COURSE_EXERCISE:
                     $icon = Display::return_icon('quiz.png', get_lang('Exercise'));
                     $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_FORUM:
-                    $icon = '<i class="fas fa-comments fa-lg"></i>';
+                    $icon = '<span title="'.$this->get_lang('ForumMessage').'"><i class="fas fa-comments fa-lg"></i></span>';
                     $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_COURSE_ANNOUNCEMENT:
@@ -934,7 +934,7 @@ class SchoolPlugin extends Plugin
                     $msgTypeLang = $icon;
                     break;
                 case MESSAGE_TYPE_SESSION_ANNOUNCEMENT:
-                    $msgTypeLang = '<i class="fas fa-bell fa-lg"></i>';
+                    $msgTypeLang = '<span title="'.$this->get_lang('PlatformMessage').'"><i class="fas fa-bell fa-lg"></i></span>';
                     break;
             }
 

@@ -50,3 +50,6 @@ $strings['Actions'] = 'Acciones';
 $strings['MarkAsUnread'] = 'Marcar como no leído';
 $strings['MarkAsRead'] = 'Marcar como leído';
 $strings['ConfirmYourChoice'] = 'Confirmar tu selección';
+$strings['ForumMessage'] = 'Mensaje del foro';
+$strings['PlatformMessage'] = 'Anuncio de la plataforma';
+$strings['CourseActivityMessage'] = 'Mensaje de actividad del curso';

@@ -184,18 +184,22 @@
     border-radius: 5px;
   }
 }
-.table-read, .table-read > th, .table-read > td {
+.table tr th{
+  vertical-align: middle;
+}
+.table-read{
   background-color: #f9f9f9;
   border-bottom: 4px solid #FFF;
-  vertical-align: middle;
 }
-.table-unread, .table-unread > th, .table-unread > td {
+.table-unread{
   background-color: #f2f2f2;
   border-bottom: 4px solid #FFF;
-  vertical-align: middle;
 }
-.row_selected, .row_selected > th, .row_selected > td {
+.row_selected{
   background-color: #FFFFCC;
+}
+.table tr.table-unread:hover, .table tr.table-read:hover {
+  background-color: #E5EDF9;
 }
 .message-unread{
   font-weight: 800;

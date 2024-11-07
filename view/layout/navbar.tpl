@@ -45,7 +45,7 @@
                     </div>
                 </div>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">
+                <a class="dropdown-item" href="profile">
                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-800"></i>
                     {{ 'EditProfile'|get_plugin_lang('SchoolPlugin') }}
                 </a>
