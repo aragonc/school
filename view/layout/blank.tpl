@@ -86,7 +86,22 @@
 <!-- Bootstrap core JavaScript-->
 {{ js_files }}
 <script>
+
+    function setCheckboxTable(value, table_id) {
+        let checkboxes = $("#"+table_id+" input:checkbox");
+        $.each(checkboxes, function(index, checkbox) {
+        checkbox.checked = value;
+            if (value) {
+                $(checkbox).parentsUntil("tr").parent().addClass("row_selected");
+            } else {
+                $(checkbox).parentsUntil("tr").parent().removeClass("row_selected");
+            }
+        });
+        return false;
+    }
+
     $(document).ready(function () {
+
         function loadNotifications() {
             let count = 0;
             let url_platform = '{{ _p.web_plugin }}';

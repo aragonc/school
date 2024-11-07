@@ -960,7 +960,8 @@ class SchoolPlugin extends Plugin
 
             $inputID = '<input type="checkbox" name="id[]" value="'.$row['id'].'" />';
 
-            $sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
+            //$sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
+            $sendDate = api_format_date($row['send_date'], DATE_FORMAT_SHORT);
             $messageList[] = [
                 'id' => $row['id'],
                 'check_id' => $inputID,

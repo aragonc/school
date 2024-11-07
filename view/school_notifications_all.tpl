@@ -16,7 +16,8 @@
         {% if list.messages %}
         <div class="card">
             <div class="card-body">
-                <nav class="table-responsive">
+                <div class="table-responsive">
+                    <form id="form_message_inbox_id" method="post" action="" name="form_message_inbox">
                     <table id="table-message" class="table table-borderless">
                         <thead>
                         <tr>
@@ -47,8 +48,8 @@
                     <div id="action-bar" class="d-flex justify-content-between align-items-start">
 
                         <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
-                            <button type="button" class="btn btn-outline-secondary">{{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}</button>
-                            <button type="button" class="btn btn-outline-secondary">{{ 'CancelSelected'|get_plugin_lang('SchoolPlugin') }}</button>
+                            <a onclick="javascript: setCheckboxTable(true, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}</a>
+                            <a onclick="javascript: setCheckboxTable(false, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'CancelSelected'|get_plugin_lang('SchoolPlugin') }}</a>
 
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -82,10 +83,11 @@
                                 </ul>
                             </nav>
                         {% endif %}
-
                     </div>
-
+                    </form>
                 </div>
+
+
             </div>
         </div>
         {% endif %}
