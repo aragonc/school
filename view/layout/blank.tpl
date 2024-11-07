@@ -108,8 +108,8 @@
         if (!confirm('{{ "ConfirmYourChoice"|get_lang | escape('js')}}')) {
             return false;
         } else {
-            let action =$(element).attr("data-action");
-            $('#'+table_id+' input[name="action"] ').attr("value", action);
+            let action=$(element).attr("data-action");
+            $('#'+table_id+' input[name="action"]').val(action);
             form.submit();
             return false;
         }

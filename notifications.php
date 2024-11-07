@@ -8,9 +8,7 @@ $plugin->setSidebar('notifications');
 api_block_anonymous_users();
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$action = $_GET['action'] ?? 'unread';
-//$view = $_GET['view'] ?? 'unread';
-
+$action = $_REQUEST['action'] ?? 'unread';
 $perPage = 10;
 $userId = api_get_user_id();
 $content = null;
@@ -30,7 +28,6 @@ if ($enable) {
                 $plugin->assign('list', $messages);
                 $plugin->setTitle($plugin->get_lang('MyNotifications'));
                 $content = $plugin->fetch('school_notifications_all.tpl');
-
                 break;
             case 'unread':
                 $messages = $plugin->getMessages($userId,$page,$perPage);
