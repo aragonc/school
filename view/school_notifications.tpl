@@ -5,7 +5,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link " href="/notifications?action=all" >
+        <a class="nav-link " href="/notifications?view=all" >
             {{ 'SeeAll'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_messages }}</span>
         </a>
     </li>

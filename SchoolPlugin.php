@@ -951,11 +951,11 @@ class SchoolPlugin extends Plugin
 
             $class = 'message-read';
             $rowClass = 'table-read';
-            $action = '<i class="far fa-envelope-open fa-lg"></i>';
+            $action = '<a title="'.$this->get_lang('MarkAsUnread').'" href="/notifications?view=all&action=mark_as_unread&id[]='.$row['id'].'"><i class="far fa-envelope-open fa-lg"></i></a>';
             if($row['msg_status'] == 1){
                 $class = 'message-unread';
                 $rowClass = 'table-unread';
-                $action = '<i class="fas fa-envelope fa-lg"></i>';
+                $action = '<a title="'.$this->get_lang('MarkAsRead').'" href="/notifications?action=mark_as_read&id[]='.$row['id'].'"><i class="fas fa-envelope fa-lg"></i></a>';
             }
 
             $inputID = '<input type="checkbox" name="id[]" value="'.$row['id'].'" />';
