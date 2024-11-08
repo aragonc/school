@@ -6,7 +6,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link active" href="/notifications?action=all" >
+        <a class="nav-link active" href="/notifications?view=all" >
             {{ 'SeeAll'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_messages }}</span>
         </a>
     </li>
@@ -18,7 +18,7 @@
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <form id="form_message_inbox_id" method="post" action="{{ _p.web }}notifications?action=all" name="form_message_inbox">
+                    <form id="form_message_inbox_id" method="post" action="{{ _p.web }}notifications?view=all" name="form_message_inbox">
                         <input type="hidden" name="action">
                         <table id="table-message" class="table table-borderless">
                             <thead>
@@ -71,19 +71,19 @@
                                 <nav>
                                     <ul class="pagination">
                                         {% if list.pagination.currentPage > 1 %}
-                                        <li class="page-item"><a class="page-link" href="?action=all&page={{ list.pagination.currentPage - 1 }}">{{ 'Previous'|get_plugin_lang('SchoolPlugin') }}</a></li>
+                                        <li class="page-item"><a class="page-link" href="?view=all&page={{ list.pagination.currentPage - 1 }}">{{ 'Previous'|get_plugin_lang('SchoolPlugin') }}</a></li>
                                         {% endif %}
 
                                         {% for i in 1..list.pagination.totalPages %}
                                         {% if i == list.pagination.currentPage %}
                                         <li class="page-item disabled"><a class="page-link"><strong>{{ i }}</strong></a></li>
                                         {% else %}
-                                        <li class="page-item"><a class="page-link" href="?action=all&page={{ i }}">{{ i }}</a></li>
+                                        <li class="page-item"><a class="page-link" href="?view=all&page={{ i }}">{{ i }}</a></li>
                                         {% endif %}
                                         {% endfor %}
 
                                         {% if list.pagination.currentPage < list.pagination.totalPages %}
-                                        <li class="page-item"><a class="page-link" href="?action=all&page={{ list.pagination.currentPage + 1 }}">{{ 'Next'|get_plugin_lang('SchoolPlugin') }}</a></li>
+                                        <li class="page-item"><a class="page-link" href="?view=all&page={{ list.pagination.currentPage + 1 }}">{{ 'Next'|get_plugin_lang('SchoolPlugin') }}</a></li>
                                         {% endif %}
                                     </ul>
                                 </nav>

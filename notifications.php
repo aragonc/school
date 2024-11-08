@@ -8,7 +8,8 @@ $plugin->setSidebar('notifications');
 api_block_anonymous_users();
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$action = $_REQUEST['action'] ?? 'unread';
+$action = $_REQUEST['action'] ?? '';
+$view = $_REQUEST['view'] ?? 'unread';
 $perPage = 10;
 $userId = api_get_user_id();
 $content = null;
@@ -18,7 +19,8 @@ $success_unread = get_lang('SelectedMessagesUnRead');
 $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
 
 if ($enable) {
-        switch ($action) {
+
+        switch ($view) {
             case 'all':
                 $messages = $plugin->getMessages($userId, $page, $perPage, true);
                 $totalUnread = $plugin->getMessagesCount($userId);
@@ -47,6 +49,10 @@ if ($enable) {
                 $plugin->setTitle($plugin->get_lang('MyNotifications'));
                 $content = $plugin->fetch('school_notifications.tpl');
                 break;
+        }
+
+        switch ($action) {
+
             case 'view':
                 $messageId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
                 $type = isset($_GET['type']) ? (int)$_GET['type'] : MessageManager::MESSAGE_TYPE_INBOX;
@@ -69,7 +75,11 @@ if ($enable) {
                     'normal',
                     false
                 ));
-                header('Location: '.api_get_path(WEB_PATH).'notifications?action=unread');
+                if($view === 'all'){
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=all');
+                } else {
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=unread');
+                }
                 break;
             case 'mark_as_unread':
                 $messageId = $_REQUEST['id'];
@@ -86,10 +96,15 @@ if ($enable) {
                     'normal',
                     false
                 ));
-                header('Location: '.api_get_path(WEB_PATH).'notifications?action=all');
+
+                if($view === 'all'){
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=all');
+                } else {
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=unread');
+                }
+
                 break;
         }
-
 
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
