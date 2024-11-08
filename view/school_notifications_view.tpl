@@ -5,7 +5,7 @@
             <div class="d-flex">
                 <div class="flex-grow-1"><h2 class="title">{{ box.message.title }}</h2></div>
                 <div class="p-2">
-                    <a class="btn btn-primary btn-download" href="/notifications"><i class="fas fa-arrow-left"></i> Volver</a>
+                    <a class="btn btn-primary btn-download" href="#" onclick="window.history.back(); return false;"><i class="fas fa-arrow-left"></i> Volver</a>
                 </div>
             </div>
 
