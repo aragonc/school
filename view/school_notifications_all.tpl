@@ -36,9 +36,13 @@
                             {% for message in list.messages %}
                             <tr class="{{ message.row }}">
                                 <th scope="row">{{ message.check_id }}</th>
-                                <td>{{ message.user_avatar }}</td>
+                                <td><a class="{{ message.class }}" href="{{ message.link }}">{{ message.user_avatar }}</a></td>
                                 <td><a class="{{ message.class }}" href="{{ message.link }}">{{ message.title }}</a></td>
-                                <td><div class="{{ message.class }}">{{ message.session_title }}</div></td>
+                                <td>
+                                    <a class="{{ message.class }}" href="{{ message.link }}">
+                                        <div class="{{ message.class }}">{{ message.session_title }}</div>
+                                    </a>
+                                </td>
                                 <td><div class="{{ message.class }}">{{ message.send_date }}</div></td>
                                 <td>{{ message.type }}</td>
                                 <td>{{ message.action }}</td>
@@ -87,8 +91,6 @@
                         </div>
                     </form>
                 </div>
-
-
             </div>
         </div>
         {% endif %}
