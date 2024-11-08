@@ -1,3 +1,4 @@
+{% if total > 0 %}
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link active" href="/notifications">
@@ -13,6 +14,8 @@
 
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
+
+        {% if total_unread != 0 %}
         {% if list.messages %}
         <div class="card">
             <div class="card-body">
@@ -90,5 +93,25 @@
             </div>
         </div>
         {% endif %}
+        {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="p-5 text-center">
+                        <h3>{{ 'YouHaveNoNewNotifications'|get_plugin_lang('SchoolPlugin') }}</h3>
+                        {{ img_section }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="p-5 text-center">
+            <h3>{{ 'HereYourNotificationsWillBe'|get_plugin_lang('SchoolPlugin') }}</h3>
+            {{ img_section }}
+        </div>
+    </div>
+</div>
+{% endif %}

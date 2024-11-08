@@ -1,3 +1,4 @@
+{% if total > 0 %}
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link" href="/notifications">
@@ -93,3 +94,13 @@
         {% endif %}
     </div>
 </div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="p-5 text-center">
+            <h3>{{ 'HereYourNotificationsWillBe'|get_plugin_lang('SchoolPlugin') }}</h3>
+            {{ img_section }}
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -53,3 +53,5 @@ $strings['ConfirmYourChoice'] = 'Confirmar tu selección';
 $strings['ForumMessage'] = 'Mensaje del foro';
 $strings['PlatformMessage'] = 'Anuncio de la plataforma';
 $strings['CourseActivityMessage'] = 'Mensaje de actividad del curso';
+$strings['YouHaveNoNewNotifications'] = 'No tienes nuevas notificaciones';
+$strings['HereYourNotificationsWillBe'] = 'Aquí estarán tus notificaciones';

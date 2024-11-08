@@ -23,6 +23,10 @@ if ($enable) {
                 $messages = $plugin->getMessages($userId, $page, $perPage, true);
                 $totalUnread = $plugin->getMessagesCount($userId);
                 $totalMessages = $plugin->getMessagesCount($userId, true);
+                $total = $totalUnread + $totalMessages;
+                $imgSection = $plugin->get_svg_icon('messages',$plugin->get_lang('HereYourNotificationsWillBe'), 500);
+                $plugin->assign('total', $total);
+                $plugin->assign('img_section', $imgSection);
                 $plugin->assign('total_unread', $totalUnread);
                 $plugin->assign('total_messages', $totalMessages);
                 $plugin->assign('list', $messages);
@@ -33,6 +37,10 @@ if ($enable) {
                 $messages = $plugin->getMessages($userId,$page,$perPage);
                 $totalUnread = $plugin->getMessagesCount($userId);
                 $totalMessages = $plugin->getMessagesCount($userId, true);
+                $total = $totalUnread + $totalMessages;
+                $imgSection = $plugin->get_svg_icon('messages',$plugin->get_lang('HereYourNotificationsWillBe'), 500);
+                $plugin->assign('total', $total);
+                $plugin->assign('img_section', $imgSection);
                 $plugin->assign('total_unread', $totalUnread);
                 $plugin->assign('total_messages', $totalMessages);
                 $plugin->assign('list', $messages);
