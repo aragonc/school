@@ -75,10 +75,11 @@ if ($enable) {
                     'normal',
                     false
                 ));
+
                 if($view === 'all'){
-                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=all');
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?view=all');
                 } else {
-                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=unread');
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?view=unread');
                 }
                 break;
             case 'mark_as_unread':
@@ -98,9 +99,9 @@ if ($enable) {
                 ));
 
                 if($view === 'all'){
-                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=all');
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?view=all');
                 } else {
-                    header('Location: '.api_get_path(WEB_PATH).'notifications?action=unread');
+                    header('Location: '.api_get_path(WEB_PATH).'notifications?view=unread');
                 }
 
                 break;
