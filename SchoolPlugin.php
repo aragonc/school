@@ -1147,8 +1147,8 @@ class SchoolPlugin extends Plugin
                 'label' => 'Solicitudes',
                 'current' => false,
                 'icon' => 'inbox',
-                'url' => '#',
-                'class' => '',
+                'url' => '/requests',
+                'class' => $currentSection === 'requests' ? 'active':'',
                 'items' => []
             ],
             [

@@ -55,3 +55,4 @@ $strings['PlatformMessage'] = 'Anuncio de la plataforma';
 $strings['CourseActivityMessage'] = 'Mensaje de actividad del curso';
 $strings['YouHaveNoNewNotifications'] = 'No tienes nuevas notificaciones';
 $strings['HereYourNotificationsWillBe'] = 'Aquí estarán tus notificaciones';
+$strings['MyRequests'] = 'Mis Solicitudes';
