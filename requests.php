@@ -1,20 +1,36 @@
 <?php
 
 require_once __DIR__.'/config.php';
+require __DIR__ . '/vendor/autoload.php';
+
+use School\PipedriveAPI;
+
 $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 $certificateId = $_GET['id'] ?? 0;
 $plugin->setSidebar('requests');
+$apiToken = $plugin->get('api_token_pipedrive');
+
+$pipedriveAPI = new PipedriveAPI($apiToken);
 
 api_block_anonymous_users();
 
 if ($enable) {
     $userId = api_get_user_id();
-    $categories = $plugin->getCertificatesInSessions($userId);
-    //$imgSection = $plugin->get_svg_icon('certificates','Cursos Anteriores', 500);
+
+    $sessionsCurrent = $plugin->getSessionRelUser($userId);
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
-    //$plugin->assign('img_section', $imgSection);
+    $idBoard = $plugin->get('board_pipedrive');
+    $idPhase = $plugin->get('phase_pipedrive');
+    $form = new FormValidator('requests','post','');
+    $form->addSelect('session_id', $plugin->get_lang('SelectProgram'), $sessionsCurrent);
+    $form->addText('title',$plugin->get_lang('TitleOfTheProject'));
+    $form->addHidden('board_id',6);
+    $form->addHidden('phase_id',19);
+    $form->addHtmlEditor('description',$plugin->get_lang('DescriptionProject'));
+    $form->addButton('submit',$plugin->get_lang('SendRequest'),'','primary');
+    $plugin->assign('form', $form->returnForm());
 
     $plugin->setTitle($plugin->get_lang('MyRequests'));
     $content = $plugin->fetch('school_requests.tpl');

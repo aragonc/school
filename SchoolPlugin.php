@@ -1,9 +1,12 @@
 <?php
 
+require_once 'src/PipedriveAPI.php';
+
 use Doctrine\ORM\Query\QueryException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+use School\PipedriveAPI;
 
 class SchoolPlugin extends Plugin
 {
@@ -18,9 +21,10 @@ class SchoolPlugin extends Plugin
         parent::__construct(
             '1.5.0',
             'Alex Aragon <alex.aragon@tunqui.pe>',
-            [
-                'tool_enable' => 'boolean'
-            ],
+            $this->extendAttributes([
+                'tool_enable' => 'boolean',
+                'api_token_pipedrive' => 'text',
+            ])
         );
 
         $this->isAdminPlugin = true;
@@ -190,6 +194,50 @@ class SchoolPlugin extends Plugin
 
     }
 
+    /**
+     * Extiende los atributos dinámicamente si se cumplen ciertas condiciones.
+     *
+     * @param array $attributes Los atributos iniciales.
+     * @return array Los atributos modificados.
+     */
+    private function extendAttributes(array $attributes): array
+    {
+        // Verificar si el atributo 'api_token_pipedrive' tiene un valor
+        if (!empty($this->get('api_token_pipedrive'))) {
+            $boardsList = $phasesList = [];
+            $apiToken = $this->get('api_token_pipedrive');
+            $pipedriveAPI = new School\PipedriveAPI($apiToken);
+            $projectBoards = $pipedriveAPI->getProjectBoards();
+            if ($projectBoards !== null) {
+                $boardsList = array_combine(
+                    array_column($projectBoards, 'id'),
+                    array_column($projectBoards, 'name')
+                );
+            }
+            $idBoard = $this->get('board_pipedrive');
+
+            $projectPhases = $pipedriveAPI->getProjectPhases($idBoard);
+
+            if ($projectPhases !== null) {
+                $phasesList = array_combine(
+                    array_column($projectPhases, 'id'),
+                    array_column($projectPhases, 'name')
+                );
+            }
+
+            // Agregar atributos adicionales
+            $attributes['board_pipedrive'] = [
+                'type' => 'select',
+                'options' => $boardsList,
+            ];
+            $attributes['phase_pipedrive'] = [
+                'type' => 'select',
+                'options' => $phasesList,
+            ];
+        }
+
+        return $attributes;
+    }
     /**
      * @return mixed
      */
@@ -468,6 +516,28 @@ class SchoolPlugin extends Plugin
         }
         return $total;
 
+    }
+    public function getSessionRelUser($userID)
+    {
+        $table_session_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+        $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
+
+        $sql = "SELECT
+                    sru.session_id,
+                    s.name
+                FROM $table_session_user sru
+                INNER JOIN $table_session s
+                ON s.id = sru.session_id
+                WHERE sru.user_id = $userID;";
+
+        $result = Database::query($sql);
+        $list = [];
+        if (Database::num_rows($result) > 0) {
+            foreach ($result as $row) {
+                $list[$row['session_id']] = $row['name'];
+            }
+        }
+        return $list;
     }
     public function getSessionsByCategory($userID, $history = false): array
     {
