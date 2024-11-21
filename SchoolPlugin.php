@@ -141,7 +141,6 @@ class SchoolPlugin extends Plugin
             }
         }
 
-
         $js_file_to_string = '';
         $css[] = api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH) . 'school/css/style.css');
 
@@ -150,43 +149,20 @@ class SchoolPlugin extends Plugin
             $css_file_to_string .= api_get_css($file);
         }
 
-        $bowerJsFiles = [
-            'modernizr/modernizr.js',
-            'jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
-            'moment/min/moment-with-locales.js',
-            'jquery-timeago/jquery.timeago.js',
-            'mediaelement/build/mediaelement-and-player.min.js',
-            'jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js',
-            'image-map-resizer/js/imageMapResizer.min.js',
-            'jquery.scrollbar/jquery.scrollbar.min.js',
-            'readmore-js/readmore.min.js',
-            'bootstrap-select/dist/js/bootstrap-select.min.js',
-            'select2/dist/js/select2.min.js',
-            'js-cookie/src/js.cookie.js',
-        ];
-
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery/jquery.min.js').'"></script>'."\n";
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/bootstrap/js/bootstrap.bundle.min.js').'"></script>'."\n";
-
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery-easing/jquery.easing.min.js').'"></script>'."\n";
-
-
-        /*foreach ($bowerJsFiles as $file) {
-            $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH).'assets/'.$file).'"></script>'."\n";
-        }*/
-
-        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/js/main.js').'"></script>'."\n";
+        $this->set_js_files();
 
         // Setting system variables
         $this->set_system_parameters();
         $this->set_user_parameters();
-        //$this->assign('title_string', $this->title);
         //$this->setSidebar();
         $this->assign('flash_messages', Display::getFlashToString());
         Display::cleanFlashMessages();
 
 
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';
+
+
+
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
         $this->assign('css_files', $css_file_to_string);
@@ -195,8 +171,6 @@ class SchoolPlugin extends Plugin
     }
 
     /**
-     * Extiende los atributos dinámicamente si se cumplen ciertas condiciones.
-     *
      * @param array $attributes Los atributos iniciales.
      * @return array Los atributos modificados.
      */
@@ -208,6 +182,7 @@ class SchoolPlugin extends Plugin
             $apiToken = $this->get('api_token_pipedrive');
             $pipedriveAPI = new School\PipedriveAPI($apiToken);
             $projectBoards = $pipedriveAPI->getProjectBoards();
+
             if ($projectBoards !== null) {
                 $boardsList = array_combine(
                     array_column($projectBoards, 'id'),
@@ -263,6 +238,144 @@ class SchoolPlugin extends Plugin
         $this->title = $title;
         $this->assign('title_string', $this->title);
 
+    }
+
+    public function set_js_files(): void
+    {
+        global $disable_js_and_css_files, $htmlHeadXtra;
+        $isoCode = api_get_language_isocode();
+        $selectLink = 'bootstrap-select/dist/js/i18n/defaults-'.$isoCode.'_'.strtoupper($isoCode).'.min.js';
+
+        if ($isoCode == 'en') {
+            $selectLink = 'bootstrap-select/dist/js/i18n/defaults-'.$isoCode.'_US.min.js';
+        }
+        // JS files
+        $js_files = [
+            'chosen/chosen.jquery.min.js',
+            'mediaelement/plugins/vrview/vrview.js',
+            'mediaelement/plugins/markersrolls/markersrolls.min.js',
+        ];
+
+        if (api_get_setting('accessibility_font_resize') === 'true') {
+            $js_files[] = 'fontresize.js';
+        }
+
+        $js_file_to_string = '';
+        $bowerJsFiles = [
+            'modernizr/modernizr.js',
+            'jquery/dist/jquery.min.js',
+            'bootstrap/dist/js/bootstrap.min.js',
+            'jquery-ui/jquery-ui.min.js',
+            'jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
+            'moment/min/moment-with-locales.js',
+            'bootstrap-daterangepicker/daterangepicker.js',
+            'jquery-timeago/jquery.timeago.js',
+            'mediaelement/build/mediaelement-and-player.min.js',
+            'jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js',
+            'image-map-resizer/js/imageMapResizer.min.js',
+            'jquery.scrollbar/jquery.scrollbar.min.js',
+            'readmore-js/readmore.min.js',
+            'bootstrap-select/dist/js/bootstrap-select.min.js',
+            $selectLink,
+            'select2/dist/js/select2.min.js',
+            "select2/dist/js/i18n/$isoCode.js",
+            'js-cookie/src/js.cookie.js',
+        ];
+
+        $viewBySession = api_get_setting('my_courses_view_by_session') === 'true';
+
+        /*if ($viewBySession || api_is_global_chat_enabled()) {
+            // Do not include the global chat in LP
+            if ($this->show_learnpath == false &&
+                $this->show_footer == true &&
+                $this->hide_global_chat == false
+            ) {
+                $js_files[] = 'chat/js/chat.js';
+                $bowerJsFiles[] = 'linkifyjs/linkify.js';
+                $bowerJsFiles[] = 'linkifyjs/linkify-jquery.js';
+            }
+        }*/
+
+        $features = api_get_configuration_value('video_features');
+        if (!empty($features) && isset($features['features'])) {
+            foreach ($features['features'] as $feature) {
+                if ($feature === 'vrview') {
+                    continue;
+                }
+                $js_files[] = "mediaelement/plugins/$feature/$feature.min.js";
+            }
+        }
+
+        if (CHAMILO_LOAD_WYSIWYG === true) {
+            $bowerJsFiles[] = 'ckeditor/ckeditor.js';
+        }
+
+        if (api_get_setting('include_asciimathml_script') === 'true') {
+            $bowerJsFiles[] = 'MathJax/MathJax.js?config=TeX-MML-AM_HTMLorMML';
+        }
+
+        // If not English and the language is supported by timepicker, localize
+        $assetsPath = api_get_path(SYS_PUBLIC_PATH).'assets/';
+        if ($isoCode != 'en') {
+            if (is_file($assetsPath.'jqueryui-timepicker-addon/dist/i18n/jquery-ui-timepicker-'.$isoCode.'.js') && is_file($assetsPath.'jquery-ui/ui/minified/i18n/datepicker-'.$isoCode.'.min.js')) {
+                $bowerJsFiles[] = 'jqueryui-timepicker-addon/dist/i18n/jquery-ui-timepicker-'.$isoCode.'.js';
+                $bowerJsFiles[] = 'jquery-ui/ui/minified/i18n/datepicker-'.$isoCode.'.min.js';
+            }
+        }
+
+        foreach ($bowerJsFiles as $file) {
+            $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH).'assets/'.$file).'"></script>'."\n";
+        }
+
+        foreach ($js_files as $file) {
+            $js_file_to_string .= api_get_js($file);
+        }
+
+        // Loading email_editor js
+        /*if (!api_is_anonymous() && api_get_setting('allow_email_editor') === 'true') {
+            $template = $this->get_template('mail_editor/email_link.js.tpl');
+            $js_file_to_string .= $this->fetch($template);
+        }*/
+
+        if (!$disable_js_and_css_files) {
+            $this->assign('js_file_to_string', $js_file_to_string);
+
+            $extraHeaders = '<script>var _p = '.json_encode($this->getWebPaths(), JSON_PRETTY_PRINT).'</script>';
+            // Adding jquery ui by default
+            $extraHeaders .= api_get_jquery_ui_js();
+            if (isset($htmlHeadXtra) && $htmlHeadXtra) {
+                foreach ($htmlHeadXtra as &$this_html_head) {
+                    $extraHeaders .= $this_html_head."\n";
+                }
+            }
+
+            $ajax = api_get_path(WEB_AJAX_PATH);
+            $courseId = api_get_course_id();
+            if (empty($courseId)) {
+                $courseLogoutCode = '
+                <script>
+                function courseLogout() {
+                }
+                </script>';
+            } else {
+                $courseLogoutCode = "
+                <script>
+                var logOutUrl = '".$ajax."course.ajax.php?a=course_logout&".api_get_cidreq()."';
+                function courseLogout() {
+                    $.ajax({
+                        async : false,
+                        url: logOutUrl,
+                        success: function (data) {
+                            return 1;
+                        }
+                    });
+                }
+                </script>";
+            }
+
+            $extraHeaders .= $courseLogoutCode;
+            $this->assign('extra_headers', $extraHeaders);
+        }
     }
 
     public function get_favicon($iconName): string

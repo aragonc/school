@@ -14,6 +14,16 @@
             rel="stylesheet">
     <!-- Custom styles for this template-->
     {{ css_files }}
+
+    {{ js_files }}
+
+    {{ js_file_to_string }}
+    {{ extra_headers }}
+    {% if _s.language_interface %}
+    <script src="{{ _p.web }}web/build/main.{{ _s.language_interface }}.js"></script>
+    {% else %}{# language_interface *should* always be defined, so we should never come here #}
+    <script src="{{ _p.web }}web/build/main.js"></script>
+    {% endif %}
 </head>
 
 <body id="page-top" class="sidebar-toggled">
@@ -87,7 +97,7 @@
 </div>
 
 <!-- Bootstrap core JavaScript-->
-{{ js_files }}
+
 <script>
 
     function setCheckboxTable(value, table_id) {
