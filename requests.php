@@ -26,6 +26,7 @@ if ($enable) {
     $idPhase = $plugin->get('phase_pipedrive');
 
     switch ($action) {
+
         case 'create':
             $form = new FormValidator('requests','post',api_get_self().'?action='.Security::remove_XSS($_GET['action']));
             $form->addSelect('session_id', $plugin->get_lang('SelectProgram'), $sessionsCurrent);
@@ -44,6 +45,9 @@ if ($enable) {
             if ($form->validate()) {
                 $values = $form->exportValues();
                 var_dump($values);
+                $res = $plugin->saveRequest($values);
+                $pipedriveAPI->addProject($values);
+
             }
 
             break;

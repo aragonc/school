@@ -21,6 +21,18 @@
                 </tr>
             </thead>
             <tbody>
+
+            {% for request in requests %}
+                <tr data-id="{{ request.id }}">
+                    <td >{{ request.id }}</td>
+                    <td >{{ request.title }}</td>
+                    <td >{{ request.session_id }}</td>
+                    <td >{{ request.description }}</td>
+                    <td >{{ request.phase_id }}</td>
+                    <td >{{ request.start_time }}</td>
+                </tr>
+            {% endfor %}
+
             </tbody>
         </table>
 

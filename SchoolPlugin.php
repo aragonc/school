@@ -656,7 +656,25 @@ class SchoolPlugin extends Plugin
         return $total;
 
     }
-
+    public function saveRequest($values): int
+    {
+        if (!is_array($values)) {
+            return 0;
+        }
+        $table_request = Database::get_main_table(self::TABLE_SCHOOL_REQUEST);
+        $params = [
+            'title' => $values['title'],
+            'board_id' => $values['board_id'],
+            'phase_id' => $values['phase_id'],
+            'description' => $values['description'],
+            'session_id' => $values['session_id'],
+            'start_time' => date('Y-m-d H:i:s'),
+            'end_time' => $values['end_time'] ?? NULL,
+            'user_id' => api_get_user_id(),
+            'activate' => $values['activate'] ?? 1
+        ];
+        return Database::insert($table_request, $params);
+    }
     public function getRequestUser($userID): array
     {
         $list = [];
@@ -675,7 +693,7 @@ class SchoolPlugin extends Plugin
                     'start_time' => $row['start_time'],
                     'end_time' => $row['end_time'],
                     'user_id' => $row['user_id'],
-                    'activate' => $row['activate'],
+                    'activate' => $row['activate']
                 ];
             }
         }

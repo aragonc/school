@@ -122,15 +122,16 @@ class PipedriveAPI {
         }
     }
     // Método para añadir un nuevo proyecto
-    public function addProject($title, $boardId, $phaseId) {
+    public function addProject($params) {
         // Configura la URL completa para el endpoint de creación de proyectos
         $url = $this->apiUrl . 'projects?api_token=' . $this->apiToken;
 
         // Datos obligatorios para crear un proyecto
         $projectData = [
-            'title' => $title,
-            'board_id' => $boardId,
-            'phase_id' => $phaseId
+            'title' => $params['title'],
+            'board_id' => intval($params['board_id']),
+            'phase_id' => intval($params['phase_id']),
+            'description' => $params['description'],
         ];
 
         $ch = curl_init();
