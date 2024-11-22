@@ -44,8 +44,16 @@ if ($enable) {
 
             if ($form->validate()) {
                 $values = $form->exportValues();
+                $session = api_get_session_name($values['session_id']);
+                $user = api_get_user_info($userId);
+                $html = 'Usuario: '.$user['firstname'].' '.$user['lastname'].'<br>';
+                $html.= 'Email: '.$user['email'].'</br>';
+                $html.= 'Programa: '.$session.'</br>';
+
+                $values['description'] .= '<br>'.$html;
                 $res = $plugin->saveRequest($values);
                 $pipedriveAPI->addProject($values);
+
                 if ($res) {
                     $url = api_get_path(WEB_PATH).'requests?action=list';
                     header('Location: '.$url);
