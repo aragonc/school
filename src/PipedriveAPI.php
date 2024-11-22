@@ -132,7 +132,7 @@ class PipedriveAPI {
             'board_id' => intval($params['board_id']),
             'phase_id' => intval($params['phase_id']),
             'description' => $params['description'],
-            'template_id' => 11
+            'template_id' => 30
         ];
 
         $ch = curl_init();
