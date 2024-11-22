@@ -28,11 +28,11 @@ if ($enable) {
     switch ($action) {
 
         case 'create':
-            $form = new FormValidator('requests','post',api_get_self().'?action='.Security::remove_XSS($_GET['action']));
+            $form = new FormValidator('requests','post',api_get_path(WEB_PATH).'requests?action='.Security::remove_XSS($_GET['action']));
             $form->addSelect('session_id', $plugin->get_lang('SelectProgram'), $sessionsCurrent);
             $form->addText('title',$plugin->get_lang('TitleOfTheProject'));
-            $form->addHidden('board_id',6);
-            $form->addHidden('phase_id',19);
+            $form->addHidden('board_id',$idBoard);
+            $form->addHidden('phase_id',$idPhase);
             $form->addHtmlEditor('description',$plugin->get_lang('DescriptionProject'));
             $form->addButton('submit',$plugin->get_lang('SendRequest'),'','primary');
             $plugin->assign('action', $action);
@@ -44,10 +44,12 @@ if ($enable) {
 
             if ($form->validate()) {
                 $values = $form->exportValues();
-                var_dump($values);
                 $res = $plugin->saveRequest($values);
                 $pipedriveAPI->addProject($values);
-
+                if ($res) {
+                    $url = api_get_path(WEB_PATH).'requests?action=list';
+                    header('Location: '.$url);
+                }
             }
 
             break;
