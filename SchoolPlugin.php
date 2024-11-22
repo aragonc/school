@@ -16,6 +16,8 @@ class SchoolPlugin extends Plugin
     public $title = null;
     public $currentSection = null;
 
+    const TABLE_SCHOOL_REQUEST = 'plugin_school_request';
+
     protected function __construct()
     {
         parent::__construct(
@@ -530,12 +532,32 @@ class SchoolPlugin extends Plugin
 
     public function install()
     {
-
+        $sql = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_REQUEST." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            title VARCHAR(250) NULL,
+            board_id INT NULL NOT NULL,
+            phase_id INT NULL NOT NULL,
+            description MEDIUMTEXT NULL,
+            session_id INT NULL NOT NULL,
+            start_time DATETIME NULL,
+            end_time DATETIME NULL,
+            activate INT
+        )";
+        Database::query($sql);
     }
 
     public function uninstall()
     {
 
+        $tablesToBeDeleted = [
+            self::TABLE_MEET_LIST
+        ];
+
+        foreach ($tablesToBeDeleted as $tableToBeDeleted) {
+            $table = Database::get_main_table($tableToBeDeleted);
+            $sql = "DROP TABLE IF EXISTS $table";
+            Database::query($sql);
+        }
     }
     /**
      * @param string $variable
@@ -634,7 +656,33 @@ class SchoolPlugin extends Plugin
         return $total;
 
     }
-    public function getSessionRelUser($userID)
+
+    public function getRequestUser($userID): array
+    {
+        $list = [];
+        $table_request = self::TABLE_SCHOOL_REQUEST;
+        $sql = "SELECT * FROM $table_request psr WHERE psr.user_id = $userID ";
+        $result = Database::query($sql);
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $list[] = [
+                    'id' => $row['id'],
+                    'title' => $row['title'],
+                    'board_id' => $row['board_id'],
+                    'phase_id' => $row['phase_id'],
+                    'description' => $row['description'],
+                    'session_id' => $row['session_id'],
+                    'start_time' => $row['start_time'],
+                    'end_time' => $row['end_time'],
+                    'user_id' => $row['user_id'],
+                    'activate' => $row['activate'],
+                ];
+            }
+        }
+        return $list;
+    }
+
+    public function getSessionRelUser($userID): array
     {
         $table_session_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);

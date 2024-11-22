@@ -64,3 +64,6 @@ $strings['phase_pipedrive'] = 'Fase de inicio del proyecto.';
 $strings['DescriptionProject'] = 'Descripción de la solicitud';
 $strings['SelectProgram'] = 'Selecciona un programa';
 $strings['SendRequest'] = 'Enviar su solicitud';
+$strings['TitleRequest'] = 'Titulo de la solicitud';
+$strings['Phase'] = 'Fase';
+$strings['CreateNewRequest'] = 'Crear nueva solicitud';
