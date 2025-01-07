@@ -67,3 +67,4 @@ $strings['SendRequest'] = 'Enviar su solicitud';
 $strings['TitleRequest'] = 'Titulo de la solicitud';
 $strings['Phase'] = 'Fase';
 $strings['CreateNewRequest'] = 'Crear nueva solicitud';
+

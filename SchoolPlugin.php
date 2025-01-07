@@ -1443,4 +1443,19 @@ class SchoolPlugin extends Plugin
         ];
 
     }
+    public function is_platform_authentication(): bool
+    {
+        $tabUserInfo = api_get_user_info();
+
+        return $tabUserInfo['auth_source'] == PLATFORM_AUTH_SOURCE;
+    }
+
+    public function is_profile_editable(): bool
+    {
+        if (isset($GLOBALS['profileIsEditable'])) {
+            return (bool) $GLOBALS['profileIsEditable'];
+        }
+
+        return true;
+    }
 }
