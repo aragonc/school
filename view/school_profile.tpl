@@ -1,6 +1,6 @@
 <div class="card">
     <div class="card-body">
-        <div class="p-5 text-center">
+        <div class="p-5">
             <div class="row">
                 <div class="col">
                     {{ form }}

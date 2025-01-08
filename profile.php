@@ -46,8 +46,9 @@ if ($enable) {
         api_get_path(WEB_PATH).'profile?action='.Security::remove_XSS($action),
         '',
         [],
-        FormValidator::LAYOUT_PAY
+        FormValidator::LAYOUT_NEW
     );
+
     $form->addElement('text', 'firstname', get_lang('FirstName'), ['size' => 40]);
     $form->addElement('text', 'lastname', get_lang('LastName'), ['size' => 40]);
     if (api_get_setting('profile', 'name') !== 'true') {
