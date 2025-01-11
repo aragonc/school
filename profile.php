@@ -49,11 +49,9 @@ if ($enable) {
         FormValidator::LAYOUT_NEW
     );
 
-    $form->addElement('text', 'firstname', get_lang('FirstName'), ['size' => 40]);
-    $form->addElement('text', 'lastname', get_lang('LastName'), ['size' => 40]);
-    if (api_get_setting('profile', 'name') !== 'true') {
-        $form->freeze(['lastname', 'firstname']);
-    }
+    $form->addElement('text', 'firstname', get_lang('FirstName'), ['size' => 40, 'disabled' => 'disabled']);
+    $form->addElement('text', 'lastname', get_lang('LastName'), ['size' => 40, 'disabled' => 'disabled']);
+
 
     //    USERNAME
     $form->addElement(
@@ -64,45 +62,15 @@ if ($enable) {
             'id' => 'username',
             'maxlength' => USERNAME_MAX_LENGTH,
             'size' => USERNAME_MAX_LENGTH,
+            'disabled' => 'disabled'
         ]
     );
 
-    $form->freeze('username');
-
     // EMAIL
-    $form->addElement('email', 'email', get_lang('Email'), ['size' => 40]);
-    $form->freeze('email');
+    $form->addElement('email', 'email', get_lang('Email'), ['size' => 40, 'disabled' => 'disabled']);
 
     // PHONE
     $form->addElement('text', 'phone', get_lang('Phone'), ['size' => 20]);
-    $form->freeze('phone');
-
-    // INTERNATIONAL BUY COURSE
-    $buy = null;
-    if(class_exists('BuyCoursesPlugin')) {
-        $buy = BuyCoursesPlugin::create();
-        $currencies = $buy->getCurrencies();
-        $listCountries = [];
-        $currencySelect = $form->addSelect(
-            'country',
-            [
-                get_lang('Country')
-            ],
-            [get_lang('Select')],
-            ['class' => 'form-control']
-        );
-
-        foreach ($currencies as $currency) {
-            $currencyText = $currency['country_name'];
-            $currencyValue = $currency['country_code'];
-
-            $currencySelect->addOption($currencyText, $currencyValue);
-
-            if ($currency['status']) {
-                $currencySelect->setSelected($currencyValue);
-            }
-        }
-    }
 
     $showPassword = $plugin->is_platform_authentication();
 
@@ -128,6 +96,36 @@ if ($enable) {
         $form->addRule(['password1', 'password2'], get_lang('PassTwo'), 'compare');
         $form->addPasswordRule('password1');
     }
+
+    // INTERNATIONAL BUY COURSE
+    $buy = '';
+    if(class_exists('BuyCoursesPlugin')) {
+        $buy = BuyCoursesPlugin::create();
+        $currencies = $buy->getCurrencies();
+        $listCountries = [];
+        $currencySelect = $form->addSelect(
+            'country',
+            [
+                get_lang('Country')
+            ],
+            [get_lang('Select')],
+            ['class' => 'form-control']
+        );
+
+        foreach ($currencies as $currency) {
+            $currencyText = $currency['country_name'];
+            $currencyValue = $currency['country_code'];
+
+            $currencySelect->addOption($currencyText, $currencyValue);
+
+            if ($currency['status']) {
+                $currencySelect->setSelected($currencyValue);
+            }
+        }
+    }
+
+    $extraField = new ExtraField('user');
+    $return = $extraField->addElements($form, api_get_user_id(), ['pause_formation', 'start_pause_date', 'end_pause_date']);
 
     //    SUBMIT
     if ($plugin->is_profile_editable()) {
