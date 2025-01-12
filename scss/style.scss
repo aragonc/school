@@ -211,8 +211,18 @@
 .message-read{
   color: $gray-800;
 }
-.form-label{
+.form-group .form-label.label{
   font-weight: bold;
+}
+.form-group .form-control{
+  background-color: #FFF !important;
+  border-color: #969695;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  &:disabled{
+    background-color: #f2f2f2 !important;
+    opacity: 1;
+  }
 }
 #table-message{
   .fa-pencil-alt{
