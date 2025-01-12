@@ -8,6 +8,8 @@ $plugin->setSidebar('dashboard');
 api_block_anonymous_users();
 $action = $_GET['action'] ?? '';
 
+$htmlHeadXtra[] = api_get_password_checker_js('#username', '#password1');
+
 if ($enable) {
     $userId = api_get_user_id();
     $user_data = api_get_user_info(
