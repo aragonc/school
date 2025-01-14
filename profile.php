@@ -34,7 +34,7 @@ if ($enable) {
         true
     );
 
-    $imgSection = $plugin->get_svg_icon('profile', $plugin->get_lang('HereYourNotificationsWillBe'), 500);
+    $imgSection = $plugin->get_svg_icon('profile', $plugin->get_lang('HereYourNotificationsWillBe'), 500, true);
 
     $array_list_key = UserManager::get_api_keys(api_get_user_id());
     $id_temp_key = UserManager::get_api_key_id(api_get_user_id(), 'dokeos');

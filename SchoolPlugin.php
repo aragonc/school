@@ -393,12 +393,17 @@ class SchoolPlugin extends Plugin
         }
         return $iconPathWeb;
     }
-    public function get_svg_icon($iconName, $altText = '', $size = 64): string
+    public function get_svg_icon($iconName, $altText = '', $size = 64, $responsive = false): string
     {
         $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
         if (file_exists($icon_path)) {
             $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.svg';
-            $img = Display::img($iconPathWeb,$altText,['width' => $size, 'height' => $size]);
+            if($responsive){
+                $attrib = ['width' => $size, 'height' => $size, 'class' => 'img-fluid'];
+            } else {
+                $attrib = ['width' => $size, 'height' => $size];
+            }
+            $img = Display::img($iconPathWeb,$altText, $attrib);
         } else {
             $img = '<!-- Icono no encontrado -->';
         }
