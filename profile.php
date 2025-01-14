@@ -1,14 +1,26 @@
 <?php
 
-require_once __DIR__.'/config.php';
+use Chamilo\UserBundle\Entity\User;
+use ChamiloSession as Session;
+
+require_once __DIR__ . '/config.php';
 $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 $plugin->setSidebar('dashboard');
 api_block_anonymous_users();
 $action = $_GET['action'] ?? '';
+$table_user = Database::get_main_table(TABLE_MAIN_USER);
 
 $htmlHeadXtra[] = api_get_password_checker_js('#username', '#password1');
+
+$allow_users_to_change_email_with_no_password = true;
+if ($plugin->is_platform_authentication() &&
+    api_get_setting('allow_users_to_change_email_with_no_password') == 'false'
+) {
+    $allow_users_to_change_email_with_no_password = false;
+}
+
 
 if ($enable) {
     $userId = api_get_user_id();
@@ -22,7 +34,7 @@ if ($enable) {
         true
     );
 
-    $imgSection = $plugin->get_svg_icon('profile',$plugin->get_lang('HereYourNotificationsWillBe'), 500);
+    $imgSection = $plugin->get_svg_icon('profile', $plugin->get_lang('HereYourNotificationsWillBe'), 500);
 
     $array_list_key = UserManager::get_api_keys(api_get_user_id());
     $id_temp_key = UserManager::get_api_key_id(api_get_user_id(), 'dokeos');
@@ -45,7 +57,7 @@ if ($enable) {
     $form = new FormValidator(
         'profile',
         'post',
-        api_get_path(WEB_PATH).'profile?action='.Security::remove_XSS($action),
+        api_get_path(WEB_PATH) . 'profile',
         '',
         [],
         FormValidator::LAYOUT_NEW
@@ -101,7 +113,7 @@ if ($enable) {
 
     // INTERNATIONAL BUY COURSE
     $buy = '';
-    if(class_exists('BuyCoursesPlugin')) {
+    if (class_exists('BuyCoursesPlugin')) {
         $buy = BuyCoursesPlugin::create();
         $currencies = $buy->getCurrencies();
         $listCountries = [];
@@ -138,6 +150,8 @@ if ($enable) {
 
     $form->setDefaults($user_data);
 
+
+    // VALIDATE FORM
     if ($form->validate()) {
         $hook = HookUpdateUser::create();
 
@@ -147,12 +161,156 @@ if ($enable) {
 
         $wrong_current_password = false;
         $user_data = $form->getSubmitValues(1);
+
         /** @var User $user */
         $user = UserManager::getRepository()->find(api_get_user_id());
 
         // set password if a new one was provided
         $validPassword = false;
         $passwordWasChecked = false;
+
+        if ($user &&
+            (!empty($user_data['password0']) &&
+                !empty($user_data['password1'])) ||
+            (!empty($user_data['password0']) &&
+                api_get_setting('profile', 'email') == 'true')
+        ) {
+            $passwordWasChecked = true;
+            $validPassword = UserManager::isPasswordValid(
+                $user->getPassword(),
+                $user_data['password0'],
+                $user->getSalt()
+            );
+
+            if ($validPassword) {
+                $password = $user_data['password1'];
+            } else {
+                Display::addFlash(
+                    Display:: return_message(
+                        get_lang('CurrentPasswordEmptyOrIncorrect'),
+                        'warning',
+                        false
+                    )
+                );
+            }
+        }
+
+        //Only update values that are request by the "profile" setting
+        $profile_list = api_get_setting('profile');
+        //Adding missing variables
+
+        $available_values_to_modify = [];
+        foreach ($profile_list as $key => $status) {
+            if ($status == 'true') {
+                switch ($key) {
+                    case 'login':
+                        $available_values_to_modify[] = 'username';
+                        break;
+                    case 'name':
+                        $available_values_to_modify[] = 'firstname';
+                        $available_values_to_modify[] = 'lastname';
+                        break;
+                    case 'picture':
+                        $available_values_to_modify[] = 'picture_uri';
+                        break;
+                    default:
+                        $available_values_to_modify[] = $key;
+                        break;
+                }
+            }
+        }
+
+        // build SQL query
+        $sql = "UPDATE $table_user SET";
+        unset($user_data['api_key_generate']);
+
+        foreach ($user_data as $key => $value) {
+            if (substr($key, 0, 6) === 'extra_') { //an extra field
+                continue;
+            } elseif (strpos($key, 'remove_extra_') !== false) {
+            } else {
+                if (in_array($key, $available_values_to_modify)) {
+                    $sql .= " $key = '".Database::escape_string($value)."',";
+                }
+            }
+        }
+
+        $changePassword = false;
+        // Change email
+        if ($allow_users_to_change_email_with_no_password) {
+            if (isset($changeemail) && in_array('email', $available_values_to_modify)) {
+                $sql .= " email = '".Database::escape_string($changeemail)."' ";
+            }
+            if (isset($password) && in_array('password', $available_values_to_modify)) {
+                $changePassword = true;
+            }
+        } else {
+            if (isset($changeemail) && !isset($password) && in_array('email', $available_values_to_modify)) {
+                $sql .= " email = '".Database::escape_string($changeemail)."'";
+            } else {
+                if (isset($password) && in_array('password', $available_values_to_modify)) {
+                    if (isset($changeemail) && in_array('email', $available_values_to_modify)) {
+                        $sql .= " email = '".Database::escape_string($changeemail)."' ";
+                    }
+                    $changePassword = true;
+                }
+            }
+        }
+
+        $sql = rtrim($sql, ',');
+        if ($changePassword && !empty($password)) {
+            UserManager::updatePassword(api_get_user_id(), $password);
+        }
+
+        if (api_get_setting('profile', 'officialcode') === 'true' &&
+            isset($user_data['official_code'])
+        ) {
+            $sql .= ", official_code = '".Database::escape_string($user_data['official_code'])."'";
+        }
+        $sql .= " , country = '".$user_data['country']."' ";
+        $sql .= " WHERE id  = '".api_get_user_id()."'";
+
+        Database::query($sql);
+
+        if (!$passwordWasChecked) {
+            Display::addFlash(
+                Display:: return_message(get_lang('Changesweresuccessfullyupdated'), 'normal', false)
+            );
+        } else {
+            if ($validPassword) {
+                Display::addFlash(
+                    Display:: return_message(get_lang('Changesweresuccessfullyupdated'), 'normal', false)
+                );
+            }
+        }
+
+
+        $extraField = new ExtraFieldValue('user');
+        $extraField->saveFieldValues($user_data);
+
+        $userInfo = api_get_user_info(
+            api_get_user_id(),
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+        );
+        Session::write('_user', $userInfo);
+
+        if ($hook) {
+            Database::getManager()->clear(User::class); // Avoid cache issue (user entity is used before)
+            $user = api_get_user_entity(api_get_user_id()); // Get updated user info for hook event
+            $hook->setEventData(['user' => $user]);
+            $hook->notifyUpdateUser(HOOK_EVENT_TYPE_POST);
+        }
+
+        Session::erase('system_timezone');
+
+        $url = api_get_self();
+        header("Location: $url");
+        exit;
 
     }
 
@@ -162,4 +320,5 @@ if ($enable) {
     $content = $plugin->fetch('school_profile.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
+
 }
