@@ -62,7 +62,7 @@ if ($enable) {
         [],
         FormValidator::LAYOUT_NEW
     );
-
+    $form->addHtml('<h3 class="section-form">'.$plugin->get_lang('PersonalData').'</h3>');
     $form->addElement('text', 'firstname', get_lang('FirstName'), ['size' => 40, 'disabled' => 'disabled']);
     $form->addElement('text', 'lastname', get_lang('LastName'), ['size' => 40, 'disabled' => 'disabled']);
 
@@ -85,31 +85,6 @@ if ($enable) {
 
     // PHONE
     $form->addElement('text', 'phone', get_lang('Phone'), ['size' => 20]);
-
-    $showPassword = $plugin->is_platform_authentication();
-
-    //    PASSWORD, if auth_source is platform
-    if ($showPassword &&
-        $plugin->is_profile_editable() &&
-        api_get_setting('profile', 'password') === 'true'
-    ) {
-        $form->addElement('password', 'password0', [get_lang('Pass'), get_lang('TypeCurrentPassword')], ['size' => 40]);
-        $form->addElement(
-            'password',
-            'password1',
-            [get_lang('NewPass'), get_lang('EnterYourNewPassword')],
-            ['id' => 'password1', 'size' => 40]
-        );
-        $form->addElement(
-            'password',
-            'password2',
-            [get_lang('Confirmation'), get_lang('RepeatYourNewPassword')],
-            ['size' => 40]
-        );
-        //    user must enter identical password twice so we can prevent some user errors
-        $form->addRule(['password1', 'password2'], get_lang('PassTwo'), 'compare');
-        $form->addPasswordRule('password1');
-    }
 
     // INTERNATIONAL BUY COURSE
     $buy = '';
@@ -140,6 +115,32 @@ if ($enable) {
 
     $extraField = new ExtraField('user');
     $return = $extraField->addElements($form, api_get_user_id(), ['pause_formation', 'start_pause_date', 'end_pause_date']);
+
+    $showPassword = $plugin->is_platform_authentication();
+
+    $form->addHtml('<h3 class="section-form" style="margin-top: 3rem;">'.$plugin->get_lang('AccessCredentials').'</h3>');
+    //    PASSWORD, if auth_source is platform
+    if ($showPassword &&
+        $plugin->is_profile_editable() &&
+        api_get_setting('profile', 'password') === 'true'
+    ) {
+        $form->addElement('password', 'password0', [get_lang('Pass'), get_lang('TypeCurrentPassword')], ['size' => 40]);
+        $form->addElement(
+            'password',
+            'password1',
+            [get_lang('NewPass'), get_lang('EnterYourNewPassword')],
+            ['id' => 'password1', 'size' => 40]
+        );
+        $form->addElement(
+            'password',
+            'password2',
+            [get_lang('Confirmation'), get_lang('RepeatYourNewPassword')],
+            ['size' => 40]
+        );
+        //    user must enter identical password twice so we can prevent some user errors
+        $form->addRule(['password1', 'password2'], get_lang('PassTwo'), 'compare');
+        $form->addPasswordRule('password1');
+    }
 
     //    SUBMIT
     if ($plugin->is_profile_editable()) {
@@ -308,7 +309,7 @@ if ($enable) {
 
         Session::erase('system_timezone');
 
-        $url = api_get_self();
+        $url = api_get_path(WEB_PATH) . 'profile';
         header("Location: $url");
         exit;
 

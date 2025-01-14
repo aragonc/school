@@ -67,4 +67,6 @@ $strings['SendRequest'] = 'Enviar su solicitud';
 $strings['TitleRequest'] = 'Titulo de la solicitud';
 $strings['Phase'] = 'Fase';
 $strings['CreateNewRequest'] = 'Crear nueva solicitud';
-
+$strings['EditAvatar'] = 'Editar Avatar';
+$strings['PersonalData'] = 'Datos personales';
+$strings['AccessCredentials'] = 'Credenciales de acceso';
