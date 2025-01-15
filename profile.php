@@ -62,7 +62,6 @@ if ($enable) {
         [],
         FormValidator::LAYOUT_NEW
     );
-    $form->addHtml('<h3 class="section-form">'.$plugin->get_lang('PersonalData').'</h3>');
     $form->addElement('text', 'firstname', get_lang('FirstName'), ['size' => 40, 'disabled' => 'disabled']);
     $form->addElement('text', 'lastname', get_lang('LastName'), ['size' => 40, 'disabled' => 'disabled']);
 

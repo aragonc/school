@@ -35,9 +35,8 @@ if ($enable) {
     $plugin->setTitle($plugin->get_lang('EditProfile'));
     $plugin->assign('img_section', $imgSection);
     $plugin->assign('form', '');
-    $content = $plugin->fetch('school_avatar.tpl');
+    $content = $plugin->fetch('school_password.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
 
 }
-

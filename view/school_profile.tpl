@@ -1,7 +1,13 @@
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link active" href="/profile">
-            {{ 'EditProfile'|get_plugin_lang('SchoolPlugin') }}
+            {{ 'PersonalData'|get_plugin_lang('SchoolPlugin') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link " href="/password" >
+            {{ 'ChangePassword'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </li>
 
@@ -10,7 +16,6 @@
             {{ 'EditAvatar'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </li>
-
 </ul>
 
 <div class="card">
