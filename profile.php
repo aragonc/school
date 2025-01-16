@@ -52,7 +52,7 @@ if ($enable) {
     $form->addElement(
         'text',
         'username',
-        get_lang('UserName'),
+        $plugin->get_lang('User'),
         [
             'id' => 'username',
             'maxlength' => USERNAME_MAX_LENGTH,
@@ -135,6 +135,7 @@ if ($enable) {
 
         // Build SQL query
         $sql = "UPDATE $table_user SET";
+
         foreach ($user_data as $key => $value) {
             if (substr($key, 0, 6) === 'extra_') { // Extra field
                 continue;
@@ -148,6 +149,7 @@ if ($enable) {
         }
 
         $sql = rtrim($sql, ',');
+        $sql .= " , country = '".$user_data['country']."' ";
         $sql .= " WHERE id  = '" . api_get_user_id() . "'";
 
         Database::query($sql);

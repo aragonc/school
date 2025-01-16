@@ -21,7 +21,7 @@ if ($enable) {
         true
     );
 
-    $imgSection = $plugin->get_svg_icon('profile', $plugin->get_lang('HereYourNotificationsWillBe'), 500,true);
+    $imgSection = $plugin->get_svg_icon('photo', $plugin->get_lang('HereYourNotificationsWillBe'), 500,true);
 
     $form = new FormValidator(
         'form_avatar',
