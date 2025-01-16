@@ -24,9 +24,9 @@ if ($enable) {
     $imgSection = $plugin->get_svg_icon('profile', $plugin->get_lang('HereYourNotificationsWillBe'), 500,true);
 
     $form = new FormValidator(
-        'profile',
+        'form_avatar',
         'post',
-        api_get_path(WEB_PATH) . 'profile',
+        api_get_path(WEB_PATH) . 'avatar',
         '',
         [],
         FormValidator::LAYOUT_NEW

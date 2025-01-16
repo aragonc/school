@@ -71,3 +71,7 @@ $strings['EditAvatar'] = 'Editar Foto';
 $strings['PersonalData'] = 'Datos personales';
 $strings['AccessCredentials'] = 'Credenciales de acceso';
 $strings['ChangePassword'] = 'Cambiar contraseña';
+$strings['EnterYourCurrentPassword'] = 'Ingresa tu contraseña actual';
+$strings['EnterYourNewPassword'] = 'Escribe tu nueva contraseña';
+$strings['ConfirmYourNewPassword'] = 'Confirma tu nueva contraseña';
+$strings['SaveChanges'] = 'Guardar cambios';

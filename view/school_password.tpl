@@ -1,24 +1,23 @@
 <ul class="nav nav-tabs">
     <li class="nav-item">
-        <a class="nav-link " href="../profile.php">
+        <a class="nav-link " href="/profile">
             {{ 'PersonalData'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link active" href="../avatar.php" >
+        <a class="nav-link active" href="/password" >
             {{ 'ChangePassword'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link " href="../avatar.php" >
+        <a class="nav-link " href="/avatar" >
             {{ 'EditAvatar'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </li>
 
 </ul>
-asdsasd
 <div class="card">
     <div class="card-body">
         <div class="p-5">
