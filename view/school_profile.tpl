@@ -38,7 +38,7 @@
 
 <script type="text/javascript">
     $(function() {
-        let countryCode = $("#profile_country").val();
+        let countryCode = $("#form_profile_country").val();
         //let messageError = '<?php echo custompages_get_lang('errorRUT'); ?>';
         let Rut = $("#extra_rol_unico_tributario");
         let Dni = $("#extra_identificador");
@@ -63,11 +63,11 @@
             //Rut.val('');
         }
 
-        $("#profile_country").change(function () {
+        $("#form_profile_country").change(function () {
             //checkRut = isCountryForRut($(this));
             //console.log(checkRut);
             let countrySelect;
-            $( "#profile_country option:selected" ).each(function() {
+            $( "#form_profile_country option:selected" ).each(function() {
                 countrySelect = $( this ).text();
                 if(countrySelect!=='Chile'){
                     $("#form_extra_rol_unico_tributario_group").hide();

@@ -32,27 +32,31 @@ if ($enable) {
         FormValidator::LAYOUT_NEW
     );
     $form->addHtml('<div class="form-group">');
-    $form->addHtml('<label class="form-label label">Vista previa de image</label>');
-    $form->addHtml('<div class="card avatar-profile">
+    $form->addHtml('<label class="form-label label">'.$plugin->get_lang('ImagePreview').'</label>');
+    $form->addHtml('<div class="card avatar-profile mb-4">
         <div class="card-body preview">
             <img class="img-fluid img-circle" src="' . $user_data['avatar']. '"  alt=""/>
     </div>
     </div>');
 
-    $form->addFile(
-        'picture',
-        [
-            $user_data['picture_uri'] != '' ? get_lang('UpdateImage') : get_lang('AddImage'),
-            get_lang('OnlyImagesAllowed'),
-        ],
-        [
-            'id' => 'picture',
-            'class' => 'picture-form',
-            'crop_image' => true,
-            'crop_ratio' => '1 / 1',
-            'accept' => 'image/*',
-        ]
-    );
+    try {
+        $form->addFile(
+            'picture',
+            [
+                $user_data['picture_uri'] != '' ? get_lang('UpdateImage') : get_lang('AddImage'),
+                get_lang('OnlyImagesAllowed'),
+            ],
+            [
+                'id' => 'picture',
+                'class' => 'picture-form',
+                'crop_image' => true,
+                'crop_ratio' => '1 / 1',
+                'accept' => 'image/*',
+            ]
+        );
+    } catch (Exception $e) {
+        print_r($e->getMessage());
+    }
 
     $form->addProgress();
     if (!empty($user_data['picture_uri'])) {

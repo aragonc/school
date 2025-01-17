@@ -75,3 +75,4 @@ $strings['EnterYourCurrentPassword'] = 'Ingresa tu contraseña actual';
 $strings['EnterYourNewPassword'] = 'Escribe tu nueva contraseña';
 $strings['ConfirmYourNewPassword'] = 'Confirma tu nueva contraseña';
 $strings['SaveChanges'] = 'Guardar cambios';
+$strings['ImagePreview'] = 'Vista previa de la imagen';
