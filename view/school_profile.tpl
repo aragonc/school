@@ -25,6 +25,7 @@
                 <div class="col">
 
                     {{ form }}
+
                 </div>
                 <div class="col">
                     <div class="text-center">

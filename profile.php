@@ -46,7 +46,9 @@ if ($enable) {
         FormValidator::LAYOUT_NEW
     );
     $form->addElement('text', 'firstname', get_lang('FirstName'), ['size' => 40, 'disabled' => 'disabled']);
+    $form->addRule('firstname', get_lang('ThisFieldIsRequired'), 'required');
     $form->addElement('text', 'lastname', get_lang('LastName'), ['size' => 40, 'disabled' => 'disabled']);
+    $form->addRule('lastname', get_lang('ThisFieldIsRequired'), 'required');
 
     // USERNAME
     $form->addElement(
@@ -60,12 +62,14 @@ if ($enable) {
             'disabled' => 'disabled'
         ]
     );
+    $form->addRule('username', get_lang('ThisFieldIsRequired'), 'required');
 
     // EMAIL
     $form->addElement('email', 'email', get_lang('Email'), ['size' => 40, 'disabled' => 'disabled']);
-
+    $form->addRule('email', get_lang('ThisFieldIsRequired'), 'required');
     // PHONE
     $form->addElement('text', 'phone', get_lang('Phone'), ['size' => 20]);
+    $form->addRule('phone', get_lang('ThisFieldIsRequired'), 'required');
 
     // COUNTRY
     $buy = '';
@@ -85,18 +89,26 @@ if ($enable) {
         foreach ($currencies as $currency) {
             $currencyText = $currency['country_name'];
             $currencyValue = $currency['country_code'];
-
             $currencySelect->addOption($currencyText, $currencyValue);
-
             if ($currency['status']) {
                 $currencySelect->setSelected($currencyValue);
             }
         }
+        $form->addRule('country', get_lang('ThisFieldIsRequired'), 'required');
     }
 
     $extraField = new ExtraField('user');
-    $return = $extraField->addElements($form, api_get_user_id(), ['pause_formation', 'start_pause_date', 'end_pause_date']);
+    $return = $extraField->addElements(
+        $form,
+        api_get_user_id(),
+        [
+            'pause_formation',
+            'start_pause_date',
+            'end_pause_date'
+        ]
+    );
 
+    $form->addHtml($plugin->get_lang('UsernameHelp'));
     // SUBMIT
     $form->addButtonUpdate($plugin->get_lang('SaveChanges'), 'apply_change');
 

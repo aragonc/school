@@ -51,17 +51,28 @@ if ($enable) {
         $plugin->is_profile_editable() &&
         api_get_setting('profile', 'password') === 'true'
     ) {
-        $form->addElement('password', 'password0', [$plugin->get_lang('EnterYourCurrentPassword'), get_lang('TypeCurrentPassword')], ['size' => 40]);
+        $form->addElement('password', 'password0', [
+            $plugin->get_lang('EnterYourCurrentPassword'),
+            $plugin->get_lang('EnterYourCurrentPasswordHelp')
+        ], ['size' => 40]);
+        $form->addRule('password0', get_lang('ThisFieldIsRequired'), 'required');
         $form->addElement(
             'password',
             'password1',
-            [$plugin->get_lang('EnterYourNewPassword'), get_lang('EnterYourNewPassword')],
+            [
+                $plugin->get_lang('EnterYourNewPassword'),
+                $plugin->get_lang('EnterYourNewPasswordHelp')
+            ],
             ['id' => 'password1', 'size' => 40]
         );
+        $form->addRule('password1', get_lang('ThisFieldIsRequired'), 'required');
         $form->addElement(
             'password',
             'password2',
-            [$plugin->get_lang('ConfirmYourNewPassword'), get_lang('RepeatYourNewPassword')],
+            [
+                $plugin->get_lang('ConfirmYourNewPassword'),
+                $plugin->get_lang('ConfirmYourNewPasswordHelp')
+            ],
             ['size' => 40]
         );
         //    user must enter identical password twice so we can prevent some user errors
