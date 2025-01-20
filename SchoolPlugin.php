@@ -1387,7 +1387,7 @@ class SchoolPlugin extends Plugin
                 'url' => '/certified',
                 'class' => $currentSection === 'certificates' ? 'active':'',
                 'items' => []
-            ],
+            ]/*,
             [
                 'id' => 4,
                 'name' => 'requests',
@@ -1397,7 +1397,7 @@ class SchoolPlugin extends Plugin
                 'url' => '/requests',
                 'class' => $currentSection === 'requests' ? 'active':'',
                 'items' => []
-            ],
+            ]*/,
             [
                 'id' => 5,
                 'name' => 'help',

@@ -45,16 +45,16 @@ if ($enable) {
         [],
         FormValidator::LAYOUT_NEW
     );
-    $form->addElement('text', 'firstname', get_lang('FirstName'), ['size' => 40, 'disabled' => 'disabled']);
-    $form->addRule('firstname', get_lang('ThisFieldIsRequired'), 'required');
-    $form->addElement('text', 'lastname', get_lang('LastName'), ['size' => 40, 'disabled' => 'disabled']);
-    $form->addRule('lastname', get_lang('ThisFieldIsRequired'), 'required');
+    $form->addElement('text', 'firstname', '* '. get_lang('FirstName'), ['size' => 40, 'disabled' => 'disabled']);
+
+    $form->addElement('text', 'lastname', '* '. get_lang('LastName'), ['size' => 40, 'disabled' => 'disabled']);
+
 
     // USERNAME
     $form->addElement(
         'text',
         'username',
-        $plugin->get_lang('User'),
+        '* '. $plugin->get_lang('User'),
         [
             'id' => 'username',
             'maxlength' => USERNAME_MAX_LENGTH,
@@ -62,11 +62,10 @@ if ($enable) {
             'disabled' => 'disabled'
         ]
     );
-    $form->addRule('username', get_lang('ThisFieldIsRequired'), 'required');
 
     // EMAIL
-    $form->addElement('email', 'email', get_lang('Email'), ['size' => 40, 'disabled' => 'disabled']);
-    $form->addRule('email', get_lang('ThisFieldIsRequired'), 'required');
+    $form->addElement('email', 'email', '* '. get_lang('Email'), ['size' => 40, 'disabled' => 'disabled']);
+
     // PHONE
     $form->addElement('text', 'phone', get_lang('Phone'), ['size' => 20]);
     $form->addRule('phone', get_lang('ThisFieldIsRequired'), 'required');
