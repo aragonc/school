@@ -1399,7 +1399,7 @@ class SchoolPlugin extends Plugin
                 'items' => []
             ]*/,
             [
-                'id' => 5,
+                'id' => 4,
                 'name' => 'help',
                 'label' => 'Ayuda',
                 'current' => false,
@@ -1409,6 +1409,16 @@ class SchoolPlugin extends Plugin
                 'items' => []
             ],
             [
+                'id' => 5,
+                'name' => 'shopping',
+                'label' => $this->get_lang('BuyCourses'),
+                'current' => false,
+                'icon' => 'shopping-cart',
+                'url' => '/shopping',
+                'class' => $currentSection === 'shopping' ? 'active':'',
+                'items' => []
+            ]
+            /*[
                 'id' => 6,
                 'name' => 'buy',
                 'label' => 'Comprar',
@@ -1433,7 +1443,7 @@ class SchoolPlugin extends Plugin
                         'url' => '/comprar/diplomados'
                     ]
                 ]
-            ]
+            ]*/
         ];
 
     }
