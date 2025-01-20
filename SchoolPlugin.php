@@ -248,9 +248,19 @@ class SchoolPlugin extends Plugin
 
     }
 
+    public function set_js_extras($htmlExtras): string
+    {
+        $extraHeaders = '';
+        if (isset($htmlExtras) && $htmlExtras) {
+            foreach ($htmlExtras as &$this_html_head) {
+                $extraHeaders .= $this_html_head."\n";
+            }
+        }
+        return $extraHeaders;
+    }
     public function set_js_files(): void
     {
-        global $disable_js_and_css_files, $htmlHeadXtra;
+        global $disable_js_and_css_files;
         $isoCode = api_get_language_isocode();
         $selectLink = 'bootstrap-select/dist/js/i18n/defaults-'.$isoCode.'_'.strtoupper($isoCode).'.min.js';
 
@@ -288,20 +298,6 @@ class SchoolPlugin extends Plugin
             'js-cookie/src/js.cookie.js',
         ];
 
-        $viewBySession = api_get_setting('my_courses_view_by_session') === 'true';
-
-        /*if ($viewBySession || api_is_global_chat_enabled()) {
-            // Do not include the global chat in LP
-            if ($this->show_learnpath == false &&
-                $this->show_footer == true &&
-                $this->hide_global_chat == false
-            ) {
-                $js_files[] = 'chat/js/chat.js';
-                $bowerJsFiles[] = 'linkifyjs/linkify.js';
-                $bowerJsFiles[] = 'linkifyjs/linkify-jquery.js';
-            }
-        }*/
-
         $features = api_get_configuration_value('video_features');
         if (!empty($features) && isset($features['features'])) {
             foreach ($features['features'] as $feature) {
@@ -337,12 +333,6 @@ class SchoolPlugin extends Plugin
             $js_file_to_string .= api_get_js($file);
         }
 
-        // Loading email_editor js
-        /*if (!api_is_anonymous() && api_get_setting('allow_email_editor') === 'true') {
-            $template = $this->get_template('mail_editor/email_link.js.tpl');
-            $js_file_to_string .= $this->fetch($template);
-        }*/
-
         if (!$disable_js_and_css_files) {
             $this->assign('js_file_to_string', $js_file_to_string);
 
@@ -354,7 +344,6 @@ class SchoolPlugin extends Plugin
                     $extraHeaders .= $this_html_head."\n";
                 }
             }
-
             $ajax = api_get_path(WEB_AJAX_PATH);
             $courseId = api_get_course_id();
             if (empty($courseId)) {

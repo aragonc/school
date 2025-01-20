@@ -1,5 +1,7 @@
 <?php
 
+use Chamilo\UserBundle\Entity\User;
+
 require_once __DIR__ . '/config.php';
 $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
@@ -7,6 +9,12 @@ $nameTools = $plugin->get_lang('DashboardSchool');
 $plugin->setSidebar('dashboard');
 api_block_anonymous_users();
 $action = $_GET['action'] ?? '';
+$table_user = Database::get_main_table(TABLE_MAIN_USER);
+
+$htmlHeadXtra[]= api_get_css_asset('cropper/dist/cropper.min.css');
+$htmlHeadXtra[]= api_get_asset('cropper/dist/cropper.min.js');
+
+$plugin->assign('extra_headers', $plugin->set_js_extras($htmlHeadXtra));
 
 if ($enable) {
 
@@ -21,7 +29,7 @@ if ($enable) {
         true
     );
 
-    $imgSection = $plugin->get_svg_icon('photo', $plugin->get_lang('HereYourNotificationsWillBe'), 500,true);
+    //$imgSection = $plugin->get_svg_icon('photo', $plugin->get_lang('HereYourNotificationsWillBe'), 500,true);
 
     $form = new FormValidator(
         'form_avatar',
@@ -70,9 +78,54 @@ if ($enable) {
         $allowed_picture_types
     );
 
+    $form->addButtonUpdate($plugin->get_lang('SaveChanges'), 'apply_change');
+    $form->setDefaults($user_data);
+
+    if ($form->validate()) {
+
+        $user_data = $form->getSubmitValues(1);
+        /** @var User $user */
+        $user = UserManager::getRepository()->find(api_get_user_id());
+
+        // Upload picture if a new one is provided
+        if ($_FILES['picture']['size']) {
+            $new_picture = UserManager::update_user_picture(
+                api_get_user_id(),
+                $_FILES['picture']['name'],
+                $_FILES['picture']['tmp_name'],
+                $user_data['picture_crop_result']
+            );
+
+            if ($new_picture) {
+                $user_data['picture_uri'] = $new_picture;
+
+                Display::addFlash(
+                    Display:: return_message(
+                        get_lang('PictureUploaded'),
+                        'normal',
+                        false
+                    )
+                );
+            }
+        } elseif (!empty($user_data['remove_picture'])) {
+            // remove existing picture if asked
+            UserManager::deleteUserPicture(api_get_user_id());
+            $user_data['picture_uri'] = '';
+        }
+
+        $sql = "UPDATE $table_user u SET";
+        unset($user_data['api_key_generate']);
+        $sql .= " u.picture_uri = '".Database::escape_string($user_data['picture_uri'])."' ";
+        $sql .= " WHERE u.id  = '".api_get_user_id()."';";
+        Database::query($sql);
+
+        $url = api_get_path(WEB_PATH) . 'avatar';
+        header("Location: $url");
+        exit;
+
+    }
 
     $plugin->setTitle($plugin->get_lang('EditProfile'));
-    $plugin->assign('img_section', $imgSection);
     $plugin->assign('form', $form->returnForm());
     $content = $plugin->fetch('school_avatar.tpl');
     $plugin->assign('content', $content);

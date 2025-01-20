@@ -236,6 +236,11 @@
 .card.avatar-profile{
   border: 1px solid #e3e6f0;
 }
+#picture-form-group .cropCanvas{
+  width: 300px;
+  height: 300px;
+  margin-bottom: 2rem;
+}
 #table-message{
   .fa-pencil-alt{
     &:before{
