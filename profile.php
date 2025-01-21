@@ -104,14 +104,12 @@ if ($enable) {
             'pause_formation',
             'start_pause_date',
             'end_pause_date'
-        ],false,false,[],[],[],false,false,[],[],false,[],['identificador']
+        ]
     );
-
+//,false,false,[],[],[],false,false,[],[],false,[],['identificador']
     // SUBMIT
-    $form->addButtonUpdate($plugin->get_lang('SaveChanges'), 'apply_change');
-    $form->addHtml($plugin->get_lang('UsernameHelp'));
-
-
+    $form->addButton('submit',$plugin->get_lang('SaveChanges'), '','primary','default','btn-block');
+    $form->addHtml($plugin->get_lang('TheFollowingFieldsAreRequired'));
     $form->setDefaults($user_data);
 
     // VALIDATE FORM

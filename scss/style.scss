@@ -225,9 +225,9 @@
 }
 .form-group .form-control{
   background-color: #FFF !important;
-  border-color: #969695;
-  border-width: 0 0 1px 0;
-  border-radius: 0;
+  border-color: #cdcdcd;
+  border-width: 1px;
+  border-radius: 10px;
   &:disabled{
     background-color: #f2f2f2 !important;
     opacity: 1;
@@ -279,4 +279,17 @@
   width: 100% !important;
   display: inline-block;
   font-size: 14px;
+  margin-top: 1rem;
+}
+.bd-callout {
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #eee;
+  border-left-width: .25rem;
+  border-radius: .25rem;
+  background: #f2f2f2;
+}
+.bd-callout-info {
+  border-left-color: #5bc0de;
 }

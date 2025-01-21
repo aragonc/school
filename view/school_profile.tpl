@@ -29,6 +29,9 @@
                 </div>
                 <div class="col">
                     <div class="text-center">
+                        <div class="bd-callout bd-callout-info">
+                            {{ 'UsernameHelp'|get_plugin_lang('SchoolPlugin') }}
+                        </div>
                         {{ img_section }}
                     </div>
                 </div>

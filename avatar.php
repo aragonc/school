@@ -77,8 +77,7 @@ if ($enable) {
         'filetype',
         $allowed_picture_types
     );
-
-    $form->addButtonUpdate($plugin->get_lang('SaveChanges'), 'apply_change');
+    $form->addButton('submit',$plugin->get_lang('SaveChanges'), '','primary','default','btn-block');
     $form->setDefaults($user_data);
 
     if ($form->validate()) {

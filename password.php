@@ -51,37 +51,33 @@ if ($enable) {
         $plugin->is_profile_editable() &&
         api_get_setting('profile', 'password') === 'true'
     ) {
-        $form->addElement('password', 'password0', [
-            $plugin->get_lang('EnterYourCurrentPassword'),
-            $plugin->get_lang('EnterYourCurrentPasswordHelp')
-        ], ['size' => 40]);
-        $form->addRule('password0', get_lang('ThisFieldIsRequired'). '. '. $plugin->get_lang('TheCurrentPasswordFieldIsEmpty'), 'required');
+        $form->addElement('password', 'password0', [$plugin->get_lang('EnterYourCurrentPassword')], ['size' => 40, 'required']);
+        $form->addRule('password0', $plugin->get_lang('EnterYourCurrentPasswordHelp'), 'required');
         $form->addElement(
             'password',
             'password1',
             [
-                $plugin->get_lang('EnterYourNewPassword'),
-                $plugin->get_lang('EnterYourNewPasswordHelp')
+                $plugin->get_lang('EnterYourNewPassword')
             ],
-            ['id' => 'password1', 'size' => 40]
+            ['id' => 'password1', 'size' => 40, 'required']
         );
-        $form->addRule('password1', get_lang('ThisFieldIsRequired'). '. '. $plugin->get_lang('TheNewPasswordFieldIsEmpty'), 'required');
+        $form->addRule('password1', $plugin->get_lang('EnterYourNewPasswordHelp'), 'required');
         $form->addElement(
             'password',
             'password2',
             [
-                $plugin->get_lang('ConfirmYourNewPassword'),
-                $plugin->get_lang('ConfirmYourNewPasswordHelp')
+                $plugin->get_lang('ConfirmYourNewPassword')
             ],
-            ['size' => 40]
+            ['size' => 40, 'required']
         );
-        $form->addRule('password2', get_lang('ThisFieldIsRequired'). '. '. $plugin->get_lang('TheRepeatNewPasswordFieldIsEmpty'), 'required');
+        $form->addRule('password2', $plugin->get_lang('ConfirmYourNewPasswordHelp'), 'required');
         //    user must enter identical password twice so we can prevent some user errors
         $form->addRule(['password2', 'password1'], get_lang('PassTwo'), 'compare');
         $form->addPasswordRule('password1');
     }
 
-    $form->addButtonUpdate($plugin->get_lang('SaveChanges'), 'apply_change');
+    $form->addButton('submit',$plugin->get_lang('UpdatePassword'), '','primary','default','btn-block');
+    $form->addHtml($plugin->get_lang('TheFollowingFieldsAreRequired'));
     $form->setDefaults($user_data);
 
     // VALIDATE FORM
