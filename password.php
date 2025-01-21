@@ -77,7 +77,7 @@ if ($enable) {
         );
         $form->addRule('password2', get_lang('ThisFieldIsRequired'). '. '. $plugin->get_lang('TheRepeatNewPasswordFieldIsEmpty'), 'required');
         //    user must enter identical password twice so we can prevent some user errors
-        $form->addRule(['password1', 'password2'], get_lang('PassTwo'), 'compare');
+        $form->addRule(['password2', 'password1'], get_lang('PassTwo'), 'compare');
         $form->addPasswordRule('password1');
     }
 
