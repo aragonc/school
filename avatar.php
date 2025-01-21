@@ -107,17 +107,24 @@ if ($enable) {
                     )
                 );
             }
-        } elseif (!empty($user_data['remove_picture'])) {
-            // remove existing picture if asked
-            UserManager::deleteUserPicture(api_get_user_id());
-            $user_data['picture_uri'] = '';
+            $sql = "UPDATE $table_user u SET";
+            unset($user_data['api_key_generate']);
+            $sql .= " u.picture_uri = '".Database::escape_string($user_data['picture_uri'])."' ";
+            $sql .= " WHERE u.id  = '".api_get_user_id()."';";
+            Database::query($sql);
+
+        } else {
+
+            Display::addFlash(
+                Display:: return_message(
+                    $plugin->get_lang('NoImageSelected'),
+                    'warning',
+                    false
+                )
+            );
         }
 
-        $sql = "UPDATE $table_user u SET";
-        unset($user_data['api_key_generate']);
-        $sql .= " u.picture_uri = '".Database::escape_string($user_data['picture_uri'])."' ";
-        $sql .= " WHERE u.id  = '".api_get_user_id()."';";
-        Database::query($sql);
+
 
         $url = api_get_path(WEB_PATH) . 'avatar';
         header("Location: $url");

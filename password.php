@@ -55,7 +55,7 @@ if ($enable) {
             $plugin->get_lang('EnterYourCurrentPassword'),
             $plugin->get_lang('EnterYourCurrentPasswordHelp')
         ], ['size' => 40]);
-        $form->addRule('password0', get_lang('ThisFieldIsRequired'), 'required');
+        $form->addRule('password0', get_lang('ThisFieldIsRequired'). '. '. $plugin->get_lang('TheCurrentPasswordFieldIsEmpty'), 'required');
         $form->addElement(
             'password',
             'password1',
@@ -65,7 +65,7 @@ if ($enable) {
             ],
             ['id' => 'password1', 'size' => 40]
         );
-        $form->addRule('password1', get_lang('ThisFieldIsRequired'), 'required');
+        $form->addRule('password1', get_lang('ThisFieldIsRequired'). '. '. $plugin->get_lang('TheNewPasswordFieldIsEmpty'), 'required');
         $form->addElement(
             'password',
             'password2',
@@ -75,6 +75,7 @@ if ($enable) {
             ],
             ['size' => 40]
         );
+        $form->addRule('password2', get_lang('ThisFieldIsRequired'). '. '. $plugin->get_lang('TheRepeatNewPasswordFieldIsEmpty'), 'required');
         //    user must enter identical password twice so we can prevent some user errors
         $form->addRule(['password1', 'password2'], get_lang('PassTwo'), 'compare');
         $form->addPasswordRule('password1');
@@ -130,7 +131,7 @@ if ($enable) {
                 } else {
                     Display::addFlash(
                         Display::return_message(
-                            get_lang('CurrentPasswordEmptyOrIncorrect'),
+                            $plugin->get_lang('CurrentPasswordEmptyOrIncorrect'),
                             'warning',
                             false
                         )
