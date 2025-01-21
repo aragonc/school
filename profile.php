@@ -104,12 +104,13 @@ if ($enable) {
             'pause_formation',
             'start_pause_date',
             'end_pause_date'
-        ]
+        ],false,false,[],[],[],false,false,[],[],false,[],['identificador']
     );
 
-    $form->addHtml($plugin->get_lang('UsernameHelp'));
     // SUBMIT
     $form->addButtonUpdate($plugin->get_lang('SaveChanges'), 'apply_change');
+    $form->addHtml($plugin->get_lang('UsernameHelp'));
+
 
     $form->setDefaults($user_data);
 

@@ -89,3 +89,4 @@ $strings['TheCurrentPasswordFieldIsEmpty'] = 'El campo contraseña actual esta v
 $strings['TheNewPasswordFieldIsEmpty'] = 'El campo contraseña nueva esta vacio.';
 $strings['TheRepeatNewPasswordFieldIsEmpty'] = 'El campo contraseña nueva esta vacio.';
 $strings['CurrentPasswordEmptyOrIncorrect'] = 'El campo contraseña actual, no es la correcta.';
+$strings['ThereAreNoCoursesAvailable'] = 'No hay cursos disponibles.';
