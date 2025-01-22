@@ -79,6 +79,9 @@ if ($enable) {
 
     $form->addButton('submit',$plugin->get_lang('UpdatePassword'), '','primary','default','btn-block');
     $form->addHtml($plugin->get_lang('TheFollowingFieldsAreRequired'));
+
+   // var_dump($_POST);
+
     $form->setDefaults($user_data);
 
     // VALIDATE FORM
@@ -125,24 +128,26 @@ if ($enable) {
                     Display::addFlash(
                         Display::return_message(get_lang('Changesweresuccessfullyupdated'), 'normal', false)
                     );
+
+                    $url = api_get_path(WEB_PATH) . 'password';
+                    header("Location: $url");
+                    exit;
+
                 } else {
-                    Display::addFlash(
+                    $form->setElementError('password0', $plugin->get_lang('TheCurrentPasswordFieldIsEmpty'));
+                    /*Display::addFlash(
                         Display::return_message(
                             $plugin->get_lang('CurrentPasswordEmptyOrIncorrect'),
                             'warning',
                             false
                         )
-                    );
+                    );*/
                 }
             }
         }
-
-
-        $url = api_get_path(WEB_PATH) . 'password';
-        header("Location: $url");
-        exit;
-
     }
+
+
 
     $plugin->setTitle($plugin->get_lang('EditProfile'));
     $plugin->assign('img_section', $imgSection);
