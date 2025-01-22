@@ -46,9 +46,7 @@ if ($enable) {
         FormValidator::LAYOUT_NEW
     );
     $form->addElement('text', 'firstname', '* '. get_lang('FirstName'), ['size' => 40, 'disabled' => 'disabled']);
-
     $form->addElement('text', 'lastname', '* '. get_lang('LastName'), ['size' => 40, 'disabled' => 'disabled']);
-
 
     // USERNAME
     $form->addElement(
@@ -67,7 +65,7 @@ if ($enable) {
     $form->addElement('email', 'email', '* '. get_lang('Email'), ['size' => 40, 'disabled' => 'disabled']);
 
     // PHONE
-    $form->addElement('text', 'phone', get_lang('Phone'), ['size' => 20]);
+    $form->addElement('text', 'phone', $plugin->get_lang('PhoneOrWhatsApp'), ['size' => 20, 'required']);
     $form->addRule('phone', get_lang('ThisFieldIsRequired'), 'required');
 
     // COUNTRY
@@ -190,6 +188,7 @@ if ($enable) {
     $plugin->setTitle($plugin->get_lang('EditProfile'));
     $plugin->assign('img_section', $imgSection);
     $plugin->assign('form', $form->returnForm());
+    $plugin->assign('error_rut', $plugin->get_lang('errorRUT'));
     $content = $plugin->fetch('school_profile.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();

@@ -43,7 +43,7 @@
 <script type="text/javascript">
     $(function() {
         let countryCode = $("#form_profile_country").val();
-        //let messageError = '<?php echo custompages_get_lang('errorRUT'); ?>';
+        let messageError = '{{ error_rut }}';
         let Rut = $("#extra_rol_unico_tributario");
         let Dni = $("#extra_identificador");
         let RutValue = null;
@@ -90,7 +90,7 @@
         });
 
 
-        $("#profile").submit(function(e){
+        $("#form_profile").submit(function(e){
             //console.log(RUT.val());
             RutValue = Rut.val();
             DniValue = Dni.val();
@@ -98,16 +98,15 @@
             let formGroupRUT = $("#form_extra_rol_unico_tributario_group");
             let formGroupDNI = $("#form_extra_identificador_group");
             //alert($("input[type=radio]:checked").val());
-            $( "#profile_country option:selected" ).each(function() {
+            $( "#form_profile_country option:selected" ).each(function() {
                 countrySelect = $( this ).text();
             });
-            //console.log(countrySelect);
 
             if(checkRut){
                 if(countrySelect==='Chile') {
                     if (!(RutValue.match('^[0-9]{7,9}[-|‐]{1}[0-9kK]{1}$'))) {
                         if (!contentAdd) {
-                            formGroupRUT.addClass('error has-error');
+                            formGroupRUT.addClass('flat-error flat-has-error');
                             formGroupRUT.append('<div class="help-info-form">'+messageError+'</div>');
                             contentAdd = true;
                         }
@@ -116,7 +115,7 @@
                 } else {
                     if(DniValue.trim() === ""){
                         if (!contentAdd) {
-                            formGroupDNI.addClass('error has-error');
+                            formGroupDNI.addClass('flat-error flat-has-error');
                             formGroupDNI.append('<div class="help-info-form">Debe de ingresar un Nº Documento o Cédula de Identidad válido</div>');
                             contentAdd = true;
                         }

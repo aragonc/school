@@ -93,3 +93,5 @@ $strings['ThereAreNoCoursesAvailable'] = 'No hay cursos disponibles.';
 $strings['TheFollowingFieldsAreRequired'] = 'Los siguientes campos son obligatorios (*).';
 $strings['UpdatePassword'] = 'Actualizar contraseña';
 $strings['UpdateAvatar'] = 'Actualiza tu foto';
+$strings['PhoneOrWhatsApp'] = 'Celular (WhatsApp)';
+$strings['ErrorRut'] = "Debe ingresar un RUN Válido. Ej: 11222333-K";
