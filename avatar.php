@@ -77,7 +77,7 @@ if ($enable) {
         'filetype',
         $allowed_picture_types
     );
-    $form->addButton('submit',$plugin->get_lang('SaveChanges'), '','primary','default','btn-block');
+    $form->addButton('submit',$plugin->get_lang('UpdateAvatar'), '','primary','default','btn-block', ['disabled']);
     $form->setDefaults($user_data);
 
     if ($form->validate()) {

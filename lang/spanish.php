@@ -92,3 +92,4 @@ $strings['CurrentPasswordEmptyOrIncorrect'] = 'El campo contraseña actual, no e
 $strings['ThereAreNoCoursesAvailable'] = 'No hay cursos disponibles.';
 $strings['TheFollowingFieldsAreRequired'] = 'Los siguientes campos son obligatorios (*).';
 $strings['UpdatePassword'] = 'Actualizar contraseña';
+$strings['UpdateAvatar'] = 'Actualiza tu foto';

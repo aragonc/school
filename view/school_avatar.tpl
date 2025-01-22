@@ -32,3 +32,11 @@
         </div>
     </div>
 </div>
+<script>
+    $(document).ready(function () {
+        $('#picture_crop_button').on('click', function () {
+            // Habilitar el botón
+            $('#form_avatar_submit').prop('disabled', false);
+        });
+    });
+</script>
