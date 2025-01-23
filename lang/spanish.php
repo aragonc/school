@@ -78,7 +78,7 @@ $strings['EnterYourNewPasswordHelp'] = 'Ingresa aquí tu nueva contraseña.';
 $strings['ConfirmYourNewPassword'] = 'Vuelve a escribir la contraseña nueva';
 $strings['ConfirmYourNewPasswordHelp'] = 'Repite aquí tu nueva contraseña.';
 $strings['SaveChanges'] = 'Guardar cambios';
-$strings['ImagePreview'] = 'Vista previa de la imagen';
+$strings['ImagePreview'] = 'Tu foto actual';
 $strings['UsernameHelp'] = '<p>Para editar su nombre, apellido, email y/o usuario, debe realizar la solicitud vía correo electrónico a <a href="mailto: online@aula-virtual.cl">online@aula-virtual.cl</a>.</p>';
 $strings['BuyCourses'] = 'Comprar cursos';
 $strings['Courses'] = 'Cursos';

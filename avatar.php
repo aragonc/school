@@ -46,14 +46,14 @@ if ($enable) {
             <img class="img-fluid img-circle" src="' . $user_data['avatar']. '"  alt=""/>
     </div>
     </div>');
-
+    $labelImage =  [
+        $user_data['picture_uri'] != '' ? get_lang('UpdateImage') : get_lang('AddImage')
+    ];
     try {
+
         $form->addFile(
             'picture',
-            [
-                $user_data['picture_uri'] != '' ? get_lang('UpdateImage') : get_lang('AddImage'),
-                get_lang('OnlyImagesAllowed'),
-            ],
+            $labelImage,
             [
                 'id' => 'picture',
                 'class' => 'picture-form',
@@ -62,14 +62,15 @@ if ($enable) {
                 'accept' => 'image/*',
             ]
         );
+        $form->addHtml('<div class="help-block">'.get_lang('OnlyImagesAllowed').'</div>');
     } catch (Exception $e) {
         print_r($e->getMessage());
     }
 
     $form->addProgress();
-    if (!empty($user_data['picture_uri'])) {
+    /*if (!empty($user_data['picture_uri'])) {
         $form->addElement('checkbox', 'remove_picture', null, get_lang('DelImage'));
-    }
+    }*/
     $allowed_picture_types = api_get_supported_image_extensions(false);
     $form->addRule(
         'picture',
