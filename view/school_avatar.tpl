@@ -34,8 +34,11 @@
 </div>
 <script>
     $(document).ready(function () {
+        $('#form_avatar_submit').hide();
+
         $('#picture_crop_button').on('click', function () {
             // Habilitar el botón
+            $('#form_avatar_submit').show();
             $('#form_avatar_submit').prop('disabled', false);
         });
     });
