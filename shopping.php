@@ -35,10 +35,11 @@ if(isset($_SESSION['user_country_login'])){
     $sessionList = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 4);
 }
 
-var_dump($sessionList);
+//var_dump($sessionList);
 if ($enable) {
     $userId = api_get_user_id();
     $plugin->setTitle($plugin->get_lang('BuyCourses'));
+    $plugin->assign('sessions', $sessionList);
     $content = $plugin->fetch('school_shopping.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();

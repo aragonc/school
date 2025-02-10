@@ -47,10 +47,9 @@ if ($enable) {
     </div>
     </div>');
     $labelImage =  [
-        $user_data['picture_uri'] != '' ? get_lang('UpdateImage') : get_lang('AddImage')
+        $user_data['picture_uri'] != '' ? $plugin->get_lang('SelectAnImage') : get_lang('AddImage')
     ];
     try {
-
         $form->addFile(
             'picture',
             $labelImage,
