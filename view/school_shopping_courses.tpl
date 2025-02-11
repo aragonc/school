@@ -5,7 +5,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link " href="/shopping?view=all">
+        <a class="nav-link " href="/shopping?view=graduates">
             {{ 'Graduates'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </li>

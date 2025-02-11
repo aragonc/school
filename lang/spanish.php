@@ -81,6 +81,7 @@ $strings['SaveChanges'] = 'Guardar cambios';
 $strings['ImagePreview'] = 'Tu foto actual';
 $strings['UsernameHelp'] = '<p>Para editar su nombre, apellido, email y/o usuario, debe realizar la solicitud vía correo electrónico a <a href="mailto: online@aula-virtual.cl">online@aula-virtual.cl</a>.</p>';
 $strings['BuyCourses'] = 'Comprar cursos';
+$strings['BuyGraduates'] = 'Comprar diplomados';
 $strings['Courses'] = 'Cursos';
 $strings['Graduates'] = 'Diplomados';
 $strings['NoImageSelected'] = 'No se selecciono ninguna imagen';
