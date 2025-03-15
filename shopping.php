@@ -39,16 +39,41 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])){
                 $country = $_SESSION['user_country_login'];
                 if($country['country_code'] === 'CL'){
-                    $sessionList = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, false, 4);
+                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, false, 4);
                 } else {
-                    $sessionList = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 6);
+                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 6);
                     $isInternational = true;
                 }
             } else {
-                $sessionList = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 4);
+                $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 4);
             }
+
+            $list = $tags = [];
+            foreach ($sessions as $session) {
+                $tags =  $plugin->getTagsSession($session['id']);
+                $list[] = [
+                    'id' => $session['id'],
+                    'name' => $session['name'],
+                    'description' => ucfirst(strtolower(strip_tags($session['description']))),
+                    'tags' => $tags,
+                    'dates' => $session['dates'],
+                    'courses' => $session['courses'],
+                    'has_coupon' => $session['has_coupon'],
+                    'price' => $session['price'],
+                    'price_without_tax' => $session['price_without_tax'],
+                    'image' => $session['image'],
+                    'category' => $session['category'],
+                    'price_usd' => $session['price_usd'],
+                    'total_price_formatted' => $session['total_price_formatted'],
+                    'is_international' => $session['is_international'],
+                    'coach' => $session['coach'],
+                    'enrolled' => $session['enrolled'],
+                    'currency' => $session['currency'],
+                ];
+            }
+
             $plugin->setTitle($plugin->get_lang('BuyCourses'));
-            $plugin->assign('sessions', $sessionList);
+            $plugin->assign('sessions', $list);
             $content = $plugin->fetch('school_shopping_courses.tpl');
             break;
 
@@ -57,17 +82,41 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])) {
                 $country = $_SESSION['user_country_login'];
                 if ($country['country_code'] === 'CL') {
-                    $sessionList = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 1);
+                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 1);
                 } else {
-                    $sessionList = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 8);
+                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 8);
                     $isInternational = true;
                 }
             } else {
-                $sessionList = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 1);
+                $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 1);
+            }
+
+            $list = $tags = [];
+            foreach ($sessions as $session) {
+                $tags =  $plugin->getTagsSession($session['id']);
+                $list[] = [
+                    'id' => $session['id'],
+                    'name' => $session['name'],
+                    'description' => ucfirst(strtolower(strip_tags($session['description']))),
+                    'tags' => $tags,
+                    'dates' => $session['dates'],
+                    'courses' => $session['courses'],
+                    'has_coupon' => $session['has_coupon'],
+                    'price' => $session['price'],
+                    'price_without_tax' => $session['price_without_tax'],
+                    'image' => $session['image'],
+                    'category' => $session['category'],
+                    'price_usd' => $session['price_usd'],
+                    'total_price_formatted' => $session['total_price_formatted'],
+                    'is_international' => $session['is_international'],
+                    'coach' => $session['coach'],
+                    'enrolled' => $session['enrolled'],
+                    'currency' => $session['currency'],
+                ];
             }
 
             $plugin->setTitle($plugin->get_lang('BuyGraduates'));
-            $plugin->assign('sessions', $sessionList);
+            $plugin->assign('sessions', $list);
             $content = $plugin->fetch('school_shopping_graduates.tpl');
             break;
     }

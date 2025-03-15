@@ -312,6 +312,26 @@
 }
 
 .card-course{
+  .btn-primary{
+    color: #fff;
+    background-color: #000A4A;
+    border-color: #000A4A;
+  }
+  .card-image{
+    .price{
+      //background-color: #000A4A;
+      background-color: #4E73DF;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 5px 10px;
+      flex-direction: row;
+      color: #FFF;
+      position: absolute;
+      border-radius: 0 0 10px 0;
+      top: 160px;
+      right: 0;
+    }
+  }
   .card-title{
     font-size: 20px;
     font-weight: 900;
@@ -333,18 +353,7 @@
     object-fit: cover;
     border-radius: 10px;
   }
-  .price{
-    background-color: #000A4A;
-    font-size: 16px;
-    font-weight: 800;
-    padding: 10px;
-    border-radius: 4px 4px 4px 4px;
-    flex-direction: row;
-    color: #FFF;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
+
   .date{
     font-size: 12px;
     margin-top: 1rem;

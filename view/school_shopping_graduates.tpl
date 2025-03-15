@@ -13,7 +13,6 @@
 
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
-
         <div class="card">
             <div class="card-body">
                 <div class="p-5">
@@ -23,28 +22,28 @@
                             {% for session in sessions %}
                             <div class="col-4">
                                 <div class="card h-100 card-course" style="width: 22rem;">
-                                    <img alt="{{ session.name }}" class="card-img-top"
-                                         src="{{ session.image ? session.image : 'session_default.png'|icon() }}">
-                                    <div class="card-body">
-
+                                    <div class="card-image">
+                                        <img alt="{{ session.name }}" class="card-img-top"
+                                             src="{{ session.image ? session.image : 'session_default.png'|icon() }}">
                                         <div class="price">
                                             {{ session.total_price_formatted }}
                                         </div>
-
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="tags">
+                                            {{ session.tags }}
+                                        </div>
                                         <h5 class="card-title">
                                             <a href="{{ _p.web ~ 'session/' ~ session.id ~ '/about/' }}">{{ session.name }}</a>
                                         </h5>
-
                                         <div class="date">
-                                            <em class="fa fa-calendar fa-fw"></em> {{ session.dates.display }}
+                                            {{ session.description }}
                                         </div>
-
                                         {% if session.enrolled.checking == "YES" %}
                                         <div class="alert alert-success">
                                             <em class="fa fa-check-square-o fa-fw"></em> {{ 'TheUserIsAlreadyRegisteredInTheSession'|get_plugin_lang('BuyCoursesPlugin') }}
                                         </div>
                                         {% endif %}
-
                                         {% if session.enrolled.checking == "NO" %}
                                         <a href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"
                                            class="btn btn-block btn-primary">
@@ -58,7 +57,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     {% else %}
                     <div class="card">
                         <div class="card-body">
@@ -74,4 +72,3 @@
         </div>
     </div>
 </div>
-

@@ -17,6 +17,8 @@ class SchoolPlugin extends Plugin
     public $currentSection = null;
 
     const TABLE_SCHOOL_REQUEST = 'plugin_school_request';
+    const TABLE_SHORTIFY_TAGS = 'plugin_shortify_tags';
+    const TABLE_SHORTIFY_URL_TAGS = 'plugin_shortify_url_tags';
 
     protected function __construct()
     {
@@ -1461,5 +1463,25 @@ class SchoolPlugin extends Plugin
         }
 
         return true;
+    }
+    public function getTagsSession($idSession): string
+    {
+        if (empty($idSession)) {
+            return '';
+        }
+        $tagsTable = Database::get_main_table(self::TABLE_SHORTIFY_TAGS);
+        $tagsTableUrls = Database::get_main_table(self::TABLE_SHORTIFY_URL_TAGS);
+        $sql = "SELECT pst.id, pst.tag FROM session s
+                INNER JOIN  $tagsTableUrls psut ON s.reference_session = psut.reference
+                INNER JOIN $tagsTable pst ON pst.id = psut.tag_id
+                WHERE s.id = $idSession; ";
+
+        $result = Database::query($sql);
+
+        $tags = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $tags[$row['id']] = $row['tag'];
+        }
+        return implode(' | ', array_map('ucfirst', array_map('strtolower', $tags)));
     }
 }
