@@ -1484,4 +1484,45 @@ class SchoolPlugin extends Plugin
         }
         return implode(' | ', array_map('ucfirst', array_map('strtolower', $tags)));
     }
+
+    public function getInfoSession($item): array
+    {
+        if(empty($item)){
+            return [];
+        }
+        $session = api_get_session_info($item);
+        if(empty($session)){
+            return [];
+        }
+        $category = self::getSessionCategoryID($session['id']);
+        $sessionField = new ExtraFieldValue('session');
+        $extraFieldData = $sessionField->getAllValuesForAnItem($item, null, true);
+
+        return [
+            'id' => $session['id'],
+            'name' => $session['name'],
+            'description' => $session['description'],
+            'display_start_date' => $session['display_start_date'],
+            'session_category_id' => $session['session_category_id'],
+            'session_category' => $category,
+            'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
+            'extra_fields' => $extraFieldData
+        ];
+    }
+
+    public function getSessionCategoryID($idCategory):string
+    {
+        $table_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
+        $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
+        $sql = "SELECT sc.name FROM $table_session s INNER JOIN $table_session_category sc ON sc.id = s.session_category_id WHERE s.id = $idCategory;";
+        $result = Database::query($sql);
+        $category = null;
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $category = $row['name'];
+            }
+        }
+        return  $category;
+    }
+
 }
