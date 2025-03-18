@@ -1490,6 +1490,7 @@ class SchoolPlugin extends Plugin
             return [];
         }
         $session = api_get_session_info($item);
+
         if(empty($session)){
             return [];
         }
@@ -1502,8 +1503,9 @@ class SchoolPlugin extends Plugin
         return [
             'id' => $session['id'],
             'name' => $session['name'],
-            'description' => $session['description'],
+            'description' => ucfirst(strtolower(strip_tags($session['description']))),
             'display_start_date' => $session['display_start_date'],
+            'display_end_date' => $session['display_end_date'],
             'session_category_id' => $session['session_category_id'],
             'tags' => $tags,
             'session_category' => $category,

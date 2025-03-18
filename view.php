@@ -2,13 +2,15 @@
 
 require_once __DIR__.'/config.php';
 $plugin = SchoolPlugin::create();
-$plugin = SchoolPlugin::create();
+$buyCourse = BuyCoursesPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 $sessionId = $_GET['session_id'] ?? 0;
 
 $session = $plugin->getInfoSession($sessionId);
 $plugin->setSidebar('shopping');
+$itemBuy = $buyCourse->getItemByProduct($sessionId,$buyCourse::PRODUCT_TYPE_SESSION);
+var_dump($itemBuy);
 
 api_block_anonymous_users();
 $userId = api_get_user_id();

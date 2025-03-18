@@ -387,6 +387,18 @@
   color: $brand-two;
   padding: 1rem 0 .2rem 0;
 }
+.view-price{
+  background-color: $brand-one;
+  font-size: 1.2rem;
+  font-weight: 800;
+  padding: 5px 10px;
+  flex-direction: row;
+  color: $white;
+  position: absolute;
+  border-radius: 0 0 10px 0;
+  bottom: 84px;
+  right: 54px;
+}
 .view-duration{
   font-size: 1.2rem;
   color: $brand-two;

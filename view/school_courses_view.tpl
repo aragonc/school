@@ -4,6 +4,7 @@
 {% set session_image = _p.web_upload ~ extra_field.value.getValue() %}
 {% endif %}
 {% endfor %}
+
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         <div class="card">
@@ -16,6 +17,9 @@
                             <div class="col">
                                 <div class="media-image">
                                     <img class="img-responsive" width="550px" src="{{session_image}}" alt="{{ session.name }}">
+                                </div>
+                                <div class="view-price">
+                                    CLP 60,000
                                 </div>
                                 <div class="view-mode">
                                     Modalidad 100% Online Asincrónico
