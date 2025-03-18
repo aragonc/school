@@ -314,8 +314,8 @@
 .card-course{
   .btn-primary{
     color: #fff;
-    background-color: #000A4A;
-    border-color: #000A4A;
+    background-color: $brand-five;
+    border-color: $brand-five;
   }
   .card-image{
     .price{
@@ -340,7 +340,7 @@
     max-width: 100%;
     margin-top: 0;
     a{
-      color: #4B4851;
+      color: $brand-two;
       &:hover, &:focus{
         text-decoration: none;
       }
@@ -364,8 +364,60 @@
     font-size: 14px;
     font-weight: 700;
     letter-spacing: -0.3px;
-    color: #4B4851;
+    color: $brand-two;
     padding: 0;
     margin: 0 0 0.5rem 0;
+  }
+}
+.view-title-course{
+  font-size: 2.2rem;
+  font-weight: 900;
+  display: block;
+  max-width: 100%;
+  margin-top: 0;
+  color: $brand-two;
+}
+.view-tags{
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+.view-mode{
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: $brand-two;
+  padding: 1rem 0 .2rem 0;
+}
+.view-duration{
+  font-size: 1.2rem;
+  color: $brand-two;
+  padding: 0 0 .5rem 0;
+}
+.view-sub-title{
+  font-size: 1.5rem;
+  color: $brand-two;
+  font-weight: 800;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+.view-dates{
+  strong{
+    font-weight: 800;
+  }
+}
+.view-buttons{
+  .btn-default{
+    border-color: $brand-five;
+    color: $brand-five;
+    font-weight: 800;
+    font-size: 1.2rem;
+    border-radius: 10px;
+  }
+  .btn-primary{
+    border-color: $brand-five;
+    background-color: $brand-five;
+    color: $white;
+    font-weight: 800;
+    font-size: 1.2rem;
+    border-radius: 10px;
   }
 }

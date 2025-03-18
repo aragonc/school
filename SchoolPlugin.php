@@ -384,15 +384,14 @@ class SchoolPlugin extends Plugin
         }
         return $iconPathWeb;
     }
-    public function get_svg_icon($iconName, $altText = '', $size = 64, $responsive = false): string
+    public function get_svg_icon($iconName, $altText = '', $size = 64, $responsive = false, $type = 'svg'): string
     {
-        $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
+        $icon_path = __DIR__ . '/img/icons/' . $iconName . '.' . $type;
         if (file_exists($icon_path)) {
-            $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.svg';
+            $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.' . $type;
+            $attrib = null;
             if($responsive){
                 $attrib = ['width' => $size, 'height' => $size, 'class' => 'img-fluid'];
-            } else {
-                $attrib = ['width' => $size, 'height' => $size];
             }
             $img = Display::img($iconPathWeb,$altText, $attrib);
         } else {
@@ -1498,12 +1497,15 @@ class SchoolPlugin extends Plugin
         $sessionField = new ExtraFieldValue('session');
         $extraFieldData = $sessionField->getAllValuesForAnItem($item, null, true);
 
+        $tags = $this->getTagsSession($session['id']);
+
         return [
             'id' => $session['id'],
             'name' => $session['name'],
             'description' => $session['description'],
             'display_start_date' => $session['display_start_date'],
             'session_category_id' => $session['session_category_id'],
+            'tags' => $tags,
             'session_category' => $category,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
             'extra_fields' => $extraFieldData

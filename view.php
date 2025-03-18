@@ -8,13 +8,15 @@ $nameTools = $plugin->get_lang('DashboardSchool');
 $sessionId = $_GET['session_id'] ?? 0;
 
 $session = $plugin->getInfoSession($sessionId);
-var_dump($session);
 $plugin->setSidebar('shopping');
 
 api_block_anonymous_users();
 $userId = api_get_user_id();
 $content = '';
-$plugin->setTitle($plugin->get_lang('BuyGraduates'));
+$imgSection = $plugin->get_svg_icon('payment_methods','Cursos Anteriores', 100,false, 'png');
+$plugin->setTitle('');
+$plugin->assign('session', $session);
+$plugin->assign('img_section', $imgSection);
 $content = $plugin->fetch('school_courses_view.tpl');
 $plugin->assign('content', $content);
 $plugin->display_blank_template();
