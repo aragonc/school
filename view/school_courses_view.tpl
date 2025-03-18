@@ -15,7 +15,7 @@
                         <div class="row">
                             <div class="col">
                                 <div class="media-image">
-                                    <img class="img-responsive" width="400px" src="{{session_image}}" alt="{{ session.name }}">
+                                    <img class="img-responsive" width="550px" src="{{session_image}}" alt="{{ session.name }}">
                                 </div>
                                 <div class="view-mode">
                                     Modalidad 100% Online Asincrónico
