@@ -19,7 +19,7 @@
                                     <img class="img-responsive" width="550px" src="{{session_image}}" alt="{{ session.name }}">
                                 </div>
                                 <div class="view-price">
-                                    CLP 60,000
+                                    {{ item.iso_code }} {{ item.price_without_discount }}
                                 </div>
                                 <div class="view-mode">
                                     Modalidad 100% Online Asincrónico
@@ -30,8 +30,8 @@
                             </div>
                             <div class="col">
                                 <div class="view-dates">
-                                    <div class="start"><strong>Fecha de Inicio:</strong>  Martes 03 de Marzo 2025</div>
-                                    <div class="end"><strong>Fecha de Termino:</strong> Martes 23 de Junio 2025</div>
+                                    <div class="start"><strong>Fecha de Inicio:</strong> {{ session.display_start_date_text }}</div>
+                                    <div class="end"><strong>Fecha de Termino:</strong> {{ session.display_end_date_text }}</div>
                                 </div>
                                 <div class="description">
                                     <h3 class="view-sub-title">Caracteristicas</h3>
@@ -44,13 +44,14 @@
                                     </ul>
                                 </div>
                                 <div class="view-buttons">
-                                    <a class="btn btn-default btn-block mb-2" href="#">Ver ficha (PDF)</a>
-                                    <a class="btn btn-primary btn-block mb-2" href="#"> Comprar</a>
+                                    <a class="btn btn-default btn-block mb-2" target="_blank" href="{{ url_pdf }}">Ver ficha (PDF)</a>
+                                    <a class="btn btn-primary btn-block mb-2" href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"> {{ 'Buy'|get_plugin_lang('BuyCoursesPlugin') }}</a>
+
                                 </div>
                                 {{ img_section }}
                             </div>
                         </div>
-                        <h3 class="view-sub-title">Calendario del Curso</h3>
+                        <h3 class="view-sub-title">{{ 'CourseCalendar'|get_plugin_lang('SchoolPlugin') }}</h3>
                         <ul>
                             <li>martes, 25 de marzo de 2025: Inicio del curso e inicio Módulo I</li>
                             <li>martes, 1 de abril de 2025: Inicio del Módulo II</li>

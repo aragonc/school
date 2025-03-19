@@ -19,6 +19,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_REQUEST = 'plugin_school_request';
     const TABLE_SHORTIFY_TAGS = 'plugin_shortify_tags';
     const TABLE_SHORTIFY_URL_TAGS = 'plugin_shortify_url_tags';
+    const TABLE_SHORTIFY_URL = 'plugin_shortify_urls';
 
     protected function __construct()
     {
@@ -1510,7 +1511,8 @@ class SchoolPlugin extends Plugin
             'tags' => $tags,
             'session_category' => $category,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
-            'extra_fields' => $extraFieldData
+            'extra_fields' => $extraFieldData,
+            'reference_session' => $session['reference_session']
         ];
     }
 
@@ -1529,4 +1531,26 @@ class SchoolPlugin extends Plugin
         return  $category;
     }
 
+    public function formatDateEs($date): string
+    {
+        setlocale(LC_TIME, 'es_ES.UTF-8', 'Spanish_Spain', 'es_ES'); // Configurar español
+        $dateTime = new DateTime($date);
+
+        // Formatear la fecha
+        $textDate = strftime('%A %d de %B %Y', $dateTime->getTimestamp());
+
+        return ucfirst($textDate); // Capitalizar primera letra
+    }
+
+    public function getSessionTabURL($referenceSession)
+    {
+        if (empty($referenceSession)) {
+            return '#';
+        }
+        $tagsTableUrls = Database::get_main_table(self::TABLE_SHORTIFY_URL);
+        $sql = "SELECT psu.url_pdf FROM $tagsTableUrls psu WHERE psu.reference = '".$referenceSession ."'";
+        $result = Database::query($sql);
+        $url = Database::fetch_array($result);
+        return  $url['url_pdf'];
+    }
 }

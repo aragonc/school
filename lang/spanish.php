@@ -98,3 +98,4 @@ $strings['PhoneOrWhatsApp'] = 'Celular (WhatsApp)';
 $strings['ErrorRut'] = "Debe ingresar un RUN Válido. Ej: 11222333-K";
 $strings['ErrorForms'] = "Hay errores, corregir antes de enviar";
 $strings['SelectAnImage'] = "Seleccionar una imagen.";
+$strings['CourseCalendar'] = "Calendario del curso";
