@@ -52,15 +52,7 @@
                             </div>
                         </div>
                         <h3 class="view-sub-title">{{ 'CourseCalendar'|get_plugin_lang('SchoolPlugin') }}</h3>
-                        <ul>
-                            <li>martes, 25 de marzo de 2025: Inicio del curso e inicio Módulo I</li>
-                            <li>martes, 1 de abril de 2025: Inicio del Módulo II</li>
-                            <li>martes, 8 de abril de 2025: Inicio del Módulo III</li>
-                            <li>martes, 15 de abril de 2025: Habilitación de Evaluación del Curso.</li>
-                            <li>martes, 15 de abril de 2025: Inicio del Módulo IV</li>
-                            <li>lunes, 21 de abril de 2025: Cierre de evaluaciones (a contar de este día se ocultará el icono de evaluaciones, calificaciones y el foro de consultas).</li>
-                            <li>martes, 29 de abril de 2025: Habilitación de resultados de las evaluaciones, retroalimentaciones y certificados de aprobación.</li>
-                        </ul>
+                        {{ session.calendar_course.content }}
                     </div>
                 </div>
             </div>

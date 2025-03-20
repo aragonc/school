@@ -2,6 +2,7 @@
 
 require_once 'src/PipedriveAPI.php';
 
+use Chamilo\CoreBundle\Entity\Session;
 use Doctrine\ORM\Query\QueryException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -1485,12 +1486,25 @@ class SchoolPlugin extends Plugin
         return implode(' | ', array_map('ucfirst', array_map('strtolower', $tags)));
     }
 
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     * @throws \Doctrine\ORM\ORMException
+     */
     public function getInfoSession($item): array
     {
         if(empty($item)){
             return [];
         }
+
         $session = api_get_session_info($item);
+
+        $em = Database::getManager();
+        /** @var Session $session */
+        $sessionEntity = $em->find('ChamiloCoreBundle:Session', $item);
+
+        $courses = self::getSessionCourseList($sessionEntity);
+        $lists = self::getDescriptionCourse($session['id'], $courses['id'],8);
 
         if(empty($session)){
             return [];
@@ -1512,8 +1526,26 @@ class SchoolPlugin extends Plugin
             'session_category' => $category,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
             'extra_fields' => $extraFieldData,
-            'reference_session' => $session['reference_session']
+            'reference_session' => $session['reference_session'],
+            'calendar_course' => $lists,
         ];
+    }
+
+    function getSessionCourseList(Session $session): array
+    {
+        $return = [];
+
+        foreach ($session->getCourses() as $sessionCourse) {
+            /** @var Course $course */
+            $course = $sessionCourse->getCourse();
+            $return = [
+                'id' => $course->getId(),
+                'name' => $course->getTitle(),
+                'code' => $course->getCode()
+            ];
+        }
+
+        return $return;
     }
 
     public function getSessionCategoryID($idCategory):string
@@ -1552,5 +1584,25 @@ class SchoolPlugin extends Plugin
         $result = Database::query($sql);
         $url = Database::fetch_array($result);
         return  $url['url_pdf'];
+    }
+    public function getDescriptionCourse($sessionID, $courseID, $type): array
+    {
+        if (empty($type) || empty($sessionID) || empty($courseID)) {
+            return [];
+        }
+        $tableCourseDescription = Database::get_course_table(TABLE_COURSE_DESCRIPTION);
+        $sql = "SELECT ccd.id, ccd.title, ccd.content FROM $tableCourseDescription ccd WHERE c_id = $courseID and session_id = $sessionID and ccd.description_type = $type;";
+        $result = Database::query($sql);
+        $description = [];
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $description = [
+                    'id' => $row['id'],
+                    'title' => $row['title'],
+                    'content' => $row['content']
+                ];
+            }
+        }
+        return  $description;
     }
 }
