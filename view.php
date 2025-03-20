@@ -11,7 +11,6 @@ $session = $plugin->getInfoSession($sessionId);
 $session['display_start_date_text'] = $plugin->formatDateEs($session['display_start_date']);
 $session['display_end_date_text'] = $plugin->formatDateEs($session['display_end_date']);
 $sessionURL = $plugin->getSessionTabURL($session['reference_session']);
-
 $plugin->setSidebar('shopping');
 $itemBuy = $buyCourse->getItemByProduct($sessionId,$buyCourse::PRODUCT_TYPE_SESSION);
 

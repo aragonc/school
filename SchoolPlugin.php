@@ -1504,7 +1504,7 @@ class SchoolPlugin extends Plugin
         $sessionEntity = $em->find('ChamiloCoreBundle:Session', $item);
 
         $courses = self::getSessionCourseList($sessionEntity);
-        $lists = self::getDescriptionCourse($session['id'], $courses['id'],8);
+        $lists = self::getDescriptionCourse($session['id'], $courses[0]['id'],8);
 
         if(empty($session)){
             return [];
@@ -1524,6 +1524,8 @@ class SchoolPlugin extends Plugin
             'session_category_id' => $session['session_category_id'],
             'tags' => $tags,
             'session_category' => $category,
+            'n_courses' => count($courses),
+            'courses' => $courses,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
             'extra_fields' => $extraFieldData,
             'reference_session' => $session['reference_session'],
@@ -1538,7 +1540,7 @@ class SchoolPlugin extends Plugin
         foreach ($session->getCourses() as $sessionCourse) {
             /** @var Course $course */
             $course = $sessionCourse->getCourse();
-            $return = [
+            $return[] = [
                 'id' => $course->getId(),
                 'name' => $course->getTitle(),
                 'code' => $course->getCode()

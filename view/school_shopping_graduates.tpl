@@ -34,7 +34,7 @@
                                             {{ session.tags }}
                                         </div>
                                         <h5 class="card-title">
-                                            <a href="{{ _p.web ~ 'session/' ~ session.id ~ '/about/' }}">{{ session.name }}</a>
+                                            <a href="{{ _p.web ~ 'view/course/' ~ session.id  }}">{{ session.name }}</a>
                                         </h5>
                                         <div class="date">
                                             {{ session.description }}

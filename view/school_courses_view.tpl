@@ -51,8 +51,17 @@
                                 {{ img_section }}
                             </div>
                         </div>
-                        <h3 class="view-sub-title">{{ 'CourseCalendar'|get_plugin_lang('SchoolPlugin') }}</h3>
-                        {{ session.calendar_course.content }}
+                        {% if session.n_courses <= 1 %}
+                            <h3 class="view-sub-title">{{ 'CourseCalendar'|get_plugin_lang('SchoolPlugin') }}</h3>
+                            {{ session.calendar_course.content }}
+                        {% else %}
+                            <h3 class="view-sub-title">{{ 'DiplomaSchedule'|get_plugin_lang('SchoolPlugin') }}</h3>
+                            <ul>
+                                {% for course in session.courses %}
+                                <li>{{ course.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
                     </div>
                 </div>
             </div>
