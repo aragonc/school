@@ -24,7 +24,16 @@ if(class_exists('BuyCoursesPlugin')){
         $_SESSION['user_country_login'] = $country;
     }
 }
-
+$tags = $plugin->getTags();
+$form = new FormValidator(
+    'search_filter',
+    'get',
+    null,
+    null,
+    [],
+    FormValidator::LAYOUT_SEARCH
+);
+$form->addSelect('tag',$plugin->get_lang('ShowByCategories'), $tags);
 
 
 //var_dump($sessionList);
@@ -74,6 +83,7 @@ if ($enable) {
 
             $plugin->setTitle($plugin->get_lang('BuyCourses'));
             $plugin->assign('sessions', $list);
+            $plugin->assign('form', $form->returnForm());
             $content = $plugin->fetch('school_shopping_courses.tpl');
             break;
 
@@ -82,13 +92,13 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])) {
                 $country = $_SESSION['user_country_login'];
                 if ($country['country_code'] === 'CL') {
-                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 1);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 1);
                 } else {
-                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 8);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 8);
                     $isInternational = true;
                 }
             } else {
-                $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 1);
+                $sessions = $plugin->getCoursesByFiltering($nameFilter, 1);
             }
 
             $list = $tags = [];

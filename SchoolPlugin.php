@@ -1609,6 +1609,19 @@ class SchoolPlugin extends Plugin
         return  $description;
     }
 
+    public function getTags(): array
+    {
+        $tagsTable = Database::get_main_table(self::TABLE_SHORTIFY_TAGS);
+        $sql = "SELECT * FROM $tagsTable pst";
+        $result = Database::query($sql);
+        $tags = [];
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $tags[$row['id']] = $row['tag'];
+            }
+        }
+        return  $tags;
+    }
     private function filterSessionList($name = null, $categoryID = 0): array
     {
         $itemTable = Database::get_main_table(self::TABLE_BUYCOURSE_ITEM);
