@@ -1612,50 +1612,40 @@ class SchoolPlugin extends Plugin
     private function filterSessionList($name = null, $categoryID = 0): array
     {
         $itemTable = Database::get_main_table(self::TABLE_BUYCOURSE_ITEM);
+        $urlsTable = Database::get_main_table(self::TABLE_SHORTIFY_URL);
         $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
 
-        $innerJoin = "$itemTable i ON s.id = i.product_id ";
-        $whereConditions = [
-            'i.product_type = ? ' => 2,
-        ];
+        $yesterdayDateOne = date('Y-m-d', strtotime("+0 day"));
+        $yesterdayDateTwo = date('Y-m-d', strtotime("+1 day"));
 
+        /*
         if (!empty($name)) {
             $whereConditions['AND s.name LIKE %?%'] = $name;
+        }*/
+
+        $sql = "SELECT s.id, s.reference_session, psu.reference, psu.ordering FROM $sessionTable s
+                INNER JOIN $itemTable i ON s.id = i.product_id   INNER JOIN $urlsTable psu ON s.reference_session = psu.reference
+                WHERE i.product_type = '2' AND s.session_category_id = '".$categoryID."' AND s.sale_start_date <= '".$yesterdayDateOne."'
+                AND '".$yesterdayDateTwo."' <= s.sale_end_date ORDER BY psu.ordering ASC";
+        $result = Database::query($sql);
+
+        $sessionIds = [];
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $sessionIds[] = [
+                    'id' => $row['id'],
+                    'reference' => $row['reference'],
+                    'ordering' => $row['ordering']
+                ];
+            }
         }
-
-        if (!empty($categoryID)) {
-            $whereConditions['AND s.session_category_id = ?'] = $categoryID;
-        }
-
-        $yesterdayDate = date('Y-m-d', strtotime("+0 day"));
-        $whereConditions[' AND s.sale_start_date <= ?'] = $yesterdayDate;
-        $yesterdayDate = date('Y-m-d', strtotime("+1 day"));
-        $whereConditions[' AND ? <= s.sale_end_date'] = $yesterdayDate;
-
-        $sessionIds = Database::select(
-            's.id',
-            "$sessionTable s INNER JOIN $innerJoin",
-            [
-                'where' => $whereConditions,
-                'order' => 's.id DESC',
-            ],
-            'all','ASSOC',true
-        );
-
-
-        if (!$sessionIds) {
-            return [];
-        }
-
         $sessions = [];
-
         foreach ($sessionIds as $sessionId) {
             $sessions[] = Database::getManager()->find(
                 'ChamiloCoreBundle:Session',
-                $sessionId
+                $sessionId['id']
             );
         }
-
         return $sessions;
     }
 
