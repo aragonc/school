@@ -21,6 +21,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SHORTIFY_TAGS = 'plugin_shortify_tags';
     const TABLE_SHORTIFY_URL_TAGS = 'plugin_shortify_url_tags';
     const TABLE_SHORTIFY_URL = 'plugin_shortify_urls';
+    const TABLE_BUYCOURSE_ITEM = 'plugin_buycourses_item';
 
     protected function __construct()
     {
@@ -1607,4 +1608,118 @@ class SchoolPlugin extends Plugin
         }
         return  $description;
     }
+
+    private function filterSessionList($name = null, $categoryID = 0): array
+    {
+        $itemTable = Database::get_main_table(self::TABLE_BUYCOURSE_ITEM);
+        $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+
+        $innerJoin = "$itemTable i ON s.id = i.product_id ";
+        $whereConditions = [
+            'i.product_type = ? ' => 2,
+        ];
+
+        if (!empty($name)) {
+            $whereConditions['AND s.name LIKE %?%'] = $name;
+        }
+
+        if (!empty($categoryID)) {
+            $whereConditions['AND s.session_category_id = ?'] = $categoryID;
+        }
+
+        $yesterdayDate = date('Y-m-d', strtotime("+0 day"));
+        $whereConditions[' AND s.sale_start_date <= ?'] = $yesterdayDate;
+        $yesterdayDate = date('Y-m-d', strtotime("+1 day"));
+        $whereConditions[' AND ? <= s.sale_end_date'] = $yesterdayDate;
+
+        $sessionIds = Database::select(
+            's.id',
+            "$sessionTable s INNER JOIN $innerJoin",
+            [
+                'where' => $whereConditions,
+                'order' => 's.id DESC',
+            ],
+            'all','ASSOC',true
+        );
+
+
+        if (!$sessionIds) {
+            return [];
+        }
+
+        $sessions = [];
+
+        foreach ($sessionIds as $sessionId) {
+            $sessions[] = Database::getManager()->find(
+                'ChamiloCoreBundle:Session',
+                $sessionId
+            );
+        }
+
+        return $sessions;
+    }
+
+    /**
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function getCoursesByFiltering ($name, $categoryID): array
+    {
+
+        $buy = BuyCoursesPlugin::create();
+        $sessionCatalog = [];
+
+        $sessions = $this->filterSessionList($name, $categoryID);
+
+        foreach ($sessions as $session) {
+            $sessionCourses = $session->getCourses();
+            if (empty($sessionCourses)) {
+                continue;
+            }
+
+            $item = $buy->getItemByProduct(
+                $session->getId(),
+                $buy::PRODUCT_TYPE_SESSION
+            );
+
+            if (empty($item)) {
+                continue;
+            }
+
+            $sessionData = $buy->getSessionInfo($session->getId());
+            $sessionData['coach'] = $session->getGeneralCoach()->getCompleteName();
+            $sessionData['enrolled'] = $buy->getUserStatusForSession(
+                api_get_user_id(),
+                $session
+            );
+            $sessionData['courses'] = [];
+
+            foreach ($sessionCourses as $sessionCourse) {
+                $course = $sessionCourse->getCourse();
+
+                $sessionCourseData = [
+                    'title' => $course->getTitle(),
+                    'coaches' => [],
+                ];
+
+                $userCourseSubscriptions = $session->getUserCourseSubscriptionsByStatus(
+                    $course,
+                    Chamilo\CoreBundle\Entity\Session::COACH
+                );
+
+                foreach ($userCourseSubscriptions as $userCourseSubscription) {
+                    $user = $userCourseSubscription->getUser();
+                    $sessionCourseData['coaches'][] = $user->getCompleteName();
+                }
+
+                $sessionData['courses'][] = $sessionCourseData;
+            }
+            $sessionCatalog[] = $sessionData;
+        }
+
+        return $sessionCatalog;
+
+    }
+
 }

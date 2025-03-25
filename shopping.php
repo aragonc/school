@@ -39,13 +39,13 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])){
                 $country = $_SESSION['user_country_login'];
                 if($country['country_code'] === 'CL'){
-                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, false, 4);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 4);
                 } else {
-                    $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 6);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 6);
                     $isInternational = true;
                 }
             } else {
-                $sessions = $buy->getCatalogSessionList($nameFilter, $minFilter, $maxFilter, true, 4);
+                $sessions = $plugin->getCoursesByFiltering($nameFilter, 4);
             }
 
             $list = $tags = [];
