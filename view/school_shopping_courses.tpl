@@ -1,3 +1,6 @@
+<div class="d-flex flex-row-reverse">
+    <div class="p-2 bd-highlight">{{ form }}</div>
+</div>
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link active" href="/shopping">
@@ -10,15 +13,11 @@
         </a>
     </li>
 </ul>
-
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         <div class="card">
             <div class="card-body">
                 <div class="p-5">
-                    <div class="d-flex flex-row-reverse">
-                        <div class="p-2 bd-highlight">{{ form }}</div>
-                    </div>
 
                     <div class="container-fluid">
                         <div class="row">

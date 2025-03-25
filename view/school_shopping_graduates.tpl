@@ -1,3 +1,6 @@
+<div class="d-flex flex-row-reverse">
+    <div class="p-2 bd-highlight">{{ form }}</div>
+</div>
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link " href="/shopping">

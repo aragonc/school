@@ -34,7 +34,7 @@ $form = new FormValidator(
     FormValidator::LAYOUT_SEARCH
 );
 $form->addSelect('tag',$plugin->get_lang('ShowByCategories'), $tags);
-
+$plugin->assign('form', $form->returnForm());
 
 //var_dump($sessionList);
 if ($enable) {
@@ -83,7 +83,7 @@ if ($enable) {
 
             $plugin->setTitle($plugin->get_lang('BuyCourses'));
             $plugin->assign('sessions', $list);
-            $plugin->assign('form', $form->returnForm());
+
             $content = $plugin->fetch('school_shopping_courses.tpl');
             break;
 
