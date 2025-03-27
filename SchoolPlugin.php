@@ -1615,7 +1615,7 @@ class SchoolPlugin extends Plugin
         $sql = "SELECT * FROM $tagsTable pst";
         $result = Database::query($sql);
         $tags = [
-            '-1' => $this->get_lang('SelectAnOption')
+            '-1' => $this->get_lang('All')
         ];
         if (Database::num_rows($result) > 0) {
             while ($row = Database::fetch_array($result)) {

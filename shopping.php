@@ -80,7 +80,7 @@ if ($enable) {
                     'currency' => $session['currency'],
                 ];
             }
-            $plugin->setTitle($plugin->get_lang('BuyCourses'));
+            $plugin->setTitle($plugin->get_lang('Registrations'));
             $plugin->assign('sessions', $list);
 
             $content = $plugin->fetch('school_shopping_courses.tpl');
@@ -124,7 +124,7 @@ if ($enable) {
                 ];
             }
 
-            $plugin->setTitle($plugin->get_lang('BuyGraduates'));
+            $plugin->setTitle($plugin->get_lang('Registrations'));
             $plugin->assign('sessions', $list);
             $content = $plugin->fetch('school_shopping_graduates.tpl');
             break;
