@@ -26,8 +26,10 @@
                             <div class="col-4">
                                 <div class="card h-100 card-course mb-5" style="width: 22rem;">
                                     <div class="card-image">
-                                        <img alt="{{ session.name }}" class="card-img-top"
+                                        <a href="{{ _p.web ~ 'view/course/' ~ session.id  }}">
+                                            <img alt="{{ session.name }}" class="card-img-top"
                                              src="{{ session.image ? session.image : 'session_default.png'|icon() }}">
+                                        </a>
                                         <div class="price">
                                             {{ session.total_price_formatted }}
                                         </div>
