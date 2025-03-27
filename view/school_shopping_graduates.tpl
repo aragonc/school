@@ -75,3 +75,10 @@
         </div>
     </div>
 </div>
+<script>
+    $(document).ready(function() {
+        $('#search_filter_tag').change(function() {
+            $('#search_filter').submit();
+        });
+    });
+</script>

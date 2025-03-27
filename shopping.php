@@ -9,6 +9,10 @@ $filterTag = $_REQUEST['tag'] ?? -1;
 $plugin->setSidebar('shopping');
 $view = $_REQUEST['view'] ?? 'courses';
 
+$actionFilter = '/shopping';
+if($view!='courses'){
+    $actionFilter = '/shopping?view=graduates';
+}
 $nameFilter = null;
 $minFilter = 0;
 $maxFilter = 0;
@@ -28,14 +32,14 @@ $tags = $plugin->getTags();
 $form = new FormValidator(
     'search_filter',
     'get',
-    null,
+    $actionFilter,
     null,
     [],
     FormValidator::LAYOUT_SEARCH
 );
+$form->addHidden('view', $view);
 $form->addSelect('tag',$plugin->get_lang('ShowByCategories'), $tags);
-$plugin->setFilter($form->returnForm());
-//var_dump($sessionList);
+
 if ($enable) {
     $userId = api_get_user_id();
     $content = '';
@@ -128,7 +132,7 @@ if ($enable) {
             $content = $plugin->fetch('school_shopping_graduates.tpl');
             break;
     }
-
+    $plugin->setFilter($form->returnForm());
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
 }
