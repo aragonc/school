@@ -34,8 +34,7 @@ $form = new FormValidator(
     FormValidator::LAYOUT_SEARCH
 );
 $form->addSelect('tag',$plugin->get_lang('ShowByCategories'), $tags);
-$plugin->assign('form', $form->returnForm());
-
+$plugin->setFilter($form->returnForm());
 //var_dump($sessionList);
 if ($enable) {
     $userId = api_get_user_id();

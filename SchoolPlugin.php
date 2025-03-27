@@ -253,6 +253,15 @@ class SchoolPlugin extends Plugin
 
     }
 
+    /**
+     * @param null $form
+     */
+    public function setFilter($form): void
+    {
+        $this->assign('form_filter', $form);
+
+    }
+
     public function set_js_extras($htmlExtras): string
     {
         $extraHeaders = '';
