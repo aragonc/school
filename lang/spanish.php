@@ -100,6 +100,6 @@ $strings['ErrorForms'] = "Hay errores, corregir antes de enviar";
 $strings['SelectAnImage'] = "Seleccionar una imagen.";
 $strings['CourseCalendar'] = "Calendario del curso";
 $strings['DiplomaSchedule'] = "Calendario del diplomado";
-$strings['ShowByCategories'] = "Mostrar por categorias";
+$strings['ShowByCategories'] = "Filtrar por categorías";
 $strings['All'] = "Todos";
 $strings['Registrations'] = "Inscripciones";
