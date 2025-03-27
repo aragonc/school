@@ -5,8 +5,8 @@ $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 $certificateId = $_GET['id'] ?? 0;
+$filterTag = $_REQUEST['tag'] ?? -1;
 $plugin->setSidebar('shopping');
-
 $view = $_REQUEST['view'] ?? 'courses';
 
 $nameFilter = null;
@@ -14,7 +14,7 @@ $minFilter = 0;
 $maxFilter = 0;
 
 api_block_anonymous_users();
-
+$filterTag = intval($filterTag);
 $country = $buy = null;
 
 if(class_exists('BuyCoursesPlugin')){
@@ -48,13 +48,13 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])){
                 $country = $_SESSION['user_country_login'];
                 if($country['country_code'] === 'CL'){
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 4);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 4, $filterTag);
                 } else {
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 6);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 6, $filterTag);
                     $isInternational = true;
                 }
             } else {
-                $sessions = $plugin->getCoursesByFiltering($nameFilter, 4);
+                $sessions = $plugin->getCoursesByFiltering($nameFilter, 4, $filterTag);
             }
 
             $list = $tags = [];
@@ -80,7 +80,6 @@ if ($enable) {
                     'currency' => $session['currency'],
                 ];
             }
-
             $plugin->setTitle($plugin->get_lang('BuyCourses'));
             $plugin->assign('sessions', $list);
 
@@ -92,13 +91,13 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])) {
                 $country = $_SESSION['user_country_login'];
                 if ($country['country_code'] === 'CL') {
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 1);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 1, $filterTag);
                 } else {
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 8);
+                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 8, $filterTag);
                     $isInternational = true;
                 }
             } else {
-                $sessions = $plugin->getCoursesByFiltering($nameFilter, 1);
+                $sessions = $plugin->getCoursesByFiltering($nameFilter, 1, $filterTag);
             }
 
             $list = $tags = [];

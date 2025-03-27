@@ -21,7 +21,7 @@
                 <div class="p-5">
                     <div class="container-fluid">
                         <div class="row">
-                            {% if sessions|length > 10 %}
+                            {% if sessions %}
                             {% for session in sessions %}
                             <div class="col-4">
                                 <div class="card h-100 card-course" style="width: 22rem;">

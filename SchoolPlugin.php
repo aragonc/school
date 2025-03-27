@@ -1614,7 +1614,9 @@ class SchoolPlugin extends Plugin
         $tagsTable = Database::get_main_table(self::TABLE_SHORTIFY_TAGS);
         $sql = "SELECT * FROM $tagsTable pst";
         $result = Database::query($sql);
-        $tags = [];
+        $tags = [
+            '-1' => $this->get_lang('SelectAnOption')
+        ];
         if (Database::num_rows($result) > 0) {
             while ($row = Database::fetch_array($result)) {
                 $tags[$row['id']] = $row['tag'];
@@ -1622,24 +1624,30 @@ class SchoolPlugin extends Plugin
         }
         return  $tags;
     }
-    private function filterSessionList($name = null, $categoryID = 0): array
+    private function filterSessionList($name = null, $categoryID = 0, $filterTag = -1): array
     {
         $itemTable = Database::get_main_table(self::TABLE_BUYCOURSE_ITEM);
         $urlsTable = Database::get_main_table(self::TABLE_SHORTIFY_URL);
         $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+        $urlTagsTable = Database::get_main_table(self::TABLE_SHORTIFY_URL_TAGS);
 
         $yesterdayDateOne = date('Y-m-d', strtotime("+0 day"));
         $yesterdayDateTwo = date('Y-m-d', strtotime("+1 day"));
 
-        /*
-        if (!empty($name)) {
-            $whereConditions['AND s.name LIKE %?%'] = $name;
-        }*/
+        $sql = "SELECT s.id, s.reference_session, psu.reference, psu.ordering,
+                GROUP_CONCAT(psut.tag_id ORDER BY psut.tag_id ASC) AS tag_ids FROM $sessionTable s
+                INNER JOIN $itemTable i ON s.id = i.product_id
+                INNER JOIN $urlsTable psu ON s.reference_session = psu.reference
+                LEFT JOIN $urlTagsTable psut ON psut.reference = s.reference_session ";
+        $sql.= "WHERE i.product_type = '2' AND s.session_category_id = '".$categoryID."'
+                AND s.sale_start_date <= '".$yesterdayDateOne."' AND '".$yesterdayDateTwo."' <= s.sale_end_date ";
 
-        $sql = "SELECT s.id, s.reference_session, psu.reference, psu.ordering FROM $sessionTable s
-                INNER JOIN $itemTable i ON s.id = i.product_id   INNER JOIN $urlsTable psu ON s.reference_session = psu.reference
-                WHERE i.product_type = '2' AND s.session_category_id = '".$categoryID."' AND s.sale_start_date <= '".$yesterdayDateOne."'
-                AND '".$yesterdayDateTwo."' <= s.sale_end_date ORDER BY psu.ordering ASC";
+        if ($filterTag != -1 && $filterTag != 0) {
+            $sql.= "AND psut.tag_id = '".$filterTag."' ";
+        }
+
+        $sql.= "GROUP BY s.id, s.reference_session, psu.reference, psu.ordering ORDER BY psu.ordering ASC ";
+
         $result = Database::query($sql);
 
         $sessionIds = [];
@@ -1667,13 +1675,13 @@ class SchoolPlugin extends Plugin
      * @throws \Doctrine\ORM\TransactionRequiredException
      * @throws \Doctrine\ORM\ORMException
      */
-    public function getCoursesByFiltering ($name, $categoryID): array
+    public function getCoursesByFiltering ($name, $categoryID, $filterTag): array
     {
 
         $buy = BuyCoursesPlugin::create();
         $sessionCatalog = [];
 
-        $sessions = $this->filterSessionList($name, $categoryID);
+        $sessions = $this->filterSessionList($name, $categoryID, $filterTag);
 
         foreach ($sessions as $session) {
             $sessionCourses = $session->getCourses();
@@ -1700,12 +1708,10 @@ class SchoolPlugin extends Plugin
 
             foreach ($sessionCourses as $sessionCourse) {
                 $course = $sessionCourse->getCourse();
-
                 $sessionCourseData = [
                     'title' => $course->getTitle(),
                     'coaches' => [],
                 ];
-
                 $userCourseSubscriptions = $session->getUserCourseSubscriptionsByStatus(
                     $course,
                     Chamilo\CoreBundle\Entity\Session::COACH
