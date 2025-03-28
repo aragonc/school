@@ -258,6 +258,7 @@
                                     </div>
                                 </li>`;
                                 resultList.append(notFound);
+                                resultList.show(); // Muestra la lista
                             }
                         },
                         error: function() {
