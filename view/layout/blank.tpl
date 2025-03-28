@@ -215,6 +215,8 @@
             let term = $(this).val().trim();
             let resultList = $("#result");
             let url_platform = '{{ _p.web_plugin }}';
+            let url_courses = '{{ _p.web }}shopping';
+            let url_graduates = '{{ _p.web }}shopping?view=graduates';
 
             if (term.length > 0) {
                 $("#loader").show();
@@ -248,7 +250,14 @@
                                 });
                                 resultList.show(); // Muestra la lista
                             } else {
-                                resultList.append('<li class="list-group-item text-muted">No se encontraron resultados</li>');
+                                let notFound = `
+                                <li class="list-group-item text-muted">
+                                    <div class="dropdown-item align-items-center p-4">
+                                No se encontraron resultados, puedes visitar nuestro catalogo de <a href="`+url_courses+`">cursos</a>
+                                y <a href="`+url_graduates+`">diplomados</a>
+                                    </div>
+                                </li>`;
+                                resultList.append(notFound);
                             }
                         },
                         error: function() {
