@@ -434,13 +434,18 @@
   }
 }
 .navbar-search{
+  position: relative;
   #loader {
     display: none;
     text-align: center;
-    padding: 10px;
+    padding: 0;
     position: absolute;
-    right: 0;
+    left: -30px;
+    top: 2px;
     z-index: 10;
+  }
+  input{
+    height: 40px !important;
   }
   .list-group{
     position: absolute;
