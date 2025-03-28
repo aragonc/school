@@ -103,4 +103,4 @@ $strings['DiplomaSchedule'] = "Calendario del diplomado";
 $strings['ShowByCategories'] = "Filtrar por categorías";
 $strings['All'] = "Todos";
 $strings['Registrations'] = "Inscripciones";
-$strings['SearchCourses'] = "Buscar cursos";
+$strings['SearchCourses'] = "Buscar cursos y diplomados...";

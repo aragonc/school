@@ -434,6 +434,14 @@
   }
 }
 .navbar-search{
+  #loader {
+    display: none;
+    text-align: center;
+    padding: 10px;
+    position: absolute;
+    right: 0;
+    z-index: 10;
+  }
   .list-group{
     position: absolute;
     width: auto;

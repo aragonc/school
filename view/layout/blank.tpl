@@ -208,24 +208,31 @@
     });
 
     $(document).ready(function() {
-        $("#term").on("keyup", function() {
+        let timeout = null;
 
-            let url_platform = '{{ _p.web_plugin }}';
+        $("#term").on("keyup", function() {
+            clearTimeout(timeout);
             let term = $(this).val().trim();
+            let resultList = $("#result");
+            let url_platform = '{{ _p.web_plugin }}';
 
             if (term.length > 0) {
-                $.ajax({
-                    url: url_platform + "school/src/ajax.php?action=search&term=" + term,
-                    method: "GET",
-                    dataType: "json",
-                    success: function(response) {
-                        let resultList = $("#result");
-                        resultList.empty(); // Limpiar resultados previos
+                $("#loader").show();
+                resultList.empty();
 
-                        if (response.sessions.length > 0) {
-                            response.sessions.slice(0, 5).forEach(function(session) {  // Mostrar solo los primeros 5
-                                let listItem = `
-                                <li class="list-group-item">
+                timeout = setTimeout(function() {
+                    $.ajax({
+                        url: url_platform + "school/src/ajax.php?action=search&term=" + term,
+                        method: "GET",
+                        dataType: "json",
+                        success: function(response) {
+                            $("#loader").hide();
+                            resultList.empty();
+
+                            if (response.sessions.length > 0) {
+                                response.sessions.slice(0, 5).forEach(function(session) {
+                                    let listItem = `
+                                    <li class="list-group-item">
                                     <a class="dropdown-item d-flex align-items-center" href="#">
                                         <div class="mr-3">
                                             <img src="${session.extra.image}" alt="${session.name}" width="100" class="mr-2">
@@ -236,19 +243,37 @@
                                         </div>
                                     </a>
                                 </li>
-                            `;
-                                resultList.append(listItem);
-                            });
-                        } else {
-                            resultList.append('<li class="list-group-item text-muted">No se encontraron resultados</li>');
+                                `;
+                                    resultList.append(listItem);
+                                });
+                                resultList.show(); // Muestra la lista
+                            } else {
+                                resultList.append('<li class="list-group-item text-muted">No se encontraron resultados</li>');
+                            }
+                        },
+                        error: function() {
+                            $("#loader").hide();
+                            resultList.html('<li class="list-group-item text-danger">Error al obtener datos</li>');
                         }
-                    },
-                    error: function() {
-                        $("#result").html('<li class="list-group-item text-danger">Error al obtener datos</li>');
-                    }
-                });
+                    });
+                }, 400);
             } else {
-                $("#result").empty(); // Limpiar si no hay texto
+                $("#loader").hide();
+                resultList.empty().hide();
+            }
+        });
+
+        // Ocultar los resultados al hacer clic fuera
+        $(document).on("click", function(event) {
+            if (!$(event.target).closest("#term, #result").length) {
+                $("#result").hide();
+            }
+        });
+
+        // Mostrar resultados cuando el input tenga el foco
+        $("#term").on("focus", function() {
+            if ($("#result").children().length > 0) {
+                $("#result").show();
             }
         });
     });
