@@ -226,12 +226,15 @@
                             response.sessions.slice(0, 5).forEach(function(session) {  // Mostrar solo los primeros 5
                                 let listItem = `
                                 <li class="list-group-item">
-                                    <div>
-                                        <img src="${session.extra.image}" alt="${session.name}" width="50" class="mr-2">
-                                        <strong>${session.name}</strong>
-                                    </div>
-                                    <p>${session.description}</p>
-                                    <a href="${session.extra.video}" target="_blank">Ver Video</a>
+                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                        <div class="mr-3">
+                                            <img src="${session.extra.image}" alt="${session.name}" width="100" class="mr-2">
+                                        </div>
+                                        <div>
+                                            <h4 class="title mt-3">${session.name}</h4>
+                                            <p>${session.description}</p>
+                                        </div>
+                                    </a>
                                 </li>
                             `;
                                 resultList.append(listItem);

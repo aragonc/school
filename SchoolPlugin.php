@@ -1669,6 +1669,7 @@ class SchoolPlugin extends Plugin
                 }
                 $session['ordering'] = intval($row['ordering']);
                 $session['extra'] = $ResultExtraField;
+                $session['description'] = ucfirst(strtolower(strip_tags($session['description'])));
                 $sessions[] = $session;
             }
         }

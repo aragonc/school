@@ -433,3 +433,17 @@
     border-radius: 10px;
   }
 }
+.navbar-search{
+  .list-group{
+    position: absolute;
+    width: auto;
+    z-index: 10;
+    .list-group-item{
+      padding: 0.5rem 0.25rem;
+      .title{
+        font-size: 1rem;
+        font-weight: 800;
+      }
+    }
+  }
+}
