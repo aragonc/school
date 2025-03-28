@@ -1633,7 +1633,48 @@ class SchoolPlugin extends Plugin
         }
         return  $tags;
     }
-    private function filterSessionList($name = null, $categoryID = 0, $filterTag = -1): array
+    public function getSearchCourse($name): array
+    {
+        $yesterdayDateOne = date('Y-m-d', strtotime("+0 day"));
+        $yesterdayDateTwo = date('Y-m-d', strtotime("+1 day"));
+        $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+        $itemTable = Database::get_main_table(self::TABLE_BUYCOURSE_ITEM);
+        $urlsTable = Database::get_main_table(self::TABLE_SHORTIFY_URL);
+        $sql = "SELECT s.id, s.name, s.description, s.session_category_id, s.reference_session, psu.ordering FROM $sessionTable s
+                INNER JOIN $itemTable i ON s.id = i.product_id
+                INNER JOIN $urlsTable psu ON s.reference_session = psu.reference
+                WHERE i.product_type = '2'
+                AND s.sale_start_date <= '".$yesterdayDateOne."'
+                AND '".$yesterdayDateTwo."' <= s.sale_end_date
+                AND s.name LIKE '%".$name."%'
+                ORDER BY psu.ordering ASC";
+
+        $result = Database::query($sql);
+        $sessions = [];
+
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $session = SessionManager::fetch($row['id']);
+                $sessionField = new ExtraField('session');
+                $extraFieldData = $sessionField->getDataAndFormattedValues($row['id']);
+                $ResultExtraField = [];
+                foreach ($extraFieldData as $item) {
+                    if ($item['variable'] === 'image') {
+                        // Extraer la URL de la imagen desde el atributo href
+                        preg_match('/href="([^"]+)"/', $item['value'], $matches);
+                        $ResultExtraField['image'] = $matches[1] ?? null;
+                    } elseif ($item['variable'] === 'video_url_session') {
+                        $ResultExtraField['video'] = $item['value'];
+                    }
+                }
+                $session['ordering'] = intval($row['ordering']);
+                $session['extra'] = $ResultExtraField;
+                $sessions[] = $session;
+            }
+        }
+        return $sessions;
+    }
+    private function filterSessionList( $categoryID = 0, $filterTag = -1): array
     {
         $itemTable = Database::get_main_table(self::TABLE_BUYCOURSE_ITEM);
         $urlsTable = Database::get_main_table(self::TABLE_SHORTIFY_URL);
@@ -1684,13 +1725,13 @@ class SchoolPlugin extends Plugin
      * @throws \Doctrine\ORM\TransactionRequiredException
      * @throws \Doctrine\ORM\ORMException
      */
-    public function getCoursesByFiltering ($name, $categoryID, $filterTag): array
+    public function getCoursesByFiltering ($categoryID, $filterTag): array
     {
 
         $buy = BuyCoursesPlugin::create();
         $sessionCatalog = [];
 
-        $sessions = $this->filterSessionList($name, $categoryID, $filterTag);
+        $sessions = $this->filterSessionList($categoryID, $filterTag);
 
         foreach ($sessions as $session) {
             $sessionCourses = $session->getCourses();

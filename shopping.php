@@ -51,13 +51,13 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])){
                 $country = $_SESSION['user_country_login'];
                 if($country['country_code'] === 'CL'){
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 4, $filterTag);
+                    $sessions = $plugin->getCoursesByFiltering( 4, $filterTag);
                 } else {
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 6, $filterTag);
+                    $sessions = $plugin->getCoursesByFiltering( 6, $filterTag);
                     $isInternational = true;
                 }
             } else {
-                $sessions = $plugin->getCoursesByFiltering($nameFilter, 4, $filterTag);
+                $sessions = $plugin->getCoursesByFiltering( 4, $filterTag);
             }
 
             $list = $tags = [];
@@ -94,13 +94,13 @@ if ($enable) {
             if(isset($_SESSION['user_country_login'])) {
                 $country = $_SESSION['user_country_login'];
                 if ($country['country_code'] === 'CL') {
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 1, $filterTag);
+                    $sessions = $plugin->getCoursesByFiltering( 1, $filterTag);
                 } else {
-                    $sessions = $plugin->getCoursesByFiltering($nameFilter, 8, $filterTag);
+                    $sessions = $plugin->getCoursesByFiltering( 8, $filterTag);
                     $isInternational = true;
                 }
             } else {
-                $sessions = $plugin->getCoursesByFiltering($nameFilter, 1, $filterTag);
+                $sessions = $plugin->getCoursesByFiltering( 1, $filterTag);
             }
 
             $list = $tags = [];

@@ -206,6 +206,51 @@
         setInterval(loadNotifications, 30000);
 
     });
+
+    $(document).ready(function() {
+        $("#term").on("keyup", function() {
+
+            let url_platform = '{{ _p.web_plugin }}';
+            let term = $(this).val().trim();
+
+            if (term.length > 0) {
+                $.ajax({
+                    url: url_platform + "school/src/ajax.php?action=search&term=" + term,
+                    method: "GET",
+                    dataType: "json",
+                    success: function(response) {
+                        let resultList = $("#result");
+                        resultList.empty(); // Limpiar resultados previos
+
+                        if (response.sessions.length > 0) {
+                            response.sessions.slice(0, 5).forEach(function(session) {  // Mostrar solo los primeros 5
+                                let listItem = `
+                                <li class="list-group-item">
+                                    <div>
+                                        <img src="${session.extra.image}" alt="${session.name}" width="50" class="mr-2">
+                                        <strong>${session.name}</strong>
+                                    </div>
+                                    <p>${session.description}</p>
+                                    <a href="${session.extra.video}" target="_blank">Ver Video</a>
+                                </li>
+                            `;
+                                resultList.append(listItem);
+                            });
+                        } else {
+                            resultList.append('<li class="list-group-item text-muted">No se encontraron resultados</li>');
+                        }
+                    },
+                    error: function() {
+                        $("#result").html('<li class="list-group-item text-danger">Error al obtener datos</li>');
+                    }
+                });
+            } else {
+                $("#result").empty(); // Limpiar si no hay texto
+            }
+        });
+    });
+
+
 </script>
 
 </body>
