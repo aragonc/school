@@ -434,7 +434,11 @@
   }
 }
 .navbar-search{
+  width: 35rem !important;
   position: relative;
+  .dropdown-list{
+    width: 35rem !important;
+  }
   #loader {
     display: none;
     text-align: center;
@@ -451,8 +455,16 @@
     position: absolute;
     width: auto;
     z-index: 10;
+    border: none;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
     .list-group-item{
-      padding: 0.5rem 0.25rem;
+      padding: 0;
+      .dropdown-item{
+        line-height: 1rem;
+        padding: 0.25rem 1rem;
+      }
       .title{
         font-size: 1rem;
         font-weight: 800;

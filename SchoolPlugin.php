@@ -173,9 +173,9 @@ class SchoolPlugin extends Plugin
 
 
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';
+        $imageFolder = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/';
 
-
-
+        $this->assign('image_url', $imageFolder);
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
         $this->assign('css_files', $css_file_to_string);
@@ -1668,6 +1668,7 @@ class SchoolPlugin extends Plugin
                     }
                 }
                 $session['ordering'] = intval($row['ordering']);
+                $session['url'] = api_get_path(WEB_PATH).'view/course/'. $row['id'];
                 $session['extra'] = $ResultExtraField;
                 $session['description'] = ucfirst(strtolower(strip_tags($session['description'])));
                 $sessions[] = $session;

@@ -230,10 +230,10 @@
                             resultList.empty();
 
                             if (response.sessions.length > 0) {
-                                response.sessions.slice(0, 5).forEach(function(session) {
+                                response.sessions.forEach(function(session) {
                                     let listItem = `
                                     <li class="list-group-item">
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <a class="dropdown-item d-flex align-items-center" href="${session.url}">
                                         <div class="mr-3">
                                             <img src="${session.extra.image}" alt="${session.name}" width="100" class="mr-2">
                                         </div>

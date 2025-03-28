@@ -4,13 +4,15 @@
     </button>
 
     <form class="d-none d-sm-inline-block form-inline ml-auto mr-md-3 my-2 my-md-0 mw-100 navbar-search">
-        <div id="loader"><img src="https://i.gifer.com/ZZ5H.gif" alt="Cargando..." width="20"></div>
+        <div id="loader"><img src="{{ image_url }}spinner.gif" alt="Cargando..." width="20"></div>
         <div class="input-group">
             <input id="term" name="term" type="text" class="form-control bg-light border-0 small" placeholder="{{ 'SearchCourses'|get_plugin_lang('SchoolPlugin') }}"
                    aria-label="Search" aria-describedby="basic-addon2">
         </div>
+        <div class="dropdown-list">
+            <ul class="list-group" id="result"></ul>
+        </div>
 
-        <ul class="list-group" id="result"></ul>
     </form>
 
     <!-- Topbar Navbar -->
