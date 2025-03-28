@@ -456,11 +456,12 @@
     width: auto;
     z-index: 10;
     border: none;
-    max-height: 400px;
+    max-height: 420px;
     overflow-y: auto;
     overflow-x: hidden;
     .list-group-item{
       padding: 0;
+      background-color: #eefaff;
       .dropdown-item{
         line-height: 1rem;
         padding: 0.25rem 1rem;
