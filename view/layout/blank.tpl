@@ -253,7 +253,7 @@
                                 let notFound = `
                                 <li class="list-group-item text-muted">
                                     <div class="dropdown-item align-items-center p-4">
-                                No se encontraron resultados, puedes visitar nuestro catalogo de <a href="`+url_courses+`">cursos</a>
+                                No se encontraron resultados, puedes visitar nuestro catálogo de <a href="`+url_courses+`">cursos</a>
                                 y <a href="`+url_graduates+`">diplomados</a>
                                     </div>
                                 </li>`;
