@@ -11,27 +11,29 @@
             <div class="card-body">
                 <div class="p-5">
                     <div class="container-fluid">
+                        <div class="view-arrow"><i class="fas fa-caret-square-left"></i></div>
                         <div class="view-tags">{{ session.tags }}</div>
                         <h1 class="view-title-course">{{ session.name }}</h1>
                         <div class="row">
                             <div class="col">
-                                <div class="media-image">
-                                    <img class="img-responsive" width="550px" src="{{session_image}}" alt="{{ session.name }}">
+                                <div class="view-media-image">
+                                    <img class="img-responsive rounded" width="100%" src="{{session_image}}" alt="{{ session.name }}">
+                                    <div class="view-price">
+                                        {{ item.iso_code }} {{ item.price_without_discount }}
+                                    </div>
                                 </div>
-                                <div class="view-price">
-                                    {{ item.iso_code }} {{ item.price_without_discount }}
-                                </div>
+
                                 <div class="view-mode">
-                                    Modalidad 100% Online Asincrónico
+                                    {{ 'OnlineAsynchronousModality'|get_plugin_lang('SchoolPlugin') }}
                                 </div>
                                 <div class="view-duration">
-                                    Duración: 30 horas.
+                                    {{ 'Duration'|get_plugin_lang('SchoolPlugin') }}: 30 horas.
                                 </div>
                             </div>
                             <div class="col">
-                                <div class="view-dates">
-                                    <div class="start"><strong>Fecha de Inicio:</strong> {{ session.display_start_date_text }}</div>
-                                    <div class="end"><strong>Fecha de Termino:</strong> {{ session.display_end_date_text }}</div>
+                                <div class="view-dates rounded-lg">
+                                    <div class="start"><strong>{{ 'StartDate'|get_plugin_lang('SchoolPlugin') }}:</strong> {{ session.display_start_date_text }}</div>
+                                    <div class="end"><strong>{{ 'EndDate'|get_plugin_lang('SchoolPlugin') }}:</strong> {{ session.display_end_date_text }}</div>
                                 </div>
                                 <div class="description">
                                     <h3 class="view-sub-title">Caracteristicas</h3>
@@ -44,24 +46,29 @@
                                     </ul>
                                 </div>
                                 <div class="view-buttons">
-                                    <a class="btn btn-default btn-block mb-2" target="_blank" href="{{ url_pdf }}">Ver ficha (PDF)</a>
-                                    <a class="btn btn-primary btn-block mb-2" href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"> {{ 'Buy'|get_plugin_lang('BuyCoursesPlugin') }}</a>
-
+                                    <a class="btn btn-default btn-block mb-2" target="_blank" href="{{ url_pdf }}"><i class="far fa-file-pdf"></i> {{ 'SeeFile'|get_plugin_lang('SchoolPlugin') }}</a>
+                                    <a class="btn btn-primary btn-block mb-2" href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"> <em class="fa fa-shopping-cart"></em> {{ 'Buy'|get_plugin_lang('BuyCoursesPlugin') }}</a>
                                 </div>
-                                {{ img_section }}
+                                <div class="view-pay-icon">
+                                    {{ img_section }}
+                                </div>
+
                             </div>
                         </div>
-                        {% if session.n_courses <= 1 %}
+                        <div class="border-calendar mt-5">
+                            {% if session.n_courses <= 1 %}
                             <h3 class="view-sub-title">{{ 'CourseCalendar'|get_plugin_lang('SchoolPlugin') }}</h3>
                             {{ session.calendar_course.content }}
-                        {% else %}
+                            {% else %}
                             <h3 class="view-sub-title">{{ 'DiplomaSchedule'|get_plugin_lang('SchoolPlugin') }}</h3>
                             <ul>
                                 {% for course in session.courses %}
                                 <li>{{ course.name }}</li>
                                 {% endfor %}
                             </ul>
-                        {% endif %}
+                            {% endif %}
+                        </div>
+
                     </div>
                 </div>
             </div>

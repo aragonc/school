@@ -31,7 +31,7 @@
                                             {{ session.total_price_formatted }}
                                         </div>
                                     </div>
-                                    <div class="card-body">
+                                    <div class="card-body card-course-body">
                                         <div class="tags">
                                             {{ session.tags }}
                                         </div>
