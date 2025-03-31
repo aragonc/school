@@ -237,7 +237,7 @@
                                     <li class="list-group-item">
                                     <a class="dropdown-item d-flex align-items-center" href="${session.url}">
                                         <div class="mr-3">
-                                            <img src="${session.extra.image}" alt="${session.name}" width="100" class="mr-2">
+                                            <img src="${session.extra.image}" alt="${session.name}" width="100" class="mr-2 rounded-lg">
                                         </div>
                                         <div>
                                             <h4 class="title mt-3">${session.name}</h4>
