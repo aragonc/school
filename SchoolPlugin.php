@@ -1546,14 +1546,17 @@ class SchoolPlugin extends Plugin
     function getSessionCourseList(Session $session): array
     {
         $return = [];
-
+        $sessionID = $session->getId();
         foreach ($session->getCourses() as $sessionCourse) {
             /** @var Course $course */
             $course = $sessionCourse->getCourse();
+            $courseID = $course->getId();
+            $lists = self::getDescriptionCourse($sessionID, $courseID,8);
             $return[] = [
-                'id' => $course->getId(),
+                'id' => $courseID,
                 'name' => $course->getTitle(),
-                'code' => $course->getCode()
+                'code' => $course->getCode(),
+                'calendar' => $lists
             ];
         }
 

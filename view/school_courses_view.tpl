@@ -63,7 +63,14 @@
                             <h3 class="view-sub-title">{{ 'DiplomaSchedule'|get_plugin_lang('SchoolPlugin') }}</h3>
                             <ul>
                                 {% for course in session.courses %}
-                                <li>{{ course.name }}</li>
+                                <li class="course-name">{{ course.name }}
+                                    {% if course.calendar.content %}
+                                        <div class="course-list-calendar">
+                                            {{ course.calendar.content }}
+                                        </div>
+                                    {% endif %}
+                                </li>
+
                                 {% endfor %}
                             </ul>
                             {% endif %}

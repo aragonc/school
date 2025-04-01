@@ -423,7 +423,20 @@
   color: $brand-two;
   padding: 1rem 0 .2rem 0;
 }
-
+.course-name{
+  font-weight: 600;
+  font-size: 16px;
+}
+.course-list-calendar{
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  font-weight: normal;
+  ul{
+    li{
+      margin: 0 !important;
+    }
+  }
+}
 .view-duration{
   font-size: 1.2rem;
   color: $brand-two;
