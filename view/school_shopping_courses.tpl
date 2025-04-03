@@ -46,6 +46,10 @@
                                             <em class="fa fa-check-square-o fa-fw"></em> {{ 'TheUserIsAlreadyRegisteredInTheSession'|get_plugin_lang('BuyCoursesPlugin') }}
                                         </div>
                                         {% endif %}
+
+                                    </div>
+
+                                    <div class="card-footer text-center">
                                         {% if session.enrolled.checking == "NO" %}
                                         <a href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"
                                            class="btn btn-block btn-primary">
@@ -54,6 +58,7 @@
                                         </a>
                                         {% endif %}
                                     </div>
+
                                 </div>
                             </div>
                             {% endfor %}
