@@ -61,6 +61,7 @@ if ($enable) {
             }
 
             $list = $tags = [];
+
             foreach ($sessions as $session) {
                 $tags =  $plugin->getTagsSession($session['id']);
                 $list[] = [
@@ -76,6 +77,7 @@ if ($enable) {
                     'image' => $session['image'],
                     'category' => $session['category'],
                     'price_usd' => $session['price_usd'],
+                    'price_new' => $session['currency'].' '.str_replace('.', '', $session['price']),
                     'total_price_formatted' => $session['total_price_formatted'],
                     'is_international' => $session['is_international'],
                     'coach' => $session['coach'],

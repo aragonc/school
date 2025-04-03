@@ -8,6 +8,7 @@ $nameTools = $plugin->get_lang('DashboardSchool');
 $sessionId = $_GET['session_id'] ?? 0;
 
 $session = $plugin->getInfoSession($sessionId);
+
 $session['display_start_date_text'] = $plugin->formatDateEs($session['display_start_date']);
 $session['display_end_date_text'] = $plugin->formatDateEs($session['display_end_date']);
 $sessionURL = $plugin->getSessionTabURL($session['reference_session']);
