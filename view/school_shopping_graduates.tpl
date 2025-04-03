@@ -20,8 +20,8 @@
                         <div class="row">
                             {% if sessions %}
                             {% for session in sessions %}
-                            <div class="col-4">
-                                <div class="card h-100 card-course mb-5" style="width: 22rem;">
+                            <div class="col-4 mb-4">
+                                <div class="card h-100 card-course" style="width: 22rem;">
                                     <div class="card-image">
                                         <a href="{{ _p.web ~ 'view/course/' ~ session.id  }}">
                                             <img alt="{{ session.name }}" class="card-img-top"
