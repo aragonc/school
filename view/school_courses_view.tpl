@@ -11,7 +11,18 @@
             <div class="card-body">
                 <div class="p-5">
                     <div class="container-fluid">
-                        <div class="d-flex justify-content-end"><a href="{{ _p.web }}shopping" class="btn btn-primary btn-download"><i class="fas fa-chevron-left"></i> Volver </a></div>
+                        <div class="d-flex justify-content-end">
+                            {% if session.n_courses <= 1 %}
+                                <a href="{{ _p.web }}shopping" class="btn btn-primary btn-download">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                            {% else %}
+                                <a href="{{ _p.web }}shopping?view=graduates" class="btn btn-primary btn-download">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                            {% endif %}
+
+                        </div>
 
                         <div class="view-tags">{{ session.tags }}</div>
                         <h1 class="view-title-course">{{ session.name }}</h1>
@@ -20,7 +31,7 @@
                                 <div class="view-media-image">
                                     <img class="img-responsive rounded" width="100%" src="{{session_image}}" alt="{{ session.name }}">
                                     <div class="view-price">
-                                        {{ item.iso_code }} {{ item.total_price }}
+                                        {{ item.price_view }}
                                     </div>
                                 </div>
 

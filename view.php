@@ -14,6 +14,7 @@ $session['display_end_date_text'] = $plugin->formatDateEs($session['display_end_
 $sessionURL = $plugin->getSessionTabURL($session['reference_session']);
 $plugin->setSidebar('shopping');
 $itemBuy = $buyCourse->getItemByProduct($sessionId,$buyCourse::PRODUCT_TYPE_SESSION);
+$itemBuy['price_view'] = str_replace(',', '.', $itemBuy['price_formatted']);
 
 api_block_anonymous_users();
 $userId = api_get_user_id();
