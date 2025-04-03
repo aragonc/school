@@ -28,7 +28,7 @@
                                              src="{{ session.image ? session.image : 'session_default.png'|icon() }}">
                                         </a>
                                         <div class="price">
-                                            {{ session.total_price_formatted }}
+                                            {{ session.price_new }}
                                         </div>
                                     </div>
                                     <div class="card-body">
