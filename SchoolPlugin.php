@@ -402,7 +402,7 @@ class SchoolPlugin extends Plugin
         if (file_exists($icon_path)) {
             $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.' . $type;
             $attrib = null;
-            if($responsive){
+            if(!$responsive){
                 $attrib = ['width' => $size, 'height' => $size, 'class' => 'img-fluid'];
             }
             $img = Display::img($iconPathWeb,$altText, $attrib);
@@ -858,7 +858,7 @@ class SchoolPlugin extends Plugin
                 $count++;
                 $result_row['status'] = 5;
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
-                $result_row['url'] = '#';
+                $result_row['url'] = api_get_path(WEB_PATH).'home?cDir='.$result_row['course_code'].'&id_session='.$session_id;
                 if ($count % 2 == 0) {
                     $result_row['ribbon'] = 'even';
                 } else {
