@@ -109,3 +109,5 @@ $strings['EndDate'] = "Fecha de término";
 $strings['Duration'] = "Duración";
 $strings['SeeFile'] = "Ver ficha";
 $strings['OnlineAsynchronousModality'] = "Modalidad 100% Online Asincrónico";
+$strings['ToolCalendar'] = "Calendario";
+$strings['NoResults'] = "Sin resultados";

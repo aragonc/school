@@ -68,7 +68,7 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="p-5 text-center">
-                                <h3>{{ 'ThereAreNoCoursesAvailable'|get_plugin_lang('SchoolPlugin') }}</h3>
+                                <h3>{{ 'NoResults'|get_plugin_lang('SchoolPlugin') }}</h3>
                                 {{ img_section }}
                             </div>
                         </div>
