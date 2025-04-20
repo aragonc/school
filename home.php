@@ -18,7 +18,7 @@ api_protect_course_script(true);
 
 $session = $plugin->getInfoSession($sessionId);
 $course = api_get_course_info_by_id($courseId);
-
+$toolsOne = $plugin->getToolsCourse();
 $words = explode(' ', $course['title']);
 $first_four = array_slice($words, 0, 4);
 $rest = array_slice($words, 4);
@@ -40,6 +40,7 @@ $plugin->setTitle('');
 $plugin->assign('session', $session);
 $plugin->assign('course', $course);
 $plugin->assign('icon_course', $iconCourse);
+$plugin->assign('tools_one', $toolsOne);
 $content = $plugin->fetch('school_course_home.tpl');
 $plugin->assign('content', $content);
 $plugin->display_blank_template();

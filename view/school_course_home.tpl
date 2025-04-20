@@ -25,18 +25,36 @@
     </div>
 </div>
 
-<div class="card card-home">
+<div class="card card- mt-3">
     <div class="card-body">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row">
                 <div class="col">
                     Felicitaciones! Tienes todas
                     tus actividades al día
                 </div>
-                <div class="col">Calendario</div>
-                <div class="col">Ver Ficha (PDF)</div>
-                <div class="col">Material Complementario</div>
+                {% for tool in tools_one %}
+                    <div class="col">
+                        <a class="link_tool" id="{{ tool.name }}" href="#">
+                            <div class="tool d-flex justify-content-center">
+                                <div class="icon">
+                                    {{ tool.icon }}
+                                </div>
+                                <div class="label pl-2 pr-2 align-self-center">
+                                    {{ tool.label }}
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card- mt-3">
+    <div class="card-body">
+        <div class="container">
         </div>
     </div>
 </div>

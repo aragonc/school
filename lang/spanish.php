@@ -111,3 +111,5 @@ $strings['SeeFile'] = "Ver ficha";
 $strings['OnlineAsynchronousModality'] = "Modalidad 100% Online Asincrónico";
 $strings['ToolCalendar'] = "Calendario";
 $strings['NoResults'] = "Sin resultados";
+$strings['SeeFile'] = "Ver ficha (PDF)";
+$strings['SupplementaryMaterial'] = "Material Complementario";

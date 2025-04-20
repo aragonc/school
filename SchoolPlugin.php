@@ -1786,7 +1786,7 @@ class SchoolPlugin extends Plugin
 
     }
 
-    public function getToolsCourse()
+    public function getToolsCourse(): array
     {
         return [
             [
@@ -1798,9 +1798,16 @@ class SchoolPlugin extends Plugin
             ],
             [
                 'id' => 1,
-                'name' => 'tool_calendar',
-                'label' => self::get_lang('ToolCalendar'),
-                'icon' => self::get_svg_icon('tool_calendar', self::get_lang('ToolCalendar'), 64),
+                'name' => 'tool_chip',
+                'label' => self::get_lang('SeeFile'),
+                'icon' => self::get_svg_icon('tool_chip', self::get_lang('SeeFile'), 64),
+                'url' => '#'
+            ],
+            [
+                'id' => 2,
+                'name' => 'tool_doc',
+                'label' => self::get_lang('SupplementaryMaterial'),
+                'icon' => self::get_svg_icon('tool_doc', self::get_lang('SupplementaryMaterial'), 64),
                 'url' => '#'
             ]
         ];
