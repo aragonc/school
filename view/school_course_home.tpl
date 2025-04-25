@@ -52,9 +52,9 @@
     </div>
 </div>
 
-<div class="card card- mt-3">
-    <div class="card-body">
-        <h3 class="title-tool-section">Contenidos</h3>
+<div class="card pb-3 mt-3">
+    <div class="card-body pb-3">
+        <h3 class="pt-3 pb-3 title-tool-section">Contenidos</h3>
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_two %}
@@ -76,9 +76,9 @@
     </div>
 </div>
 
-<div class="card card- mt-3">
-    <div class="card-body">
-        <h3 class="title-tool-section">Mis Actividades</h3>
+<div class="card pb-3 mt-3">
+    <div class="card-body ">
+        <h3 class="pt-3 pb-3 title-tool-section">Mis Actividades</h3>
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_tree %}
