@@ -35,7 +35,7 @@
                 </div>
                 {% for tool in tools_one %}
                     <div class="col">
-                        <a class="link_tool" id="{{ tool.name }}" href="{{ tool.link }}">
+                        <a class="link_home" id="{{ tool.name }}" href="{{ tool.link }}">
                             <div class="tool d-flex justify-content-center">
                                 <div class="icon">
                                     {{ tool.icon }}
@@ -58,8 +58,8 @@
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_two %}
-                <div class="col-2">
-                    <a class="link_tool" id="{{ tool.name }}" href="{{ tool.link }}">
+                <div class="col-2 d-flex align-items-stretch">
+                    <a class="link_scorm" id="{{ tool.name }}" href="{{ tool.link }}">
                         <div class="tool">
                             <div class="icon">
                                 {{ tool.icon }}
@@ -82,8 +82,8 @@
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_tree %}
-                <div class="col-2">
-                    <a class="link_scorm" id="{{ tool.name }}" href="{{ tool.link }}">
+                <div class="col-2 d-flex align-items-stretch">
+                    <a class="link_tool" id="{{ tool.name }}" href="{{ tool.link }}">
                         <div class="tool">
                             <div class="icon">
                                 {{ tool.icon }}

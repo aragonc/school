@@ -540,7 +540,7 @@
     }
   }
 }
-.link_tool{
+.link_home{
   text-align: center;
   padding: 1rem;
   background-color: $gray-100;
@@ -549,4 +549,26 @@
   border-radius: 10px;
   color: $gray-700;
   font-weight: bold;
+}
+.link_scorm{
+  text-align: center;
+  padding: 0.5rem;
+  background-color: #ffffff;
+  display: inline-block;
+  width: 100%;
+  border-radius: 10px;
+  color: $gray-700;
+  font-weight: bold;
+  border: 1px solid $gray-300;
+}
+.link_tool{
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  background-color: #ffffff;
+  display: inline-block;
+  width: 100%;
+  border-radius: 10px;
+  color: $gray-700;
+  font-weight: bold;
+  border: 1px solid $gray-300;
 }
