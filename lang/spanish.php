@@ -113,3 +113,5 @@ $strings['ToolCalendar'] = "Calendario";
 $strings['NoResults'] = "Sin resultados";
 $strings['SeeFile'] = "Ver ficha (PDF)";
 $strings['SupplementaryMaterial'] = "Material Complementario";
+$strings['Contents'] = "Contenidos";
+$strings['MyActivities'] = "Mis actividades";

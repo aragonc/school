@@ -51,10 +51,10 @@
         </div>
     </div>
 </div>
-
+{% if tools_two is not empty %}
 <div class="card pb-3 mt-3">
     <div class="card-body pb-3">
-        <h3 class="pt-3 pb-3 title-tool-section">Contenidos</h3>
+        <h3 class="pt-3 pb-3 title-tool-section">{{ 'Contents'|get_plugin_lang('SchoolPlugin') }}</h3>
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_two %}
@@ -75,10 +75,11 @@
         </div>
     </div>
 </div>
-
+{% endif %}
+{% if tools_tree is not empty %}
 <div class="card pb-3 mt-3">
     <div class="card-body ">
-        <h3 class="pt-3 pb-3 title-tool-section">Mis Actividades</h3>
+        <h3 class="pt-3 pb-3 title-tool-section">{{ 'MyActivities'|get_plugin_lang('SchoolPlugin') }}</h3>
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_tree %}
@@ -99,3 +100,4 @@
         </div>
     </div>
 </div>
+{% endif %}

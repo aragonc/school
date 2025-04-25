@@ -50,7 +50,7 @@
                  aria-labelledby="userDropdown">
                 <div class="user-header">
                     <div class="text-center">
-                        <a href="{{ profile_url }}">
+                        <a href="{{ _p.web }}profile">
                             <img class="img-circle" src="{{ _u.avatar_medium }}" alt="{{ _u.complete_name }}"/>
                             <p class="name">{{ _u.firstname }} {{ _u.lastname }}</p>
                         </a>
@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="profile">
+                <a class="dropdown-item" href="{{ _p.web }}profile">
                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-800"></i>
                     {{ 'EditProfile'|get_plugin_lang('SchoolPlugin') }}
                 </a>
@@ -70,4 +70,5 @@
         </li>
     </ul>
 </nav>
+
 <!-- End of Topbar -->
