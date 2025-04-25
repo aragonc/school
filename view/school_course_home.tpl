@@ -35,13 +35,13 @@
                 </div>
                 {% for tool in tools_one %}
                     <div class="col">
-                        <a class="link_tool" id="{{ tool.name }}" href="#">
+                        <a class="link_tool" id="{{ tool.name }}" href="{{ tool.link }}">
                             <div class="tool d-flex justify-content-center">
                                 <div class="icon">
                                     {{ tool.icon }}
                                 </div>
                                 <div class="label pl-2 pr-2 align-self-center">
-                                    {{ tool.label }}
+                                    {{ tool.name }}
                                 </div>
                             </div>
                         </a>
@@ -54,7 +54,48 @@
 
 <div class="card card- mt-3">
     <div class="card-body">
-        <div class="container">
+        <h3>Contenidos</h3>
+        <div class="container-fluid">
+            <div class="row">
+                {% for tool in tools_two %}
+                <div class="col-2">
+                    <a class="link_tool" id="{{ tool.name }}" href="{{ tool.link }}">
+                        <div class="tool">
+                            <div class="icon">
+                                {{ tool.icon }}
+                            </div>
+                            <div class="label pl-2 pr-2 align-self-center">
+                                {{ tool.name }}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card- mt-3">
+    <div class="card-body">
+        <h3>Mis Actividades</h3>
+        <div class="container-fluid">
+            <div class="row">
+                {% for tool in tools_tree %}
+                <div class="col-2">
+                    <a class="link_scorm" id="{{ tool.name }}" href="{{ tool.link }}">
+                        <div class="tool">
+                            <div class="icon">
+                                {{ tool.icon }}
+                            </div>
+                            <div class="label pl-2 pr-2 align-self-center">
+                                {{ tool.name }}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>

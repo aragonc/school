@@ -17,13 +17,13 @@ $plugin->setSidebar('course');
 api_protect_course_script(true);
 
 $session = $plugin->getInfoSession($sessionId);
-$course = api_get_course_info_by_id($courseId);
-$toolsOne = $plugin->getToolsCourse();
-$words = explode(' ', $course['title']);
+$courseInfo = api_get_course_info_by_id($courseId);
+
+$words = explode(' ', $courseInfo['title']);
 $first_four = array_slice($words, 0, 4);
 $rest = array_slice($words, 4);
 $title = '<span>' . implode(' ', $first_four) . '</span> ' . implode(' ', $rest);
-$course['title'] = $title;
+$courseInfo['title'] = $title;
 
 $logInfo = [
     'tool' => 'course-main',
@@ -36,11 +36,14 @@ Event::registerLog($logInfo);
 
 $content = '';
 
+$tools = $plugin->getToolsCourseHome($sessionId, $courseId);
 $plugin->setTitle('');
 $plugin->assign('session', $session);
-$plugin->assign('course', $course);
+$plugin->assign('course', $courseInfo);
 $plugin->assign('icon_course', $iconCourse);
-$plugin->assign('tools_one', $toolsOne);
+$plugin->assign('tools_one', $tools['home']);
+$plugin->assign('tools_two', $tools['scorm']);
+$plugin->assign('tools_tree', $tools['tools']);
 $content = $plugin->fetch('school_course_home.tpl');
 $plugin->assign('content', $content);
 $plugin->display_blank_template();

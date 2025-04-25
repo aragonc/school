@@ -8,6 +8,7 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use School\PipedriveAPI;
+use Chamilo\CourseBundle\Entity\CLpCategory;
 
 class SchoolPlugin extends Plugin
 {
@@ -1811,5 +1812,113 @@ class SchoolPlugin extends Plugin
                 'url' => '#'
             ]
         ];
+    }
+    public function getActivitiesCourse(): array
+    {
+        return [
+            [
+                'id' => 1,
+                'name' => 'tool_evaluation',
+                'label' => self::get_lang('ToolEvaluation'),
+                'icon' => self::get_svg_icon('tool_evaluation', self::get_lang('ToolEvaluation'), 64),
+                'url' => '#'
+            ],
+            [
+                'id' => 1,
+                'name' => 'tool_forum',
+                'label' => self::get_lang('ToolForum'),
+                'icon' => self::get_svg_icon('tool_forum', self::get_lang('ToolForum'), 64),
+                'url' => '#'
+            ],
+            [
+                'id' => 2,
+                'name' => 'tool_survey',
+                'label' => self::get_lang('ToolSurvey'),
+                'icon' => self::get_svg_icon('tool_survey', self::get_lang('ToolSurvey'), 64),
+                'url' => '#'
+            ]
+        ];
+    }
+    public function getToolsCourseHome($sessionId, $courseId): array
+    {
+        $cidReq = api_get_cidreq();
+        $tools = CourseHome::get_tools_category(
+            TOOL_STUDENT_VIEW,
+            $courseId,
+            $sessionId
+        );
+
+        foreach ($tools as &$tool) {
+            if (isset($tool['image'])) {
+                $tool['label'] = pathinfo($tool['image'], PATHINFO_FILENAME); // elimina la extensión .gif
+            } else {
+                $tool['label'] = null;
+            }
+        }
+        unset($tool);
+
+        $tmpTools = [];
+        foreach ($tools as &$tool) {
+            $tmpTools[] = [
+                'iid' => $tool['iid'],
+                'id' => $tool['id'],
+                'c_id' => $tool['c_id'],
+                'name' => $tool['name'],
+                'label' => $tool['label'],
+                'icon' => self::get_svg_icon($tool['label'], self::get_lang('SupplementaryMaterial'), 64),
+                'link' => api_get_path(WEB_CODE_PATH).$tool['link'].'?&'.$cidReq,
+            ];
+        }
+
+        $results = [
+            'home' => [
+                [
+                    'iid' => 1,
+                    'id' => 1,
+                    'c_id' => $courseId,
+                    'name' => self::get_lang('ToolCalendar'),
+                    'label' => 'tool_calendar',
+                    'icon' => self::get_svg_icon('tool_calendar', self::get_lang('ToolCalendar'), 64),
+                    'link' => '#'
+                ],
+                [
+                    'iid' => 2,
+                    'id' => 2,
+                    'c_id' => $courseId,
+                    'name' => self::get_lang('SeeFile'),
+                    'label' => 'tool_chip',
+                    'icon' => self::get_svg_icon('tool_chip', self::get_lang('SeeFile'), 64),
+                    'link' => '#'
+                ]
+            ],
+            'scorm' => [],
+            'tools' => []
+        ];
+
+        foreach ($tmpTools as $tool) {
+            if (!isset($tool['label'])) {
+                continue;
+            }
+
+            switch ($tool['label']) {
+                case 'scormbuilder':
+                    $results['scorm'][] = $tool;
+                    break;
+
+                case 'folder_document':
+                    $results['home'][] = $tool;
+                    break;
+
+                case 'info':
+                    // No hacer nada, se excluye
+                    break;
+
+                default:
+                    $results['tools'][] = $tool;
+                    break;
+            }
+        }
+        return $results;
+
     }
 }
