@@ -530,6 +530,13 @@
     padding: 1rem;
     font-weight: bold;
     font-size: 1.2rem;
+    @media (max-width: 768px) {
+      font-size: .9rem; // tamaño más pequeño para móviles
+      text-align: left; // opcional: centrar en móvil
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
   .course-home-title{
     font-weight: 800;
@@ -537,6 +544,11 @@
     font-size: 2.2rem;
     span{
       color: $blue-primary;
+    }
+    @media (max-width: 768px) {
+      font-size: 1.5rem; // tamaño más pequeño para móviles
+      text-align: left; // opcional: centrar en móvil
+      padding-top: 1rem;
     }
   }
 }
@@ -575,4 +587,7 @@
 .title-tool-section{
   font-weight: 800;
   font-size: 1.5rem;
+}
+@media (max-width: 480px) {
+
 }
