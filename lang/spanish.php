@@ -115,3 +115,4 @@ $strings['SeeFile'] = "Ver ficha (PDF)";
 $strings['SupplementaryMaterial'] = "Material Complementario";
 $strings['Contents'] = "Contenidos";
 $strings['MyActivities'] = "Mis actividades";
+$strings['WelcomeHome'] = "¡Bienvenido al aula virtual, inicia tu curso ahora!";

@@ -35,12 +35,13 @@ $logInfo = [
 Event::registerLog($logInfo);
 
 $content = '';
-
+$checkIcon = $plugin->get_svg_icon('check_green', $plugin->get_lang('Welcome'), 64);
 $tools = $plugin->getToolsCourseHome($sessionId, $courseId);
 $plugin->setTitle('');
 $plugin->assign('session', $session);
 $plugin->assign('course', $courseInfo);
 $plugin->assign('icon_course', $iconCourse);
+$plugin->assign('icon_check', $checkIcon);
 $plugin->assign('tools_one', $tools['home']);
 $plugin->assign('tools_two', $tools['scorm']);
 $plugin->assign('tools_tree', $tools['tools']);

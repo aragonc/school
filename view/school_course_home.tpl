@@ -12,11 +12,11 @@
     <div class="card-body">
         <div class="container">
             <div class="row">
-                <div class="col">
+                <div class="col-12 col-lg-6">
                     <img class="img-responsive rounded" width="100%" src="{{session_image}}" alt="{{ session.name }}">
                 </div>
-                <div class="col">
-                    <div class="h-25"></div>
+                <div class="col-12 col-lg-6">
+                    <div class="d-none d-lg-block h-25"></div>
                     <h1 class="course-home-title">{{ course.title }}</h1>
                     <div class="h-25"></div>
                 </div>
@@ -29,13 +29,19 @@
     <div class="card-body">
         <div class="container-fluid">
             <div class="row">
-                <div class="col">
-                    Felicitaciones! Tienes todas
-                    tus actividades al día
+                <div class="col-12 col-lg-3">
+                    <div class="message-home mb-3 d-flex justify-content-center">
+                        <div class="icon">
+                            {{ icon_check }}
+                        </div>
+                        <div class="label pl-2 pr-2 align-self-center">
+                            {{ 'WelcomeHome'|get_plugin_lang('SchoolPlugin') }}
+                        </div>
+                    </div>
                 </div>
                 {% for tool in tools_one %}
-                    <div class="col">
-                        <a class="link_home" id="{{ tool.name }}" href="{{ tool.link }}">
+                    <div class="col-12 col-lg-3">
+                        <a class="link_home  mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
                             <div class="tool d-flex justify-content-center">
                                 <div class="icon">
                                     {{ tool.icon }}
@@ -58,8 +64,8 @@
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_two %}
-                <div class="col-2 d-flex align-items-stretch">
-                    <a class="link_scorm" id="{{ tool.name }}" href="{{ tool.link }}">
+                <div class="col-12 col-lg-2 d-flex align-items-stretch">
+                    <a class="link_scorm mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
                         <div class="tool">
                             <div class="icon">
                                 {{ tool.icon }}
@@ -83,8 +89,8 @@
         <div class="container-fluid">
             <div class="row">
                 {% for tool in tools_tree %}
-                <div class="col-2 d-flex align-items-stretch">
-                    <a class="link_tool" id="{{ tool.name }}" href="{{ tool.link }}">
+                <div class="col-12 col-lg-2 d-flex align-items-stretch">
+                    <a class="link_tool mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
                         <div class="tool">
                             <div class="icon">
                                 {{ tool.icon }}
