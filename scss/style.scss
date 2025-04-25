@@ -523,6 +523,11 @@
     }
   }
 }
+.card-section{
+  .container-fluid{
+    padding: 0 !important;
+  }
+}
 .card-home{
   .card-header{
     background-color: $blue-primary;

@@ -47,7 +47,7 @@
                 {{ flash_messages }}
 
                 <div class="row">
-                    <div class="col-8">
+                    <div class="col-12 col-lg-8">
                         {% if title_string %}
                         <!-- Page Heading -->
                         <h1 class="title-page mb-4">
@@ -55,7 +55,7 @@
                         </h1>
                         {% endif %}
                     </div>
-                    <div class="col-4">
+                    <div class="col-12 col-lg-4">
                         {{ form_filter }}
                     </div>
                 </div>

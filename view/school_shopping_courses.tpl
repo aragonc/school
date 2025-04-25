@@ -13,15 +13,15 @@
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         <div class="card">
-            <div class="card-body">
-                <div class="p-5">
+            <div class="card-body card-section">
+                <div class="p-0 p-lg-5">
 
                     <div class="container-fluid">
                         <div class="row">
                             {% if sessions %}
                             {% for session in sessions %}
-                            <div class="col-4 mb-4">
-                                <div class="card h-100 card-course " style="width: 22rem;">
+                            <div class="col-12 col-lg-4 mb-4">
+                                <div class="card h-100 card-course " >
                                     <div class="card-image">
                                         <a href="{{ _p.web ~ 'view/course/' ~ session.id  }}">
                                             <img alt="{{ session.name }}" class="card-img-top"
