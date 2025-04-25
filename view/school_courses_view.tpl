@@ -8,8 +8,8 @@
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         <div class="card">
-            <div class="card-body">
-                <div class="p-5">
+            <div class="card-body card-section">
+                <div class="p-0 p-lg-5">
                     <div class="container-fluid">
                         <div class="d-flex justify-content-end">
                             {% if session.n_courses <= 1 %}
@@ -27,7 +27,7 @@
                         <div class="view-tags">{{ session.tags }}</div>
                         <h1 class="view-title-course">{{ session.name }}</h1>
                         <div class="row">
-                            <div class="col">
+                            <div class="col-12 col-lg-6">
                                 <div class="view-media-image">
                                     <img class="img-responsive rounded" width="100%" src="{{session_image}}" alt="{{ session.name }}">
                                     <div class="view-price">
@@ -46,7 +46,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col">
+                            <div class="col-12 col-lg-6">
                                 <div class="view-dates rounded-lg">
                                     <div class="start"><strong>{{ 'StartDate'|get_plugin_lang('SchoolPlugin') }}:</strong> {{ session.display_start_date_text }}</div>
                                     <div class="end"><strong>{{ 'EndDate'|get_plugin_lang('SchoolPlugin') }}:</strong> {{ session.display_end_date_text }}</div>

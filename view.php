@@ -19,7 +19,7 @@ $itemBuy['price_view'] = str_replace(',', '.', $itemBuy['price_formatted']);
 api_block_anonymous_users();
 $userId = api_get_user_id();
 $content = '';
-$imgSection = $plugin->get_svg_icon('payment_methods','Cursos Anteriores', 100,false, 'png');
+$imgSection = $plugin->get_svg_icon('payment_methods','Cursos Anteriores', 400,false, 'png');
 $plugin->setTitle('');
 $plugin->assign('session', $session);
 $plugin->assign('url_pdf', $sessionURL);
