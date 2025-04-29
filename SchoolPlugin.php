@@ -554,9 +554,7 @@ class SchoolPlugin extends Plugin
     public function uninstall()
     {
 
-        $tablesToBeDeleted = [
-            self::TABLE_MEET_LIST
-        ];
+        $tablesToBeDeleted = [];
 
         foreach ($tablesToBeDeleted as $tableToBeDeleted) {
             $table = Database::get_main_table($tableToBeDeleted);
