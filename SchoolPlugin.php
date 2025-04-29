@@ -3,12 +3,9 @@
 require_once 'src/PipedriveAPI.php';
 
 use Chamilo\CoreBundle\Entity\Session;
-use Doctrine\ORM\Query\QueryException;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use School\PipedriveAPI;
-use Chamilo\CourseBundle\Entity\CLpCategory;
 
 class SchoolPlugin extends Plugin
 {

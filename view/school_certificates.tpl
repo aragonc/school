@@ -124,7 +124,7 @@
 
         <div class="card">
             <div class="card-body ">
-                <div class="p-5 text-center">
+                <div class="p-0 p-lg-5 text-center">
                 <h3>{{ 'HereAreYourCertificates'|get_plugin_lang('SchoolPlugin') }}</h3>
                 {{ img_section }}
                 </div>
