@@ -161,6 +161,27 @@
         }
     });
 
+    $(document).on('click', '.open-calendar', function(e) {
+        e.preventDefault();
+
+        // Obtiene el contenido del calendario oculto
+        const calendarHtml = $('#data_tool_calendar').html();
+
+        // Inserta el contenido en el body del modal
+        $('#generalModalBody').html(calendarHtml);
+
+        // Establece el título del modal (opcional)
+        $('#generalModalLabel').text('Calendario Académico');
+
+        // Muestra el modal
+        $('#generalModal').modal('show');
+    });
+
+    // Limpia el contenido del modal al cerrarse (opcional)
+    $('#generalModal').on('hidden.bs.modal', function () {
+        $('#generalModalBody').html('');
+    });
+
     $(document).ready(function () {
 
         $('.open-pdf').on('click', function(e) {

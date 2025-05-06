@@ -1844,6 +1844,17 @@ class SchoolPlugin extends Plugin
             $sessionId
         );
 
+        $calendarCourseHTML = '<ul>';
+        foreach ($session['courses'] as $course) {
+            $calendarCourseHTML.= ' <li class="course-name"><h4 class="title">'.$course['name'].'</h4>';
+            if(!empty($course['calendar']['content'])){
+                $calendarCourseHTML.= '<div class="course-list-calendar">'.$course['calendar']['content'].'</div>';
+            }
+
+            $calendarCourseHTML.= '</li>';
+        }
+        $calendarCourseHTML .= '</ul>';
+
         foreach ($tools as &$tool) {
             if (isset($tool['image'])) {
                 $tool['label'] = pathinfo($tool['image'], PATHINFO_FILENAME); // elimina la extensión .gif
@@ -1877,7 +1888,8 @@ class SchoolPlugin extends Plugin
                     'name' => self::get_lang('ToolCalendar'),
                     'label' => 'tool_calendar',
                     'icon' => self::get_svg_icon('tool_calendar', self::get_lang('ToolCalendar'), 64),
-                    'link' => '#'
+                    'link' => '#',
+                    'data' => '<div id="data_tool_calendar" class="d-none">'.$calendarCourseHTML.'</div>',
                 ],
                 [
                     'iid' => 2,

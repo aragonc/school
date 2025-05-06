@@ -44,7 +44,11 @@
                             {% if tool.label == 'tool_chip' %}
                                 <a class="link_tool open-pdf mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
                                 {% else %}
-                                <a class="link_tool mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
+                                    {% if tool.label == 'tool_calendar' %}
+                                            <a class="link_tool open-calendar mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
+                                        {% else %}
+                                            <a class="link_tool mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
+                                    {% endif %}
                             {% endif %}
 
                             <div class="tool d-flex justify-content-center">
@@ -54,6 +58,7 @@
                                 <div class="label pl-2 pr-2 align-self-center">
                                     {{ tool.name }}
                                 </div>
+                                {{ tool.data }}
                             </div>
                         </a>
                     </div>
