@@ -33,7 +33,6 @@ $logInfo = [
     'info' => '',
 ];
 Event::registerLog($logInfo);
-
 $content = '';
 $checkIcon = $plugin->get_svg_icon('check_green', $plugin->get_lang('Welcome'), 64);
 $tools = $plugin->getToolsCourseHome($sessionId, $courseId);

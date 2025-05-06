@@ -106,6 +106,23 @@
     </div>
 </div>
 
+<!-- Modal General Bootstrap -->
+<div class="modal fade" id="generalModal" tabindex="-1" role="dialog" aria-labelledby="generalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generalModalLabel">Cargando...</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="generalModalBody">
+
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Bootstrap core JavaScript-->
 
 <script>
@@ -145,6 +162,31 @@
     });
 
     $(document).ready(function () {
+
+        $('.open-pdf').on('click', function(e) {
+            e.preventDefault(); // Evita que el enlace navegue
+            const pdfUrl = $(this).attr('href');
+            const modalTitle = $(this).data('title') || 'Visualizar Ficha PDF del curso';
+
+            $('#pdfViewer').attr('src', pdfUrl);
+            $('#generalModalLabel').text(modalTitle);
+
+            const iframe = $('<iframe>', {
+                src: pdfUrl,
+                width: '100%',
+                height: '600px',
+                frameborder: 0
+            });
+
+            $('#generalModalBody').html(iframe);
+
+        });
+
+        // Limpia el iframe al cerrar el modal
+        $('#pdfModal').on('hidden.bs.modal', function () {
+            $('#pdfViewer').attr('src', '');
+        });
+
 
         function loadNotifications() {
             let count = 0;

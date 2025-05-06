@@ -41,7 +41,12 @@
                 </div>
                 {% for tool in tools_one %}
                     <div class="col-12 col-lg-3">
-                        <a class="link_home  mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
+                            {% if tool.label == 'tool_chip' %}
+                                <a class="link_tool open-pdf mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
+                                {% else %}
+                                <a class="link_tool mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
+                            {% endif %}
+
                             <div class="tool d-flex justify-content-center">
                                 <div class="icon">
                                     {{ tool.icon }}

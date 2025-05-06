@@ -1836,6 +1836,7 @@ class SchoolPlugin extends Plugin
     }
     public function getToolsCourseHome($sessionId, $courseId): array
     {
+        $session = $this->getInfoSession($sessionId);
         $cidReq = api_get_cidreq();
         $tools = CourseHome::get_tools_category(
             TOOL_STUDENT_VIEW,
@@ -1865,6 +1866,8 @@ class SchoolPlugin extends Plugin
             ];
         }
 
+        $pdfURL = $this->getSessionTabURL($session['reference_session']);
+
         $results = [
             'home' => [
                 [
@@ -1883,7 +1886,7 @@ class SchoolPlugin extends Plugin
                     'name' => self::get_lang('SeeFile'),
                     'label' => 'tool_chip',
                     'icon' => self::get_svg_icon('tool_chip', self::get_lang('SeeFile'), 64),
-                    'link' => '#'
+                    'link' => $pdfURL
                 ]
             ],
             'scorm' => [],
