@@ -1,4 +1,7 @@
 // Sidebar
+.navbar-expand{
+  justify-content: space-between;
+}
 .sidebar {
     width: $sidebar-collapsed-width;
     min-height: 100vh;
@@ -13,19 +16,45 @@
         }
 
         .nav-link {
-            text-align: center;
-            padding: 0.75rem 1rem;
-            width: $sidebar-collapsed-width;
-
+          text-align: center;
+          padding: 0.70rem;
+          //width: $sidebar-collapsed-width;
+          width: 2.5rem;
+          height: 2.2rem;
+          margin: auto;
+          border-radius: 10px;
+          background: $bgcolor;
+          display: block;
+          font-size: 12px;
             span {
-                font-size: 0.65rem;
-                display: block;
+              font-size: 0.85rem;
+              opacity: 0;
+              visibility: hidden;
+              width: 200px;
+              display: inline-block;
+              position: absolute;
+              top: 5px;
+            }
+            i{
+              margin-right: 0;
+              color: $gray-800 !important;
             }
         }
 
         &.active {
             .nav-link {
-                font-weight: 700;
+                text-align: center;
+                padding: 0.70rem;
+                //width: $sidebar-collapsed-width;
+                width: 2.5rem;
+                height: 2.2rem;
+                margin: auto;
+                border-radius: 10px;
+                background: $bgcolor;
+              i{
+                margin-right: 0;
+                color: $white !important;
+              }
             }
         }
 
@@ -117,7 +146,7 @@
     }
 
     &.toggled {
-        width: 0 !important;
+        width: $sidebar-collapsed-width !important;
         overflow: hidden;
 
         #sidebarToggle::after {
@@ -143,7 +172,7 @@
         z-index: 1;
 
         .sidebar-brand-icon {
-            display: none;
+            display: inline-block;
         }
 
         .sidebar-brand-big {
