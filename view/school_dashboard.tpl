@@ -84,7 +84,7 @@
                                 <span class="row-date">{{ session.registered_at }}</span>
                             </div>
                             <div class="col-md-auto text-center pr-4">
-                                <a class="btn btn-primary btn-download" href="{{session.certificate_url}}" role="button">
+                                <a class="btn btn-primary btn-download" href="{{session.certificate_url}}" role="button"  target="_blank">
                                     <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
                                 </a>
                             </div>
