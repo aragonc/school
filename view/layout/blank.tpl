@@ -349,6 +349,22 @@
                 $("#result").show();
             }
         });
+
+        $(document).ready(function(){
+            // Toggle sidebar on mobile with animation
+            $('#sidebarToggleTop').on('click', function(e) {
+                e.preventDefault();
+                const $sidebar = $('#accordionSidebar');
+
+                if ($sidebar.hasClass('toggled')) {
+                    $sidebar.animate({ width: 'toggle' }, 200, function() {
+                        $sidebar.removeClass('toggled');
+                    });
+                } else {
+                    $sidebar.addClass('toggled').hide().animate({ width: 'toggle' }, 200);
+                }
+            });
+        });
     });
 
 
