@@ -59,7 +59,7 @@
                                         <span class="row-date">{{ session.registered_at }}</span>
                                     </div>
                                     <div class="col-md-auto text-center">
-                                        <a class="btn btn-primary btn-download" href="#" target="_blank" role="button">
+                                        <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
                                             <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
                                         </a>
                                     </div>
@@ -84,7 +84,7 @@
                                 <span class="row-date">{{ session.registered_at }}</span>
                             </div>
                             <div class="col-md-auto text-center pr-4">
-                                <a class="btn btn-primary btn-download" href="#" role="button">
+                                <a class="btn btn-primary btn-download" href="{{session.certificate_url}}" role="button">
                                     <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
                                 </a>
                             </div>
