@@ -6,6 +6,8 @@ use Chamilo\CoreBundle\Entity\Session;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
 
 class SchoolPlugin extends Plugin
 {
@@ -1931,5 +1933,25 @@ class SchoolPlugin extends Plugin
         }
         return $results;
 
+    }
+
+    public static function generateQRImage($text)
+    {
+
+        if (!empty($text) ) {
+            $qrCode = new QrCode($text);
+            $qrCode->setSize(120);
+            $qrCode->setMargin(5);
+            $qrCode->setErrorCorrectionLevel(ErrorCorrectionLevel::MEDIUM());
+            $qrCode->setForegroundColor(['r' => 0, 'g' => 0, 'b' => 0, 'a' => 0]);
+            $qrCode->setBackgroundColor(['r' => 255, 'g' => 255, 'b' => 255, 'a' => 0]);
+            $qrCode->setValidateResult(false);
+            $image = $qrCode->writeString();
+            $imageQR=base64_encode($image);
+
+            return $imageQR;
+        }
+
+        return false;
     }
 }

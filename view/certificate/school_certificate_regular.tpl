@@ -19,8 +19,8 @@
         }
         .titulo {
             font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 10px;
+            font-size: 25px;
+            margin-bottom: 40px;
         }
         .firma-block {
             margin-top: 40px;
@@ -45,6 +45,10 @@
             text-align: center;
             color: #555;
         }
+        .timbre-block{
+            position: absolute;
+            right: 10%;
+        }
     </style>
 </head>
 <body>
@@ -64,13 +68,13 @@
 <p><strong>Fecha de emisión del Certificado:</strong> {{ data.date_current }}</p>
 
 <div class="timbre-block">
-    <img src="{{ timbre_path }}" alt="Firma" style="width:100px;">
+    <img src="{{ timbre_path }}" alt="Firma" style="width:150px;">
 </div>
 
-<div class="firma-block">
+<div class="firma-block" style="text-align: center;">
     <div>
         <img src="{{ signature_path }}" alt="Firma" style="width:300px;">
-        <div class="firma">
+        <div style="text-align: center; width: 400px;  border-top: 1px solid #000; display: inline-block; margin: auto;">
             <strong>FUNDACIÓN EDUCHILE</strong><br>
             Pablo Rodríguez<br>
             Director Académico
@@ -79,7 +83,7 @@
 </div>
 
 <div class="barcode text-center">
-    CÓDIGO DE BARRAS (SOLO VISUAL Y BASADO EN EL CÓDIGO DE SESIÓN + RUN)
+    {{ qr_code }}
 </div>
 
 <div class="footer">

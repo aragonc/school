@@ -34,6 +34,7 @@ $paramsUser = [
     'date_current' => $currentLocalTime,
     'display_start_date' => $displayStartDate,
     'display_end_date' => $displayEndDate,
+    'session_id' => $session['id']
 ];
 
 api_block_anonymous_users();
@@ -56,6 +57,10 @@ $params = [
 ];
 
 $templateName = $plugin->get_lang('ExportCertificate');
+
+$generateImg = $plugin->generateQRImage($paramsUser['session_id'].$paramsUser['rut']);
+$certificateQR = '<img src="data:image/png;base64,'.$generateImg.'">';
+
 $template = new Template($templateName);
 $logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo.png';
 $signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma.png';
@@ -64,11 +69,37 @@ $template->assign('data', $paramsUser);
 $template->assign('logo_path', $logoCampus);
 $template->assign('signature_path', $signature);
 $template->assign('timbre_path', $timbre);
+$template->assign('qr_code', $certificateQR);
 $content = $template->fetch('school/view/certificate/school_certificate_regular.tpl');
 
-echo $content;
+$archivePath = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/';
+if (!is_dir($archivePath)) {
+    mkdir($archivePath, api_get_permissions_for_new_directories());
+}
+$archiveCacheUserURL = api_get_path(WEB_ARCHIVE_PATH) . 'certificates/'.$userID.'/';
+$archiveCacheUser = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/'.$userID.'/';
 
-//$pdf = new PDF($params['format'], $params['orientation'], $params);
-//$pdf->content_to_pdf($content, '', $fileName, null, 'D', false, null, false, false, false);
+if (!is_dir($archiveCacheUser)) {
+    mkdir($archiveCacheUser, api_get_permissions_for_new_directories());
+}
+
+$mpdf = new \Mpdf\Mpdf([
+    'tempDir' => $archivePath,
+    'allow_output_buffering' => true,
+    'curlAllowUnsafeSslRequests' => true,
+    'margin_left' => 20,  // Margen izquierdo
+    'margin_right' => 20,  // Margen derecho
+    'margin_top' => 10,  // Margen superior
+    'margin_bottom' => 10,  // Margen inferior
+]);
+
+$mpdf->WriteHTML($content);
+$mpdf->Output($archiveCacheUser.$fileName, \Mpdf\Output\Destination::FILE);
+
+header('Content-Type: application/pdf');
+header('Content-Disposition: inline; filename="' . $fileName . '"');
+header('Content-Transfer-Encoding: binary');
+header('Accept-Ranges: bytes');
+readfile($archiveCacheUser . $fileName);
 exit;
 
