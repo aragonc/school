@@ -1954,4 +1954,18 @@ class SchoolPlugin extends Plugin
 
         return false;
     }
+
+    public function getHeaderTemplate(): string
+    {
+        $this->setCurrentSection('dashboard');
+        $this->setSidebar('dashboard');
+        return $this->fetch('layout/header.tpl');
+    }
+
+    public function getFooterTemplate(): string
+    {
+        $this->setCurrentSection('dashboard');
+        $this->setSidebar('dashboard');
+        return $this->fetch('layout/footer.tpl');
+    }
 }
