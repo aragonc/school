@@ -1853,7 +1853,6 @@ class SchoolPlugin extends Plugin
             if(!empty($course['calendar']['content'])){
                 $calendarCourseHTML.= '<div class="course-list-calendar">'.$course['calendar']['content'].'</div>';
             }
-
             $calendarCourseHTML.= '</li>';
         }
         $calendarCourseHTML .= '</ul>';
@@ -1869,14 +1868,27 @@ class SchoolPlugin extends Plugin
 
         $tmpTools = [];
         foreach ($tools as &$tool) {
+            $link = api_get_path(WEB_CODE_PATH).$tool['link'].'?&'.$cidReq;
+            if($tool['category'] == 'plugin'){
+                $link = api_get_path(WEB_PLUGIN_PATH).$tool['link'].'?&'.$cidReq;
+            }
+            $toolName = Security::remove_XSS(stripslashes(strip_tags($tool['name'])));
+            $toolName = api_underscore_to_camel_case($toolName);
+
+            if (isset($tool['category']) && 'plugin' !== $tool['category'] &&
+                isset($GLOBALS['Tool'.$toolName])
+            ) {
+                $toolName = get_lang('Tool'.$toolName);
+            }
+
             $tmpTools[] = [
                 'iid' => $tool['iid'],
                 'id' => $tool['id'],
                 'c_id' => $tool['c_id'],
-                'name' => $tool['name'],
+                'name' => $toolName,
                 'label' => $tool['label'],
                 'icon' => self::get_svg_icon($tool['label'], self::get_lang('SupplementaryMaterial'), 64),
-                'link' => api_get_path(WEB_CODE_PATH).$tool['link'].'?&'.$cidReq,
+                'link' => $link,
             ];
         }
 
