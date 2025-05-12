@@ -612,6 +612,17 @@ class SchoolPlugin extends Plugin
 
     public function setSidebar($section = '')
     {
+        $institution = api_get_setting('Institution');
+        $logoPath = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/logo-educhile.svg';
+        $siteName = api_get_setting('siteName');
+        $imageAttributes = [
+            'title' => $siteName,
+            'class' => 'logo-site',
+            'id' => 'header-logo',
+        ];
+        $logoPathImg = Display::img($logoPath, $institution, $imageAttributes);
+
+        $this->assign('logo', $logoPathImg);
         $this->assign('logo_svg', self::display_logo());
         $this->assign('logo_icon', self::display_logo_icon());
         $this->assign('favicon', self::get_favicon('favicon'));

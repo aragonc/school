@@ -1,8 +1,8 @@
 <!-- Sidebar -->
-<ul class="navbar-nav bg-sidebar sidebar sidebar-dark accordion toggled" id="accordionSidebar">
+<ul class="navbar-nav bg-sidebar sidebar sidebar-dark accordion d-none d-md-block toggled" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="dashboard">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ _p.web }}">
         <div class="sidebar-brand-icon">
             {{ logo_icon }}
         </div>
@@ -60,3 +60,28 @@
 
 </ul>
 <!-- End of Sidebar -->
+<!-- Sidebar Mobile -->
+<div class="nav-mobile d-sm-none"  tabindex="0">
+    <nav class="nav-items">
+        <div class="d-flex flex-row justify-content-between">
+            <div class="logo-campus">
+                {{ logo }}
+            </div>
+            <div class="p-2">
+                <button type="button" id="closeMobile" class="btn btn-outline-primary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+
+
+        {% for menu in menus %}
+        <a id="menu-{{ menu.name }}" class="nav-item" href="{{ menu.url }}" title="{{ menu.label }}">
+            <i class="fas fa-fw fa-{{ menu.icon }}"></i>
+            <span>{{ menu.label }}</span>
+        </a>
+        {% endfor %}
+    </nav>
+</div>
+<!-- End of Sidebar Mobile -->

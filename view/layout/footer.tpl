@@ -284,7 +284,7 @@
             }
         });
 
-        $(document).ready(function(){
+        /*$(document).ready(function(){
             // Toggle sidebar on mobile with animation
             $('#sidebarToggleTop').on('click', function(e) {
                 e.preventDefault();
@@ -298,8 +298,66 @@
                     $sidebar.addClass('toggled').hide().animate({ width: 'toggle' }, 200);
                 }
             });
-        });
+        });*/
     });
+
+    $(document).ready(function () {
+        var $nav = $(".nav-mobile");
+        var $toggle = $("#sidebarToggleTop");
+        var $close = $("#closeMobile");
+        var $body = $("body");
+
+        function openMenu() {
+            $nav.addClass("is-active");
+            $body.addClass("no-scroll");
+        }
+
+        function closeMenu() {
+            $nav.removeClass("is-active");
+            $body.removeClass("no-scroll");
+        }
+
+        if ($nav.length) {
+            if ($toggle.length) {
+                $toggle.on("click", function (e) {
+                    e.stopPropagation();
+                    if ($nav.hasClass("is-active")) {
+                        closeMenu();
+                    } else {
+                        openMenu();
+                    }
+                });
+            }
+
+            if ($close.length) {
+                $close.on("click", function (e) {
+                    e.stopPropagation();
+                    closeMenu();
+                });
+            }
+
+            // Escape key
+            $(document).on("keydown", function (e) {
+                if (e.key === "Escape") {
+                    closeMenu();
+                }
+            });
+
+            // Click fuera del menú
+            $(document).on("click", function (e) {
+                if (
+                    $nav.hasClass("is-active") &&
+                    !$nav.is(e.target) &&
+                    $nav.has(e.target).length === 0 &&
+                    !$toggle.is(e.target) &&
+                    !$close.is(e.target)
+                ) {
+                    closeMenu();
+                }
+            });
+        }
+    });
+
 
 
 </script>
