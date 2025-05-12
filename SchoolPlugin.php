@@ -1410,17 +1410,7 @@ class SchoolPlugin extends Plugin
                 'url' => '/certified',
                 'class' => $currentSection === 'certificates' ? 'active':'',
                 'items' => []
-            ]/*,
-            [
-                'id' => 4,
-                'name' => 'requests',
-                'label' => 'Solicitudes',
-                'current' => false,
-                'icon' => 'inbox',
-                'url' => '/requests',
-                'class' => $currentSection === 'requests' ? 'active':'',
-                'items' => []
-            ]*/,
+            ],
             [
                 'id' => 4,
                 'name' => 'help',
@@ -1796,58 +1786,6 @@ class SchoolPlugin extends Plugin
 
     }
 
-    public function getToolsCourse(): array
-    {
-        return [
-            [
-                'id' => 1,
-                'name' => 'tool_calendar',
-                'label' => self::get_lang('ToolCalendar'),
-                'icon' => self::get_svg_icon('tool_calendar', self::get_lang('ToolCalendar'), 64),
-                'url' => '#'
-            ],
-            [
-                'id' => 1,
-                'name' => 'tool_chip',
-                'label' => self::get_lang('SeeFile'),
-                'icon' => self::get_svg_icon('tool_chip', self::get_lang('SeeFile'), 64),
-                'url' => '#'
-            ],
-            [
-                'id' => 2,
-                'name' => 'tool_doc',
-                'label' => self::get_lang('SupplementaryMaterial'),
-                'icon' => self::get_svg_icon('tool_doc', self::get_lang('SupplementaryMaterial'), 64),
-                'url' => '#'
-            ]
-        ];
-    }
-    public function getActivitiesCourse(): array
-    {
-        return [
-            [
-                'id' => 1,
-                'name' => 'tool_evaluation',
-                'label' => self::get_lang('ToolEvaluation'),
-                'icon' => self::get_svg_icon('tool_evaluation', self::get_lang('ToolEvaluation'), 64),
-                'url' => '#'
-            ],
-            [
-                'id' => 1,
-                'name' => 'tool_forum',
-                'label' => self::get_lang('ToolForum'),
-                'icon' => self::get_svg_icon('tool_forum', self::get_lang('ToolForum'), 64),
-                'url' => '#'
-            ],
-            [
-                'id' => 2,
-                'name' => 'tool_survey',
-                'label' => self::get_lang('ToolSurvey'),
-                'icon' => self::get_svg_icon('tool_survey', self::get_lang('ToolSurvey'), 64),
-                'url' => '#'
-            ]
-        ];
-    }
     public function getToolsCourseHome($sessionId, $courseId): array
     {
         $session = $this->getInfoSession($sessionId);
