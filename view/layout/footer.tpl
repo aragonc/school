@@ -306,6 +306,7 @@
         var $toggle = $("#sidebarToggleTop");
         var $close = $("#closeMobile");
         var $body = $("body");
+        var $overlay = $(".menu-overlay");
 
         function openMenu() {
             $nav.addClass("is-active");
@@ -336,14 +337,18 @@
                 });
             }
 
-            // Escape key
+            if ($overlay.length) {
+                $overlay.on("click", function () {
+                    closeMenu();
+                });
+            }
+
             $(document).on("keydown", function (e) {
                 if (e.key === "Escape") {
                     closeMenu();
                 }
             });
 
-            // Click fuera del menú
             $(document).on("click", function (e) {
                 if (
                     $nav.hasClass("is-active") &&
@@ -357,6 +362,7 @@
             });
         }
     });
+
 
 
 

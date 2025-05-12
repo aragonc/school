@@ -61,6 +61,7 @@
 </ul>
 <!-- End of Sidebar -->
 <!-- Sidebar Mobile -->
+<div class="menu-overlay"></div>
 <div class="nav-mobile d-sm-none"  tabindex="0">
     <nav class="nav-items">
         <div class="d-flex flex-row justify-content-between">
@@ -74,10 +75,8 @@
             </div>
         </div>
 
-
-
         {% for menu in menus %}
-        <a id="menu-{{ menu.name }}" class="nav-item" href="{{ menu.url }}" title="{{ menu.label }}">
+        <a id="menu-{{ menu.name }}" class="nav-item {{ menu.class }}" href="{{ menu.url }}" title="{{ menu.label }}">
             <i class="fas fa-fw fa-{{ menu.icon }}"></i>
             <span>{{ menu.label }}</span>
         </a>

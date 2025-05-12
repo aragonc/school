@@ -695,12 +695,16 @@ $toggleColor: red;
     grid-gap: 5px 0;
     align-content: start;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-
+    .nav-item.active{
+      color: white;
+      background-color: $brand-one;
+    }
     .nav-item {
-      background: darken(#efefef, 5%);
+      background: #e6e6e6;
       padding: 10px;
       transition: background-color 0.3s ease;
-
+      color: rgba(58, 59, 69, 0.8);
+      border-radius: 10px;
       &:hover {
         cursor: pointer;
         background: darken(#efefef, 10%);
@@ -708,6 +712,25 @@ $toggleColor: red;
     }
   }
 }
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.2); /* 20% opacidad negra */
+  z-index: 998;
+  display: none; /* Oculto por defecto */
+}
+
+.nav-mobile.is-active {
+  z-index: 999; /* Asegura que esté encima del overlay */
+}
+
+body.no-scroll .menu-overlay {
+  display: block; /* Se muestra cuando el menú está activo */
+}
+
 .no-scroll {
   overflow: hidden;
   height: 100vh;
