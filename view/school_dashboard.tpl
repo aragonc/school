@@ -46,7 +46,7 @@
 
                 {% if session.number_courses <=1 %}
                     {% for course in session.courses %}
-                        <div class="card pl-4 pr-4 mb-2">
+                        <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2">
                             <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
                                 <div class="row align-items-center">
                                     <div class="col">
@@ -70,7 +70,7 @@
                     {% endfor %}
                 {% else %}
 
-                <div class="card pl-4 pr-4">
+                <div class="card pl-0 pr-0 pl-md-4 pr-md-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
                         <div class="row align-items-center">
                             <div class="col">

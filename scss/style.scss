@@ -34,6 +34,11 @@
   }
 }
 .navbar{
+  .logo-campus{
+    .logo-site{
+      width: 130px;
+    }
+  }
     .dropdown{
       .username-dropdown{
         background-color: $bgcolor;
@@ -42,6 +47,20 @@
         padding: .5rem 1rem;
         @media (max-width: 480px) {
           padding: 0;
+        }
+      }
+      .icon-search{
+        height: 2.5rem;
+        width: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        @media (max-width: 480px) {
+          height: 2rem;
+          width: 2rem;
+          background: transparent;
+          color: $gray-700;
+          font-size: 1.4rem;
         }
       }
       .badge-bell{
@@ -54,6 +73,8 @@
         justify-content: center;
         color: $white;
         @media (max-width: 480px) {
+          height: 2rem;
+          width: 2rem;
           background: transparent;
           color: $gray-700;
           font-size: 1.4rem;
@@ -150,11 +171,27 @@
 .row-date{
   width: 150px;
   display: inline-block;
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 }
 .nav-tabs{
   border-bottom: 1px solid #FFF;
   .nav-link{
     border: none;
+  }
+}
+.card{
+  .course-link{
+    img{
+      @media (max-width: 480px) {
+        width: 22px;
+        height: 22px;
+      }
+    }
+  }
+  @media (max-width: 480px) {
+    border-radius: 0;
   }
 }
 .btn-download{
@@ -179,6 +216,9 @@
 .course-title{
   font-weight: bold;
   color: $gray-800;
+  @media (max-width: 480px) {
+    font-weight: 400;
+  }
 }
 .message{
   .title{
@@ -497,6 +537,9 @@
 .navbar-search{
   width: 30rem !important;
   position: relative;
+  @media (max-width: 480px) {
+    width: 100% !important;
+  }
   .dropdown-list{
     width: 30rem !important;
   }
