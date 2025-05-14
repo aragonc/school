@@ -1,10 +1,10 @@
-<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top">
+<nav class="navbar navbar-expand navbar-light topbar mb-4 static-top">
     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle">
         <i class="fa fa-bars"></i>
     </button>
 
     <div class="logo-campus d-sm-inline-block d-md-none">
-        {{ logo }}
+        <a href="{{ _p.web }}">{{ logo }}</a>
     </div>
 
     <form class="d-none d-sm-inline-block form-inline ml-auto mr-md-3 my-2 my-md-0 mw-100 navbar-search">

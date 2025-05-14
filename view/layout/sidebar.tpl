@@ -66,7 +66,7 @@
     <nav class="nav-items">
         <div class="d-flex flex-row justify-content-between">
             <div class="logo-campus">
-                {{ logo }}
+                <a href="{{ _p.web }}">{{ logo }}</a>
             </div>
             <div class="p-2">
                 <button type="button" id="closeMobile" class="btn btn-outline-primary">

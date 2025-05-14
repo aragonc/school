@@ -24,8 +24,8 @@
                     <div class="row align-items-center pb-3 pt-3">
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
-                                <div class="p-2">{{ category.category_image }}</div>
-                                <div class="p-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
+                                <div class="p-0 p-md-2">{{ category.category_image }}</div>
+                                <div class="p-0 p-md-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
                             </div>
                         </div>
                         <div class="col-md-auto d-none d-sm-block">
@@ -76,7 +76,7 @@
                             <div class="col">
                                 <h2 class="mb-0">
                                     <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
-                                        {{ session.session_image }} {{ session.name }}
+                                        {{ session.session_image }} <span class="course-title">{{ session.name }}</span>
                                     </button>
                                 </h2>
                             </div>
@@ -105,7 +105,6 @@
                                         <div class="pr-1 pl-1">
                                             {{ course.icon }}
                                         </div>
-
                                     <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
                                         {{ course.title }}
                                     </a>
