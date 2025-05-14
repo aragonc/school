@@ -1,4 +1,7 @@
 // Topbar
+.navbar{
+  padding: 0;
+}
 .topbar {
   height: $topbar-base-height;
   #sidebarToggleTop {
@@ -30,6 +33,9 @@
       display: flex;
       align-items: center;
       padding: 0 0.75rem;
+      @media (max-width: 480px) {
+        padding: 0 0.5rem;
+      }
       &:focus {
         outline: none;
       }

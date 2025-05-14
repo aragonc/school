@@ -32,10 +32,17 @@
         transform-origin: top right;
         right: .25rem;
         margin-top: -.25rem;
+        @media (max-width: 480px) {
+          margin-top: -1.25rem;
+        }
       }
       .img-profile {
         height: 2rem;
         width: 2rem;
+        @media (max-width: 480px) {
+          width: 2.5rem;
+          height: 2.5rem;
+        }
       }
     }
   }

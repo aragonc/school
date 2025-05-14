@@ -1,7 +1,11 @@
 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top">
-    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle">
         <i class="fa fa-bars"></i>
     </button>
+
+    <div class="logo-campus d-sm-inline-block d-md-none">
+        {{ logo }}
+    </div>
 
     <form class="d-none d-sm-inline-block form-inline ml-auto mr-md-3 my-2 my-md-0 mw-100 navbar-search">
         <div id="loader"><img src="{{ image_url }}spinner.gif" alt="Cargando..." width="20"></div>
@@ -22,7 +26,7 @@
             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <div class="badge-bell">
-                    <i class="fas fa-bell fa-fw text-white"></i>
+                    <i class="fas fa-bell fa-fw"></i>
                     <span id="badge-counter" class="badge badge-danger badge-counter">0</span>
                 </div>
             </a>
