@@ -56,8 +56,8 @@
         align-items: center;
         justify-content: center;
         @media (max-width: 480px) {
-          height: 2rem;
-          width: 2rem;
+          height: 2.5rem;
+          width: 2.5rem;
           background: transparent;
           color: $gray-700;
           font-size: 1.4rem;
@@ -73,8 +73,8 @@
         justify-content: center;
         color: $white;
         @media (max-width: 480px) {
-          height: 2rem;
-          width: 2rem;
+          height: 2.5rem;
+          width: 2.5rem;
           background: transparent;
           color: $gray-700;
           font-size: 1.4rem;
@@ -176,6 +176,14 @@
   font-weight: 800;
   line-height: 16px;
 }
+.topbar {
+  #sidebarToggleTop{
+    margin-right: 0.5rem;
+    .fa-bars{
+      font-size: 1.4rem;
+    }
+  }
+}
 .row-date{
   width: 150px;
   display: inline-block;
@@ -185,8 +193,14 @@
 }
 .nav-tabs{
   border-bottom: 1px solid #FFF;
+  @media (max-width: 480px) {
+    border-bottom: 1px solid #dddfeb;
+  }
   .nav-link{
-    border: none;
+    border-bottom: none;
+    @media (max-width: 480px) {
+      border-bottom: 1px solid transparent;
+    }
   }
 }
 .category{
@@ -595,7 +609,9 @@
       background-color: #eefaff;
       .dropdown-item{
         line-height: 1rem;
-        padding: 0.25rem 1rem;
+        @media (max-width: 480px) {
+          padding: 0.25rem;
+        }
       }
       .title{
         font-size: 1rem;
@@ -886,7 +902,8 @@ body.no-scroll .menu-overlay {
 
 @media (max-width: 480px) {
   .topbar .dropdown .dropdown-menu{
-    width: 90%;
+    width: 100%;
+    right: 0;
   }
   .card-catalog{
     .container-fluid{

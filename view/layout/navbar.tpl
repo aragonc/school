@@ -10,11 +10,11 @@
     <form class="d-none d-sm-inline-block form-inline ml-auto mr-md-3 my-2 my-md-0 mw-100 navbar-search">
         <div id="loader"><img src="{{ image_url }}spinner.gif" alt="Cargando..." width="20"></div>
         <div class="input-group">
-            <input id="term" name="term" type="text" class="form-control bg-light border-0 small" placeholder="{{ 'SearchCourses'|get_plugin_lang('SchoolPlugin') }}"
+            <input id="term1" name="term" type="text" class="terms-search form-control bg-light border-0 small" placeholder="{{ 'SearchCourses'|get_plugin_lang('SchoolPlugin') }}"
                    aria-label="Search" aria-describedby="basic-addon2">
         </div>
         <div class="dropdown-list">
-            <ul class="list-group" id="result"></ul>
+            <ul class="result_search list-group" id="result"></ul>
         </div>
 
     </form>
@@ -35,14 +35,12 @@
                  aria-labelledby="searchDropdown">
                 <form class="form-inline mr-auto w-100 navbar-search">
                     <div class="input-group">
-                        <input type="text" class="form-control bg-light border-0 small"
-                               placeholder="Search for..." aria-label="Search"
+                        <input id="term2" name="term" type="text" class="form-control terms-search bg-light border-0 small"
+                               placeholder="{{ 'SearchCourses'|get_plugin_lang('SchoolPlugin') }}" aria-label="Search"
                                aria-describedby="basic-addon2">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="button">
-                                <i class="fas fa-search fa-sm"></i>
-                            </button>
-                        </div>
+                    </div>
+                    <div class="dropdown-list">
+                        <ul class="result_search list-group" id="result"></ul>
                     </div>
                 </form>
             </div>

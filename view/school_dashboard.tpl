@@ -46,7 +46,7 @@
 
                 {% if session.number_courses <=1 %}
                     {% for course in session.courses %}
-                        <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2">
+                        <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2 d-none d-md-block">
                             <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
                                 <div class="row align-items-center">
                                     <div class="col">
@@ -54,7 +54,6 @@
                                             {{ course.icon }} <span class="course-title">{{ session.name }}</span>
                                         </a>
                                     </div>
-
                                     <div class="col-md-auto text-center">
                                         <span class="row-date">{{ session.registered_at }}</span>
                                     </div>
@@ -67,6 +66,9 @@
                                 </div>
                             </div>
                         </div>
+
+
+
                     {% endfor %}
                 {% else %}
 

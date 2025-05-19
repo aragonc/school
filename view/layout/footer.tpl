@@ -207,10 +207,10 @@
     $(document).ready(function() {
         let timeout = null;
 
-        $("#term").on("keyup", function() {
+        $(".terms-search").on("keyup", function() {
             clearTimeout(timeout);
             let term = $(this).val().trim();
-            let resultList = $("#result");
+            let resultList = $(".result_search");
             let url_platform = '{{ _p.web_plugin }}';
             let url_courses = '{{ _p.web }}shopping';
             let url_graduates = '{{ _p.web }}shopping?view=graduates';
@@ -237,8 +237,8 @@
                                             <img src="${session.extra.image}" alt="${session.name}" width="100" class="mr-2 rounded-lg">
                                         </div>
                                         <div>
-                                            <h4 class="title mt-3">${session.name}</h4>
-                                            <p>${session.description}</p>
+                                            <h4 class="title mt-1 mt-md-3">${session.name}</h4>
+                                            <p class="mb-1 mb-md-3">${session.description}</p>
                                         </div>
                                     </a>
                                 </li>
@@ -283,22 +283,6 @@
                 $("#result").show();
             }
         });
-
-        /*$(document).ready(function(){
-            // Toggle sidebar on mobile with animation
-            $('#sidebarToggleTop').on('click', function(e) {
-                e.preventDefault();
-                const $sidebar = $('#accordionSidebar');
-
-                if ($sidebar.hasClass('toggled')) {
-                    $sidebar.animate({ width: 'toggle' }, 200, function() {
-                        $sidebar.removeClass('toggled');
-                    });
-                } else {
-                    $sidebar.addClass('toggled').hide().animate({ width: 'toggle' }, 200);
-                }
-            });
-        });*/
     });
 
     $(document).ready(function () {
