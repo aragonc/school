@@ -404,6 +404,8 @@ class SchoolPlugin extends Plugin
             $attrib = null;
             if(!$responsive){
                 $attrib = ['width' => $size, 'height' => $size, 'class' => 'img-fluid'];
+            } else {
+                $attrib = ['width' => $size, 'height' => $size];
             }
             $img = Display::img($iconPathWeb,$altText, $attrib);
         } else {
@@ -786,8 +788,10 @@ class SchoolPlugin extends Plugin
             $total = Database::num_rows($result);
             foreach ($result as $row) {
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
+                $shortDate = date('d/m', strtotime($row['registered_at']));
                 $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
                 $row['registered_at'] = $dateRegister;
+                $row['short_date'] = $shortDate;
                 $row['number_courses'] = count($courseList);
                 $row['courses'] = $courseList;
                 $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
@@ -868,6 +872,7 @@ class SchoolPlugin extends Plugin
                 $count++;
                 $result_row['status'] = 5;
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
+                $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
                 if ($count % 2 == 0) {
                     $result_row['ribbon'] = 'even';

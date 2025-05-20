@@ -899,7 +899,24 @@ body.no-scroll .menu-overlay {
 #toolbar-document{
   display: none;
 }
-
+.course-mobile{
+  background-color: #f2f2f2;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  .mobile-title{
+    .btn-download{
+      font-size: 12px;
+      padding: 0 5px;
+    }
+  }
+}
+.icon-mobile{
+  width: 32px;
+  margin-right: 1rem;
+}
+.date-mobile{
+  font-size: 12px;
+}
 @media (max-width: 480px) {
   .topbar .dropdown .dropdown-menu{
     width: 100%;

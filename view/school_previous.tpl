@@ -20,11 +20,11 @@
                     <div class="row align-items-center pb-3">
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
-                                <div class="p-2">{{ category.category_image }}</div>
-                                <div class="p-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
+                                <div class="p-0 p-md-2">{{ category.category_image }}</div>
+                                <div class="p-0 p-md-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
                             </div>
                         </div>
-                        <div class="col-md-auto">
+                        <div class="col-md-auto d-none d-sm-block">
                             <div class="section-col-table">
                                 {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
                             </div>
@@ -39,7 +39,7 @@
                 {% if session.number_courses <=1 %}
 
                     {% for course in session.courses %}
-                    <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2">
+                    <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2 d-none d-md-block">
                         <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
                             <div class="row align-items-center">
                                 <div class="col">
@@ -55,7 +55,34 @@
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
+
+                    <div class="course-mobile d-md-none">
+                        <div class="row align-items-center">
+                            <div class="col-10">
+                                <div class="d-flex justify-content-start">
+                                    <div class="icon-mobile">
+                                        {{ course.icon_mobile }}
+                                    </div>
+                                    <div class="mobile-title">
+                                        <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                            <span class="course-title">{{ session.name }}</span>
+                                        </a>
+                                        <div class="certificate-regular">
+                                            <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
+                                                <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <div class="date-mobile">
+                                    {{ session.short_date }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
 
                 {% else %}
                 <div class="card pl-0 pr-0 pl-md-4 pr-md-4">
