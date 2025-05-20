@@ -27,15 +27,17 @@
 
 <div class="card card- mt-3">
     <div class="card-body p-1 p-md-4">
-        <div class="container-fluid">
+        <div class="container-fluid mobile-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3">
-                    <div class="message-home mb-3 d-flex justify-content-center">
-                        <div class="icon">
-                            {{ icon_check }}
-                        </div>
-                        <div class="label pl-2 pr-2 align-self-center">
-                            {{ 'WelcomeHome'|get_plugin_lang('SchoolPlugin') }}
+                    <div class="alert alert-success" role="alert">
+                        <div class="message-home m-0 mb-md-3 mt-md-3 d-flex justify-content-center">
+                            <div class="icon">
+                                {{ icon_check }}
+                            </div>
+                            <div class="label pl-2 pr-2 align-self-center">
+                                {{ 'WelcomeHome'|get_plugin_lang('SchoolPlugin') }}
+                            </div>
                         </div>
                     </div>
                 </div>

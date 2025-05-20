@@ -641,6 +641,9 @@
     padding: 1rem;
     font-weight: bold;
     font-size: 1.2rem;
+    @media (max-width: 480px) {
+      padding: 0.5rem;
+    }
     @media (max-width: 768px) {
       font-size: .9rem; // tamaño más pequeño para móviles
       text-align: left; // opcional: centrar en móvil
@@ -699,6 +702,9 @@
   color: $gray-700;
   font-weight: bold;
   border: 1px solid $gray-300;
+  @media (max-width: 480px) {
+    padding: 0.5rem 0rem;
+  }
   .label{
     @media (max-width: 480px) {
       font-size: 14px;
