@@ -98,24 +98,26 @@
 
                 <div class="card pl-0 pr-0 pl-md-4 pr-md-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
-
-                        <div class="row align-items-center d-none d-md-block">
-                            <div class="col">
-                                <h2 class="mb-0">
-                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
-                                        {{ session.session_image }} <span class="course-title">{{ session.name }}</span>
-                                    </button>
-                                </h2>
-                            </div>
-                            <div class="col-md-auto text-center">
-                                <span class="row-date">{{ session.registered_at }}</span>
-                            </div>
-                            <div class="col-md-auto text-center pr-4">
-                                <a class="btn btn-primary btn-download" href="{{session.certificate_url}}" role="button"  target="_blank">
-                                    <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
-                                </a>
+                        <div class="d-none d-md-block">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h2 class="mb-0">
+                                        <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
+                                            {{ session.session_image }} <span class="course-title">{{ session.name }}</span>
+                                        </button>
+                                    </h2>
+                                </div>
+                                <div class="col-md-auto text-center">
+                                    <span class="row-date">{{ session.registered_at }}</span>
+                                </div>
+                                <div class="col-md-auto text-center pr-4">
+                                    <a class="btn btn-primary btn-download" href="{{session.certificate_url}}" role="button"  target="_blank">
+                                        <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
+                                    </a>
+                                </div>
                             </div>
                         </div>
+
 
                         <!-- version mobile -->
 
