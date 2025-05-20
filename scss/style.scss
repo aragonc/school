@@ -511,10 +511,17 @@
   margin-top: 0;
   color: $brand-two;
   margin-bottom: 2rem;
+  @media (max-width: 480px) {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
 }
 .view-tags{
   margin-bottom: 0;
   font-size: 1.2rem;
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
 }
 .view-pay-icon{
   text-align: center;
