@@ -683,6 +683,11 @@
   color: $gray-700;
   font-weight: bold;
   border: 1px solid $gray-300;
+  .label{
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
+  }
 }
 .link_tool{
   text-align: center;
@@ -694,6 +699,11 @@
   color: $gray-700;
   font-weight: bold;
   border: 1px solid $gray-300;
+  .label{
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
+  }
 }
 .title-tool-section{
   font-weight: 800;
