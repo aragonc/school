@@ -62,7 +62,7 @@
 <!-- End of Sidebar -->
 <!-- Sidebar Mobile -->
 <div class="menu-overlay"></div>
-<div class="nav-mobile d-none d-md-block d-lg-none"  tabindex="0">
+<div class="nav-mobile d-sm-block d-md-block d-lg-none"  tabindex="0">
     <nav class="nav-items">
         <div class="d-flex flex-row justify-content-between">
             <div class="logo-campus">
