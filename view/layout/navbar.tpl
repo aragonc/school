@@ -1,5 +1,5 @@
 <nav class="navbar navbar-expand navbar-light topbar mb-4 static-top">
-    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle">
+    <button id="sidebarToggleTop" class="btn btn-link d-lg-none rounded-circle">
         <i class="fa fa-bars"></i>
     </button>
 

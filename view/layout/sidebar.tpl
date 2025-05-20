@@ -1,5 +1,5 @@
 <!-- Sidebar -->
-<ul class="navbar-nav bg-sidebar sidebar sidebar-dark accordion d-none d-md-block toggled" id="accordionSidebar">
+<ul class="navbar-nav bg-sidebar sidebar sidebar-dark accordion d-none d-lg-block toggled" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ _p.web }}">
@@ -62,7 +62,7 @@
 <!-- End of Sidebar -->
 <!-- Sidebar Mobile -->
 <div class="menu-overlay"></div>
-<div class="nav-mobile d-sm-none"  tabindex="0">
+<div class="nav-mobile d-none d-md-block d-lg-none"  tabindex="0">
     <nav class="nav-items">
         <div class="d-flex flex-row justify-content-between">
             <div class="logo-campus">
