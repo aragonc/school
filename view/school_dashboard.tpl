@@ -98,7 +98,8 @@
 
                 <div class="card pl-0 pr-0 pl-md-4 pr-md-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
-                        <div class="row align-items-center">
+
+                        <div class="row align-items-center d-none d-md-block">
                             <div class="col">
                                 <h2 class="mb-0">
                                     <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
@@ -115,6 +116,38 @@
                                 </a>
                             </div>
                         </div>
+
+                        <!-- version mobile -->
+
+                        <div class="course-mobile d-md-none">
+                            <div class="row align-items-center">
+                                <div class="col-10">
+                                    <div class="d-flex justify-content-start">
+                                        <div class="icon-mobile">
+                                            {{ session.session_image_mobile }}
+                                        </div>
+                                        <div class="mobile-title">
+
+                                            <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
+                                                 <span class="course-title">{{ session.name }}</span>
+                                            </button>
+
+                                            <div class="certificate-regular">
+                                                <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
+                                                    <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <div class="date-mobile">
+                                        {{ session.short_date }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                     <div id="collapse_session_{{ session.id }}" class="collapse" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">
 

@@ -795,6 +795,7 @@ class SchoolPlugin extends Plugin
                 $row['number_courses'] = count($courseList);
                 $row['courses'] = $courseList;
                 $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
+                $row['session_image_mobile'] = self::get_svg_icon('course', $row['name'],22, true);
                 $row['certificate_url'] = api_get_path(WEB_PLUGIN_PATH).'school/src/certificate_regular.php?id_session='.$row['id'];
                 if(is_null($row['id_category'])){
                     $row['id_category'] = 4;

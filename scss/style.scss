@@ -139,6 +139,9 @@
     display: inline-block;
     width: 100%;
     color: $gray-700;
+    @media (max-width: 480px) {
+      font-size: 14px;
+    }
   }
 }
 .navbar-light{
@@ -904,6 +907,9 @@ body.no-scroll .menu-overlay {
   margin-bottom: 0.5rem;
   padding: 0.5rem;
   .mobile-title{
+    .btn-link{
+      padding: 0;
+    }
     .btn-download{
       font-size: 12px;
       padding: 0 5px;
