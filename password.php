@@ -33,7 +33,7 @@ if ($enable) {
         true
     );
 
-    $imgSection = $plugin->get_svg_icon('security', $plugin->get_lang('HereYourNotificationsWillBe'), 500,true);
+    $imgSection = $plugin->get_svg_icon('security', $plugin->get_lang('HereYourNotificationsWillBe'), 500);
 
     $form = new FormValidator(
         'form_password',

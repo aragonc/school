@@ -26,7 +26,7 @@ if ($enable) {
         true
     );
 
-    $imgSection = $plugin->get_svg_icon('profile', $plugin->get_lang('HereYourNotificationsWillBe'), 500, true);
+    $imgSection = $plugin->get_svg_icon('profile', $plugin->get_lang('HereYourNotificationsWillBe'), 500);
 
     if ($user_data !== false) {
         if (api_get_setting('login_is_email') === 'true') {
