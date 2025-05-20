@@ -930,6 +930,12 @@ body.no-scroll .menu-overlay {
   font-size: 12px;
 }
 @media (max-width: 480px) {
+  .mobile-fluid {
+    padding-right: 0;
+    padding-left: 0;
+  }
+}
+@media (max-width: 480px) {
   .topbar .dropdown .dropdown-menu{
     width: 100%;
     right: 0;

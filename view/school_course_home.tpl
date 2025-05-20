@@ -9,7 +9,7 @@
     <div class="card-header">
        {{ icon_course }} {{ session.name }}
     </div>
-    <div class="card-body">
+    <div class="card-body p-1 p-md-4">
         <div class="container">
             <div class="row">
                 <div class="col-12 col-lg-6">
@@ -18,7 +18,7 @@
                 <div class="col-12 col-lg-6">
                     <div class="d-none d-lg-block h-25"></div>
                     <h1 class="course-home-title">{{ course.title }}</h1>
-                    <div class="h-25"></div>
+                    <div class="h-25 d-none d-md-block"></div>
                 </div>
             </div>
         </div>
@@ -26,7 +26,7 @@
 </div>
 
 <div class="card card- mt-3">
-    <div class="card-body">
+    <div class="card-body p-1 p-md-4">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3">
@@ -69,12 +69,12 @@
 </div>
 {% if tools_two is not empty %}
 <div class="card pb-3 mt-3">
-    <div class="card-body pb-3">
+    <div class="card-body p-1 p-md-4">
         <h3 class="pt-3 pb-3 title-tool-section">{{ 'Contents'|get_plugin_lang('SchoolPlugin') }}</h3>
-        <div class="container-fluid">
+        <div class="container-fluid mobile-fluid">
             <div class="row">
                 {% for tool in tools_two %}
-                <div class="col-12 col-lg-2 d-flex align-items-stretch">
+                <div class="col-6 col-lg-2 d-flex align-items-stretch">
                     <a class="link_scorm mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
                         <div class="tool">
                             <div class="icon">
@@ -94,12 +94,12 @@
 {% endif %}
 {% if tools_tree is not empty %}
 <div class="card pb-3 mt-3">
-    <div class="card-body ">
+    <div class="card-body p-1 p-md-4 ">
         <h3 class="pt-3 pb-3 title-tool-section">{{ 'MyActivities'|get_plugin_lang('SchoolPlugin') }}</h3>
-        <div class="container-fluid">
+        <div class="container-fluid mobile-fluid">
             <div class="row">
                 {% for tool in tools_tree %}
-                <div class="col-12 col-lg-2 d-flex align-items-stretch">
+                <div class="col-6 col-lg-2 d-flex align-items-stretch">
                     <a class="link_tool mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
                         <div class="tool">
                             <div class="icon">
