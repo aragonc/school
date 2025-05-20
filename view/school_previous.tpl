@@ -67,11 +67,6 @@
                                         <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
                                             <span class="course-title">{{ session.name }}</span>
                                         </a>
-                                        <div class="certificate-regular">
-                                            <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
-                                                <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
-                                            </a>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -111,16 +106,9 @@
                                             {{ session.session_image_mobile }}
                                         </div>
                                         <div class="mobile-title">
-
                                             <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
                                                 <span class="course-title">{{ session.name }}</span>
                                             </button>
-
-                                            <div class="certificate-regular">
-                                                <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
-                                                    <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
-                                                </a>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
