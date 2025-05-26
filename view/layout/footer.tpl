@@ -333,16 +333,12 @@
                 }
             });
 
+            $(".logo-site").on("click", function (e) {
+                closeMenu();
+            });
+
             $(document).on("click", function (e) {
-                if (
-                    $nav.hasClass("is-active") &&
-                    !$nav.is(e.target) &&
-                    $nav.has(e.target).length === 0 &&
-                    !$toggle.is(e.target) &&
-                    !$close.is(e.target)
-                ) {
-                    closeMenu();
-                }
+
             });
         }
     });

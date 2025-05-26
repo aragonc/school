@@ -64,7 +64,7 @@
 <div class="menu-overlay"></div>
 <div class="nav-mobile d-sm-block d-md-block d-lg-none"  tabindex="0">
     <nav class="nav-items">
-        <div class="d-flex flex-row justify-content-between">
+        <div class="d-flex flex-row justify-content-between align-items-center">
             <div class="logo-campus">
                 <a href="{{ _p.web }}">{{ logo }}</a>
             </div>

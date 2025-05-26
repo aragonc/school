@@ -171,7 +171,7 @@
 .title-page{
   font-size: 1.5rem;
   color: $gray-800;
-  font-weight: 700;
+  font-weight: 800;
 }
 .box-odd{
   background-color: $gray-odd;
@@ -188,6 +188,7 @@
 .topbar {
   #sidebarToggleTop{
     margin-right: 0.5rem;
+    padding: 0.375rem;
     .fa-bars{
       font-size: 1.4rem;
     }
@@ -754,7 +755,6 @@ $toggleColor: red;
   .logo-campus{
     padding-top: 1rem;
     padding-bottom: 1rem;
-    margin-bottom: 1rem;
   }
   &.is-active {
     .nav-toggle {
@@ -821,7 +821,7 @@ $toggleColor: red;
     width: 100vw;
     height: 100vh;
     z-index: 1;
-    padding: 10px 20px 20px 10px;
+    padding: 10px;
     transition: transform 0.3s ease;
     transform: translate(calc(-100% - 50px), 0);
     background: #FFFFFF;
@@ -840,6 +840,10 @@ $toggleColor: red;
       transition: background-color 0.3s ease;
       color: rgba(58, 59, 69, 0.8);
       border-radius: 10px;
+      font-size: 16px;
+      span{
+        margin-left: 0.5rem;
+      }
       &:hover {
         cursor: pointer;
         background: darken(#efefef, 10%);
