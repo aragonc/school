@@ -166,6 +166,7 @@
   font-size: 1.3rem;
   @media (max-width: 480px) {
     font-size: 1.1rem;
+    margin-left: 0.5rem;
   }
 }
 .title-page{
@@ -960,7 +961,7 @@ body.no-scroll .menu-overlay {
   margin-right: 1rem;
 }
 .date-mobile{
-  font-size: 12px;
+  font-size: 11px;
 }
 @media (max-width: 480px) {
   .mobile-fluid {

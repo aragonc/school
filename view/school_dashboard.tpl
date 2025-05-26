@@ -15,7 +15,7 @@
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         {% if categories %}
-        <div class="pt-2 pb-4">
+        <div class="pt-0 pb-4">
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
                 <div class="container-fluid">
@@ -68,7 +68,7 @@
 
                         <div class="course-mobile d-md-none">
                             <div class="row align-items-center">
-                                <div class="col-10">
+                                <div class="col-10 pr-0">
                                     <div class="d-flex justify-content-start">
                                         <div class="icon-mobile">
                                             {{ course.icon_mobile }}
@@ -123,7 +123,7 @@
 
                         <div class="course-mobile d-md-none">
                             <div class="row align-items-center">
-                                <div class="col-10">
+                                <div class="col-10 pr-0">
                                     <div class="d-flex justify-content-start">
                                         <div class="icon-mobile">
                                             {{ session.session_image_mobile }}

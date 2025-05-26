@@ -788,7 +788,7 @@ class SchoolPlugin extends Plugin
             $total = Database::num_rows($result);
             foreach ($result as $row) {
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
-                $shortDate = date('d/m', strtotime($row['registered_at']));
+                $shortDate = $this->formatDateToSpanish($row['display_start_date']);
                 $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
                 $row['registered_at'] = $dateRegister;
                 $row['short_date'] = $shortDate;
@@ -822,7 +822,17 @@ class SchoolPlugin extends Plugin
 
     }
 
+    public function formatDateToSpanish($date)
+    {
+        $months = array(
+            'Jan' => 'Ene', 'Feb' => 'Feb', 'Mar' => 'Mar', 'Apr' => 'Abr', 'May' => 'May', 'Jun' => 'Jun',
+            'Jul' => 'Jul', 'Aug' => 'Ago', 'Sep' => 'Sep', 'Oct' => 'Oct', 'Nov' => 'Nov', 'Dec' => 'Dic'
+        );
 
+        $shortDate = date('d/M', strtotime($date));
+        $month = date('M', strtotime($date));
+        return str_replace($month, $months[$month], $shortDate);
+    }
 
     public function getCoursesListBySession($user_id, $session_id): array
     {
