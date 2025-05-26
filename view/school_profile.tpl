@@ -26,7 +26,7 @@
                     {{ form }}
                 </div>
                 <div class="col-12 col-lg-6">
-                    <div class="text-center">
+                    <div class="d-none d-md-block text-center">
                         <div class="bd-callout bd-callout-info">
                             {{ 'UsernameHelp'|get_plugin_lang('SchoolPlugin') }}
                         </div>

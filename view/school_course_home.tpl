@@ -82,7 +82,7 @@
                             <div class="icon">
                                 {{ tool.icon }}
                             </div>
-                            <div class="label p-0 p-md-2 align-self-center">
+                            <div class="label pt-2 p-md-2 align-self-center">
                                 {{ tool.name }}
                             </div>
                         </div>
@@ -107,7 +107,7 @@
                             <div class="icon">
                                 {{ tool.icon }}
                             </div>
-                            <div class="label p-0 p-md-2 align-self-center">
+                            <div class="label pt-2 p-md-2 align-self-center">
                                 {{ tool.name }}
                             </div>
                         </div>

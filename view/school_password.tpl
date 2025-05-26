@@ -26,7 +26,7 @@
                     {{ form }}
                 </div>
                 <div class="col-12 col-lg-6">
-                    <div class="text-center">
+                    <div class="d-none d-md-block text-center">
                         {{ img_section }}
                     </div>
                 </div>
