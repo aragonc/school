@@ -17,7 +17,7 @@
 
         {% if total_unread != 0 %}
         {% if list.messages %}
-        <div class="card">
+        <div class="card notifications">
             <div class="card-body">
                 <div class="table-responsive">
                     <form id="form_message_inbox_id" method="post" action="{{ _p.web }}notifications" name="form_message_inbox">
