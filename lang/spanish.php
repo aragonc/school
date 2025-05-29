@@ -26,7 +26,7 @@ $strings['HereWillBeYourTrainings'] = 'Aquí estarán tus capacitaciones';
 $strings['SelectEndYourCurrentSession'] = 'Selecciona "Cerrar sesión" a continuación si estás listo para finalizar tu sesión actual.';
 $strings['SeeCourses'] = 'Ver cursos';
 $strings['SeeDiplomas'] = 'Ver diplomados';
-$strings['CatalogueOfCoursesAndDiplomas'] = 'Te invitamos a revisar nuestro catálogo de <a href="#" title="Ver cursos">cursos</a> y <a href="#" title="Ver diplomados">diplomados</a>.';
+$strings['CatalogueOfCoursesAndDiplomas'] = 'Te invitamos a revisar nuestro catálogo de';
 $strings['DownloadPDF'] = 'Descargar PDF';
 $strings['Share'] = 'Compartir';
 $strings['HereAreYourCertificates'] = 'Aquí estarán tus certificados';

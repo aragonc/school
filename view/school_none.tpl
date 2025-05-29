@@ -9,7 +9,9 @@
     <div class="card-body">
         <div class="p-5 text-center">
             <h3>{{ 'HereWillBeYourTrainings'|get_plugin_lang('SchoolPlugin') }}</h3>
-            <p>{{ 'CatalogueOfCoursesAndDiplomas'|get_plugin_lang('SchoolPlugin') }}</p>
+            <p>{{ 'CatalogueOfCoursesAndDiplomas'|get_plugin_lang('SchoolPlugin') }}
+                <a href="{{ _p.web }}shopping" title="Ver cursos">cursos</a> y <a href="{{ _p.web }}shopping?view=graduates" title="Ver diplomados">diplomados</a>.
+            </p>
             {{ img_section }}
         </div>
     </div>

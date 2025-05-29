@@ -122,14 +122,13 @@
 </div>
 {% else %}
 
-        <div class="card">
-            <div class="card-body ">
-                <div class="p-0 p-lg-5 text-center">
-                <h3>{{ 'HereAreYourCertificates'|get_plugin_lang('SchoolPlugin') }}</h3>
-                {{ img_section }}
-                </div>
+    <div class="card">
+        <div class="card-body p-0 p-md-3">
+            <div class="p-5 p-lg-5 text-center">
+            <h3>{{ 'HereAreYourCertificates'|get_plugin_lang('SchoolPlugin') }}</h3>
+            {{ img_section }}
             </div>
         </div>
-
+    </div>
 
 {% endif %}
