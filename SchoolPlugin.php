@@ -1596,14 +1596,44 @@ class SchoolPlugin extends Plugin
 
     public function formatDateEs($date): string
     {
-        setlocale(LC_TIME, 'es_ES.UTF-8', 'Spanish_Spain', 'es_ES'); // Configurar español
         $dateTime = new DateTime($date);
 
-        // Formatear la fecha
-        $textDate = strftime('%A %d de %B %Y', $dateTime->getTimestamp());
+        $dias = [
+            'Monday'    => 'lunes',
+            'Tuesday'   => 'martes',
+            'Wednesday' => 'miércoles',
+            'Thursday'  => 'jueves',
+            'Friday'    => 'viernes',
+            'Saturday'  => 'sábado',
+            'Sunday'    => 'domingo'
+        ];
 
-        return ucfirst($textDate); // Capitalizar primera letra
+        $meses = [
+            1  => 'enero',
+            2  => 'febrero',
+            3  => 'marzo',
+            4  => 'abril',
+            5  => 'mayo',
+            6  => 'junio',
+            7  => 'julio',
+            8  => 'agosto',
+            9  => 'septiembre',
+            10 => 'octubre',
+            11 => 'noviembre',
+            12 => 'diciembre'
+        ];
+
+        $diaSemana = $dias[$dateTime->format('l')];
+        $diaNumero = $dateTime->format('d');
+        $mes = $meses[(int)$dateTime->format('m')];
+        $anio = $dateTime->format('Y');
+
+        $texto = "$diaSemana $diaNumero de $mes $anio";
+
+        // Capitalizar la primera letra
+        return ucfirst($texto);
     }
+
 
     public function getSessionTabURL($referenceSession)
     {
