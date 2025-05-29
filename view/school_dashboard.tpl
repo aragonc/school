@@ -41,10 +41,8 @@
             </div>
             <div class="accordion" id="sessions_accordion_{{ category.category_id }}">
                 {% for session in category.sessions %}
-
-                {% if session.number_courses <=1 %}
-                    {% for course in session.courses %}
-
+                    {% if session.number_courses <=1 %}
+                        {% for course in session.courses %}
 
                         <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2 d-none d-md-block">
                             <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
@@ -55,7 +53,7 @@
                                         </a>
                                     </div>
                                     <div class="col-md-auto text-center">
-                                        <span class="row-date">{{ session.registered_at }}</span>
+                                        <span class="row-date">{{ session.short_date }}</span>
                                     </div>
                                     <div class="col-md-auto text-center">
                                         <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
@@ -108,7 +106,7 @@
                                     </h2>
                                 </div>
                                 <div class="col-md-auto text-center">
-                                    <span class="row-date">{{ session.registered_at }}</span>
+                                    <span class="row-date">{{ session.short_date }}</span>
                                 </div>
                                 <div class="col-md-auto text-center pr-4">
                                     <a class="btn btn-primary btn-download" href="{{session.certificate_url}}" role="button"  target="_blank">

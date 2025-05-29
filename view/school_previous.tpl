@@ -33,66 +33,65 @@
                     </div>
                 </div>
             </div>
-            <div class="accordion" id="sessions_accordion">
+            <div class="accordion" id="sessions_accordion_{{ category.category_id }}">
                 {% for session in category.sessions %}
+                    {% if session.number_courses <=1 %}
+                        {% for course in session.courses %}
 
-                {% if session.number_courses <=1 %}
-
-                    {% for course in session.courses %}
-                    <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2 d-none d-md-block">
-                        <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
-                            <div class="row align-items-center">
-                                <div class="col">
-                                    <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
-                                        {{ course.icon }} <span class="course-title">{{ session.name }}</span>
-                                    </a>
-                                </div>
-
-                                <div class="col-md-auto text-center">
-                                    <span class="row-date">{{ session.registered_at }}</span>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="course-mobile d-md-none">
-                        <div class="row align-items-center">
-                            <div class="col-10 pr-0">
-                                <div class="d-flex justify-content-start">
-                                    <div class="icon-mobile">
-                                        {{ course.icon_mobile }}
-                                    </div>
-                                    <div class="mobile-title">
-                                        <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
-                                            <span class="course-title">{{ session.name }}</span>
-                                        </a>
+                            <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2 d-none d-md-block">
+                                <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
+                                    <div class="row align-items-center">
+                                        <div class="col">
+                                            <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                                {{ course.icon }} <span class="course-title">{{ session.name }}</span>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-auto text-center">
+                                            <span class="row-date">{{ session.short_date }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-2">
-                                <div class="date-mobile">
-                                    {{ session.short_date }}
+
+                            <div class="course-mobile d-md-none">
+                                <div class="row align-items-center">
+                                    <div class="col-10 pr-0">
+                                        <div class="d-flex justify-content-start">
+                                            <div class="icon-mobile">
+                                                {{ course.icon_mobile }}
+                                            </div>
+                                            <div class="mobile-title">
+                                                <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                                    <span class="course-title">{{ session.name }}</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-2">
+                                        <div class="date-mobile">
+                                            {{ session.short_date }}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
                 {% endfor %}
 
                 {% else %}
                 <div class="card pl-0 pr-0 pl-md-4 pr-md-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
 
-                        <div class="row align-items-center d-none d-md-block">
-                            <div class="col">
-                                <h2 class="mb-0">
-                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
-                                        {{ session.session_image }} {{ session.name }}
-                                    </button>
-                                </h2>
-                            </div>
-                            <div class="col-md-auto text-center">
-                                <span class="row-date">{{ session.registered_at }}</span>
+                        <div class="d-none d-md-block">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h2 class="mb-0">
+                                        <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
+                                            {{ session.session_image }} <span class="course-title">{{ session.name }}</span>
+                                        </button>
+                                    </h2>
+                                </div>
+                                <div class="col-md-auto text-center">
+                                    <span class="row-date">{{ session.short_date }}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -121,8 +120,9 @@
                         </div>
 
                     </div>
-                    <div id="collapse_session_{{ session.id }}" class="collapse mb-2 mb-md-0" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion">
-                        {% for course in session.courses %}
+                    <div id="collapse_session_{{ session.id }}" class="collapse mb-2 mb-md-0" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">
+
+                    {% for course in session.courses %}
                             <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-5">
                                 <div class="row align-items-center">
                                     <div class="col">
