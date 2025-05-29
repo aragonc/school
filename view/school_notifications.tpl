@@ -6,7 +6,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link " href="/notifications?view=all" >
+        <a class="nav-link " href="/notifications?view=all">
             {{ 'SeeAll'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_messages }}</span>
         </a>
     </li>
@@ -21,123 +21,151 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <form id="form_message_inbox_id" method="post" action="{{ _p.web }}notifications" name="form_message_inbox">
-                    <input type="hidden" name="action">
-                    <table id="table-message" class="table table-borderless d-none d-md-block">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">{{ 'User'|get_plugin_lang('SchoolPlugin') }}</th>
-                            <th scope="col">{{ 'Message'|get_plugin_lang('SchoolPlugin') }}</th>
-                            <th scope="col">{{ 'Program'|get_plugin_lang('SchoolPlugin') }}</th>
-                            <th scope="col">{{ 'Date'|get_plugin_lang('SchoolPlugin') }}</th>
-                            <th scope="col">{{ 'Type'|get_plugin_lang('SchoolPlugin') }}</th>
-                            <th scope="col">{{ 'Action'|get_plugin_lang('SchoolPlugin') }}</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for message in list.messages %}
-                        <tr class="{{ message.row }}">
-                            <th scope="row">{{ message.check_id }}</th>
-                            <td><a class="{{ message.class }}" href="{{ message.link }}">{{ message.user_avatar }}</a></td>
-                            <td><a class="{{ message.class }}" href="{{ message.link }}">{{ message.title }}</a></td>
-                            <td>
-                                <a class="{{ message.class }}" href="{{ message.link }}">
-                                    <div class="{{ message.class }}">{{ message.session_title }}</div>
-                                </a>
-                            </td>
-                            <td><div class="{{ message.class }}">{{ message.send_date }}</div></td>
-                            <td>{{ message.type }}</td>
-                            <td>{{ message.action }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-
-                    <div class="d-md-none">
-                        {% for message in list.messages %}
-                        <div class="message-row {{ message.row }}">
-                            <div class="d-flex align-items-center">
-                                <div class="message_check" id="check_{{ message.id }}">{{ message.check_id }}</div>
-                                <div class="message-title">
+                        <input type="hidden" name="action">
+                        <table id="table-message" class="table table-borderless d-none d-md-block">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">{{ 'User'|get_plugin_lang('SchoolPlugin') }}</th>
+                                <th scope="col">{{ 'Message'|get_plugin_lang('SchoolPlugin') }}</th>
+                                <th scope="col">{{ 'Program'|get_plugin_lang('SchoolPlugin') }}</th>
+                                <th scope="col">{{ 'Date'|get_plugin_lang('SchoolPlugin') }}</th>
+                                <th scope="col">{{ 'Type'|get_plugin_lang('SchoolPlugin') }}</th>
+                                <th scope="col">{{ 'Action'|get_plugin_lang('SchoolPlugin') }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for message in list.messages %}
+                            <tr class="{{ message.row }}">
+                                <th scope="row">{{ message.check_id }}</th>
+                                <td>
+                                    <a class="{{ message.class }}" href="{{ message.link }}">{{ message.user_avatar }}</a>
+                                </td>
+                                <td>
                                     <a class="{{ message.class }}" href="{{ message.link }}">{{ message.title }}</a>
-                                    <div class="session_title">
-                                        {{ message.session_title }}
+                                </td>
+                                <td>
+                                    <a class="{{ message.class }}" href="{{ message.link }}">
+                                        <div class="{{ message.class }}">{{ message.session_title }}</div>
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="{{ message.class }}">{{ message.send_date }}</div>
+                                </td>
+                                <td>{{ message.type }}</td>
+                                <td>{{ message.action }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <div class="d-md-none">
+                            {% for message in list.messages %}
+                            <div class="message-row {{ message.row }}">
+                                <div class="d-flex align-items-center">
+                                    <div class="message_check" id="check_{{ message.id }}">{{ message.check_id }}</div>
+                                    <div class="message-title">
+                                        <a class="{{ message.class }}" href="{{ message.link }}">{{ message.title }}</a>
+                                        <div class="session_title">
+                                            {{ message.session_title }}
+                                        </div>
+                                    </div>
+                                    <div class="message-date">
+                                        {{ message.send_date }}
                                     </div>
                                 </div>
-                                <div class="message-date">
-                                    {{ message.send_date }}
-                                </div>
-                                <div class="message-type">
-                                    {{ message.type }}
-                                </div>
                             </div>
-
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
 
-                            <div class="row m-0">
-                                <div class="col-12 col-md-6">
-                                    <div id="action-bar" class="bar-action-pages d-flex justify-content-between align-items-start">
-                                        <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
-                                            <a href="#" onclick="javascript: setCheckboxTable(true, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}</a>
-                                            <a href="#" onclick="javascript: setCheckboxTable(false, 'form_message_inbox_id'); return false;" class="btn btn-outline-secondary">{{ 'CancelSelected'|get_plugin_lang('SchoolPlugin') }}</a>
+                        <div class="row m-0">
+                            <div class="col-12 col-md-6">
+                                <div id="action-bar"
+                                     class="bar-action-pages d-flex justify-content-between align-items-start">
+                                    <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+                                        <a href="#" onclick="javascript: setCheckboxTable(true, 'form_message_inbox_id'); return false;"
+                                           class="btn btn-outline-secondary">
+                                            {{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}
+                                        </a>
+                                        <a href="#" onclick="javascript: setCheckboxTable(false, 'form_message_inbox_id'); return false;"
+                                           class="btn btn-outline-secondary">
+                                            {{ 'CancelSelected'|get_plugin_lang('SchoolPlugin') }}
+                                        </a>
 
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                                    {{ 'Actions'|get_plugin_lang('SchoolPlugin') }}
-                                                </button>
-                                                <div class="dropdown-menu">
-                                                    <a data-action="mark_as_unread" onclick="javascript:action_click_table(this, 'form_message_inbox_id');" class="dropdown-item" href="#">{{ 'MarkAsUnread'|get_plugin_lang('SchoolPlugin') }}</a>
-                                                    <a data-action="mark_as_read" onclick="javascript:action_click_table(this, 'form_message_inbox_id');" class="dropdown-item" href="#">{{ 'MarkAsRead'|get_plugin_lang('SchoolPlugin') }}</a>
-                                                </div>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                                    data-toggle="dropdown" aria-expanded="false">
+                                                {{ 'Actions'|get_plugin_lang('SchoolPlugin') }}
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a data-action="mark_as_unread"
+                                                   onclick="javascript:action_click_table(this, 'form_message_inbox_id');"
+                                                   class="dropdown-item"
+                                                   href="#">
+                                                    {{ 'MarkAsUnread'|get_plugin_lang('SchoolPlugin') }}
+                                                </a>
+                                                <a data-action="mark_as_read"
+                                                   onclick="javascript:action_click_table(this, 'form_message_inbox_id');"
+                                                   class="dropdown-item"
+                                                   href="#">
+                                                    {{ 'MarkAsRead'|get_plugin_lang('SchoolPlugin') }}
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6">
-                                    {% if list.pagination.totalPages >= 2 %}
-                                    <nav class="pagination-items d-flex justify-content-end">
-                                        <ul class="pagination">
-                                            {% if list.pagination.currentPage > 1 %}
-                                            <li class="page-item"><a class="page-link" href="?page={{ list.pagination.currentPage - 1 }}">{{ 'Previous'|get_plugin_lang('SchoolPlugin') }}</a></li>
-                                            {% endif %}
-
-                                            {% for i in 1..list.pagination.totalPages %}
-                                            {% if i == list.pagination.currentPage %}
-                                            <li class="page-item disabled"><a class="page-link"><strong>{{ i }}</strong></a></li>
-                                            {% else %}
-                                            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-                                            {% endif %}
-                                            {% endfor %}
-
-                                            {% if list.pagination.currentPage < list.pagination.totalPages %}
-                                            <li class="page-item"><a class="page-link" href="?page={{ list.pagination.currentPage + 1 }}">{{ 'Next'|get_plugin_lang('SchoolPlugin') }}</a></li>
-                                            {% endif %}
-                                        </ul>
-                                    </nav>
-                                    {% endif %}
-                                </div>
                             </div>
+                            <div class="col-12 col-md-6">
+                                {% if list.pagination.totalPages >= 2 %}
+                                <nav class="pagination-items d-flex justify-content-center">
+                                    <ul class="pagination">
+                                        {% if list.pagination.currentPage > 1 %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ list.pagination.currentPage - 1 }}">
+                                                {{ 'Previous'|get_plugin_lang('SchoolPlugin') }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
 
+                                        {% for i in 1..list.pagination.totalPages %}
+                                        {% if i == list.pagination.currentPage %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link"><strong>{{ i }}</strong></a>
+                                        </li>
+                                        {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
 
+                                        {% if list.pagination.currentPage < list.pagination.totalPages %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ list.pagination.currentPage + 1 }}">
+                                                {{ 'Next'|get_plugin_lang('SchoolPlugin') }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                                {% endif %}
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
 
-
-
         {% endif %}
         {% else %}
-            <div class="card">
-                <div class="card-body">
-                    <div class="p-5 text-center">
-                        <h3>{{ 'YouHaveNoNewNotifications'|get_plugin_lang('SchoolPlugin') }}</h3>
-                        {{ img_section }}
-                    </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="p-5 text-center">
+                    <h3>{{ 'YouHaveNoNewNotifications'|get_plugin_lang('SchoolPlugin') }}</h3>
+                    {{ img_section }}
                 </div>
             </div>
+        </div>
         {% endif %}
     </div>
 </div>
