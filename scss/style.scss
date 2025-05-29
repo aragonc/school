@@ -22,7 +22,7 @@
 .page-container{
   max-width: 1440px;
   @media (max-width: 480px) {
-    padding: 0.5rem 1.5rem;
+    padding: 0.5rem 1rem;
   }
 }
 .bg-sidebar{
@@ -342,8 +342,14 @@
 .message{
   .title{
     font-weight: 800;
-    font-size: 1.5em;
+    font-size: 1.9em;
     color: $gray-900;
+    @media (max-width: 480px) {
+      font-size: 1.9rem;
+    }
+  }
+  .info{
+    font-size: 14px;
   }
   .program{
     display: inline-block;
@@ -352,6 +358,24 @@
     background-color: $blue-primary;
     color: $white;
     border-radius: 5px;
+  }
+  .program-mobile{
+    font-size: 14px;
+    img{
+      display: none;
+    }
+  }
+  .content{
+    @media (max-width: 480px) {
+      table{
+        width: 100% !important;
+      }
+    }
+    .img-responsive{
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
   }
 }
 .table tr th{

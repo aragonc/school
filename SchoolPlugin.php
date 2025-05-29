@@ -1347,7 +1347,7 @@ class SchoolPlugin extends Plugin
             $userImage = Display::img(
                 $fromUser['avatar_small'],
                 $name,
-                ['title' => $name, 'class' => 'rounded-circle user-avatar', 'style' => 'max-width:32px'],
+                ['title' => $name, 'class' => 'rounded-circle', 'style' => 'max-width:32px'],
                 false
             );
         }
@@ -1359,7 +1359,7 @@ class SchoolPlugin extends Plugin
         $messageInfo = '';
         switch ($type) {
             case MessageManager::MESSAGE_TYPE_INBOX:
-                $messageInfo = '<strong>'.get_lang('From').'</strong>:&nbsp;'.$userImage.'&nbsp;'.$name;
+                $messageInfo = $userImage.'&nbsp;'.$name;
                 break;
             case MessageManager::MESSAGE_TYPE_OUTBOX:
                 $messageInfo= get_lang('From').':&nbsp;'.$name.'</b> '.api_strtolower(get_lang('To')).' <b>'.
@@ -1387,6 +1387,7 @@ class SchoolPlugin extends Plugin
             'user_sender_id' => $user_sender_id,
             'user_avatar' => $userImage,
             'session_title' => self::get_svg_icon('course_white', $title,32) .' | '. $sessionName,
+            'session_title_mobile' => $sessionName,
         ];
 
         return [
