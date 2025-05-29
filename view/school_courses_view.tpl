@@ -11,17 +11,29 @@
             <div class="card-body card-section p-0 p-lg-5">
                 <div class="p-0 p-lg-5">
                     <div class="container-fluid">
-                        <div class="d-flex justify-content-end">
-                            {% if session.n_courses <= 1 %}
+                        <div class="return d-none d-md-block">
+                            <div class="d-flex justify-content-end">
+                                {% if session.n_courses <= 1 %}
                                 <a href="{{ _p.web }}shopping" class="btn btn-primary btn-download">
                                     <i class="fas fa-arrow-left"></i> Volver
                                 </a>
-                            {% else %}
+                                {% else %}
                                 <a href="{{ _p.web }}shopping?view=graduates" class="btn btn-primary btn-download">
                                     <i class="fas fa-arrow-left"></i> Volver
                                 </a>
-                            {% endif %}
-
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="return d-block d-md-none pb-3">
+                                {% if session.n_courses <= 1 %}
+                                <a href="{{ _p.web }}shopping" class="btn btn-primary btn-download">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                                {% else %}
+                                <a href="{{ _p.web }}shopping?view=graduates" class="btn btn-primary btn-download">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                                {% endif %}
                         </div>
 
                         <div class="view-tags">{{ session.tags }}</div>
