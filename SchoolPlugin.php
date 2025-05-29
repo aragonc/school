@@ -829,7 +829,7 @@ class SchoolPlugin extends Plugin
             'Jul' => 'Jul', 'Aug' => 'Ago', 'Sep' => 'Sep', 'Oct' => 'Oct', 'Nov' => 'Nov', 'Dec' => 'Dic'
         );
 
-        $shortDate = date('d/M', strtotime($date));
+        $shortDate = date('d M Y', strtotime($date));
         $month = date('M', strtotime($date));
         return str_replace($month, $months[$month], $shortDate);
     }
