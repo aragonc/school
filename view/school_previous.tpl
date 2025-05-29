@@ -46,7 +46,7 @@
                                                 {{ course.icon }} <span class="course-title">{{ session.name }}</span>
                                             </a>
                                         </div>
-                                        <div class="col-md-auto text-center">
+                                        <div class="col-md-auto text-right">
                                             <span class="row-date">{{ session.short_date }}</span>
                                         </div>
                                     </div>
@@ -89,8 +89,8 @@
                                         </button>
                                     </h2>
                                 </div>
-                                <div class="col-md-auto text-center">
-                                    <span class="row-date">{{ session.short_date }}</span>
+                                <div class="col-md-auto text-right">
+                                    <span class="row-date pr-3">{{ session.short_date }}</span>
                                 </div>
                             </div>
                         </div>
