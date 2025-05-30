@@ -1,6 +1,6 @@
 {% if categories %}
 <div class="card">
-    <div class="card-body">
+    <div class="card-body p-0 p-md-5">
 
         {% for category in categories %}
         <div id="category_{{ category.category_id }}" class="category">
@@ -22,11 +22,11 @@
                             {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
                     </div>
-                    <div class="col-md-auto">
+                    <!--<div class="col-md-auto">
                         <div class="section-col-table">
                             {{ 'Share'|get_plugin_lang('SchoolPlugin') }}
                         </div>
-                    </div>
+                    </div>-->
                 </div>
             </div>
         </div>
@@ -37,7 +37,7 @@
             {% if session.number_courses <=1 %}
 
                     {% for course in session.courses %}
-                    <div class="card pl-4 pr-4">
+                    <div class="card px-0 px-md-4 mb-1">
                         <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
                             <div class="row align-items-center">
                                 <div class="col">
@@ -52,11 +52,11 @@
                                         <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                                     </a>
                                 </div>
-                                <div class="col-md-auto text-center">
+                                <!--<div class="col-md-auto text-center">
                                     <a class="btn btn-primary btn-share" href="{{ course.certificate.link_share }}" role="button">
                                         <i class="fas fa-share-alt"></i> <span class="circle-linkedin"><i class="fab fa-linkedin-in"></i></span>
                                     </a>
-                                </div>
+                                </div>-->
                             </div>
                         </div>
                     </div>
@@ -103,11 +103,11 @@
                                             <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                                         </a>
                                     </div>
-                                    <div class="col-md-auto text-center">
+                                    <!--<div class="col-md-auto text-center">
                                         <a class="btn btn-primary btn-share" href="{{ course.certificate.link_share }}" role="button">
                                             <i class="fas fa-share-alt"></i> <span class="circle-linkedin"><i class="fab fa-linkedin-in"></i></span>
                                         </a>
-                                    </div>
+                                    </div>-->
                                 </div>
                             </div>
                             {% endfor %}
