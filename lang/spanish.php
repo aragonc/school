@@ -119,3 +119,6 @@ $strings['WelcomeHome'] = "¡El verdadero cambio comienza cuando decides capacit
 $strings['CourseHours'] = "30 Horas";
 $strings['DiplomaHours'] = "200 Horas";
 $strings['Training'] = "Capacitación";
+$strings['Help'] = "Ayuda";
+$strings['HelpText'] = "Para cualquier consulta o requerimiento de soporte técnico, por favor envíanos un email a: <a href='mailto:online@aula-virtual.cl'>online@aula-virtual.cl</a>";
+$strings['RespondAsSoonAsPossible'] = "Nuestro equipo te responderá a la brevedad.";

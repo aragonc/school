@@ -1431,11 +1431,11 @@ class SchoolPlugin extends Plugin
             [
                 'id' => 4,
                 'name' => 'help',
-                'label' => 'Ayuda',
+                'label' => $this->get_lang('Help'),
                 'current' => false,
                 'icon' => 'question-circle',
-                'url' => '#',
-                'class' => '',
+                'url' => '/help',
+                'class' => $currentSection === 'help' ? 'active':'',
                 'items' => []
             ],
             [
