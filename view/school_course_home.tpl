@@ -7,10 +7,10 @@
 
 <div class="card card-home">
     <div class="card-header">
-       {{ icon_course }} {{ session.name }}
+       {{ icon_course }} {{ session.display_category }}
     </div>
     <div class="card-body p-1 p-md-4">
-        <div class="container">
+        <div class="container p-0 p-md-5">
             <div class="row">
                 <div class="col-12 col-lg-6">
                     <img class="img-responsive rounded" width="100%" src="{{session_image}}" alt="{{ session.name }}">
@@ -42,7 +42,7 @@
                     </div>
                 </div>
                 {% for tool in tools_one %}
-                    <div class="col-12 col-lg-3">
+                    <div class="col-6 col-lg-3">
                             {% if tool.label == 'tool_chip' %}
                                 <a class="link_tool open-pdf mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
                                 {% else %}
@@ -53,7 +53,7 @@
                                     {% endif %}
                             {% endif %}
 
-                            <div class="tool d-flex justify-content-center">
+                            <div class="tool d-block d-md-flex justify-content-center">
                                 <div class="icon">
                                     {{ tool.icon }}
                                 </div>
@@ -70,7 +70,7 @@
     </div>
 </div>
 {% if tools_two is not empty %}
-<div class="card pb-3 mt-3">
+<div class="card pb-md-3 mt-mb-3">
     <div class="card-body p-1 p-md-4">
         <h3 class="pt-3 pb-3 title-tool-section">{{ 'Contents'|get_plugin_lang('SchoolPlugin') }}</h3>
         <div class="container-fluid mobile-fluid">
@@ -95,7 +95,7 @@
 </div>
 {% endif %}
 {% if tools_tree is not empty %}
-<div class="card pb-3 mt-3">
+<div class="card pb-md-3 mt-md-3">
     <div class="card-body p-1 p-md-4 ">
         <h3 class="pt-3 pb-3 title-tool-section">{{ 'MyActivities'|get_plugin_lang('SchoolPlugin') }}</h3>
         <div class="container-fluid mobile-fluid">

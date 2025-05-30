@@ -1539,7 +1539,10 @@ class SchoolPlugin extends Plugin
         $category = self::getSessionCategoryID($session['id']);
         $sessionField = new ExtraFieldValue('session');
         $extraFieldData = $sessionField->getAllValuesForAnItem($item, null, true);
-
+        $displayCategory = $category;
+        if($category=='Diplomados'){
+            $displayCategory = $session['name'];
+        }
         $tags = $this->getTagsSession($session['id']);
 
         return [
@@ -1551,6 +1554,7 @@ class SchoolPlugin extends Plugin
             'session_category_id' => $session['session_category_id'],
             'tags' => $tags,
             'session_category' => $category,
+            'display_category' => $displayCategory,
             'n_courses' => count($courses),
             'courses' => $courses,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
@@ -1586,12 +1590,13 @@ class SchoolPlugin extends Plugin
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
         $sql = "SELECT sc.name FROM $table_session s INNER JOIN $table_session_category sc ON sc.id = s.session_category_id WHERE s.id = $idCategory;";
         $result = Database::query($sql);
-        $category = null;
+        $category = $this->get_lang("Training");
         if (Database::num_rows($result) > 0) {
             while ($row = Database::fetch_array($result)) {
                 $category = $row['name'];
             }
         }
+
         return  $category;
     }
 

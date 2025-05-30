@@ -118,3 +118,4 @@ $strings['MyActivities'] = "Mis actividades";
 $strings['WelcomeHome'] = "¡Bienvenido al aula virtual, inicia tu curso ahora!";
 $strings['CourseHours'] = "30 Horas";
 $strings['DiplomaHours'] = "200 Horas";
+$strings['Training'] = "Capacitación";
