@@ -123,12 +123,9 @@ if ($enable) {
             );
         }
 
-
-
         $url = api_get_path(WEB_PATH) . 'avatar';
         header("Location: $url");
         exit;
-
     }
 
     $plugin->setTitle($plugin->get_lang('EditProfile'));

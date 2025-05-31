@@ -9,11 +9,11 @@
     <div class="card-header">
        {{ icon_course }} {{ session.display_category }}
     </div>
-    <div class="card-body p-1 p-md-4">
+    <div class="card-body p-0 p-md-4">
         <div class="container p-0 p-md-5">
             <div class="row">
                 <div class="col-12 col-lg-6">
-                    <img class="img-responsive rounded" width="100%" src="{{session_image}}" alt="{{ session.name }}">
+                    <img class="img-responsive rounded-md" width="100%" src="{{session_image}}" alt="{{ session.name }}">
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="d-none d-lg-block h-25"></div>
@@ -57,7 +57,7 @@
                                 <div class="icon">
                                     {{ tool.icon }}
                                 </div>
-                                <div class="label pl-2 pr-2 align-self-center">
+                                <div class="label pt-2 px-md-2 align-self-center">
                                     {{ tool.name }}
                                 </div>
                                 {{ tool.data }}
