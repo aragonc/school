@@ -10,7 +10,7 @@
        {{ icon_course }} {{ session.display_category }}
     </div>
     <div class="card-body p-0 p-md-4">
-        <div class="container p-0 p-md-5">
+        <div class="container p-0">
             <div class="row">
                 <div class="col-12 col-lg-6">
                     <img class="img-responsive rounded-md" width="100%" src="{{session_image}}" alt="{{ session.name }}">

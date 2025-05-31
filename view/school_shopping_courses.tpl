@@ -13,8 +13,8 @@
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
         <div class="card card-catalog">
-            <div class="card-body px-0 px-md-5">
-                <div class="p-0 p-lg-5">
+            <div class="card-body px-0 px-md-4">
+                <div class="p-0 py-md-5 px-md-0">
                     <div class="container-fluid">
                         <div class="row">
                             {% if sessions %}
