@@ -9,7 +9,7 @@
     <div class="card-header">
        {{ icon_course }} {{ session.display_category }}
     </div>
-    <div class="card-body p-0 p-md-4">
+    <div class="card-body py-4 px-0">
         <div class="container p-0">
             <div class="row">
                 <div class="col-12 col-lg-6">
@@ -30,10 +30,10 @@
         <div class="container-fluid mobile-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3">
-                    <div class="alert alert-success" role="alert">
+                    <div class="alert alert-success alert-welcome" role="alert">
                         <div class="message-home m-0 mb-md-2 mt-md-2 d-flex justify-content-center">
                             <div class="icon">
-                                <i class="far fa-smile fa-2xl"></i>
+                                {{ icon_smile }}
                             </div>
                             <div class="label pl-2 pr-2 align-self-center">
                                 {{ 'WelcomeHome'|get_plugin_lang('SchoolPlugin') }}
@@ -44,12 +44,12 @@
                 {% for tool in tools_one %}
                     <div class="col-6 col-lg-3">
                             {% if tool.label == 'tool_chip' %}
-                                <a class="link_tool open-pdf mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
+                                <a class="link_tool open-pdf bg-icon-home mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
                                 {% else %}
                                     {% if tool.label == 'tool_calendar' %}
-                                            <a class="link_tool open-calendar mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
+                                            <a class="link_tool open-calendar bg-icon-home mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
                                         {% else %}
-                                            <a class="link_tool mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
+                                            <a class="link_tool bg-icon-home mb-3" id="{{ tool.name }}" href="{{ tool.link }}">
                                     {% endif %}
                             {% endif %}
 

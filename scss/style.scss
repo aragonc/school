@@ -766,7 +766,7 @@
   .course-home-title{
     font-weight: 800;
     color: #0a0a0a;
-    font-size: 2.2rem;
+    font-size: 2.5rem;
     span{
       color: $blue-primary;
     }
@@ -802,6 +802,18 @@
       font-size: 14px;
     }
   }
+}
+.alert-welcome{
+  padding: 1.5rem 0.5rem;
+  background-color: #cff6c5;
+  border-color: #cff6c5;
+  .icon{
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+}
+.bg-icon-home{
+  background-color: #f2f2f2 !important;
 }
 .link_tool{
   text-align: center;
