@@ -6,18 +6,18 @@
         <div id="category_{{ category.category_id }}" class="category">
             <div class="container-fluid">
                 <div class="row align-items-center pb-3">
-                    <div class="col">
+                    <div class="col p-0 px-md-2">
                         <div class="d-flex flex-row align-items-center">
                             <div class="p-1">{{ category.category_image }}</div>
                             <div class="p-1"><h4 class="category-name">{{ category.category_name }}</h4></div>
                         </div>
                     </div>
-                    <div class="col-md-auto">
+                    <div class="col-md-auto d-none d-md-block">
                         <div class="section-col-table pl-4 pr-4">
                             {{ 'IssueDate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
                     </div>
-                    <div class="col-md-auto">
+                    <div class="col-md-auto d-none d-md-block">
                         <div class="section-col-table pl-4 pr-4">
                             {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                         </div>
@@ -37,7 +37,8 @@
             {% if session.number_courses <=1 %}
 
                     {% for course in session.courses %}
-                    <div class="card px-0 px-md-4 mb-1">
+
+                    <div class="card px-0 px-md-4 mb-1 d-none d-md-block">
                         <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
                             <div class="row align-items-center">
                                 <div class="col">
@@ -60,6 +61,35 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="course-mobile d-md-none">
+                        <div class="row align-items-center">
+                            <div class="col-10 pr-0">
+                                <div class="d-flex justify-content-start">
+                                    <div class="icon-mobile">
+                                        {{ course.icon_mobile }}
+                                    </div>
+                                    <div class="mobile-title">
+                                        <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                            <span class="course-title">{{ session.name }}</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <div class="date-mobile">
+                                    {{ course.certificate.date }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center py-2">
+                            <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" target="_blank" role="button">
+                                <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
+                            </a>
+                        </div>
+                    </div>
+
+
                     {% endfor %}
 
             {% else %}
@@ -86,15 +116,12 @@
                     </div>
 
                     <div id="collapse_session_{{ session.id }}" class="collapse show" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">
-
                             {% for course in session.courses %}
-
-                            <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-5">
+                            <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-5 d-none d-md-block">
                                 <div class="row align-items-center">
                                     <div class="col">
                                         {{ course.icon }} {{ course.title }}
                                     </div>
-
                                     <div class="col-md-auto text-center">
                                         <span class="row-date">{{ course.certificate.date }}</span>
                                     </div>
@@ -110,8 +137,37 @@
                                     </div>-->
                                 </div>
                             </div>
-                            {% endfor %}
 
+
+                        <div class="course-mobile d-md-none">
+                            <div class="row align-items-center">
+                                <div class="col-10 pr-0">
+                                    <div class="d-flex justify-content-start">
+                                        <div class="icon-mobile">
+                                            {{ course.icon_mobile }}
+                                        </div>
+                                        <div class="mobile-title">
+                                            <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                                <span class="course-title">{{ session.name }}</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <div class="date-mobile">
+                                        {{ course.certificate.date }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center py-2">
+                                <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" target="_blank" role="button">
+                                    <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
+                                </a>
+                            </div>
+                        </div>
+
+
+                            {% endfor %}
                     </div>
                 </div>
             {% endif %}

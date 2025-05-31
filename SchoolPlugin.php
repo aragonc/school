@@ -1095,6 +1095,7 @@ class SchoolPlugin extends Plugin
                     'code' => $course['code'],
                     'ribbon' => $ribbon,
                     'icon' => self::get_svg_icon('course', $course['title'],32),
+                    'icon_mobile' => self::get_svg_icon('course', $course['title'],22, true),
                     'certificate' => [
                         'score' => $certificateInfo['score_certificate'],
                         'date' => api_format_date($certificateInfo['created_at'], DATE_FORMAT_SHORT),
