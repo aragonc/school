@@ -13,7 +13,7 @@
             </div>
             <div class="program-mobile d-block d-md-none">{{ box.message.session_title_mobile }}</div>
             <div class="info pt-2 pb-3">
-                {{ box.message.info }} - <i class="far fa-calendar"></i> {{ box.message.send_date }}
+                {{ box.message.info }} - <i class="far fa-calendar"></i> {{ box.message.date }}
             </div>
             <div class="program d-none d-md-block">{{ box.message.session_title }}</div>
             <div class="content pt-md-5 pb-2">{{ box.message.content }}</div>
