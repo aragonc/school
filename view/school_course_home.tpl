@@ -17,6 +17,7 @@
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="d-none d-lg-block h-25"></div>
+                    <div class="is_diplomado">{{ session.name }}</div>
                     <h1 class="course-home-title">{{ course.title }}</h1>
                     <div class="h-25 d-none d-md-block"></div>
                 </div>

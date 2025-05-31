@@ -1540,9 +1540,6 @@ class SchoolPlugin extends Plugin
         $sessionField = new ExtraFieldValue('session');
         $extraFieldData = $sessionField->getAllValuesForAnItem($item, null, true);
         $displayCategory = $category;
-        if($category=='Diplomados'){
-            $displayCategory = $session['name'];
-        }
         $tags = $this->getTagsSession($session['id']);
 
         return [
