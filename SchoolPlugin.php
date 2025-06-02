@@ -784,9 +784,18 @@ class SchoolPlugin extends Plugin
         if (empty($result)) {
             return [];
         }
-        if (Database::num_rows($result) > 0) {
-            $total = Database::num_rows($result);
-            foreach ($result as $row) {
+
+        // Aquí obtenemos todos los resultados primero
+        $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($rows) > 0) {
+
+            usort($rows, function($a, $b) {
+                return strtotime($b['display_start_date']) <=> strtotime($a['display_start_date']);
+            });
+
+            $total = count($rows);
+            foreach ($rows as $row) {
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
                 $shortDate = $this->formatDateToSpanish($row['display_start_date']);
                 $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
@@ -794,15 +803,15 @@ class SchoolPlugin extends Plugin
                 $row['short_date'] = $shortDate;
                 $row['number_courses'] = count($courseList);
                 $row['courses'] = $courseList;
-                $row['session_image'] = self::get_svg_icon('course', $row['name'],32);
-                $row['session_image_mobile'] = self::get_svg_icon('course', $row['name'],22, true);
-                $row['certificate_url'] = api_get_path(WEB_PLUGIN_PATH).'school/src/certificate_regular.php?id_session='.$row['id'];
-                if(is_null($row['id_category'])){
+                $row['session_image'] = self::get_svg_icon('course', $row['name'], 32);
+                $row['session_image_mobile'] = self::get_svg_icon('course', $row['name'], 22, true);
+                $row['certificate_url'] = api_get_path(WEB_PLUGIN_PATH) . 'school/src/certificate_regular.php?id_session=' . $row['id'];
+                if (is_null($row['id_category'])) {
                     $row['id_category'] = 4;
                     $row['category'] = self::get_lang('OnlineCourses');
                 }
                 if (!isset($categories[$row['id_category']])) {
-                    $nameImage = 'category_'.$row['id_category'];
+                    $nameImage = 'category_' . $row['id_category'];
                     $categories[$row['id_category']] = [
                         'category_id' => $row['id_category'],
                         'category_name' => $row['category'],
@@ -812,7 +821,6 @@ class SchoolPlugin extends Plugin
                 }
                 $categories[$row['id_category']]['sessions'][] = $row;
             }
-
         }
 
         return [
@@ -876,10 +884,11 @@ class SchoolPlugin extends Plugin
         $myCourseList = [];
         $courses = [];
         $result = Database::query($sql);
+        $rows = $result->fetchAll(PDO::FETCH_ASSOC);
 
         $count = 0;
-        if (Database::num_rows($result) > 0) {
-            while ($result_row = Database::fetch_array($result, 'ASSOC')) {
+        if (count($rows) > 0) {
+            foreach ($rows as $result_row) {
                 $count++;
                 $result_row['status'] = 5;
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
@@ -939,9 +948,10 @@ class SchoolPlugin extends Plugin
                     $where_access_url ORDER BY sc.position ASC ";
 
             $result = Database::query($sql);
+            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
 
-            if (Database::num_rows($result) > 0) {
-                while ($result_row = Database::fetch_array($result, 'ASSOC')) {
+            if (count($rows) > 0) {
+                foreach ($rows as $result_row) {
                     $result_row['status'] = 2;
                     if (!in_array($result_row['real_id'], $courses)) {
                         $position = $result_row['position'];
