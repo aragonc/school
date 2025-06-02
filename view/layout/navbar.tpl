@@ -7,7 +7,7 @@
         <a href="{{ _p.web }}">{{ logo }}</a>
     </div>
 
-    <form class="d-none d-sm-inline-block form-inline ml-auto mr-md-3 my-2 my-md-0 mw-100 navbar-search">
+    <form class="d-none d-sm-inline-block form-inline ml-auto my-2 my-md-0 mw-100 navbar-search">
         <div id="loader"><img src="{{ image_url }}spinner.gif" alt="Cargando..." width="20"></div>
         <div class="input-group">
             <input id="term1" name="term" type="text" class="terms-search form-control bg-light border-0 small" placeholder="{{ 'SearchCourses'|get_plugin_lang('SchoolPlugin') }}"
@@ -16,11 +16,10 @@
         <div class="dropdown-list">
             <ul class="result_search list-group" id="result"></ul>
         </div>
-
     </form>
 
     <!-- Topbar Navbar -->
-    <ul class="navbar-nav ml-auto">
+    <ul class="navbar-nav">
 
         <!-- Nav Item - Search Dropdown (Visible Only XS) -->
         <li class="nav-item dropdown no-arrow d-sm-none">
