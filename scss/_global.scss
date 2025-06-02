@@ -23,6 +23,9 @@ a {
     @media (max-width: 480px) {
       background-color: $white;
     }
+    @media (max-width: 768px) {
+      background-color: $white;
+    }
     width: 100%;
     overflow-x: hidden;
     #content {
