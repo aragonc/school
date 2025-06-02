@@ -8,6 +8,7 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\QrCode;
+use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class SchoolPlugin extends Plugin
 {
@@ -830,6 +831,12 @@ class SchoolPlugin extends Plugin
 
     }
 
+    function generateBarcode($code): string
+    {
+        $generator = new BarcodeGeneratorPNG();
+        $barcode = $generator->getBarcode($code, $generator::TYPE_CODE_128);
+        return base64_encode($barcode);
+    }
     public function formatDateToSpanish($date)
     {
         $months = array(

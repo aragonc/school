@@ -15,7 +15,6 @@ $extraData = $extraField->get_handler_extra_data($userID);
 
 $nCourse = intval($session['nbr_courses']);
 $textHours = $plugin->get_lang('CourseHours');
-
 if($nCourse > 1){
     $textHours = $plugin->get_lang('DiplomaHours');
 }
@@ -58,8 +57,9 @@ $params = [
 
 $templateName = $plugin->get_lang('ExportCertificate');
 
-$generateImg = $plugin->generateQRImage($paramsUser['session_id'].$paramsUser['rut']);
-$certificateQR = '<img src="data:image/png;base64,'.$generateImg.'">';
+$valueBarCode = $paramsUser['session_id'].$paramsUser['rut'];
+$generateImgCodeBar = $plugin->generateBarcode($paramsUser['session_id'].$paramsUser['rut']);
+$certificateBarCode = '<img src="data:image/png;base64,'.$generateImgCodeBar.'">';
 
 $template = new Template($templateName);
 $logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo.png';
@@ -69,7 +69,9 @@ $template->assign('data', $paramsUser);
 $template->assign('logo_path', $logoCampus);
 $template->assign('signature_path', $signature);
 $template->assign('timbre_path', $timbre);
-$template->assign('qr_code', $certificateQR);
+$template->assign('bar_code', $certificateBarCode);
+$template->assign('bar_code_value', $valueBarCode);
+
 $content = $template->fetch('school/view/certificate/school_certificate_regular.tpl');
 
 $archivePath = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/';

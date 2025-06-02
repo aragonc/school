@@ -13,13 +13,16 @@
         .text-center {
             text-align: center;
         }
+        .text-right {
+            text-align: right;
+        }
         .logo {
-            width: 200px;
+            width: 180px;
             margin-bottom: 20px;
         }
-        .titulo {
+        .title {
             font-weight: bold;
-            font-size: 25px;
+            font-size: 20px;
             margin-bottom: 40px;
         }
         .firma-block {
@@ -27,6 +30,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+        .content p {
+            text-align: justify;
+            font-size: 16px;
+        }
+        .certificate-date p{
+            font-size: 16px;
         }
         .firma {
             width: 400px;
@@ -53,22 +63,30 @@
 </head>
 <body>
 
-<div class="text-center">
+<div class="logo-app text-right" >
     <img src="{{ logo_path }}" class="logo" alt="Logo Educación Chile">
-    <div class="titulo">CERTIFICADO<br>ALUMNO REGULAR</div>
+</div>
+
+<div class="text-center">
+    <div class="title">CERTIFICADO<br>ALUMNO REGULAR</div>
+</div>
+<div class="certificate-date text-right">
     <p>Santiago, {{ data.date_current }}</p>
 </div>
 
-<p>FUNDACIÓN EDUCHILE certifica que <strong>{{ data.firstname }} {{ data.lastname }}</strong>, con RUN <strong>{{ data.rut }}</strong>,
-    se encuentra como alumno regular del Programa: <strong>{{ data.course_name }}</strong> con
-    fecha de inicio: <strong>{{ data.display_start_date }}</strong> y término <strong>{{ data.display_end_date }}</strong>, con una duración de <strong>{{ duracion }}</strong>.</p>
+<div class="content">
+    <p><strong>FUNDACIÓN EDUCHILE</strong> certifica que <strong>{{ data.firstname }} {{ data.lastname }}</strong>, con RUN <strong>{{ data.rut }}</strong>,
+        se encuentra como alumno regular del Programa: <strong>{{ data.course_name }}</strong> con
+        fecha de inicio: <strong>{{ data.display_start_date }}</strong> y término <strong>{{ data.display_end_date }}</strong>, con una duración de <strong>{{ data.hours }}</strong>.</p>
 
-<p>Se extiende el presente certificado, para los fines que estime conveniente.</p>
+    <p>Se extiende el presente certificado, para los fines que estime conveniente.</p>
 
-<p><strong>Fecha de emisión del Certificado:</strong> {{ data.date_current }}</p>
+    <p><strong>Fecha de emisión del Certificado:</strong> {{ data.date_current }}</p>
+</div>
+
 
 <div class="timbre-block">
-    <img src="{{ timbre_path }}" alt="Firma" style="width:150px;">
+    <img src="{{ timbre_path }}" alt="Firma" style="width:80px;">
 </div>
 
 <div class="firma-block" style="text-align: center;">
@@ -83,7 +101,12 @@
 </div>
 
 <div class="barcode text-center">
-    {{ qr_code }}
+    <div class="barcode_img">
+        {{ bar_code }}
+    </div>
+    <div class="barcode_value">
+        {{ bar_code_value }}
+    </div>
 </div>
 
 <div class="footer">
