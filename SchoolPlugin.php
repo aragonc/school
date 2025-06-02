@@ -151,9 +151,10 @@ class SchoolPlugin extends Plugin
         $js_file_to_string = '';
 
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery/jquery.min.js').'"></script>'."\n";
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery/jquery-ui.min.js').'"></script>'."\n";
+        $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/popper/popper.min.js').'"></script>'."\n";
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/bootstrap/js/bootstrap.bundle.min.js').'"></script>'."\n";
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery-easing/jquery.easing.min.js').'"></script>'."\n";
-
 
         $css[] = api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH) . 'school/css/style.css');
 
@@ -295,7 +296,6 @@ class SchoolPlugin extends Plugin
         $js_file_to_string = '';
         $bowerJsFiles = [
             'modernizr/modernizr.js',
-            'jquery-ui/jquery-ui.min.js',
             'jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
             'moment/min/moment-with-locales.js',
             'bootstrap-daterangepicker/daterangepicker.js',

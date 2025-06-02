@@ -60,6 +60,9 @@
 <!-- Bootstrap core JavaScript-->
 
 <script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
 
     function setCheckboxTable(value, table_id) {
         let checkboxes = $("#"+table_id+" input:checkbox");

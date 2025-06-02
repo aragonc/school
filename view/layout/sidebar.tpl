@@ -42,7 +42,7 @@
     </li>
     {% else %}
     <li class="nav-item {{ menu.class }}">
-        <a id="menu-{{ menu.name }}" class="nav-link" href="{{ menu.url }}" title="{{ menu.label }}">
+        <a id="menu-{{ menu.name }}" class="nav-link" href="{{ menu.url }}" title="{{ menu.label }}" data-toggle="tooltip" data-placement="right">
             <i class="fas fa-fw fa-{{ menu.icon }}"></i>
             <span>{{ menu.label }}</span>
         </a>
