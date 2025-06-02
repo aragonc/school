@@ -9,19 +9,20 @@
     <div class="card-header">
        {{ icon_course }} {{ session.display_category }}
     </div>
-    <div class="card-body py-4 px-0">
+    <div class="card-body py-0 px-0 py-md-4">
         <div class="container p-0">
             <div class="row">
                 <div class="col-12 col-lg-6">
                     <img class="img-responsive rounded-md" width="100%" src="{{session_image}}" alt="{{ session.name }}">
                 </div>
-                <div class="col-12 col-lg-6">
-                    <div class="d-none d-lg-block h-25"></div>
-                    {% if session.n_courses > 1 %}
-                    <div class="is_graduates">{{ session.name }}</div>
-                    {% endif %}
-                    <h1 class="course-home-title">{{ course.title }}</h1>
-                    <div class="h-25 d-none d-md-block"></div>
+                <div class="col-12 col-lg-6 d-flex align-items-center">
+                    <div class="block-course">
+                        {% if session.n_courses > 1 %}
+                        <div class="is_graduates">{{ session.name }}</div>
+                        {% endif %}
+                        <h1 class="course-home-title">{{ course.title }}</h1>
+                        <div class="h-25 d-none d-md-block"></div>
+                    </div>
                 </div>
             </div>
         </div>

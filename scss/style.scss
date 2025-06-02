@@ -754,6 +754,7 @@
     @media (max-width: 480px) {
       padding: 0.5rem;
       margin-bottom: 0 !important;
+      font-size: 1.2rem !important;
     }
     @media (max-width: 768px) {
       font-size: .9rem; // tamaño más pequeño para móviles
@@ -774,6 +775,10 @@
       font-size: 1.5rem; // tamaño más pequeño para móviles
       text-align: left; // opcional: centrar en móvil
       padding-top: 1rem;
+    }
+    @media (max-width: 480px) {
+      font-size: 1.8rem;
+      padding-top: 0;
     }
   }
 }
@@ -802,6 +807,10 @@
       font-size: 14px;
     }
   }
+}
+.is_graduates{
+  margin-top: 1rem;
+  font-size: 14px;
 }
 .alert-welcome{
   padding: 1.5rem 0.5rem;
