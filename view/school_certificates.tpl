@@ -1,6 +1,6 @@
 {% if categories %}
 <div class="card">
-    <div class="card-body p-0 p-md-5">
+    <div class="card-body p-0 p-md-0 p-lg-5">
 
         {% for category in categories %}
         <div id="category_{{ category.category_id }}" class="category">
@@ -82,7 +82,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="text-center py-2">
+                        <div class="text-left py-2 m-0 ml-4">
                             <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" target="_blank" role="button">
                                 <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                             </a>
@@ -159,7 +159,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-center py-2">
+                            <div class="text-left py-2">
                                 <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" target="_blank" role="button">
                                     <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                                 </a>
