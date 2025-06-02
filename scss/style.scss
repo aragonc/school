@@ -1080,7 +1080,12 @@ body.no-scroll .menu-overlay {
 .date-mobile{
   font-size: 11px;
 }
-
+.panel{
+  background: $white;
+  .panel-body{
+    padding: 2rem;
+  }
+}
 @media (max-width: 480px) {
   .mobile-fluid {
     padding-right: 0;
