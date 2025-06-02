@@ -1391,7 +1391,7 @@ class SchoolPlugin extends Plugin
             'title' => $title,
             'content' => $content,
             'send_date' => $sendDate,
-            'date' => $this->formatDateEs($row['send_date']),
+            'date' => $this->formatDateToSpanish($row['send_date']),
             'info'=> $messageInfo,
             'type' => $typeMessage,
             'status' => $status,
