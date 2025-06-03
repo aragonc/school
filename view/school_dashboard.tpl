@@ -18,7 +18,7 @@
         <div class="pt-0 pb-4">
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
-                <div class="container-fluid">
+                <div class="container-fluid p-md-0">
                     <div class="row align-items-center pb-3 pt-3">
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
@@ -26,12 +26,12 @@
                                 <div class="p-0 p-md-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
                             </div>
                         </div>
-                        <div class="col-md-auto d-none d-sm-block">
+                        <div class="col-md-3 d-none d-sm-block">
                             <div class="section-col-table">
                                 {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
                             </div>
                         </div>
-                        <div class="col col-lg-2 d-none d-sm-block">
+                        <div class="col-md-3 col-lg-2 d-none d-sm-block">
                             <div class="section-col-table">
                                 {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                             </div>
@@ -44,7 +44,7 @@
                     {% if session.number_courses <=1 %}
                         {% for course in session.courses %}
 
-                        <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2 d-none d-md-block">
+                        <div class="card pl-0 pr-0 pl-lg-4 pr-lg-4 mb-2 d-none d-md-block">
                             <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
                                 <div class="row align-items-center">
                                     <div class="col">
@@ -94,7 +94,7 @@
                     {% endfor %}
                 {% else %}
 
-                <div class="card pl-0 pr-0 pl-md-4 pr-md-4">
+                <div class="card pl-0 pr-0 pl-lg-4 pr-lg-4">
                     <div class="card-header" id="heading_session_{{ session.id }}">
                         <div class="d-none d-md-block">
                             <div class="row align-items-center">

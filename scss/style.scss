@@ -145,6 +145,12 @@
     display: inline-block;
     width: 100%;
     color: $gray-700;
+    img{
+      width: 32px;
+      @media (max-width: 768px) {
+        width: 22px;
+      }
+    }
     @media (max-width: 480px) {
       font-size: 14px;
     }
