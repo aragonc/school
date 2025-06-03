@@ -1083,6 +1083,14 @@ body.no-scroll .menu-overlay {
     }
   }
 }
+.modal{
+  @media (max-width: 480px) {
+    ul{
+      padding: 0;
+      list-style: none;
+    }
+  }
+}
 .icon-mobile{
   width: 32px;
 }
