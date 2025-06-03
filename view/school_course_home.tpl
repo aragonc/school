@@ -30,7 +30,7 @@
 </div>
 
 <div class="card card- mt-3">
-    <div class="card-body p-1 p-md-4">
+    <div class="card-body p-1 p-md-2 p-lg-4">
         <div class="container-fluid mobile-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3">
@@ -75,7 +75,7 @@
 </div>
 {% if tools_two is not empty %}
 <div class="card pb-md-3 mt-mb-3">
-    <div class="card-body p-1 p-md-4">
+    <div class="card-body p-1 p-md-2 p-lg-4">
         <h3 class="pt-3 pb-3 title-tool-section">{{ 'Contents'|get_plugin_lang('SchoolPlugin') }}</h3>
         <div class="container-fluid mobile-fluid">
             <div class="row">
@@ -100,7 +100,7 @@
 {% endif %}
 {% if tools_tree is not empty %}
 <div class="card pb-md-3 mt-md-3">
-    <div class="card-body p-1 p-md-4 ">
+    <div class="card-body p-1 p-md-2 p-lg-4">
         <h3 class="pt-3 pb-3 title-tool-section">{{ 'MyActivities'|get_plugin_lang('SchoolPlugin') }}</h3>
         <div class="container-fluid mobile-fluid">
             <div class="row">
