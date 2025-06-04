@@ -48,7 +48,7 @@
                 {% for tool in tools_one %}
                     <div class="col-6 col-lg-3">
                             {% if tool.label == 'tool_chip' %}
-                                <a class="link_tool open-pdf bg-icon-home mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
+                                <a class="link_tool bg-icon-home mb-3" id="{{ tool.name }}" href="{{ tool.link }}" target="_blank">
                                 {% else %}
                                     {% if tool.label == 'tool_calendar' %}
                                             <a class="link_tool open-calendar bg-icon-home mb-3" id="{{ tool.name }}" href="{{ tool.link }}" data-toggle="modal" data-target="#generalModal">
