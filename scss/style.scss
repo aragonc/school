@@ -1108,6 +1108,50 @@ body.no-scroll .menu-overlay {
     padding: 2rem;
   }
 }
+.card .actions{
+  border: 1px solid $gray-200;
+  border-radius: 10px;
+  padding: 0.5rem;
+}
+.forum_display{
+  .title{
+    font-weight: 800;
+    font-size: 1.2rem;
+  }
+}
+.topic-forum{
+  .title-forum{
+    font-weight: 800;
+    font-size: 1.5rem;
+  }
+}
+.thumbnail {
+  img{
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+.forum-post{
+  .forum_post_title{
+    font-weight: 800;
+    font-size: 1.5rem;
+  }
+  .thumbnail{
+    img{
+      width: 64px;
+      border-radius: 10px;
+    }
+  }
+  .title-username{
+    font-size: 14px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-weight: bold;
+    margin-bottom: 0;
+  }
+}
+
 @media (max-width: 480px) {
   .mobile-fluid {
     padding-right: 0;
