@@ -872,7 +872,7 @@ class SchoolPlugin extends Plugin
 
         $sql = "SELECT DISTINCT
                     c.title,
-                    c.visibility,
+                    sc.visibility,
                     c.id as real_id,
                     c.code as course_code,
                     sc.id as insertion_order,
@@ -890,6 +890,7 @@ class SchoolPlugin extends Plugin
                     $where_access_url ORDER BY sc.position ASC ";
         $myCourseList = [];
         $courses = [];
+
         $result = Database::query($sql);
         $rows = $result->fetchAll(PDO::FETCH_ASSOC);
 
@@ -898,6 +899,7 @@ class SchoolPlugin extends Plugin
             foreach ($rows as $result_row) {
                 $count++;
                 $result_row['status'] = 5;
+                $result_row['visible'] = boolval($result_row['visibility']);
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
@@ -907,32 +909,36 @@ class SchoolPlugin extends Plugin
                     $result_row['ribbon'] = 'odd';
                 }
 
-                if (!in_array($result_row['real_id'], $courses)) {
-                    $position = $result_row['position'];
-                    $insertionOrder = $result_row['insertion_order'];
-                    if(!$position == '0'){
-                        $myCourseList[$position] = $result_row;
-                    } else {
-                        if($count <= 1){
-                            $myCourseList[0] = $result_row;
-                            $myCourseList[0]['number'] = 0;
-                            if($myCourseList[0]['course_code'] == 'INDUCCION'){
-                                $myCourseList[0]['icon'] = self::get_svg_icon('induccion', $result_row['title'],32);
-                            }
-
+                if($result_row['visible']){
+                    if (!in_array($result_row['real_id'], $courses)) {
+                        $position = $result_row['position'];
+                        $insertionOrder = $result_row['insertion_order'];
+                        if(!$position == '0'){
+                            $myCourseList[$position] = $result_row;
                         } else {
-                            $myCourseList[$insertionOrder] = $result_row;
-                            $myCourseList[$insertionOrder]['number'] = $count-1;
+                            if($count <= 1){
+                                $myCourseList[0] = $result_row;
+                                $myCourseList[0]['number'] = 0;
+                                if($myCourseList[0]['course_code'] == 'INDUCCION'){
+                                    $myCourseList[0]['icon'] = self::get_svg_icon('induccion', $result_row['title'],32);
+                                }
+
+                            } else {
+                                $myCourseList[$insertionOrder] = $result_row;
+                                $myCourseList[$insertionOrder]['number'] = $count-1;
+                            }
                         }
                     }
                 }
+
+
             }
         }
 
         if (api_is_allowed_to_create_course()) {
             $sql = "SELECT DISTINCT
                         c.title,
-                        c.visibility,
+                        sc.visibility,
                         c.id as real_id,
                         c.code as course_code,
                         sc.id as insertion_order,
@@ -959,15 +965,18 @@ class SchoolPlugin extends Plugin
 
             if (count($rows) > 0) {
                 foreach ($rows as $result_row) {
+                    $result_row['visible'] = boolval($result_row['visibility']);
                     $result_row['status'] = 2;
-                    if (!in_array($result_row['real_id'], $courses)) {
-                        $position = $result_row['position'];
-                        if (!isset($myCourseList[$position])) {
-                            $myCourseList[$position] = $result_row;
-                        } else {
-                            $myCourseList[] = $result_row;
+                    if($result_row['visible']) {
+                        if (!in_array($result_row['real_id'], $courses)) {
+                            $position = $result_row['position'];
+                            if (!isset($myCourseList[$position])) {
+                                $myCourseList[$position] = $result_row;
+                            } else {
+                                $myCourseList[] = $result_row;
+                            }
+                            $courses[] = $result_row['real_id'];
                         }
-                        $courses[] = $result_row['real_id'];
                     }
                 }
             }
@@ -1014,7 +1023,6 @@ class SchoolPlugin extends Plugin
         if (!empty($myCourseList)) {
             ksort($myCourseList);
         }
-
 
         return $myCourseList;
     }
