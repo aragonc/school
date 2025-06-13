@@ -1157,7 +1157,27 @@ body.no-scroll .menu-overlay {
     margin-bottom: 0;
   }
 }
-
+.input-group {
+  margin-bottom: 1rem;
+  p{
+    margin-bottom: 0;
+  }
+  input{
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+  }
+}
+.form-group{
+  width: 100%;
+  display: inline-block;
+  margin-bottom: 1rem !important;
+  textarea{
+    height: 200px;
+  }
+  .form-control{
+    width: 100%;
+  }
+}
 @media (max-width: 480px) {
   .mobile-fluid {
     padding-right: 0;

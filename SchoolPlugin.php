@@ -276,7 +276,7 @@ class SchoolPlugin extends Plugin
     }
     public function set_js_files(): void
     {
-        global $disable_js_and_css_files;
+        global $disable_js_and_css_files, $htmlHeadXtra;
         $isoCode = api_get_language_isocode();
         $selectLink = 'bootstrap-select/dist/js/i18n/defaults-'.$isoCode.'_'.strtoupper($isoCode).'.min.js';
 
@@ -591,15 +591,55 @@ class SchoolPlugin extends Plugin
     {
         echo $this->twig->render($template, $this->params);
     }
+
+    /**
+     * Call non-static for self::findTemplateFilePath.
+     *
+     * @see self::findTemplateFilePath()
+     *
+     * @param string $name
+     *
+     * @return string
+     */
+    public function get_template($name): string
+    {
+        return self::find_template($name);
+    }
+    /**
+     * @throws Exception
+     */
     public function find_template($name): string
     {
         return self::findTemplateFilePath($name);
     }
 
-    public static function findTemplateFilePath($name): string
+    /**
+     * Returns the sub-folder and filename for the given tpl file.
+     * @param string $name
+     *
+     * @return string
+     */
+    public static function findTemplateFilePath($name)
     {
+        if (empty($name)) {
+            throw new Exception('Template name cannot be empty');
+        }
+
         $sysTemplatePath = api_get_path(SYS_PLUGIN_PATH);
-        return $sysTemplatePath."school/view/layout/$name";
+        $filePath = $sysTemplatePath . "school/view/$name";
+
+        if (file_exists($filePath)) {
+            return $filePath;
+        } else {
+            throw new Exception("Template file not found: $filePath");
+        }
+    }
+
+    public function display_general($name)
+    {
+
+        $tpl = $this->twig->loadTemplate($name);
+        $this->display($tpl);
     }
     /**
      * @throws RuntimeError
@@ -1674,7 +1714,12 @@ class SchoolPlugin extends Plugin
         $sql = "SELECT psu.url_pdf FROM $tagsTableUrls psu WHERE psu.reference = '".$referenceSession ."'";
         $result = Database::query($sql);
         $url = Database::fetch_array($result);
-        return  $url['url_pdf'];
+        if($url){
+            return  $url['url_pdf'];
+        } else {
+            return '#';
+        }
+
     }
     public function getDescriptionCourse($sessionID, $courseID, $type): array
     {
