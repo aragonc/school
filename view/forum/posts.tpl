@@ -1,4 +1,4 @@
-{% import 'default/macro/macro.tpl' as display %}
+{% import 'macro/macro.tpl' as display %}
 
 {% block breadcrumb %}
 {{ breadcrumb }}
