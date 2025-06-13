@@ -134,11 +134,7 @@ class SchoolPlugin extends Plugin
             [
                 'name' => 'remove_xss',
                 'callable' => 'Security::remove_XSS',
-            ],
-            /*[
-                'name' => 'get_icon',
-                'callable' => 'self::get_svg_icon',
-            ]*/
+            ]
         ];
 
         foreach ($filters as $filter) {
@@ -173,10 +169,12 @@ class SchoolPlugin extends Plugin
         $this->assign('flash_messages', Display::getFlashToString());
         Display::cleanFlashMessages();
 
+        $breadCrumb = $this->getBreadCrumb();
 
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';
         $imageFolder = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/';
 
+        $this->assign('breadcrumb', $breadCrumb);
         $this->assign('image_url', $imageFolder);
         $this->assign('assets', $vendor);
         $this->assign('js_files', $js_file_to_string);
@@ -635,11 +633,17 @@ class SchoolPlugin extends Plugin
         }
     }
 
-    public function display_general($name)
+    public function getBreadCrumb(): string
     {
+        global $interbreadcrumb, $language_file;
+        $nameTools = $this->title;
+        $breadcrumb = return_breadcrumb(
+            $interbreadcrumb,
+            $language_file,
+            $nameTools
+        );
 
-        $tpl = $this->twig->loadTemplate($name);
-        $this->display($tpl);
+        return $breadcrumb;
     }
     /**
      * @throws RuntimeError

@@ -102,17 +102,17 @@
 {% endmacro %}
 
 {% macro panel(name, content, footer = '') %}
-    <div class="panel panel-default">
+    <div class="card">
         {% if name %}
-            <div class="panel-heading"> {{ name }}</div>
+            <div class="card-header"> {{ name }}</div>
         {% endif %}
 
-        <div class="panel-body">
+        <div class="card-body">
             {{ content }}
         </div>
 
         {% if footer %}
-            <div class="panel-footer">{{ footer }}</div>
+            <div class="card-footer">{{ footer }}</div>
         {% endif %}
     </div>
 {% endmacro %}

@@ -1,9 +1,9 @@
 {% import 'macro/macro.tpl' as display %}
+{% block breadcrumb %}
+    {{ breadcrumb }}
+{% endblock %}
 <div class="card">
     <div class="card-body">
-        {% block breadcrumb %}
-        {{ breadcrumb }}
-        {% endblock %}
 
         {% block content %}
         {% if 'translate_html'|api_get_configuration_value %}
@@ -83,10 +83,10 @@
         </div>
         {% for subitem in item.forums %}
         <div class="forum_display">
-            <div class="panel panel-default forum">
-                <div class="panel-body">
+            <div class="card forum">
+                <div class="card-body">
                     <div class="row">
-                        <div class="col-xs-4 col-md-3">
+                        <div class="col-md-2">
                             <div class="number-post">
                                 <a href="{{ subitem.url }}" title="{{subitem.title}}">
                                     {% if subitem.forum_image is not empty %}
@@ -102,7 +102,7 @@
                                 <p>{{ 'ForumThreads'| get_lang }}: {{ subitem.number_threads }} </p>
                             </div>
                         </div>
-                        <div class="col-xs-8 col-md-9">
+                        <div class="col-md-10">
                             <div class="pull-right">
                                 <div class="toolbar">
                                     {{ subitem.tools }}
