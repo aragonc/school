@@ -785,7 +785,7 @@ class SchoolPlugin extends Plugin
         }
         return $list;
     }
-    public function getSessionsByCategory($userID, $history = false): array
+    public function getSessionsByCategory($userID, $history = false, $alls = false): array
     {
         $total = 0;
         $categories = [];
@@ -818,11 +818,15 @@ class SchoolPlugin extends Plugin
             LEFT JOIN $table_session_category sc ON sc.id = s.session_category_id
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
             WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
-        if($history){
-            $sql .= " AND s.access_end_date <= CURDATE();";
-        } else {
-            $sql .= " AND s.access_end_date >= CURDATE();";
+
+        if(!$alls){
+            if($history){
+                $sql .= " AND s.access_end_date <= CURDATE();";
+            } else {
+                $sql .= " AND s.access_end_date >= CURDATE();";
+            }
         }
+
 
         $result = Database::query($sql);
 
@@ -1076,7 +1080,7 @@ class SchoolPlugin extends Plugin
         $alls = false
     ): array
     {
-        $sessionCategories = self::getSessionsByCategory($userId,true);
+        $sessionCategories = self::getSessionsByCategory($userId, false, $alls);
 
         $sessionArray = [];
         if (!empty($sessionCategories['categories'])) {
