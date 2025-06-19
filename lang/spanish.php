@@ -15,6 +15,7 @@ $strings['OnlineCourses'] = 'Cursos online';
 $strings['Diplomas'] = 'Diplomados';
 $strings['Schools'] = 'Escuelas';
 $strings['RegistrationDate'] = 'Fecha de inicio';
+$strings['EndDate'] = 'Fecha de termino';
 $strings['Certificate'] = 'Certificado';
 $strings['RegularStudent'] = 'Alumno regular';
 $strings['NoTrainingInProgress'] = 'No tienes capacitaciones en ejecución.';

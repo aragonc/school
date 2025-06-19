@@ -846,7 +846,7 @@ class SchoolPlugin extends Plugin
             $total = count($rows);
             foreach ($rows as $row) {
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
-                $shortDate = $this->formatDateToSpanish($row['display_start_date']);
+                $shortDate = $this->formatDateToSpanish($row['display_end_date']);
                 $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
                 $row['registered_at'] = $dateRegister;
                 $row['short_date'] = $shortDate;

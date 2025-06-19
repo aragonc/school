@@ -28,7 +28,7 @@
                         </div>
                         <div class="col-md-3 d-none d-sm-block">
                             <div class="section-col-table">
-                                {{ 'RegistrationDate'|get_plugin_lang('SchoolPlugin') }}
+                                {{ 'EndDate'|get_plugin_lang('SchoolPlugin') }}
                             </div>
                         </div>
                         <div class="col-md-3 col-lg-2 d-none d-sm-block">
