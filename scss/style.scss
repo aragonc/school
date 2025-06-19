@@ -1178,6 +1178,91 @@ body.no-scroll .menu-overlay {
     width: 100%;
   }
 }
+#dropzone {
+  position: relative;
+  overflow: hidden;
+  direction: ltr;
+  cursor: pointer;
+  text-align: center;
+  color: #333;
+  font-weight: bold;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+  height: auto;
+  line-height: 50px;
+  background-color: #D4E6F0;
+  border: 2px dashed #bbbbbb;
+  font-size: 120%;
+  margin-bottom: 0;
+}
+
+#dropzone.hover {
+  background: lawngreen;
+}
+.button-load {
+  background: url("../img/icons/upload_cloud_icon.png") no-repeat center 20px;
+  padding-top: 70px;
+}
+.files{
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+// Tabs
+// -------------------------
+
+/* Estilo general de los tabs */
+ul.nav-tabs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+
+ul.nav-tabs li {
+  margin-right: 15px; /* Espacio entre los tabs */
+}
+
+ul.nav-tabs li a {
+  display: block;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: #555;
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+  border-radius: 5px 5px 0 0; /* Bordes redondeados solo arriba */
+  transition: all 0.3s ease; /* Transición suave para hover */
+}
+
+/* Estilo cuando un tab está activo */
+ul.nav-tabs li.active a {
+  color: #fff;
+  background-color: #007bff; /* Color de fondo para el tab activo */
+  border-color: #007bff;
+}
+
+/* Efecto hover para los tabs inactivos */
+ul.nav-tabs li a:hover {
+  background-color: #e2e6ea; /* Fondo más claro al hacer hover */
+  color: #007bff; /* Cambia el color del texto al hacer hover */
+}
+
+/* Estilo cuando el tab está seleccionado */
+ul.nav-tabs li a[aria-selected="true"] {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+/* Estilo para los tabs inactivos cuando no están seleccionados */
+ul.nav-tabs li a[aria-selected="false"]:hover {
+  background-color: #f8f9fa; /* Fondo claro al hacer hover */
+  color: #007bff; /* Color de texto cuando se hace hover */
+}
+
 @media (max-width: 480px) {
   .mobile-fluid {
     padding-right: 0;
