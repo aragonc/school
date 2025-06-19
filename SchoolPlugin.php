@@ -951,6 +951,7 @@ class SchoolPlugin extends Plugin
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
+                $result_row['position'] = $result_row['position'] + 1;
                 if ($count % 2 == 0) {
                     $result_row['ribbon'] = 'even';
                 } else {

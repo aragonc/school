@@ -156,11 +156,7 @@
                             <div class="row align-items-center">
                                 <div class="col">
                                     <div class="d-flex flex-row pb-1 pt-1">
-                                    {% if course.number != 0 %}
-                                        <span class="badge badge-warning">{{ course.number }}</span>
-                                    {% else %}
-                                        <span class="badge badge-transparent"></span>
-                                    {% endif %}
+                                        <span class="badge badge-warning"> {{ course.position }}</span>
                                         <div class="pr-1 pl-1">
                                             {{ course.icon }}
                                         </div>
