@@ -32,7 +32,7 @@
                             </div>
                         </div>
                         <div class="col-md-3 col-lg-2 d-none d-sm-block">
-                            <div class="section-col-table">
+                            <div class="section-col-certification">
                                 {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
                             </div>
                         </div>
