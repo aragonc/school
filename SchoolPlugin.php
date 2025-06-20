@@ -921,7 +921,7 @@ class SchoolPlugin extends Plugin
 
         $sql = "SELECT DISTINCT
                     c.title,
-                    scu.visibility,
+                    sc.visibility,
                     c.id as real_id,
                     c.code as course_code,
                     sc.id as insertion_order,
