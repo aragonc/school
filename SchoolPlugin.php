@@ -1866,7 +1866,7 @@ class SchoolPlugin extends Plugin
         $descriptionVisibility = false;
         foreach ($tools as &$tool) {
 
-            if($tool['name'] === 'course_description') {
+            if($tool['image'] === 'info.gif') {
                 $descriptionVisibility = true;
             }
 
