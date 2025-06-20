@@ -156,7 +156,7 @@
                             <div class="row align-items-center">
                                 <div class="col">
                                     <div class="d-flex flex-row pb-1 pt-1">
-                                        <span class="badge badge-warning"> {{ course.position }}</span>
+                                        <span class="badge badge-warning"> {{ course.position_number }}</span>
                                         <div class="pr-1 pl-1">
                                             {{ course.icon }}
                                         </div>

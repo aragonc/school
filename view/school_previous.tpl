@@ -37,7 +37,6 @@
                 {% for session in category.sessions %}
                     {% if session.number_courses <=1 %}
                         {% for course in session.courses %}
-
                             <div class="card pl-0 pr-0 pl-md-4 pr-md-4 mb-2 d-none d-md-block">
                                 <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
                                     <div class="row align-items-center">
@@ -127,11 +126,7 @@
                                 <div class="row align-items-center">
                                     <div class="col">
                                         <div class="d-flex flex-row pb-1 pt-1">
-                                            {% if course.number != 0 %}
-                                            <span class="badge badge-warning">{{ course.number }}</span>
-                                            {% else %}
-                                            <span class="badge badge-transparent"></span>
-                                            {% endif %}
+                                            <span class="badge badge-warning"> {{ course.position_number }}</span>
                                             <div class="pr-1 pl-1">
                                                 {{ course.icon }}
                                             </div>

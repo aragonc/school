@@ -721,6 +721,9 @@
     top: 2px;
     z-index: 10;
   }
+  .input-group{
+    margin-bottom: 0;
+  }
   input{
     height: 40px !important;
   }
@@ -1211,6 +1214,8 @@ body.no-scroll .menu-overlay {
   padding-top: 1rem;
   margin-top: 1rem;
 }
+
+
 // Tabs
 // -------------------------
 

@@ -845,6 +845,7 @@ class SchoolPlugin extends Plugin
 
             $total = count($rows);
             foreach ($rows as $row) {
+
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
                 $shortDate = $this->formatDateToSpanish($row['display_end_date']);
                 $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
@@ -920,7 +921,7 @@ class SchoolPlugin extends Plugin
 
         $sql = "SELECT DISTINCT
                     c.title,
-                    sc.visibility,
+                    scu.visibility,
                     c.id as real_id,
                     c.code as course_code,
                     sc.id as insertion_order,
@@ -936,6 +937,7 @@ class SchoolPlugin extends Plugin
                     scu.user_id = $user_id AND
                     scu.session_id = $session_id
                     $where_access_url ORDER BY sc.position ASC ";
+
         $myCourseList = [];
         $courses = [];
 
@@ -951,7 +953,7 @@ class SchoolPlugin extends Plugin
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
-                $result_row['position'] = $result_row['position'] + 1;
+                $result_row['position_number'] = $count;
                 if ($count % 2 == 0) {
                     $result_row['ribbon'] = 'even';
                 } else {
@@ -962,8 +964,10 @@ class SchoolPlugin extends Plugin
                     if (!in_array($result_row['real_id'], $courses)) {
                         $position = $result_row['position'];
                         $insertionOrder = $result_row['insertion_order'];
+
                         if(!$position == '0'){
                             $myCourseList[$position] = $result_row;
+
                         } else {
                             if($count <= 1){
                                 $myCourseList[0] = $result_row;
@@ -981,91 +985,6 @@ class SchoolPlugin extends Plugin
                 }
 
 
-            }
-        }
-
-        if (api_is_allowed_to_create_course()) {
-            $sql = "SELECT DISTINCT
-                        c.title,
-                        sc.visibility,
-                        c.id as real_id,
-                        c.code as course_code,
-                        sc.id as insertion_order,
-                        sc.position,
-                        c.unsubscribe
-                    FROM $tbl_session_course_user as scu
-                    INNER JOIN $tbl_session as s
-                    ON (scu.session_id = s.id)
-                    INNER JOIN $tbl_session_course sc
-                    ON (scu.session_id = sc.session_id AND scu.c_id = sc.c_id)
-                    INNER JOIN $tableCourse as c
-                    ON (scu.c_id = c.id)
-                    $join_access_url
-                    WHERE
-                      s.id = $session_id AND
-                      (
-                        (scu.user_id = $user_id AND scu.status = 2) OR
-                        s.id_coach = $user_id
-                      )
-                    $where_access_url ORDER BY sc.position ASC ";
-
-            $result = Database::query($sql);
-            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
-
-            if (count($rows) > 0) {
-                foreach ($rows as $result_row) {
-                    $result_row['visible'] = boolval($result_row['visibility']);
-                    $result_row['status'] = 2;
-                    if($result_row['visible']) {
-                        if (!in_array($result_row['real_id'], $courses)) {
-                            $position = $result_row['position'];
-                            if (!isset($myCourseList[$position])) {
-                                $myCourseList[$position] = $result_row;
-                            } else {
-                                $myCourseList[] = $result_row;
-                            }
-                            $courses[] = $result_row['real_id'];
-                        }
-                    }
-                }
-            }
-        }
-
-        if (api_is_drh()) {
-            $sessionList = SessionManager::get_sessions_followed_by_drh($user_id);
-            $sessionList = array_keys($sessionList);
-            if (in_array($session_id, $sessionList)) {
-                $courseList = SessionManager::get_course_list_by_session_id($session_id);
-                if (!empty($courseList)) {
-                    foreach ($courseList as $course) {
-                        if (!in_array($course['id'], $courses)) {
-                            $position = $course['position'];
-                            if (!isset($myCourseList[$position])) {
-                                $myCourseList[$position] = $course;
-                            } else {
-                                $myCourseList[] = $course;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            //check if user is general coach for this session
-            $sessionInfo = api_get_session_info($session_id);
-            if ($sessionInfo['id_coach'] == $user_id) {
-                $courseList = SessionManager::get_course_list_by_session_id($session_id);
-                if (!empty($courseList)) {
-                    foreach ($courseList as $course) {
-                        if (!in_array($course['id'], $courses)) {
-                            $position = $course['position'];
-                            if (!isset($myCourseList[$position])) {
-                                $myCourseList[$position] = $course;
-                            } else {
-                                $myCourseList[] = $course;
-                            }
-                        }
-                    }
-                }
             }
         }
 
