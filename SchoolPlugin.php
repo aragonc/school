@@ -1844,6 +1844,7 @@ class SchoolPlugin extends Plugin
             $courseId,
             $sessionId
         );
+
         $course = api_get_course_info_by_id($courseId);
         $textCalendar = self::getDescriptionCourse($sessionId, $courseId,8);
         $calendarCourseHTML = '<ul>';
@@ -1862,7 +1863,13 @@ class SchoolPlugin extends Plugin
         unset($tool);
 
         $tmpTools = [];
+        $descriptionVisibility = false;
         foreach ($tools as &$tool) {
+
+            if($tool['name'] === 'course_description') {
+                $descriptionVisibility = true;
+            }
+
             $link = api_get_path(WEB_CODE_PATH).$tool['link'].'?&'.$cidReq;
             if($tool['category'] == 'plugin'){
                 $link = api_get_path(WEB_PLUGIN_PATH).$tool['link'].'?&'.$cidReq;
@@ -1889,8 +1896,9 @@ class SchoolPlugin extends Plugin
 
         $pdfURL = $this->getSessionTabURL($session['reference_session']);
 
-        $results = [
-            'home' => [
+        $toolsHome = [];
+        if($descriptionVisibility){
+            $toolsHome = [
                 [
                     'iid' => 1,
                     'id' => 1,
@@ -1910,7 +1918,12 @@ class SchoolPlugin extends Plugin
                     'icon' => self::get_svg_icon('tool_chip', self::get_lang('SeeFile'), 64),
                     'link' => $pdfURL
                 ]
-            ],
+            ];
+        }
+
+
+        $results = [
+            'home' => $toolsHome,
             'scorm' => [],
             'tools' => []
         ];
