@@ -1844,15 +1844,12 @@ class SchoolPlugin extends Plugin
             $courseId,
             $sessionId
         );
-
+        $course = api_get_course_info_by_id($courseId);
+        $textCalendar = self::getDescriptionCourse($sessionId, $courseId,8);
         $calendarCourseHTML = '<ul>';
-        foreach ($session['courses'] as $course) {
-            $calendarCourseHTML.= ' <li class="course-name"><h4 class="title">'.$course['name'].'</h4>';
-            if(!empty($course['calendar']['content'])){
-                $calendarCourseHTML.= '<div class="course-list-calendar">'.$course['calendar']['content'].'</div>';
-            }
-            $calendarCourseHTML.= '</li>';
-        }
+        $calendarCourseHTML.= ' <li class="course-name"><h4 class="title">'.$course['name'].'</h4>';
+        $calendarCourseHTML.= '<div class="course-list-calendar">'.$textCalendar['content'].'</div>';
+        $calendarCourseHTML.= '</li>';
         $calendarCourseHTML .= '</ul>';
 
         foreach ($tools as &$tool) {
