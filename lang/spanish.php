@@ -124,3 +124,5 @@ $strings['Help'] = "Ayuda";
 $strings['HelpText'] = "Escríbenos a nuestra área de ayuda: <a href='mailto:online@aula-virtual.cl'>online@aula-virtual.cl</a>";
 $strings['RespondAsSoonAsPossible'] = "Nuestro equipo te responderá a la brevedad.";
 $strings['TurnYourCellPhoneOver'] = "Para una mejor experiencia, voltea tu pantalla de celular en horizontal para ver el contenido.";
+$strings['ProgramInformation'] = "Información del programa";
+$strings['AcademicCalendar'] = "Calendario Académico";

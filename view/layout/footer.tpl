@@ -100,17 +100,10 @@
 
     $(document).on('click', '.open-calendar', function(e) {
         e.preventDefault();
-
-        // Obtiene el contenido del calendario oculto
         const calendarHtml = $('#data_tool_calendar').html();
-
         // Inserta el contenido en el body del modal
         $('#generalModalBody').html(calendarHtml);
-
-        // Establece el título del modal (opcional)
-        $('#generalModalLabel').text('Calendario Académico');
-
-        // Muestra el modal
+        $('#generalModalLabel').text('{{ "AcademicCalendar"|get_plugin_lang('SchoolPlugin') }}');
         $('#generalModal').modal('show');
     });
 
@@ -119,7 +112,7 @@
         e.preventDefault();
         const descriptionHtml = $('#data_tool_description').html();
         $('#generalModalBody').html(descriptionHtml);
-        $('#generalModalLabel').text('Sobre el curso');
+        $('#generalModalLabel').text('{{ "ProgramInformation"|get_plugin_lang('SchoolPlugin') }}');
         $('#generalModal').modal('show');
     });
 

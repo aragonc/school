@@ -1239,6 +1239,30 @@ body.no-scroll .menu-overlay {
     color: #a94442;
   }
 }
+.modal-header{
+  color: #000;
+  .modal-title{
+    font-weight: 800;
+  }
+}
+.description-box{
+  list-style: none;
+  padding-left: 0.5rem;
+  .description-title{
+    .title{
+      font-weight: 800;
+      color: $white;
+      background: url("../img/icons/arrow_icon.png") $brand-one no-repeat left center;
+      font-size: 1.2rem;
+      display: inline-block;
+      border-radius: 10px;
+      width: 100%;
+      padding: .5rem 2rem;
+      margin-bottom: 1rem;
+    }
+  }
+}
+
 // Tabs
 // -------------------------
 

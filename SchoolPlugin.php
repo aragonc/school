@@ -1859,10 +1859,10 @@ class SchoolPlugin extends Plugin
 
         $course = api_get_course_info_by_id($courseId);
         $textCalendar = self::getDescriptionCourse($sessionId, $courseId,8,'Calendario');
-        $calendarCourseHTML = '<ul>';
+        $calendarCourseHTML = '<ul class="description-box">';
         foreach ($textCalendar as $calendar) {
-            $calendarCourseHTML .= ' <li class="course-name"><h4 class="title">' . $course['name'] . '</h4>';
-            $calendarCourseHTML .= '<div class="course-list-calendar">' . $calendar['content'] . '</div>';
+            $calendarCourseHTML .= ' <li class="description-title"><h4 class="title">' . $course['name'] . '</h4>';
+            $calendarCourseHTML .= '<div class="description-content">' . $calendar['content'] . '</div>';
             $calendarCourseHTML .= '</li>';
         }
         $calendarCourseHTML .= '</ul>';
@@ -1877,7 +1877,7 @@ class SchoolPlugin extends Plugin
             $ArrayDescription = self::getDescriptionCourse($sessionId, $courseId, 8,'Desc');
         }
 
-        $descriptionHTML = '<ul>';
+        $descriptionHTML = '<ul class="description-box">';
         foreach ($ArrayDescription as $description) {
             $descriptionHTML.= ' <li class="description-title"><h4 class="title">'.$description['title'].'</h4>';
             $descriptionHTML.= '<div class="description-content">'.$description['content'].'</div>';
