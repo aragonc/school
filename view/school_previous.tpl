@@ -116,7 +116,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>d
+                        </div>
 
                     </div>
                     <div id="collapse_session_{{ session.id }}" class="collapse mb-2 mb-md-0" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">

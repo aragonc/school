@@ -1656,7 +1656,7 @@ class SchoolPlugin extends Plugin
         }
         $tableCourseDescription = Database::get_course_table(TABLE_COURSE_DESCRIPTION);
         $sql = "SELECT cc.* FROM $tableCourseDescription cc
-                WHERE cc.c_id = $courseID AND cc.session_id = $sessionID ";
+                WHERE cc.c_id = $courseID ";
         if(!empty($type)){
             $sql .= " AND cc.description_type = $type ";
         }
@@ -1668,13 +1668,14 @@ class SchoolPlugin extends Plugin
         $description = [];
         if (Database::num_rows($result) > 0) {
             while ($row = Database::fetch_array($result)) {
-
-                $description[] = [
-                    'id' => $row['id'],
-                    'title' => $row['title'],
-                    'description_type' => $row['description_type'],
-                    'content' => $row['content']
-                ];
+                if($row['session_id'] == $sessionID || $row['session_id'] == 0){
+                    $description[] = [
+                        'id' => $row['id'],
+                        'title' => $row['title'],
+                        'description_type' => $row['description_type'],
+                        'content' => $row['content']
+                    ];
+                }
             }
         }
 
