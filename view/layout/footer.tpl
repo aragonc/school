@@ -114,6 +114,15 @@
         $('#generalModal').modal('show');
     });
 
+
+    $(document).on('click', '.open_description', function(e) {
+        e.preventDefault();
+        const descriptionHtml = $('#data_tool_description').html();
+        $('#generalModalBody').html(descriptionHtml);
+        $('#generalModalLabel').text('Sobre el curso');
+        $('#generalModal').modal('show');
+    });
+
     // Limpia el contenido del modal al cerrarse (opcional)
     $('#generalModal').on('hidden.bs.modal', function () {
         $('#generalModalBody').html('');
