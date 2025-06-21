@@ -1669,22 +1669,15 @@ class SchoolPlugin extends Plugin
         if (Database::num_rows($result) > 0) {
             while ($row = Database::fetch_array($result)) {
 
-                if(!empty($type)){
-                    $description = [
-                        'id' => $row['id'],
-                        'title' => $row['title'],
-                        'content' => $row['content']
-                    ];
-                } else {
-                    $description[] = [
-                        'id' => $row['id'],
-                        'title' => $row['title'],
-                        'description_type' => $row['description_type'],
-                        'content' => $row['content']
-                    ];
-                }
+                $description[] = [
+                    'id' => $row['id'],
+                    'title' => $row['title'],
+                    'description_type' => $row['description_type'],
+                    'content' => $row['content']
+                ];
             }
         }
+
         return  $description;
     }
 
@@ -1866,13 +1859,30 @@ class SchoolPlugin extends Plugin
         $course = api_get_course_info_by_id($courseId);
         $textCalendar = self::getDescriptionCourse($sessionId, $courseId,8,'Calendario');
         $calendarCourseHTML = '<ul>';
-        $calendarCourseHTML.= ' <li class="course-name"><h4 class="title">'.$course['name'].'</h4>';
-        $calendarCourseHTML.= '<div class="course-list-calendar">'.$textCalendar['content'].'</div>';
-        $calendarCourseHTML.= '</li>';
+        foreach ($textCalendar as $calendar) {
+            $calendarCourseHTML .= ' <li class="course-name"><h4 class="title">' . $course['name'] . '</h4>';
+            $calendarCourseHTML .= '<div class="course-list-calendar">' . $calendar['content'] . '</div>';
+            $calendarCourseHTML .= '</li>';
+        }
         $calendarCourseHTML .= '</ul>';
 
-        $textDescription = self::getDescriptionCourse($sessionId, $courseId);
-        var_dump($textDescription);
+        if($session['session_category_id'] != 5){
+            $ArrayDescription = self::getDescriptionCourse($sessionId, $courseId);
+            $ArrayDescription = array_filter($ArrayDescription, function($item) {
+                return $item['description_type'] != '8';
+            });
+            $ArrayDescription = array_values($ArrayDescription);
+        } else {
+            $ArrayDescription = self::getDescriptionCourse($sessionId, $courseId, 8,'Desc');
+        }
+
+        $descriptionHTML = '<ul>';
+        foreach ($ArrayDescription as $description) {
+            $descriptionHTML.= ' <li class="description-title"><h4 class="title">'.$description['title'].'</h4>';
+            $descriptionHTML.= '<div class="description-content">'.$description['content'].'</div>';
+            $descriptionHTML.= '</li>';
+        }
+        $descriptionHTML .= '</ul>';
 
         foreach ($tools as &$tool) {
             if (isset($tool['image'])) {
@@ -1938,7 +1948,7 @@ class SchoolPlugin extends Plugin
                     'label' => 'tool_chip',
                     'icon' => self::get_svg_icon('tool_chip', self::get_lang('SeeFile'), 64),
                     'link' => '#',
-                    'data' => '<div id="data_tool_description" class="d-none">'.$calendarCourseHTML.'</div>',
+                    'data' => '<div id="data_tool_description" class="d-none">'.$descriptionHTML.'</div>',
                 ]
             ];
         }
