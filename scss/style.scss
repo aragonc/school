@@ -1261,8 +1261,18 @@ body.no-scroll .menu-overlay {
       margin-bottom: 1rem;
     }
   }
+  .description-content{
+    padding-left: 2rem;
+  }
 }
-
+.btn-goto{
+  background: #0a124a;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 0;
+  border-color: #0a124a;
+  padding: .5rem 2rem;
+}
 // Tabs
 // -------------------------
 

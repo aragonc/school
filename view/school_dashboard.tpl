@@ -18,7 +18,7 @@
         <div class="pt-0 pb-4">
         {% for category in categories %}
             <div id="category_{{ category.category_id }}" class="category">
-                <div class="container-fluid p-md-0">
+                <div class="container-fluid ">
                     <div class="row align-items-center pb-3 pt-3">
                         <div class="col">
                             <div class="d-flex flex-row align-items-center">
@@ -183,6 +183,7 @@
             </div>
         {% endfor %}
         </div>
+
         {% else %}
             <div class="p-5 text-center">
                 <h3>{{ 'NoTrainingInProgress'|get_plugin_lang('SchoolPlugin') }}</h3>
@@ -193,7 +194,11 @@
         {% endif %}
     </div>
 </div>
-
+{% if total_courses > 0 %}
+<div class="py-3">
+    <a href="{{ _p.web }}certified" class="btn btn-primary btn-goto"><i class="fas fa-file-alt"></i> {{ 'GotoMyCertificates'|get_plugin_lang('SchoolPlugin') }}</a>
+</div>
+{% endif %}
 
 
 

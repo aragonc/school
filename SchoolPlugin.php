@@ -1859,6 +1859,7 @@ class SchoolPlugin extends Plugin
 
         $course = api_get_course_info_by_id($courseId);
         $textCalendar = self::getDescriptionCourse($sessionId, $courseId,8,'Calendario');
+        
         $calendarCourseHTML = '<ul class="description-box">';
         foreach ($textCalendar as $calendar) {
             $calendarCourseHTML .= ' <li class="description-title"><h4 class="title">' . $course['name'] . '</h4>';

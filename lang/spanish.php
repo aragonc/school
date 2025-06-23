@@ -126,3 +126,4 @@ $strings['RespondAsSoonAsPossible'] = "Nuestro equipo te responderá a la breved
 $strings['TurnYourCellPhoneOver'] = "Para una mejor experiencia, voltea tu pantalla de celular en horizontal para ver el contenido.";
 $strings['ProgramInformation'] = "Información del programa";
 $strings['AcademicCalendar'] = "Calendario Académico";
+$strings['GotoMyCertificates'] = "Ir a mis certificados";
