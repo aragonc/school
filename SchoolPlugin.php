@@ -1142,6 +1142,81 @@ class SchoolPlugin extends Plugin
         return $groupedSessions;
     }
 
+    public function getAjaxMessages($userID, $cant = 5): array
+    {
+
+        $messageTable = Database::get_main_table(TABLE_MESSAGE);
+
+        // Consulta con el COUNT y LIMIT
+        $sql = "SELECT
+                m.id,
+                m.title,
+                m.msg_status,
+                m.send_date,
+                m.type,
+                m.user_sender_id,
+                m.user_receiver_id,
+                m.c_id,
+                m.session_id
+            FROM $messageTable m
+            WHERE m.user_receiver_id = $userID AND m.msg_status = 1 " .
+            // Si no es necesario filtrar por otro estado, se omite la parte de "AND m.msg_status = 1"
+            "ORDER BY m.send_date DESC
+            LIMIT $cant";
+
+        $result = Database::query($sql);
+        $messageList = [];
+
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $userInfo = api_get_user_info($row['user_sender_id']);
+            $title = Security::remove_XSS($row['title'], STUDENT, true);
+            $title = cut($title, 80);
+
+            $sessionName = api_get_session_name($row['session_id']);
+            $courseName = null;
+            if(!is_null($row['c_id'])){
+                $courseInfo = api_get_course_info_by_id($row['c_id']);
+                $courseName = $courseInfo['title'];
+            }
+
+            if(is_null($userInfo['avatar'])){
+                $avatar =  self::get_svg_icon('avatar', $userInfo['complete_name_with_username'] , 50);
+            } else {
+                $avatar = Display::img($userInfo['avatar'],$userInfo['complete_name_with_username'],['width' => 50, 'height' => 50, 'class' => 'rounded-circle user-avatar']);
+            }
+
+            //$sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
+            $sendDate = api_format_date($row['send_date'], DATE_FORMAT_SHORT);
+            $messageList[] = [
+                'id' => $row['id'],
+                'link' => '/notifications?action=view&id='.$row['id'],
+                'title' => $title,
+                'status' => $row['msg_status'],
+                'send_date' => $sendDate,
+                'user_avatar' => $avatar,
+                'user_sender_id' => $userInfo['complete_name_with_username'],
+                'user_receiver_id' => $row['user_receiver_id'],
+                'course_id' => $row['c_id'],
+                'course_title' => $courseName,
+                'session_id' => $row['session_id'],
+                'session_title' => $sessionName
+            ];
+        }
+
+        $sqlTotal = "SELECT COUNT(*) as total_messages
+                 FROM $messageTable m
+                 WHERE m.user_receiver_id = $userID AND m.msg_status = 1";
+
+        $resultTotal = Database::query($sqlTotal);
+        $rowTotal = Database::fetch_array($resultTotal, 'ASSOC');
+        $totalMessages = $rowTotal['total_messages'];
+
+        return  [
+            'messages' => $messageList,
+            'totalMessages' => $totalMessages
+        ];
+    }
+
     public function getMessagesCount($userID, $all = false, $status = 1)
     {
         $messageTable = Database::get_main_table(TABLE_MESSAGE);

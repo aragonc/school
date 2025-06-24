@@ -9,10 +9,9 @@ $plugin = SchoolPlugin::create();
 switch ($action) {
     case 'check_notifications':
         $userId = api_get_user_id();
-        $countMessages = $plugin->getMessagesCount($userId);
-        $messages = $plugin->getMessages($userId,1,5);
+        $messages = $plugin->getAjaxMessages($userId);
         $jsonResponse  = [
-            'count_messages' => $countMessages,
+            'count_messages' => $messages['totalMessages'],
             'messages' => $messages['messages']
         ];
 
