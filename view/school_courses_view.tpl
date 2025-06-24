@@ -74,7 +74,7 @@
                                     </ul>
                                 </div>
                                 <div class="view-buttons">
-                                    <a class="btn btn-default btn-block mb-2" target="_blank" href="{{ url_pdf }}"><i class="far fa-file-pdf"></i> {{ 'SeeFile'|get_plugin_lang('SchoolPlugin') }}</a>
+                                    <a class="btn btn-default btn-block mb-2" target="_blank" href="{{ url_pdf }}"><i class="far fa-file-pdf"></i> {{ 'SeeFilePDF'|get_plugin_lang('SchoolPlugin') }}</a>
                                     <a class="btn btn-primary btn-block mb-2" href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"> <em class="fa fa-shopping-cart"></em> {{ 'Buy'|get_plugin_lang('BuyCoursesPlugin') }}</a>
                                 </div>
                                 <div class="view-pay-icon">
@@ -85,16 +85,16 @@
                         </div>
                         <div class="border-calendar mt-5">
                             {% if session.n_courses <= 1 %}
-                            <h3 class="view-sub-title">{{ 'CourseCalendar'|get_plugin_lang('SchoolPlugin') }}</h3>
-                            {{ session.calendar_course.content }}
+                                <h3 class="view-sub-title">{{ 'CourseCalendar'|get_plugin_lang('SchoolPlugin') }}</h3>
+                                {{ session.calendar_course.0.content }}
                             {% else %}
                             <h3 class="view-sub-title">{{ 'DiplomaSchedule'|get_plugin_lang('SchoolPlugin') }}</h3>
                             <ul>
                                 {% for course in session.courses %}
                                 <li class="course-name"><div class="title">{{ course.name }}</div>
-                                    {% if course.calendar.content %}
+                                    {% if course.calendar.0.content %}
                                         <div class="course-list-calendar">
-                                            {{ course.calendar.content }}
+                                            {{ course.calendar.0.content }}
                                         </div>
                                     {% endif %}
                                 </li>
