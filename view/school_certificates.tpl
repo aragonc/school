@@ -82,7 +82,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="text-left py-2 m-0 ml-4">
+                        <div class="text-right py-2 m-0 ml-4">
                             <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" target="_blank" role="button">
                                 <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                             </a>
@@ -93,7 +93,7 @@
                     {% endfor %}
 
             {% else %}
-                <div class="card pl-4 pr-4">
+                <div class="card p-0 pl-md-4 pr-md-4">
                     <div class="card-header pt-1 pb-1" id="heading_session_{{ session.id }}">
                         <div class="row align-items-center">
                             <div class="col">
@@ -116,7 +116,11 @@
                     </div>
 
                     <div id="collapse_session_{{ session.id }}" class="collapse show" aria-labelledby="heading_session_{{ session.id }}" data-parent="#sessions_accordion_{{ category.category_id }}">
-                            {% for course in session.courses %}
+
+                        {% set contador = 0 %}
+
+                        {% for course in session.courses %}
+                            {% set contador = contador + 1 %}
                             <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-5 d-none d-md-block">
                                 <div class="row align-items-center">
                                     <div class="col">
@@ -140,26 +144,35 @@
 
 
                         <div class="course-mobile d-md-none">
-                            <div class="row align-items-center">
-                                <div class="col-10 pr-0">
-                                    <div class="d-flex justify-content-start">
-                                        <div class="icon-mobile">
-                                            {{ course.icon_mobile }}
+
+
+
+                                        <div class="course-box box-odd pt-1 pb-1 pr-0 pl-3">
+
+                                            <div class="row align-items-center">
+                                                <div class="col">
+                                                    <div class="d-flex flex-row pb-1 pt-1">
+                                                        <div class="icon-mobile">
+                                                            <span class="badge badge-warning">{{ contador }}</span>
+                                                        </div>
+                                                        <div class="flex-fill mobile-title">
+                                                            <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                                                <span class="course-title">{{ course.title }}</span>
+                                                            </a>
+                                                        </div>
+                                                        <div class="ml-auto date-mobile">
+                                                            {{ course.certificate.date }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                         </div>
-                                        <div class="mobile-title">
-                                            <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
-                                                <span class="course-title">{{ session.name }}</span>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-2">
-                                    <div class="date-mobile">
-                                        {{ course.certificate.date }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-left py-2">
+
+
+
+
+                            <div class="text-right py-0">
                                 <a class="btn btn-primary btn-download" href="{{ course.certificate.link_html }}" target="_blank" role="button">
                                     <i class="fas fa-download"></i> {{ 'DownloadPDF'|get_plugin_lang('SchoolPlugin') }}
                                 </a>

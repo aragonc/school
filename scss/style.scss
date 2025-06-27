@@ -1082,6 +1082,22 @@ body.no-scroll .menu-overlay {
   background-color: #f2f2f2;
   margin-bottom: 0.5rem;
   padding: 0.5rem;
+  .badge-warning{
+    color: #000;
+    background-color: #f6c23e;
+  }
+  .badge{
+    border-radius: 15px;
+  }
+  @media (max-width: 480px) {
+    .badge{
+      width: 22px;
+      height: 22px;
+      line-height: 16px;
+      font-size: 16px;
+    }
+  }
+
   .mobile-title{
     .btn-link{
       padding: 0;
