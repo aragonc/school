@@ -33,7 +33,8 @@ class SchoolPlugin extends Plugin
                 'tool_enable' => 'boolean',
                 'api_token_pipedrive' => 'text',
                 'activate_search' => 'boolean',
-                'activate_shopping' => 'boolean'
+                'activate_shopping' => 'boolean',
+                'email_help' => 'text',
             ])
         );
 
@@ -1555,7 +1556,7 @@ class SchoolPlugin extends Plugin
             ]*/
         ];
 
-        if($this->get('activate_shopping') == 'true'){
+        if($this->get('activate_shopping') == 'false'){
             unset($menus[4]);
         }
         return $menus;
