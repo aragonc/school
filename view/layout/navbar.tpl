@@ -7,6 +7,7 @@
         <a href="{{ _p.web }}">{{ logo }}</a>
     </div>
 
+    {% if enabled_search %}
     <form class="d-none d-sm-inline-block form-inline ml-auto my-2 my-md-0 mw-100 navbar-search">
         <div id="loader"><img src="{{ image_url }}spinner.gif" alt="Cargando..." width="20"></div>
         <div class="input-group">
@@ -17,18 +18,23 @@
             <ul class="result_search list-group" id="result"></ul>
         </div>
     </form>
+    {% else %}
+        <div class="ml-auto my-2 my-md-0 mw-100 "></div>
+    {% endif %}
 
     <!-- Topbar Navbar -->
     <ul class="navbar-nav">
-
+        {% if enabled_search %}
         <!-- Nav Item - Search Dropdown (Visible Only XS) -->
         <li class="nav-item dropdown no-arrow d-sm-none">
+
             <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <div class="icon-search">
                     <i class="fas fa-search fa-fw"></i>
                 </div>
             </a>
+
             <!-- Dropdown - Messages -->
             <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
                  aria-labelledby="searchDropdown">
@@ -44,6 +50,7 @@
                 </form>
             </div>
         </li>
+        {% endif %}
 
         <li class="nav-item dropdown no-arrow mx-1">
             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"

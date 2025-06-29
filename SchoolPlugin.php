@@ -669,11 +669,17 @@ class SchoolPlugin extends Plugin
             'class' => 'logo-site',
             'id' => 'header-logo',
         ];
+        $enabledSearch = false;
+        if($this->get('activate_search') == 'true'){
+            $enabledSearch = true;
+        }
+
         $logoPathImg = Display::img($logoPath, $institution, $imageAttributes);
 
         $this->assign('logo', $logoPathImg);
         $this->assign('logo_svg', self::display_logo());
         $this->assign('logo_icon', self::display_logo_icon());
+        $this->assign('enabled_search', $enabledSearch);
         $this->assign('favicon', self::get_favicon('favicon'));
         $this->assign('menus', self::getMenus($section));
         $content = $this->fetch('/layout/sidebar.tpl');
@@ -1469,7 +1475,7 @@ class SchoolPlugin extends Plugin
     }
     public function getMenus(string $currentSection = ''): array
     {
-        return [
+        $menus = [
             [
                 'id' => 1,
                 'name' => 'dashboard',
@@ -1520,6 +1526,7 @@ class SchoolPlugin extends Plugin
                 'class' => $currentSection === 'shopping' ? 'active':'',
                 'items' => []
             ]
+
             /*[
                 'id' => 6,
                 'name' => 'buy',
@@ -1548,6 +1555,10 @@ class SchoolPlugin extends Plugin
             ]*/
         ];
 
+        if($this->get('activate_shopping') == 'true'){
+            unset($menus[4]);
+        }
+        return $menus;
     }
     public function is_platform_authentication(): bool
     {
