@@ -194,11 +194,11 @@
         {% endif %}
     </div>
 </div>
-{% if total_courses > 0 %}
+
 <div class="py-3">
     <a href="{{ _p.web }}certified" class="btn btn-primary btn-goto"><i class="fas fa-file-alt"></i> {{ 'GotoMyCertificates'|get_plugin_lang('SchoolPlugin') }}</a>
 </div>
-{% endif %}
+
 
 
 
