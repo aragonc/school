@@ -3,6 +3,8 @@
         <div class="p-0 p-md-5 text-center">
             <h3>{{ 'HelpText'|get_plugin_lang('SchoolPlugin') }}</h3>
             <p>{{ 'RespondAsSoonAsPossible'|get_plugin_lang('SchoolPlugin') }}</p>
+            <p class="help_ask">{{ 'AskTheTeacher'|get_plugin_lang('SchoolPlugin') }}</p>
+            <p class="help_ask">{{ 'HelpArea'|get_plugin_lang('SchoolPlugin') }}</p>
             {{ img_section }}
         </div>
     </div>

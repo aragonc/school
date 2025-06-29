@@ -1341,6 +1341,11 @@ ul.nav-tabs li a[aria-selected="false"]:hover {
   color: #007bff; /* Color de texto cuando se hace hover */
 }
 
+.help_ask{
+  font-size: 12px;
+  margin: 0;
+}
+
 @media (max-width: 480px) {
   .mobile-fluid {
     padding-right: 0;
