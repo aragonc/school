@@ -32,6 +32,8 @@ class SchoolPlugin extends Plugin
             $this->extendAttributes([
                 'tool_enable' => 'boolean',
                 'api_token_pipedrive' => 'text',
+                'activate_search' => 'boolean',
+                'activate_shopping' => 'boolean'
             ])
         );
 

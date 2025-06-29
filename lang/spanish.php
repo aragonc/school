@@ -3,6 +3,8 @@
 $strings['plugin_title'] = 'School Plugin';
 $strings['plugin_comment'] = 'Plugin creado para una extensión de Chamilo School.';
 $strings['tool_enable'] = 'Habilitar plugin';
+$strings['activate_search'] = 'Habilitar Buscador';
+$strings['activate_shopping'] = 'Activar catálogo de compras';
 $strings['Logout'] = 'Cerrar sesión';
 $strings['EditProfile'] = 'Editar perfil';
 $strings['MyTrainings'] = 'Mis Capacitaciones';
