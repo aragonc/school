@@ -14,6 +14,7 @@ if ($enable) {
     $plugin->setTitle($plugin->get_lang('Help'));
     $imgSection = $plugin->get_svg_icon('helps',$plugin->get_lang('RespondAsSoonAsPossible'), 500);
     $plugin->assign('img_section', $imgSection);
+    $plugin->assign('email_help', $plugin->get('email_help'));
     $content = $plugin->fetch('school_help.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();

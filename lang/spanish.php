@@ -125,7 +125,7 @@ $strings['CourseHours'] = "30 Horas";
 $strings['DiplomaHours'] = "200 Horas";
 $strings['Training'] = "Capacitación";
 $strings['Help'] = "Ayuda";
-$strings['HelpText'] = "Escríbenos a nuestra área de ayuda: <a href='mailto:online@aula-virtual.cl'>online@aula-virtual.cl</a>";
+$strings['HelpText'] = "Escríbenos a nuestra área de ayuda: ";
 $strings['RespondAsSoonAsPossible'] = "Nuestro equipo te responderá a la brevedad.";
 $strings['TurnYourCellPhoneOver'] = "Para una mejor experiencia, voltea tu pantalla de celular en horizontal para ver el contenido.";
 $strings['ProgramInformation'] = "Información del programa";
