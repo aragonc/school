@@ -1624,7 +1624,11 @@ class SchoolPlugin extends Plugin
         $sessionField = new ExtraFieldValue('session');
         $extraFieldData = $sessionField->getAllValuesForAnItem($item, null, true);
         $displayCategory = $category;
-        $tags = $this->getTagsSession($session['id']);
+        $tags = [];
+        $enabledPluginTags = api_get_plugin_setting('shortify', 'shortify_tool_enable');
+        if($enabledPluginTags === 'true'){
+            $tags = $this->getTagsSession($session['id']);
+        }
 
         return [
             'id' => $session['id'],
