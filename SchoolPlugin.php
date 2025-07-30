@@ -836,7 +836,6 @@ class SchoolPlugin extends Plugin
             }
         }
 
-
         $result = Database::query($sql);
 
         if (empty($result)) {
@@ -958,7 +957,7 @@ class SchoolPlugin extends Plugin
             foreach ($rows as $result_row) {
                 $count++;
                 $result_row['status'] = 5;
-                $result_row['visible'] = boolval($result_row['visibility']);
+                $result_row['visible'] = boolval($result_row['visibility'] ?? true);
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
