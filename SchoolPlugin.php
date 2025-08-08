@@ -1614,6 +1614,12 @@ class SchoolPlugin extends Plugin
         $sessionEntity = $em->find('ChamiloCoreBundle:Session', $item);
 
         $courses = self::getSessionCourseList($sessionEntity);
+        $n_course = count($courses);
+
+        if ($n_course == 1) {
+            $session['image'] = api_get_path(WEB_APP_PATH) . 'upload/import/' . $courses[0]['code'] . '.png';
+        }
+
         $lists = self::getDescriptionCourse($session['id'], $courses[0]['id'],8);
 
         if(empty($session)){
@@ -1639,7 +1645,8 @@ class SchoolPlugin extends Plugin
             'tags' => $tags,
             'session_category' => $category,
             'display_category' => $displayCategory,
-            'n_courses' => count($courses),
+            'n_courses' => $n_course,
+            'image' => $session['image'],
             'courses' => $courses,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
             'extra_fields' => $extraFieldData,
