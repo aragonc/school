@@ -177,6 +177,7 @@ class SchoolPlugin extends Plugin
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';
         $imageFolder = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/';
 
+        $this->assign('administrator_mail', api_get_setting('emailAdministrator'));
         $this->assign('breadcrumb', $breadCrumb);
         $this->assign('image_url', $imageFolder);
         $this->assign('assets', $vendor);

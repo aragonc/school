@@ -28,7 +28,8 @@
                 <div class="col-12 col-lg-6">
                     <div class="d-none d-md-block text-center">
                         <div class="bd-callout bd-callout-info">
-                            {{ 'UsernameHelp'|get_plugin_lang('SchoolPlugin') }}
+                            <p>{{ 'UsernameHelp'|get_plugin_lang('SchoolPlugin') }}
+                            <a href="mailto: {{ administrator_mail }}">{{ administrator_mail }}</a></p>
                         </div>
                         {{ img_section }}
                     </div>
