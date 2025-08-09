@@ -133,3 +133,4 @@ $strings['AcademicCalendar'] = "Calendario Académico";
 $strings['GotoMyCertificates'] = "Ir a mis certificados";
 $strings['AskTheTeacher'] = "<strong>Foro (Pregúntale al profesor):</strong> Máximo 48 horas";
 $strings['HelpArea'] = "<strong>Área de Ayuda:</strong> Máximo 24 horas hábiles";
+$strings['template_certificate'] = "Plantilla para certificado regular";

@@ -24,6 +24,8 @@ class SchoolPlugin extends Plugin
     const TABLE_SHORTIFY_URL = 'plugin_shortify_urls';
     const TABLE_BUYCOURSE_ITEM = 'plugin_buycourses_item';
 
+    const TEMPLATE_ZERO = 0;
+    const INTERFACE_ONE = 1;
     protected function __construct()
     {
         parent::__construct(
@@ -35,6 +37,13 @@ class SchoolPlugin extends Plugin
                 'activate_search' => 'boolean',
                 'activate_shopping' => 'boolean',
                 'email_help' => 'text',
+                'template_certificate' => [
+                    'type' => 'select',
+                    'options' => [
+                        self::TEMPLATE_ZERO => 'Plantilla por defecto',
+                        self::INTERFACE_ONE => 'Plantilla Sence',
+                    ],
+                ]
             ])
         );
 
