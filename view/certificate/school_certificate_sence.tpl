@@ -84,6 +84,9 @@
     <p><strong>Fecha de emisión del Certificado:</strong> {{ data.date_current }}</p>
 </div>
 
+<div class="timbre-block">
+    <img src="{{ timbre_path }}" alt="Firma" style="width:80px;">
+</div>
 
 <div class="firma-block" style="text-align: center;">
     <div>

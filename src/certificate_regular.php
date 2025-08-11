@@ -62,14 +62,17 @@ $generateImgCodeBar = $plugin->generateBarcode($paramsUser['session_id'].$params
 $certificateBarCode = '<img src="data:image/png;base64,'.$generateImgCodeBar.'">';
 
 $template = new Template($templateName);
-$logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo.png';
 
 if($typeCertificate === '1'){
     $signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma_sence.png';
+    $logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo_sence.png';
+    $timbre= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/timbre_sence.jpg';
 } else {
     $signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma.png';
+    $logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo.png';
+    $timbre= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/timbre.jpg';
 }
-$timbre= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/timbre.jpg';
+
 $template->assign('data', $paramsUser);
 $template->assign('logo_path', $logoCampus);
 $template->assign('signature_path', $signature);
