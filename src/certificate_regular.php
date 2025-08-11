@@ -56,14 +56,19 @@ $params = [
 ];
 
 $templateName = $plugin->get_lang('ExportCertificate');
-
+$typeCertificate = $plugin->get('template_certificate');
 $valueBarCode = $paramsUser['session_id'].$paramsUser['rut'];
 $generateImgCodeBar = $plugin->generateBarcode($paramsUser['session_id'].$paramsUser['rut']);
 $certificateBarCode = '<img src="data:image/png;base64,'.$generateImgCodeBar.'">';
 
 $template = new Template($templateName);
 $logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo.png';
-$signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma.png';
+
+if($typeCertificate === '1'){
+    $signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma_sence.png';
+} else {
+    $signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma.png';
+}
 $timbre= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/timbre.jpg';
 $template->assign('data', $paramsUser);
 $template->assign('logo_path', $logoCampus);
@@ -72,7 +77,11 @@ $template->assign('timbre_path', $timbre);
 $template->assign('bar_code', $certificateBarCode);
 $template->assign('bar_code_value', $valueBarCode);
 
-$content = $template->fetch('school/view/certificate/school_certificate_regular.tpl');
+if($typeCertificate === '1'){
+    $content = $template->fetch('school/view/certificate/school_certificate_sence.tpl');
+} else {
+    $content = $template->fetch('school/view/certificate/school_certificate_regular.tpl');
+}
 
 $archivePath = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/';
 if (!is_dir($archivePath)) {
