@@ -109,8 +109,8 @@
 </div>
 
 <div class="footer">
-    Badajoz #100 oficina 502 – Las Condes, Santiago<br>
-    Email: contacto@educacionchile.cl – Teléfono: +56976417387
+    Rafael Cañas #47 Piso 3 - Providencia - Santiago<br>
+    Email: contacto@educacionchile.cl
 </div>
 
 </body>
