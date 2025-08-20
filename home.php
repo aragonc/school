@@ -37,6 +37,16 @@ $content = '';
 $checkIcon = $plugin->get_svg_icon('smile', $plugin->get_lang('Welcome'), 64);
 $tools = $plugin->getToolsCourseHome($sessionId, $courseId);
 $plugin->setTitle('');
+
+//check enabled plugin sence
+if(class_exists('SencePlugin')){
+    $sencePlugin = SencePlugin::create();
+    $enable = $sencePlugin->get('sence_enabled') == 'true';
+    if($enable){
+        $content.= $sencePlugin->loadLoginSence();
+    }
+}
+
 $plugin->assign('session', $session);
 $plugin->assign('course', $courseInfo);
 $plugin->assign('icon_course', $iconCourse);
