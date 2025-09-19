@@ -13,6 +13,9 @@ $session = api_get_session_info($idSession);
 $extraField = new ExtraField('user');
 $extraData = $extraField->get_handler_extra_data($userID);
 
+/*$extraFieldValues = new ExtraFieldValue('user');
+$extraValues = $extraFieldValues->get_values_by_handler_and_field_variable($userID, 'rol_unico_tributario');*/
+
 $nCourse = intval($session['nbr_courses']);
 $textHours = $plugin->get_lang('CourseHours');
 if($nCourse > 1){
