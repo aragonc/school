@@ -1701,6 +1701,29 @@ class SchoolPlugin extends Plugin
         return  $category;
     }
 
+    public function formatDateShortEs($date, $large = false): string
+    {
+        $monthsShorts = [
+            'Jan' => 'Ene', 'Feb' => 'Feb', 'Mar' => 'Mar',
+            'Apr' => 'Abr', 'May' => 'May', 'Jun' => 'Jun',
+            'Jul' => 'Jul', 'Aug' => 'Ago', 'Sep' => 'Sep',
+            'Oct' => 'Oct', 'Nov' => 'Nov', 'Dec' => 'Dic'
+        ];
+
+        $monthsLarge = [
+            'Jan' => 'Enero', 'Feb' => 'Febrero', 'Mar' => 'Marzo',
+            'Apr' => 'Abril', 'May' => 'Mayo', 'Jun' => 'Junio',
+            'Jul' => 'Julio', 'Aug' => 'Agosto', 'Sep' => 'Septiembre',
+            'Oct' => 'Octubre', 'Nov' => 'Noviembre', 'Dec' => 'Diciembre'
+        ];
+
+        if($large){
+            return str_replace(array_keys($monthsLarge), array_values($monthsLarge), $date);
+        } else {
+            return str_replace(array_keys($monthsShorts), array_values($monthsShorts), $date);
+        }
+
+    }
     public function formatDateEs($date): string
     {
         $dateTime = new DateTime($date);

@@ -19,9 +19,13 @@ if($nCourse > 1){
     $textHours = $plugin->get_lang('DiplomaHours');
 }
 setlocale(LC_TIME, 'es_PE.UTF-8');
-$currentLocalTime = api_get_local_time(null,null,null,false,false);
-$displayStartDate = api_get_local_time($session['display_start_date'],'America/Lima',null,false,false);
-$displayEndDate = api_get_local_time($session['display_end_date'],'America/Lima',null,false,false);
+$currentLocalTime = api_get_local_time(null,null,null,false,false, true);
+$displayStartDate = api_get_local_time($session['display_start_date'],'America/Lima',null,false,false, true);
+$displayEndDate = api_get_local_time($session['display_end_date'],'America/Lima',null,false,false, true);
+
+$currentLocalTime = $plugin->formatDateShortEs($currentLocalTime, true);
+$displayStartDate = $plugin->formatDateShortEs($displayStartDate);
+$displayEndDate = $plugin->formatDateShortEs($displayEndDate);
 
 $paramsUser = [
     'user_id' => $userInfo['id'],
