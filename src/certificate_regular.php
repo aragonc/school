@@ -13,14 +13,22 @@ $session = api_get_session_info($idSession);
 $extraField = new ExtraField('user');
 $extraData = $extraField->get_handler_extra_data($userID);
 
+/*$extraFieldValues = new ExtraFieldValue('user');
+$extraValues = $extraFieldValues->get_values_by_handler_and_field_variable($userID, 'rol_unico_tributario');*/
+
 $nCourse = intval($session['nbr_courses']);
 $textHours = $plugin->get_lang('CourseHours');
 if($nCourse > 1){
     $textHours = $plugin->get_lang('DiplomaHours');
 }
-$currentLocalTime = api_get_local_time(null,null,null,false,false,true);
-$displayStartDate = api_get_local_time($session['display_start_date'],null,null,false,false,true);
-$displayEndDate = api_get_local_time($session['display_end_date'],null,null,false,false,true);
+setlocale(LC_TIME, 'es_PE.UTF-8');
+$currentLocalTime = api_get_local_time(null,null,null,false,false, true);
+$displayStartDate = api_get_local_time($session['display_start_date'],'America/Lima',null,false,false, true);
+$displayEndDate = api_get_local_time($session['display_end_date'],'America/Lima',null,false,false, true);
+
+$currentLocalTime = $plugin->formatDateShortEs($currentLocalTime, true);
+$displayStartDate = $plugin->formatDateShortEs($displayStartDate);
+$displayEndDate = $plugin->formatDateShortEs($displayEndDate);
 
 $paramsUser = [
     'user_id' => $userInfo['id'],
@@ -56,15 +64,23 @@ $params = [
 ];
 
 $templateName = $plugin->get_lang('ExportCertificate');
-
+$typeCertificate = $plugin->get('template_certificate');
 $valueBarCode = $paramsUser['session_id'].$paramsUser['rut'];
 $generateImgCodeBar = $plugin->generateBarcode($paramsUser['session_id'].$paramsUser['rut']);
 $certificateBarCode = '<img src="data:image/png;base64,'.$generateImgCodeBar.'">';
 
 $template = new Template($templateName);
-$logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo.png';
-$signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma.png';
-$timbre= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/timbre.jpg';
+
+if($typeCertificate === '1'){
+    $signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma_sence.png';
+    $logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo_sence.png';
+    $timbre= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/timbre_sence.jpg';
+} else {
+    $signature= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/firma.png';
+    $logoCampus= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/logo.png';
+    $timbre= api_get_path(WEB_PLUGIN_PATH).'school/img/certificate/timbre.jpg';
+}
+
 $template->assign('data', $paramsUser);
 $template->assign('logo_path', $logoCampus);
 $template->assign('signature_path', $signature);
@@ -72,7 +88,11 @@ $template->assign('timbre_path', $timbre);
 $template->assign('bar_code', $certificateBarCode);
 $template->assign('bar_code_value', $valueBarCode);
 
-$content = $template->fetch('school/view/certificate/school_certificate_regular.tpl');
+if($typeCertificate === '1'){
+    $content = $template->fetch('school/view/certificate/school_certificate_sence.tpl');
+} else {
+    $content = $template->fetch('school/view/certificate/school_certificate_regular.tpl');
+}
 
 $archivePath = api_get_path(SYS_ARCHIVE_PATH) . 'certificates/';
 if (!is_dir($archivePath)) {

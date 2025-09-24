@@ -24,6 +24,8 @@ class SchoolPlugin extends Plugin
     const TABLE_SHORTIFY_URL = 'plugin_shortify_urls';
     const TABLE_BUYCOURSE_ITEM = 'plugin_buycourses_item';
 
+    const TEMPLATE_ZERO = 0;
+    const INTERFACE_ONE = 1;
     protected function __construct()
     {
         parent::__construct(
@@ -35,6 +37,13 @@ class SchoolPlugin extends Plugin
                 'activate_search' => 'boolean',
                 'activate_shopping' => 'boolean',
                 'email_help' => 'text',
+                'template_certificate' => [
+                    'type' => 'select',
+                    'options' => [
+                        self::TEMPLATE_ZERO => 'Plantilla por defecto',
+                        self::INTERFACE_ONE => 'Plantilla Sence',
+                    ],
+                ]
             ])
         );
 
@@ -177,6 +186,7 @@ class SchoolPlugin extends Plugin
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';
         $imageFolder = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/';
 
+        $this->assign('administrator_mail', api_get_setting('emailAdministrator'));
         $this->assign('breadcrumb', $breadCrumb);
         $this->assign('image_url', $imageFolder);
         $this->assign('assets', $vendor);
@@ -836,7 +846,6 @@ class SchoolPlugin extends Plugin
             }
         }
 
-
         $result = Database::query($sql);
 
         if (empty($result)) {
@@ -958,7 +967,7 @@ class SchoolPlugin extends Plugin
             foreach ($rows as $result_row) {
                 $count++;
                 $result_row['status'] = 5;
-                $result_row['visible'] = boolval($result_row['visibility']);
+                $result_row['visible'] = boolval($result_row['visibility'] ?? true);
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
@@ -1615,6 +1624,12 @@ class SchoolPlugin extends Plugin
         $sessionEntity = $em->find('ChamiloCoreBundle:Session', $item);
 
         $courses = self::getSessionCourseList($sessionEntity);
+        $n_course = count($courses);
+
+        if ($n_course == 1) {
+            $session['image'] = api_get_path(WEB_APP_PATH) . 'upload/import/' . $courses[0]['code'] . '.png';
+        }
+
         $lists = self::getDescriptionCourse($session['id'], $courses[0]['id'],8);
 
         if(empty($session)){
@@ -1640,7 +1655,8 @@ class SchoolPlugin extends Plugin
             'tags' => $tags,
             'session_category' => $category,
             'display_category' => $displayCategory,
-            'n_courses' => count($courses),
+            'n_courses' => $n_course,
+            'image' => $session['image'],
             'courses' => $courses,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
             'extra_fields' => $extraFieldData,
@@ -1685,6 +1701,29 @@ class SchoolPlugin extends Plugin
         return  $category;
     }
 
+    public function formatDateShortEs($date, $large = false): string
+    {
+        $monthsShorts = [
+            'Jan' => 'Ene', 'Feb' => 'Feb', 'Mar' => 'Mar',
+            'Apr' => 'Abr', 'May' => 'May', 'Jun' => 'Jun',
+            'Jul' => 'Jul', 'Aug' => 'Ago', 'Sep' => 'Sep',
+            'Oct' => 'Oct', 'Nov' => 'Nov', 'Dec' => 'Dic'
+        ];
+
+        $monthsLarge = [
+            'Jan' => 'Enero', 'Feb' => 'Febrero', 'Mar' => 'Marzo',
+            'Apr' => 'Abril', 'May' => 'Mayo', 'Jun' => 'Junio',
+            'Jul' => 'Julio', 'Aug' => 'Agosto', 'Sep' => 'Septiembre',
+            'Oct' => 'Octubre', 'Nov' => 'Noviembre', 'Dec' => 'Diciembre'
+        ];
+
+        if($large){
+            return str_replace(array_keys($monthsLarge), array_values($monthsLarge), $date);
+        } else {
+            return str_replace(array_keys($monthsShorts), array_values($monthsShorts), $date);
+        }
+
+    }
     public function formatDateEs($date): string
     {
         $dateTime = new DateTime($date);

@@ -13,7 +13,12 @@
         <div class="container p-0">
             <div class="row">
                 <div class="col-12 col-lg-6">
-                    <img class="img-responsive rounded-md" width="100%" src="{{session_image}}" alt="{{ session.name }}">
+
+                    {% if session_image %}
+                        <img class="img-responsive rounded-md" width="100%" src="{{session_image}}" alt="{{ session.name }}">
+                    {% else %}
+                        <img class="img-responsive rounded-md" width="100%" src="{{session.image}}" alt="{{ session.name }}">
+                    {% endif %}
                 </div>
                 <div class="col-12 col-lg-6 d-flex align-items-center">
                     <div class="block-course">
