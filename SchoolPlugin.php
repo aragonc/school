@@ -1913,6 +1913,7 @@ class SchoolPlugin extends Plugin
                 api_get_user_id(),
                 $session
             );
+            $sessionData['category_id'] = $session->getCategory()->getId();
             $sessionData['courses'] = [];
 
             foreach ($sessionCourses as $sessionCourse) {

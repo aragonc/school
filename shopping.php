@@ -2,6 +2,9 @@
 
 require_once __DIR__.'/config.php';
 $plugin = SchoolPlugin::create();
+$payments = Payments::create();
+$andes = $payments->get('andes_promo_box') == 'true';
+$categories = $payments->get('categories_andes_courses');
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 $certificateId = $_GET['id'] ?? 0;
@@ -76,6 +79,7 @@ if ($enable) {
                     'price_without_tax' => $session['price_without_tax'],
                     'image' => $session['image'],
                     'category' => $session['category'],
+                    'category_id' => $session['category_id'],
                     'price_usd' => $session['price_usd'],
                     'price_new' => $session['currency'].' '.$session['price'],
                     'total_price_formatted' => $session['total_price_formatted'],
@@ -84,6 +88,7 @@ if ($enable) {
                     'enrolled' => $session['enrolled'],
                     'currency' => $session['currency'],
                 ];
+
             }
             $plugin->setTitle($plugin->get_lang('Registrations'));
             $plugin->assign('sessions', $list);
@@ -120,6 +125,7 @@ if ($enable) {
                     'price_without_tax' => $session['price_without_tax'],
                     'image' => $session['image'],
                     'category' => $session['category'],
+                    'category_id' => $session['category_id'],
                     'price_usd' => $session['price_usd'],
                     'price_new' => $session['currency'].' '.$session['price'],
                     'total_price_formatted' => $session['total_price_formatted'],
