@@ -43,7 +43,7 @@ if(class_exists('SencePlugin')){
     $sencePlugin = SencePlugin::create();
     $enable = $sencePlugin->get('sence_enabled') == 'true';
     if($enable){
-        $content.= $sencePlugin->loadLoginSence();
+        $modalSence = $sencePlugin->loadLoginSence();
     }
 }
 
@@ -55,5 +55,5 @@ $plugin->assign('tools_one', $tools['home']);
 $plugin->assign('tools_two', $tools['scorm']);
 $plugin->assign('tools_tree', $tools['tools']);
 $content = $plugin->fetch('school_course_home.tpl');
-$plugin->assign('content', $content);
+$plugin->assign('content', $content.$modalSence);
 $plugin->display_blank_template();
