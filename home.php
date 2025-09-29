@@ -38,6 +38,7 @@ $checkIcon = $plugin->get_svg_icon('smile', $plugin->get_lang('Welcome'), 64);
 $tools = $plugin->getToolsCourseHome($sessionId, $courseId);
 $plugin->setTitle('');
 
+$modalSence = '';
 //check enabled plugin sence
 if(class_exists('SencePlugin')){
     $sencePlugin = SencePlugin::create();
