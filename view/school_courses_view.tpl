@@ -75,7 +75,15 @@
                                 </div>
                                 <div class="view-buttons">
                                     <a class="btn btn-default btn-block mb-2" target="_blank" href="{{ url_pdf }}"><i class="far fa-file-pdf"></i> {{ 'SeeFilePDF'|get_plugin_lang('SchoolPlugin') }}</a>
-                                    <a class="btn btn-primary btn-block mb-2" href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"> <em class="fa fa-shopping-cart"></em> {{ 'Buy'|get_plugin_lang('BuyCoursesPlugin') }}</a>
+
+                                    {% if session.enrolled.checking == "YES" %}
+                                        <div class="alert alert-success">
+                                            <em class="fa fa-check-square-o fa-fw"></em> {{ 'TheUserIsAlreadyRegisteredInTheSession'|get_plugin_lang('BuyCoursesPlugin') }}
+                                        </div>
+                                    {% else %}
+                                        <a class="btn btn-primary btn-block mb-2" href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"> <em class="fa fa-shopping-cart"></em> {{ 'Buy'|get_plugin_lang('BuyCoursesPlugin') }}</a>
+                                    {% endif %}
+
                                 </div>
                                 <div class="view-pay-icon">
                                     {{ img_section }}

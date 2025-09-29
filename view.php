@@ -21,6 +21,7 @@ $userId = api_get_user_id();
 $content = '';
 $imgSection = $plugin->get_svg_icon('payment_methods','Cursos Anteriores', 400,false, 'png');
 $plugin->setTitle('');
+
 $plugin->assign('session', $session);
 $plugin->assign('url_pdf', $sessionURL);
 $plugin->assign('item', $itemBuy);
