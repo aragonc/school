@@ -80,8 +80,6 @@
                                         <div class="alert alert-success">
                                             <em class="fa fa-check-square-o fa-fw"></em> {{ 'TheUserIsAlreadyRegisteredInTheSession'|get_plugin_lang('BuyCoursesPlugin') }}
                                         </div>
-                                        <a class="btn btn-primary btn-block mb-2" href="{{ course_url }}"> <i class="fas fa-home"></i> {{ 'GoCourse'|get_plugin_lang('SchoolPlugin') }}</a>
-
                                     {% else %}
                                         <a class="btn btn-primary btn-block mb-2" href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"> <em class="fa fa-shopping-cart"></em> {{ 'Buy'|get_plugin_lang('BuyCoursesPlugin') }}</a>
                                     {% endif %}
