@@ -48,7 +48,7 @@
 
                                     </div>
                                     <div class="card-footer text-center">
-                                        {% if session.enrolled.checking == "NO" %}
+                                        {% if session.enrolled.checking == "NO" or session.enrolled.checking == "TMP" %}
                                         <a href="{{ _p.web_plugin ~ 'payments/process-check.php?' ~ {'item': session.id, 'type': 2}|url_encode() }}"
                                            class="btn btn-block btn-primary">
                                             <em class="fa fa-shopping-cart"></em>
