@@ -1,0 +1,9 @@
+{{ message }}
+{{ show_form }}
+{{ home_url }}
+{{ site_name }}
+{{ form }}
+{{ show_cas }}
+{{ cas_content }}
+{{ show_course_link }}
+{{ course_id }}

@@ -17,6 +17,8 @@ class SchoolPlugin extends Plugin
     public $user_is_logged_in = false;
     public $title = null;
     public $currentSection = null;
+    public $show_sidebar = true;
+    public $show_header = true;
 
     const TABLE_SCHOOL_REQUEST = 'plugin_school_request';
     const TABLE_SHORTIFY_TAGS = 'plugin_shortify_tags';
@@ -180,7 +182,6 @@ class SchoolPlugin extends Plugin
         //$this->setSidebar();
         $this->assign('flash_messages', Display::getFlashToString());
         Display::cleanFlashMessages();
-
         $breadCrumb = $this->getBreadCrumb();
 
         $vendor = api_get_path(WEB_PLUGIN_PATH).'school/assets/';
@@ -239,6 +240,29 @@ class SchoolPlugin extends Plugin
 
         return $attributes;
     }
+
+    public function isShowSidebar(): bool
+    {
+        return $this->show_sidebar;
+    }
+
+    public function setShowSidebar(bool $show_sidebar): void
+    {
+        $this->show_sidebar = $show_sidebar;
+        $this->assign('show_sidebar', $this->show_sidebar);
+    }
+
+    public function isShowHeader(): bool
+    {
+        return $this->show_header;
+    }
+
+    public function setShowHeader(bool $show_header): void
+    {
+        $this->show_header = $show_header;
+        $this->assign('show_header', $this->show_header);
+    }
+
     /**
      * @return mixed
      */
