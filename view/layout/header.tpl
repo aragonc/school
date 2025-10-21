@@ -31,17 +31,17 @@
 <body id="page-top" class="sidebar-toggled">
 <!-- Page Wrapper -->
 <div id="wrapper">
-    {% if show_sidebar == 1 %}
+
         {% include 'layout/sidebar.tpl' %}
-    {% endif %}
+
 
     <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
-            {% if show_sidebar == 1 %}
+
                 {% include 'layout/navbar.tpl' %}
-            {% endif %}
+           
 
             <!-- Begin Page Content -->
             <div class="container page-container">

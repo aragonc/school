@@ -246,7 +246,7 @@ class SchoolPlugin extends Plugin
         return $this->show_sidebar;
     }
 
-    public function setShowSidebar(bool $show_sidebar): void
+    public function setShowSidebar($show_sidebar = true): void
     {
         $this->show_sidebar = $show_sidebar;
         $this->assign('show_sidebar', $this->show_sidebar);
@@ -257,7 +257,7 @@ class SchoolPlugin extends Plugin
         return $this->show_header;
     }
 
-    public function setShowHeader(bool $show_header): void
+    public function setShowHeader($show_header = true): void
     {
         $this->show_header = $show_header;
         $this->assign('show_header', $this->show_header);
