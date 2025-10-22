@@ -32,16 +32,14 @@
 <!-- Page Wrapper -->
 <div id="wrapper">
 
-        {% include 'layout/sidebar.tpl' %}
-
+    {% include 'layout/sidebar.tpl' %}
 
     <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
 
-                {% include 'layout/navbar.tpl' %}
-           
+            {% include 'layout/navbar.tpl' %}
 
             <!-- Begin Page Content -->
             <div class="container page-container">
