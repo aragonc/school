@@ -1,3 +1,4 @@
+
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link active" href="/dashboard">
@@ -198,7 +199,5 @@
 <div class="py-3">
     <a href="{{ _p.web }}certified" class="btn btn-primary btn-goto"><i class="fas fa-file-alt"></i> {{ 'GotoMyCertificates'|get_plugin_lang('SchoolPlugin') }}</a>
 </div>
-
-
 
 

@@ -1,6 +1,8 @@
 <?php
 
 require_once __DIR__.'/config.php';
+require_once __DIR__.'/../../main/auth/external_login/check_profile_completion.php';
+
 $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
@@ -8,9 +10,25 @@ $nameTools = $plugin->get_lang('DashboardSchool');
 $plugin->setCurrentSection('dashboard');
 $plugin->setSidebar('dashboard');
 api_block_anonymous_users();
+$showProfileCompletionModal = false;
+$currentProfileData = [];
 
 if ($enable) {
     $userId = api_get_user_id();
+    if ($userId) {
+        // Verificar directamente en la BD si los campos están completos
+        $profileCheck = checkProfileCompletion($userId);
+        if ($profileCheck['needs_completion']) {
+            $showProfileCompletionModal = true;
+            $currentProfileData = $profileCheck['current_values'];
+
+            error_log("Mostrando modal de completar perfil para usuario $userId. Campos faltantes: " .
+                implode(', ', $profileCheck['missing_fields']));
+        } else {
+            error_log("Perfil completo para usuario $userId");
+        }
+    }
+
     $sessionsCategories = $plugin->getSessionsByCategory($userId);
     $countCourses = $sessionsCategories['total'];
     $countHistory = $plugin->getSessionsByCategoryCount($userId, true);
@@ -20,6 +38,9 @@ if ($enable) {
     $plugin->assign('categories', $sessionsCategories['categories']);
     $plugin->assign('img_section', $imgSection);
     $plugin->assign('total', $countHistory);
+    $plugin->assign('show_profile_completion_modal', $showProfileCompletionModal);
+    $plugin->assign('current_profile_data', $currentProfileData);
+
     $plugin->setTitle($plugin->get_lang('MyTrainings'));
     if($total > 0){
         $plugin->assign('total_courses', $countCourses);
