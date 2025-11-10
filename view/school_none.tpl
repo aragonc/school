@@ -17,7 +17,6 @@
     </div>
 </div>
 {% if show_profile_completion_modal %}
-hola <H1>SDLOAJLSAKdslñkalñdksal</H1>
 {% include 'profile_completion_modal.tpl' %}
 {% endif %}
 
