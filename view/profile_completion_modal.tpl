@@ -64,10 +64,11 @@
                                class="form-control form-control-lg"
                                id="rut"
                                name="rut"
-                               placeholder="12.345.678-9"
-                               value="{{ current_profile_data.rut }}">
+                               placeholder="11223344-K"
+                               value="{{ current_profile_data.rut }}"
+                               maxlength="10">
                         <small class="form-text text-muted">
-                            Ingresa tu RUT con o sin puntos y con guión. Ejemplo: 12.345.678-9
+                            Ingresa tu RUT sin puntos y con guión. Ejemplo: <strong>11223344-K</strong>
                         </small>
                     </div>
 
@@ -89,24 +90,6 @@
                         </small>
                     </div>
 
-                    <!-- Teléfono/WhatsApp (OPCIONAL) -->
-                    <div class="form-group">
-                        <label for="phone">
-                            <i class="fa fa-whatsapp"></i>
-                            Teléfono / WhatsApp
-                            <span class="text-muted">(Opcional)</span>
-                        </label>
-                        <input type="tel"
-                               class="form-control form-control-lg"
-                               id="phone"
-                               name="phone"
-                               placeholder="+56 9 1234 5678"
-                               value="{{ current_profile_data.phone }}">
-                        <small class="form-text text-muted">
-                            Si deseas, incluye tu número con código de país. Ejemplo: +56 9 1234 5678
-                        </small>
-                    </div>
-
                     <div id="formMessage" class="alert" style="display: none;"></div>
                 </form>
             </div>
@@ -122,7 +105,8 @@
 </div>
 
 <script>
-    $(document).ready(function() {
+
+    $(document).ready(function () {
         // Mostrar el modal automáticamente
         $('#profileCompletionModal').modal('show');
 
@@ -155,24 +139,83 @@
         toggleIdentificationField();
 
         // Ejecutar cuando cambia el país
-        $('#country').change(function() {
+        $('#country').change(function () {
             toggleIdentificationField();
         });
 
-        // Formatear RUT automáticamente (solo para Chile)
-        $('#rut').on('input', function() {
-            let value = $(this).val().replace(/[^0-9kK]/g, '');
+        // Formatear RUT automáticamente (solo para Chile) - SIN PUNTOS
+        $('#rut').on('input', function () {
+            let value = $(this).val().toUpperCase().replace(/[^0-9K]/g, '');
+
             if (value.length > 1) {
+                // Separar cuerpo y dígito verificador
                 let body = value.slice(0, -1);
-                let dv = value.slice(-1).toUpperCase();
-                body = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                let dv = value.slice(-1);
+
+                // Formato sin puntos, solo guión: 11223344-K
                 $(this).val(body + '-' + dv);
+            } else if (value.length === 1) {
+                // Si solo hay un carácter, mostrarlo sin formato
+                $(this).val(value);
             }
         });
 
+        // Validar RUT chileno cuando pierde el foco
+        $('#rut').on('blur', function () {
+            let rutValue = $(this).val();
+            if (rutValue && $('#country').val() === 'CL' && !validateRUT(rutValue)) {
+                $(this).addClass('is-invalid');
+                if (!$('#rut-error').length) {
+                    $(this).after('<div id="rut-error" class="invalid-feedback d-block">RUT inválido. Verifica el número y dígito verificador.</div>');
+                }
+            } else {
+                $(this).removeClass('is-invalid');
+                $('#rut-error').remove();
+            }
+        });
+
+        // Función para validar RUT chileno
+        function validateRUT(rut) {
+            // Limpiar formato
+            rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+
+            if (rut.length < 8 || rut.length > 9) {
+                return false;
+            }
+
+            let body = rut.slice(0, -1);
+            let dv = rut.slice(-1);
+
+            // Calcular dígito verificador
+            let suma = 0;
+            let multiplo = 2;
+
+            for (let i = body.length - 1; i >= 0; i--) {
+                suma += parseInt(body.charAt(i)) * multiplo;
+                multiplo = multiplo < 7 ? multiplo + 1 : 2;
+            }
+
+            let dvEsperado = 11 - (suma % 11);
+            let dvCalculado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
+
+            return dv === dvCalculado;
+        }
+
         // Enviar formulario
-        $('#submitProfile').click(function() {
+        $('#submitProfile').click(function () {
             let form = $('#profileCompletionForm')[0];
+
+            // Validar RUT si es Chile
+            if ($('#country').val() === 'CL') {
+                let rutValue = $('#rut').val();
+                if (rutValue && !validateRUT(rutValue)) {
+                    $('#rut').addClass('is-invalid');
+                    if (!$('#rut-error').length) {
+                        $('#rut').after('<div id="rut-error" class="invalid-feedback d-block">RUT inválido. Verifica el número y dígito verificador.</div>');
+                    }
+                    return;
+                }
+            }
 
             // Validar formulario HTML5
             if (!form.checkValidity()) {
@@ -191,7 +234,7 @@
                 method: 'POST',
                 data: $('#profileCompletionForm').serialize(),
                 dataType: 'json',
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         $('#formMessage')
                             .removeClass('alert-danger')
@@ -199,7 +242,7 @@
                             .html('<i class="fa fa-check-circle"></i> <strong>¡Perfecto!</strong> ' + response.message + ' Redirigiendo...')
                             .show();
 
-                        setTimeout(function() {
+                        setTimeout(function () {
                             location.reload();
                         }, 2000);
                     } else {
@@ -212,7 +255,7 @@
                         submitBtn.prop('disabled', false).html(originalText);
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     console.error('Error AJAX:', error);
                     console.error('Response:', xhr.responseText);
 
@@ -236,6 +279,13 @@
 </script>
 
 <style>
+
+    .invalid-feedback {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
     #profileCompletionModal .modal-content {
         border: none;
         border-radius: 12px;
