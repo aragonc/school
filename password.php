@@ -1,7 +1,6 @@
 <?php
 
 use Chamilo\UserBundle\Entity\User;
-use ChamiloSession as Session;
 
 require_once __DIR__ . '/config.php';
 $plugin = SchoolPlugin::create();
@@ -35,6 +34,9 @@ if ($enable) {
 
     $imgSection = $plugin->get_svg_icon('security', $plugin->get_lang('HereYourNotificationsWillBe'), 500);
 
+    $showPassword = $plugin->is_platform_authentication();
+
+    $plugin->setTitle($plugin->get_lang('EditProfile'));
     $form = new FormValidator(
         'form_password',
         'post',
@@ -43,16 +45,21 @@ if ($enable) {
         [],
         FormValidator::LAYOUT_NEW
     );
-
-    $showPassword = $plugin->is_platform_authentication();
-
     //    PASSWORD, if auth_source is platform
     if ($showPassword &&
         $plugin->is_profile_editable() &&
         api_get_setting('profile', 'password') === 'true'
     ) {
-        $form->addElement('password', 'password0', [$plugin->get_lang('EnterYourCurrentPassword')], ['id' => 'password0', 'size' => 40, 'required']);
+        $form = new FormValidator(
+            'form_password',
+            'post',
+            api_get_path(WEB_PATH) . 'password',
+            '',
+            [],
+            FormValidator::LAYOUT_NEW
+        );
 
+        $form->addElement('password', 'password0', [$plugin->get_lang('EnterYourCurrentPassword')], ['id' => 'password0', 'size' => 40, 'required']);
         $form->addRule('password0', $plugin->get_lang('EnterYourCurrentPasswordHelp'), 'required');
         $form->addElement(
             'password',
@@ -75,83 +82,151 @@ if ($enable) {
         //    user must enter identical password twice so we can prevent some user errors
         $form->addRule(['password2', 'password1'], get_lang('PassTwo'), 'compare');
         $form->addPasswordRule('password1');
-    }
 
-    $form->addButton('submit',$plugin->get_lang('UpdatePassword'), '','primary','default','btn-block');
-    $form->addHtml($plugin->get_lang('TheFollowingFieldsAreRequired'));
+        $form->addButton('submit',$plugin->get_lang('UpdatePassword'), '','primary','default','btn-block');
+        $form->addHtml($plugin->get_lang('TheFollowingFieldsAreRequired'));
 
-   // var_dump($_POST);
+        // var_dump($_POST);
 
-    $form->setDefaults($user_data);
+        $form->setDefaults($user_data);
+        // VALIDATE FORM
+        if ($form->validate()) {
+            $hook = HookUpdateUser::create();
 
-    // VALIDATE FORM
-    if ($form->validate()) {
-        $hook = HookUpdateUser::create();
+            if ($hook) {
+                $hook->notifyUpdateUser(HOOK_EVENT_TYPE_PRE);
+            }
 
-        if ($hook) {
-            $hook->notifyUpdateUser(HOOK_EVENT_TYPE_PRE);
-        }
+            $wrong_current_password = false;
+            $user_data = $form->getSubmitValues(1);
 
-        $wrong_current_password = false;
-        $user_data = $form->getSubmitValues(1);
+            /** @var User $user */
+            $user = UserManager::getRepository()->find(api_get_user_id());
 
-        /** @var User $user */
-        $user = UserManager::getRepository()->find(api_get_user_id());
+            // set password if a new one was provided
+            $validPassword = false;
+            $passwordWasChecked = false;
 
-        // set password if a new one was provided
-        $validPassword = false;
-        $passwordWasChecked = false;
+            $user_data = $form->getSubmitValues(1);
 
-        $user_data = $form->getSubmitValues(1);
+            /** @var User $user */
+            $user = UserManager::getRepository()->find($userId);
 
-        /** @var User $user */
-        $user = UserManager::getRepository()->find($userId);
-
-        if ($user && !empty($user_data['password0']) && !empty($user_data['password1']) && !empty($user_data['password2'])) {
-            if ($user_data['password1'] !== $user_data['password2']) {
-                Display::addFlash(
-                    Display::return_message(
-                        get_lang('NewPasswordsDoNotMatch'),
-                        'warning',
-                        false
-                    )
-                );
-            } else {
-                $validPassword = UserManager::isPasswordValid(
-                    $user->getPassword(),
-                    $user_data['password0'],
-                    $user->getSalt()
-                );
-
-                if ($validPassword) {
-                    UserManager::updatePassword($userId, $user_data['password1']);
+            if ($user && !empty($user_data['password0']) && !empty($user_data['password1']) && !empty($user_data['password2'])) {
+                if ($user_data['password1'] !== $user_data['password2']) {
                     Display::addFlash(
-                        Display::return_message(get_lang('Changesweresuccessfullyupdated'), 'normal', false)
-                    );
-
-                    $url = api_get_path(WEB_PATH) . 'password';
-                    header("Location: $url");
-                    exit;
-
-                } else {
-                    $form->setElementError('password0', $plugin->get_lang('TheCurrentPasswordFieldIsEmpty'));
-                    /*Display::addFlash(
                         Display::return_message(
-                            $plugin->get_lang('CurrentPasswordEmptyOrIncorrect'),
+                            get_lang('NewPasswordsDoNotMatch'),
                             'warning',
                             false
                         )
-                    );*/
+                    );
+                } else {
+                    $validPassword = UserManager::isPasswordValid(
+                        $user->getPassword(),
+                        $user_data['password0'],
+                        $user->getSalt()
+                    );
+
+                    if ($validPassword) {
+                        UserManager::updatePassword($userId, $user_data['password1']);
+                        Display::addFlash(
+                            Display::return_message(get_lang('Changesweresuccessfullyupdated'), 'normal', false)
+                        );
+
+                        $url = api_get_path(WEB_PATH) . 'password';
+                        header("Location: $url");
+                        exit;
+
+                    } else {
+                        $form->setElementError('password0', $plugin->get_lang('TheCurrentPasswordFieldIsEmpty'));
+                        /*Display::addFlash(
+                            Display::return_message(
+                                $plugin->get_lang('CurrentPasswordEmptyOrIncorrect'),
+                                'warning',
+                                false
+                            )
+                        );*/
+                    }
                 }
             }
         }
+
+    } else {
+        $form->addHtml('<div class="alert alert-info" role="alert">'.$plugin->get_lang('TraditionalMethodHelp').'</div>');
+        $form->addElement('password', 'password1', [
+            $plugin->get_lang('CreatePassword')
+        ],
+            [
+                'id' => 'password1', 'size' => 40, 'required'
+            ]
+        );
+        $form->addRule('password1', $plugin->get_lang('EnterYourCurrentPasswordHelp'), 'required');
+        $form->addElement(
+            'password',
+            'password2',
+            [
+                $plugin->get_lang('RepeatYourPassword')
+            ],
+            ['id' => 'password2', 'size' => 40, 'required']
+        );
+        $form->addRule('password2', $plugin->get_lang('EnterYourNewPasswordHelp'), 'required');
+        $form->addHidden('type','create');
+        $form->addButton('submit',$plugin->get_lang('CreatePassword'), '','primary','default','btn-block');
+        $form->addHtml($plugin->get_lang('TheFollowingFieldsAreRequired'));
+        $form->setDefaults($user_data);
+        if ($form->validate()) {
+            $values = $form->exportValues();
+            $password1 = $values['password1'];
+            $password2 = $values['password2'];
+            $url = api_get_path(WEB_PATH) . 'password';
+            // Validar que los campos no estén vacíos
+            if (empty($password1) || empty($password2)) {
+                Display::addFlash(
+                    Display::return_message($plugin->get_lang('PasswordFieldsCannotBeEmpty'), 'error', false)
+                );
+                header("Location: $url");
+                exit;
+            }
+
+            // Validar que las contraseñas coincidan
+            elseif ($password1 !== $password2) {
+                Display::addFlash(
+                    Display::return_message($plugin->get_lang('PasswordsDoNotMatch'), 'error', false)
+                );
+
+                header("Location: $url");
+                exit;
+            }
+
+            $hook = HookUpdateUser::create();
+
+            $user = UserManager::getRepository()->find($userId);
+
+            if ($hook) {
+                $hook->notifyUpdateUser(HOOK_EVENT_TYPE_PRE);
+            }
+
+            $userId = api_get_user_id();
+
+            // Actualizar la contraseña
+            UserManager::updatePassword($userId, $password1);
+
+            Display::addFlash(
+                Display::return_message($plugin->get_lang('PasswordSuccessfullyChanged'), 'success', false)
+            );
+
+            header("Location: $url");
+            exit;
+
+        }
+
     }
 
-
-
-    $plugin->setTitle($plugin->get_lang('EditProfile'));
-    $plugin->assign('img_section', $imgSection);
     $plugin->assign('form', $form->returnForm());
+
+
+    $plugin->assign('img_section', $imgSection);
     $content = $plugin->fetch('school_password.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
