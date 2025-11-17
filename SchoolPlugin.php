@@ -1789,6 +1789,36 @@ class SchoolPlugin extends Plugin
         return ucfirst($texto);
     }
 
+    /**
+     * Actualiza el auth_source de un usuario
+     *
+     * @param int $userId ID del usuario
+     * @param string $authSource Fuente de autenticación (ej: 'oauth2-google', 'platform', 'ldap')
+     * @return bool true si se actualizó correctamente, false en caso contrario
+     */
+    function updateUserAuthSource($userId, $authSource): bool
+    {
+        $userId = (int) $userId;
+        $authSource = Database::escape_string($authSource);
+
+        if (empty($userId) || $userId <= 0) {
+            return false;
+        }
+
+        if (empty($authSource)) {
+            return false;
+        }
+
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        $sql = "UPDATE $userTable
+            SET auth_source = '$authSource'
+            WHERE id = $userId";
+
+        $result = Database::query($sql);
+
+        return $result !== false;
+    }
 
     public function getSessionTabURL($referenceSession)
     {

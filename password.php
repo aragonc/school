@@ -211,6 +211,8 @@ if ($enable) {
 
             // Actualizar la contraseña
             UserManager::updatePassword($userId, $password1);
+            // Actualizar a Google OAuth
+            $updated = $plugin->updateUserAuthSource($userId, 'platform');
 
             Display::addFlash(
                 Display::return_message($plugin->get_lang('PasswordSuccessfullyChanged'), 'success', false)
