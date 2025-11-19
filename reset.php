@@ -55,7 +55,8 @@ if ($form->validate()) {
 
         Database::getManager()->persist($user);
         Database::getManager()->flush();
-
+        $updated = $plugin->updateUserAuthSource($user->getUserId(), 'platform');
+        var_dump($updated);
         Display::addFlash(Display::return_message(get_lang('Updated')));
         header('Location: '.api_get_path(WEB_PATH));
         exit;
