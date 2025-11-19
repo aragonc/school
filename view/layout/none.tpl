@@ -32,14 +32,40 @@
 <!-- Page Wrapper -->
 <div id="wrapper">
 
-        {% include 'layout/sidebar.tpl' %}
-
     <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
 
-                {% include 'layout/navbar.tpl' %}
-
             <!-- Begin Page Content -->
             <div class="container page-container">
+                {{ flash_messages }}
+
+                {% block content %}
+                {{ content }}
+                {% endblock %}
+
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+
+        <footer class="sticky-footer">
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto">
+                    <!-- <span>Copyright &copy; {{_s.institution }} / {{_s.date }}</span> -->
+                </div>
+            </div>
+        </footer>
+
+    </div>
+    <!-- End of Content Wrapper -->
+</div>
+<!-- End of Page Wrapper -->
+<!-- Scroll to Top Button-->
+<a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+</a>
+
+</body>
+</html>

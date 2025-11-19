@@ -1,0 +1,185 @@
+.form_list legend {
+    font-size: 24px;
+    font-weight: 400;
+    color: #202124;
+    margin-bottom: 30px;
+    width: 100%;
+    border: none;
+    padding: 0;
+}
+
+/* Contenedor del input */
+#form_user_group {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+/* Label flotante */
+#form_user_group > label {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    color: #5f6368;
+    font-size: 14px;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    background-color: transparent;
+    z-index: 1;
+}
+
+/* Asterisco requerido */
+#form_user_group > label .form_required {
+    color: #d93025;
+}
+
+/* Estilo del input */
+#lost_password_user {
+    width: 100%;
+    padding: 13px 15px;
+    font-size: 16px;
+    border: 1px solid #dadce0 !important;
+    border-radius: 4px;
+    outline: none;
+    transition: all 0.2s ease;
+    background-color: transparent;
+    position: relative;
+    z-index: 0;
+    height: auto;
+}
+
+/* Input en focus */
+#lost_password_user:focus {
+    border: 2px solid #1a73e8 !important;
+    padding: 12px 14px;
+    box-shadow: none;
+}
+
+/* Label cuando el input tiene focus */
+#form_user_group:focus-within > label {
+    top: -8px;
+    left: 8px;
+    font-size: 12px;
+    color: #1a73e8;
+    background-color: #fff;
+    padding: 0 5px;
+}
+
+/* Clase para mantener el label arriba cuando hay contenido */
+#form_user_group.has-content > label {
+    top: -8px;
+    left: 8px;
+    font-size: 12px;
+    color: #1a73e8;
+    background-color: #fff;
+    padding: 0 5px;
+}
+
+#lost_password_submit {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    background-color: #737FE7;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#lost_password_submit:hover:not(.disabled) {
+    background-color: #737FE7;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+#lost_password_submit.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#lost_password_submit:not(.disabled):active {
+    transform: scale(0.98);
+}
+
+/* Ícono del botón */
+#lost_password_submit .fa {
+    font-size: 14px;
+}
+.text-register{
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #cdcdcd;
+}
+.element-center {
+    margin: 20px 0 0 0;
+    padding: 0;
+}
+.title {
+    font-size: 22px;
+    text-align: center;
+}
+.lost-password .help-block{
+    text-align: center;
+}
+
+.custom-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+}
+
+.custom-modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 30px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s;
+}
+
+.custom-modal-content h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.5em;
+}
+
+.custom-modal-content p {
+    color: #666;
+    line-height: 1.6;
+    margin: 20px 0;
+}
+
+.custom-modal-content button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

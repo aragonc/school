@@ -694,6 +694,13 @@ class SchoolPlugin extends Plugin
         $this->display($tpl);
     }
 
+    public function display_none_template()
+    {
+
+        $tpl = $this->twig->loadTemplate('layout/none.tpl');
+        $this->display($tpl);
+    }
+
     public function setSidebar($section = '')
     {
         $institution = api_get_setting('Institution');
