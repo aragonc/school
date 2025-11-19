@@ -9,7 +9,7 @@
     <title> {{_s.institution }} - {{_s.site_name }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ favicon }}">
     <!-- Custom fonts for this template-->
-    <link href="{{ assets }}/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="{{ _p.web }}/plugin/school/css/style-reset.css" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
           rel="stylesheet">
     <!-- Custom styles for this template-->
@@ -20,6 +20,8 @@
     {{ js_file_to_string }}
 
     {{ extra_headers }}
+
+    <link href="{{ assets }}/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
 
     {% if _s.language_interface %}
     <script src="{{ _p.web }}web/build/main.{{ _s.language_interface }}.js"></script>
@@ -49,18 +51,12 @@
             <!-- /.container-fluid -->
         </div>
         <!-- End of Main Content -->
-
-        <footer class="sticky-footer">
-            <div class="container my-auto">
-                <div class="copyright text-center my-auto">
-                    <!-- <span>Copyright &copy; {{_s.institution }} / {{_s.date }}</span> -->
-                </div>
-            </div>
-        </footer>
-
     </div>
     <!-- End of Content Wrapper -->
 </div>
+<section class="bar-bottom">
+    <div class="element-container"></div>
+</section>
 <!-- End of Page Wrapper -->
 <!-- Scroll to Top Button-->
 <a class="scroll-to-top rounded" href="#page-top">

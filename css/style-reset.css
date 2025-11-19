@@ -1,3 +1,22 @@
+body{
+    background-color: #e6e6e6 !important;
+    font-family: "Open Sans", Open Sans, serif;
+}
+.logo{
+    width:220px;
+}
+.ftco-section {
+    padding: 3em 0 3em 0;
+    display: block;
+}
+#wrapper #content-wrapper{
+    background-color: transparent !important;
+}
+.bar-bottom{
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
 .form_list legend {
     font-size: 24px;
     font-weight: 400;
@@ -166,6 +185,14 @@
     width: 100%;
     padding: 10px;
     margin-top: 10px;
+}
+.bar-bottom .element-container{
+    display: flex;
+    margin-right: auto;
+    margin-left: auto;
+    position: relative;
+    background-image: linear-gradient(90deg, #737fe7 50%, #4e4957 50%);
+    height: 15px;
 }
 
 @keyframes fadeIn {
