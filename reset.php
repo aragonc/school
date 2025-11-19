@@ -11,6 +11,7 @@ if (!ctype_alnum($token)) {
     $token = '';
 }
 
+
 // Build the form
 $form = new FormValidator('reset', 'POST', api_get_self().'?token='.$token);
 $form->addElement('header', get_lang('ResetPassword'));
