@@ -69,30 +69,31 @@ if ($enable) {
     $form->addRule('phone', get_lang('ThisFieldIsRequired'), 'required');
 
     // COUNTRY
-    $buy = '';
-    if (class_exists('BuyCoursesPlugin')) {
-        $buy = BuyCoursesPlugin::create();
-        $currencies = $buy->getCurrencies();
-        $listCountries = [];
-        $currencySelect = $form->addSelect(
-            'country',
-            [
-                get_lang('Country')
-            ],
-            [get_lang('Select')],
-            ['class' => 'form-control']
-        );
+    require_once __DIR__.'/src/countries_data.php';
 
-        foreach ($currencies as $currency) {
-            $currencyText = $currency['country_name'];
-            $currencyValue = $currency['country_code'];
-            $currencySelect->addOption($currencyText, $currencyValue);
-            if ($currency['status']) {
-                $currencySelect->setSelected($currencyValue);
-            }
-        }
-        $form->addRule('country', get_lang('ThisFieldIsRequired'), 'required');
+    $countries = getCountriesData(); // Obtener todos los países
+
+    $countrySelect = $form->addSelect(
+        'country',
+        [get_lang('Country')],
+        [get_lang('Select')],
+        ['class' => 'form-control']
+    );
+
+    // Agregar todos los países al select
+    foreach ($countries as $country) {
+        $countryText = $country['flag'] . ' ' . $country['name']; // 🇨🇱 Chile
+        $countryValue = $country['code']; // CL
+        $countrySelect->addOption($countryText, $countryValue);
     }
+
+    // Si el usuario ya tiene un país guardado, seleccionarlo
+    $userInfo = api_get_user_info();
+    if (!empty($userInfo['country'])) {
+        $countrySelect->setSelected($userInfo['country']);
+    }
+
+    $form->addRule('country', get_lang('ThisFieldIsRequired'), 'required');
 
     $extraField = new ExtraField('user');
     $return = $extraField->addElements(
