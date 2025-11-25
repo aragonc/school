@@ -35,16 +35,6 @@ switch ($action) {
         break;
 
     case 'update_password':
-        // Cargar traducciones
-        $language_file = __DIR__ . '/../lang/' . api_get_interface_language() . '.php';
-        if (file_exists($language_file)) {
-            include_once $language_file;
-        }
-
-        function get_plugin_lang($variable) {
-            global $strings;
-            return isset($strings[$variable]) ? $strings[$variable] : $variable;
-        }
 
         $response = [
             'success' => false,
@@ -54,84 +44,86 @@ switch ($action) {
         try {
             // Verificar que sea método POST
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception(get_plugin_lang('InvalidRequest'));
+                throw new Exception($plugin->get_lang('InvalidRequest'));
             }
 
-            // Obtener y validar token
+            // Obtener token y contraseñas
             $token = isset($_POST['token']) ? trim($_POST['token']) : '';
-            $validToken = isset($_SESSION['reset_password_token']) ? $_SESSION['reset_password_token'] : '';
-
-            if (empty($token) || $token !== $validToken) {
-                throw new Exception(get_plugin_lang('InvalidToken'));
-            }
-
-            // Obtener contraseñas
             $pass1 = isset($_POST['pass1']) ? trim($_POST['pass1']) : '';
             $pass2 = isset($_POST['pass2']) ? trim($_POST['pass2']) : '';
 
-            // Validaciones
+            // Validaciones básicas
+            if (empty($token)) {
+                throw new Exception($plugin->get_lang('InvalidToken'));
+            }
+
             if (empty($pass1) || empty($pass2)) {
-                throw new Exception(get_plugin_lang('PasswordFieldsCannotBeEmpty'));
+                throw new Exception($plugin->get_lang('PasswordFieldsCannotBeEmpty'));
             }
 
             if (strlen($pass1) < 8) {
-                throw new Exception(get_plugin_lang('PasswordMinLength'));
+                throw new Exception($plugin->get_lang('PasswordMinLength'));
             }
 
             if ($pass1 !== $pass2) {
-                throw new Exception(get_plugin_lang('PasswordsDoNotMatch'));
+                throw new Exception($plugin->get_lang('PasswordsDoNotMatch'));
             }
 
-            // Obtener ID de usuario desde la sesión
-            $userId = isset($_SESSION['reset_user_id']) ? (int)$_SESSION['reset_user_id'] : 0;
+            // Buscar usuario por token de confirmación
+            /** @var \Chamilo\UserBundle\Entity\User $user */
+            $user = UserManager::getManager()->findUserByConfirmationToken($token);
 
-            if ($userId <= 0) {
-                throw new Exception(get_plugin_lang('InvalidSession'));
+            if (!$user) {
+                throw new Exception($plugin->get_lang('InvalidToken'));
             }
 
-            // Verificar que el usuario existe
-            $userInfo = api_get_user_info($userId);
+            // Verificar que el token no haya expirado (tiempo en segundos)
+            $ttl = 86400; // 24 horas (puedes ajustar esto)
 
-            if (empty($userInfo)) {
-                throw new Exception(get_plugin_lang('UserNotFound'));
+            if (!$user->isPasswordRequestNonExpired($ttl)) {
+                throw new Exception($plugin->get_lang('LinkExpired'));
             }
 
-            // Encriptar la nueva contraseña
-            $hashedPassword = UserManager::encryptPassword($pass1);
+            // Actualizar la contraseña
+            $user->setPlainPassword($pass1);
 
-            // Actualizar contraseña en la base de datos
-            $tableName = Database::get_main_table(TABLE_MAIN_USER);
-            $sql = "UPDATE " . $tableName . "
-                    SET password = '" . Database::escape_string($hashedPassword) . "'
-                    WHERE user_id = " . (int)$userId;
+            // Obtener el UserManager
+            $userManager = UserManager::getManager();
+            $userManager->updateUser($user, true);
 
-            $result = Database::query($sql);
+            // Limpiar el token de confirmación y la fecha de solicitud
+            $user->setConfirmationToken(null);
+            $user->setPasswordRequestedAt(null);
 
-            if (!$result) {
-                throw new Exception(get_plugin_lang('PasswordUpdateFailed'));
-            }
-
-            // Actualización exitosa
+            // Persistir cambios con Doctrine
+            $em = Database::getManager();
+            $em->persist($user);
+            $em->flush();
+            $updated = $plugin->updateUserAuthSource($user->getUserId(), 'platform');
+            // Respuesta exitosa
             $response['success'] = true;
-            $response['message'] = get_plugin_lang('PasswordSuccessfullyChanged');
-
-            // Limpiar datos de sesión
-            unset($_SESSION['reset_password_token']);
-            unset($_SESSION['reset_user_id']);
+            $response['message'] = $plugin->get_lang('PasswordSuccessfullyChanged');
 
             // Log de auditoría
-            error_log("Password successfully changed for user ID: {$userId} (Username: {$userInfo['username']})");
+            error_log(sprintf(
+                "Password successfully changed for user ID: %d (Username: %s, Email: %s)",
+                $user->getId(),
+                $user->getUsername(),
+                $user->getEmail()
+            ));
 
-            // Registrar en tabla de log si existe
-            Event::addEvent(
-                LOG_USER_PASSWORD_UPDATE,
-                LOG_USER_ID,
-                $userId,
-                api_get_utc_datetime(),
-                api_get_user_id(),
-                null,
-                null
-            );
+            // Registrar evento en Chamilo (si existe la función)
+            if (function_exists('Event::addEvent')) {
+                Event::addEvent(
+                    LOG_USER_PASSWORD_UPDATE,
+                    LOG_USER_ID,
+                    $user->getId(),
+                    api_get_utc_datetime(),
+                    null,
+                    null,
+                    null
+                );
+            }
 
         } catch (Exception $e) {
             $response['success'] = false;
@@ -144,7 +136,6 @@ switch ($action) {
         // Enviar respuesta JSON
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($response, JSON_UNESCAPED_UNICODE);
-        exit;
         break;
 
     default:
