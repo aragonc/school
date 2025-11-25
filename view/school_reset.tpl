@@ -15,7 +15,7 @@
         left: 16px;
         top: 16px;
         color: #5f6368;
-        font-size: 16px;
+        font-size: 13px;
         font-weight: normal;
         pointer-events: none;
         transition: all 0.2s ease;
@@ -59,11 +59,15 @@
         padding: 0 4px;
     }
 
-    /* Asterisco requerido */
+    /* Asterisco requerido  */
     .form-group .form_required {
         color: #d93025;
     }
 
+    .form-group .btn-primary{
+        background-color: #737FE7;
+        border: 1px solid #737FE7;
+    }
     /* Botón de mostrar/ocultar contraseña (inyectado con JS) */
     .toggle-password-btn {
         position: absolute;
@@ -155,13 +159,121 @@
         </div>
     </div>
 </section>
+
+<!-- Modal de Error -->
+<div id="errorModal" class="custom-error-modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <svg class="modal-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <h3 class="modal-title" id="modalTitle"></h3>
+        </div>
+        <div class="modal-body">
+            <p id="modalMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-modal-close" id="btnCloseModal">
+                <span id="btnCloseText">{{ 'Accept'|get_plugin_lang('SchoolPlugin') }}</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+
 <script>
+
+    const LANG_STRINGS = {
+        validationError: "{{ 'ValidationError'|get_plugin_lang('SchoolPlugin') }}",
+        passwordFieldsEmpty: "{{ 'PasswordFieldsCannotBeEmpty'|get_plugin_lang('SchoolPlugin') }}",
+        passwordsDoNotMatch: "{{ 'PasswordsDoNotMatch'|get_plugin_lang('SchoolPlugin') }}",
+        passwordMinLength: "{{ 'PasswordMinLength'|get_plugin_lang('SchoolPlugin') }}",
+        passwordSuccess: "{{ 'PasswordSuccessfullyChanged'|get_plugin_lang('SchoolPlugin') }}",
+        passwordFailed: "{{ 'PasswordUpdateFailed'|get_plugin_lang('SchoolPlugin') }}",
+        accept: "{{ 'Accept'|get_plugin_lang('SchoolPlugin') }}",
+        close: "{{ 'Close'|get_plugin_lang('SchoolPlugin') }}"
+    };
+
+    function showErrorModal(title, message) {
+        const modal = document.getElementById('errorModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const btnCloseText = document.getElementById('btnCloseText');
+
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        btnCloseText.textContent = LANG_STRINGS.accept;
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(() => {
+            document.getElementById('btnCloseModal').focus();
+        }, 100);
+    }
+
+    function showSuccessModal(message) {
+        const modal = document.getElementById('errorModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const btnCloseText = document.getElementById('btnCloseText');
+        const modalIcon = modal.querySelector('.modal-icon');
+
+        modalTitle.textContent = '✓ ' + LANG_STRINGS.passwordSuccess;
+        modalMessage.textContent = message || LANG_STRINGS.passwordSuccess;
+        btnCloseText.textContent = LANG_STRINGS.accept;
+
+        // Cambiar color del icono a verde
+        modalIcon.style.fill = '#0f9d58';
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(() => {
+            document.getElementById('btnCloseModal').focus();
+        }, 100);
+    }
+
+    function closeErrorModal() {
+        const modal = document.getElementById('errorModal');
+        const modalIcon = modal.querySelector('.modal-icon');
+
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+
+        // Restaurar color rojo del icono
+        modalIcon.style.fill = '#d93025';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
 
         // ==========================================
-        // AGREGAR BOTONES DE MOSTRAR/OCULTAR CONTRASEÑA
+        // EVENTOS DEL MODAL
         // ==========================================
 
+        const btnClose = document.getElementById('btnCloseModal');
+        if (btnClose) {
+            btnClose.addEventListener('click', closeErrorModal);
+        }
+
+        const modal = document.getElementById('errorModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal-overlay')) {
+                    closeErrorModal();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('errorModal');
+                if (modal && modal.style.display === 'flex') {
+                    closeErrorModal();
+                }
+            }
+        });
         // Buscar todos los inputs de contraseña
         const passwordInputs = document.querySelectorAll('input[type="password"]');
 
@@ -263,22 +375,32 @@
 
                 let isValid = true;
 
-                // Validar longitud mínima
-                if (pass1 && pass1.value.length < 8) {
-                    pass1.closest('.form-group').classList.add('has-error');
-                    alert('La contraseña debe tener al menos 8 caracteres');
+                // Validar que los campos no estén vacíos
+                if (!pass1 || !pass1.value.trim()) {
+                    if (pass1) pass1.closest('.form-group').classList.add('has-error');
+                    errorMessage = "{{ 'PasswordFieldsCannotBeEmpty'|get_plugin_lang('SchoolPlugin') }}";
                     isValid = false;
                 }
-
+                // Validar longitud mínima
+                else if (pass1.value.length < 8) {
+                    pass1.closest('.form-group').classList.add('has-error');
+                    errorMessage = "{{ 'PasswordMinLength'|get_plugin_lang('SchoolPlugin') }}";
+                    isValid = false;
+                }
                 // Validar que coincidan
-                if (pass1 && pass2 && pass1.value !== pass2.value) {
+                else if (pass1.value !== pass2.value) {
                     pass2.closest('.form-group').classList.add('has-error');
-                    alert('Las contraseñas no coinciden');
+                    errorMessage = "{{ 'PasswordsDoNotMatch'|get_plugin_lang('SchoolPlugin') }}";
                     isValid = false;
                 }
 
                 if (!isValid) {
                     e.preventDefault();
+                    showErrorModal(
+                        "{{ 'ValidationError'|get_plugin_lang('SchoolPlugin') }}",
+                        errorMessage
+                    );
+                    return false;
                 }
             });
         }
