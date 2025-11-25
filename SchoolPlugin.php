@@ -2227,4 +2227,15 @@ class SchoolPlugin extends Plugin
 
         return getCountriesData();
     }
+    public function registerCountryUser($idUser, $idCountry): void
+    {
+        $userTable = Database::get_main_table(
+            TABLE_MAIN_USER
+        );
+        Database::update(
+            $userTable,
+            ['country' => $idCountry],
+            ['id = ?' => (int)$idUser]
+        );
+    }
 }

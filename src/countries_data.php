@@ -6,6 +6,22 @@
 
 function getCountriesData() {
     $countries = [
+        // ==========================================
+        // PAÍSES SUDAMERICANOS HISPANOHABLANTES
+        // ==========================================
+        ['code' => 'CL', 'name' => 'Chile', 'flag' => '🇨🇱'],
+        ['code' => 'AR', 'name' => 'Argentina', 'flag' => '🇦🇷'],
+        ['code' => 'BO', 'name' => 'Bolivia', 'flag' => '🇧🇴'],
+        ['code' => 'CO', 'name' => 'Colombia', 'flag' => '🇨🇴'],
+        ['code' => 'EC', 'name' => 'Ecuador', 'flag' => '🇪🇨'],
+        ['code' => 'PY', 'name' => 'Paraguay', 'flag' => '🇵🇾'],
+        ['code' => 'PE', 'name' => 'Perú', 'flag' => '🇵🇪'],
+        ['code' => 'UY', 'name' => 'Uruguay', 'flag' => '🇺🇾'],
+        ['code' => 'VE', 'name' => 'Venezuela', 'flag' => '🇻🇪'],
+
+        // ==========================================
+        // RESTO DE PAÍSES (orden alfabético)
+        // ==========================================
         ['code' => 'AF', 'name' => 'Afganistán', 'flag' => '🇦🇫'],
         ['code' => 'AL', 'name' => 'Albania', 'flag' => '🇦🇱'],
         ['code' => 'DE', 'name' => 'Alemania', 'flag' => '🇩🇪'],
@@ -16,7 +32,6 @@ function getCountriesData() {
         ['code' => 'AG', 'name' => 'Antigua y Barbuda', 'flag' => '🇦🇬'],
         ['code' => 'SA', 'name' => 'Arabia Saudita', 'flag' => '🇸🇦'],
         ['code' => 'DZ', 'name' => 'Argelia', 'flag' => '🇩🇿'],
-        ['code' => 'AR', 'name' => 'Argentina', 'flag' => '🇦🇷'],
         ['code' => 'AM', 'name' => 'Armenia', 'flag' => '🇦🇲'],
         ['code' => 'AW', 'name' => 'Aruba', 'flag' => '🇦🇼'],
         ['code' => 'AU', 'name' => 'Australia', 'flag' => '🇦🇺'],
@@ -31,7 +46,6 @@ function getCountriesData() {
         ['code' => 'BJ', 'name' => 'Benín', 'flag' => '🇧🇯'],
         ['code' => 'BM', 'name' => 'Bermudas', 'flag' => '🇧🇲'],
         ['code' => 'BY', 'name' => 'Bielorrusia', 'flag' => '🇧🇾'],
-        ['code' => 'BO', 'name' => 'Bolivia', 'flag' => '🇧🇴'],
         ['code' => 'BA', 'name' => 'Bosnia y Herzegovina', 'flag' => '🇧🇦'],
         ['code' => 'BW', 'name' => 'Botsuana', 'flag' => '🇧🇼'],
         ['code' => 'BR', 'name' => 'Brasil', 'flag' => '🇧🇷'],
@@ -46,10 +60,8 @@ function getCountriesData() {
         ['code' => 'CA', 'name' => 'Canadá', 'flag' => '🇨🇦'],
         ['code' => 'QA', 'name' => 'Catar', 'flag' => '🇶🇦'],
         ['code' => 'TD', 'name' => 'Chad', 'flag' => '🇹🇩'],
-        ['code' => 'CL', 'name' => 'Chile', 'flag' => '🇨🇱'],
         ['code' => 'CN', 'name' => 'China', 'flag' => '🇨🇳'],
         ['code' => 'CY', 'name' => 'Chipre', 'flag' => '🇨🇾'],
-        ['code' => 'CO', 'name' => 'Colombia', 'flag' => '🇨🇴'],
         ['code' => 'KM', 'name' => 'Comoras', 'flag' => '🇰🇲'],
         ['code' => 'CG', 'name' => 'Congo', 'flag' => '🇨🇬'],
         ['code' => 'CD', 'name' => 'Congo (Rep. Democrática)', 'flag' => '🇨🇩'],
@@ -62,7 +74,6 @@ function getCountriesData() {
         ['code' => 'CW', 'name' => 'Curazao', 'flag' => '🇨🇼'],
         ['code' => 'DK', 'name' => 'Dinamarca', 'flag' => '🇩🇰'],
         ['code' => 'DM', 'name' => 'Dominica', 'flag' => '🇩🇲'],
-        ['code' => 'EC', 'name' => 'Ecuador', 'flag' => '🇪🇨'],
         ['code' => 'EG', 'name' => 'Egipto', 'flag' => '🇪🇬'],
         ['code' => 'SV', 'name' => 'El Salvador', 'flag' => '🇸🇻'],
         ['code' => 'AE', 'name' => 'Emiratos Árabes Unidos', 'flag' => '🇦🇪'],
@@ -182,8 +193,6 @@ function getCountriesData() {
         ['code' => 'PS', 'name' => 'Palestina', 'flag' => '🇵🇸'],
         ['code' => 'PA', 'name' => 'Panamá', 'flag' => '🇵🇦'],
         ['code' => 'PG', 'name' => 'Papúa Nueva Guinea', 'flag' => '🇵🇬'],
-        ['code' => 'PY', 'name' => 'Paraguay', 'flag' => '🇵🇾'],
-        ['code' => 'PE', 'name' => 'Perú', 'flag' => '🇵🇪'],
         ['code' => 'PF', 'name' => 'Polinesia Francesa', 'flag' => '🇵🇫'],
         ['code' => 'PL', 'name' => 'Polonia', 'flag' => '🇵🇱'],
         ['code' => 'PT', 'name' => 'Portugal', 'flag' => '🇵🇹'],
@@ -242,22 +251,15 @@ function getCountriesData() {
         ['code' => 'TV', 'name' => 'Tuvalu', 'flag' => '🇹🇻'],
         ['code' => 'UA', 'name' => 'Ucrania', 'flag' => '🇺🇦'],
         ['code' => 'UG', 'name' => 'Uganda', 'flag' => '🇺🇬'],
-        ['code' => 'UY', 'name' => 'Uruguay', 'flag' => '🇺🇾'],
         ['code' => 'UZ', 'name' => 'Uzbekistán', 'flag' => '🇺🇿'],
         ['code' => 'VU', 'name' => 'Vanuatu', 'flag' => '🇻🇺'],
         ['code' => 'VA', 'name' => 'Vaticano', 'flag' => '🇻🇦'],
-        ['code' => 'VE', 'name' => 'Venezuela', 'flag' => '🇻🇪'],
         ['code' => 'VN', 'name' => 'Vietnam', 'flag' => '🇻🇳'],
         ['code' => 'WF', 'name' => 'Wallis y Futuna', 'flag' => '🇼🇫'],
         ['code' => 'YE', 'name' => 'Yemen', 'flag' => '🇾🇪'],
         ['code' => 'DJ', 'name' => 'Yibuti', 'flag' => '🇩🇯'],
         ['code' => 'ZM', 'name' => 'Zambia', 'flag' => '🇿🇲'],
-        ['code' => 'ZW', 'name' => 'Zimbabue', 'flag' => '🇿🇼'],
-
-        // ==========================================
-        // OPCIÓN "OTROS" AL FINAL
-        // ==========================================
-        ['code' => 'OTHER', 'name' => 'Otro', 'flag' => '🌍'],
+        ['code' => 'ZW', 'name' => 'Zimbabue', 'flag' => '🇿🇼']
     ];
 
     return $countries;
