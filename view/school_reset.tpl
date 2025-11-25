@@ -213,7 +213,7 @@
 <script>
 
     const LANG_STRINGS = {
-        validationError: "{{ 'ValidationError'|get_plugin_lang('SchoolPlugin') }}",
+        validationError: "",
         passwordFieldsEmpty: "{{ 'PasswordFieldsCannotBeEmpty'|get_plugin_lang('SchoolPlugin') }}",
         passwordsDoNotMatch: "{{ 'PasswordsDoNotMatch'|get_plugin_lang('SchoolPlugin') }}",
         passwordMinLength: "{{ 'PasswordMinLength'|get_plugin_lang('SchoolPlugin') }}",
@@ -259,7 +259,7 @@
         document.body.style.overflow = '';
 
         // Restaurar color rojo del icono
-        modalIcon.style.fill = '#d93025';
+        modalIcon.style.fill = '#E9A306';
     }
 
     function closeSuccessModal() {
@@ -477,7 +477,7 @@
                     isValid = false;
                 }
                 // Validar longitud mínima
-                else if (pass1.value.length < 8) {
+                else if (pass1.value.length <= 4) {
                     pass1.closest('.form-group').classList.add('has-error');
                     errorMessage = LANG_STRINGS.passwordMinLength;
                     isValid = false;
