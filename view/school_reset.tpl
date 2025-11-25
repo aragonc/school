@@ -143,7 +143,6 @@
                                 <div class="text-center">
                                     <img src="{{ _p.web }}plugin/school/img/icons/locked_icon.svg" alt="" width="128px" height="128px">
                                 </div>
-                                {{ flash_messages }}
                                 <h2 class="title">
                                     <span>Actualiza</span> tu contraseña
                                 </h2>
