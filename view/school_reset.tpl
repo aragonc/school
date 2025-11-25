@@ -477,7 +477,7 @@
                     isValid = false;
                 }
                 // Validar longitud mínima
-                else if (pass1.value.length <= 4) {
+                else if (pass1.value.length < 4) {
                     pass1.closest('.form-group').classList.add('has-error');
                     errorMessage = LANG_STRINGS.passwordMinLength;
                     isValid = false;

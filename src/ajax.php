@@ -61,7 +61,7 @@ switch ($action) {
                 throw new Exception($plugin->get_lang('PasswordFieldsCannotBeEmpty'));
             }
 
-            if (strlen($pass1) <= 4) {
+            if (strlen($pass1) < 4) {
                 throw new Exception($plugin->get_lang('PasswordMinLength'));
             }
 
