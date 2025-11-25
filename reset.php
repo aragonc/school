@@ -12,8 +12,8 @@ if (!ctype_alnum($token)) {
 }
 
 // Build the form
-$form = new FormValidator('reset', 'POST', api_get_self().'?token='.$token);
-$form->addElement('header', get_lang('ResetPassword'));
+$form = new FormValidator('reset', 'POST', api_get_self().'?token='.$token,'',[],FormValidator::LAYOUT_BOX_NO_LABEL);
+//$form->addElement('header', get_lang('ResetPassword'));
 $form->addHidden('token', $token);
 $form->addElement('password', 'pass1', get_lang('Password'));
 $form->addElement(
@@ -25,7 +25,7 @@ $form->addElement(
 $form->addRule('pass1', get_lang('ThisFieldIsRequired'), 'required');
 $form->addRule('pass2', get_lang('ThisFieldIsRequired'), 'required');
 $form->addRule(['pass1', 'pass2'], get_lang('PassTwo'), 'compare');
-$form->addButtonSave(get_lang('Update'));
+$form->addButton('update',get_lang('ResetPassword'),'','primary','large', 'btn-block');
 
 $ttl = api_get_setting('user_reset_password_token_limit');
 if (empty($ttl)) {
@@ -56,7 +56,6 @@ if ($form->validate()) {
         Database::getManager()->persist($user);
         Database::getManager()->flush();
         $updated = $plugin->updateUserAuthSource($user->getUserId(), 'platform');
-        var_dump($updated);
         Display::addFlash(Display::return_message(get_lang('Updated')));
         header('Location: '.api_get_path(WEB_PATH));
         exit;

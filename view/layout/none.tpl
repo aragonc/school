@@ -8,11 +8,7 @@
     <meta name="author" content="">
     <title> {{_s.institution }} - {{_s.site_name }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ favicon }}">
-    <!-- Custom fonts for this template-->
-    <link href="{{ _p.web }}/plugin/school/css/style-reset.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-          rel="stylesheet">
-    <!-- Custom styles for this template-->
+
     {{ css_files }}
 
     {{ js_files }}
@@ -22,7 +18,9 @@
     {{ extra_headers }}
 
     <link href="{{ assets }}/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-
+    <!-- Custom fonts for this template-->
+    <link href="{{ _p.web }}/plugin/school/css/style-reset.css" rel="stylesheet" type="text/css">
+    <!-- Custom styles for this template-->
     {% if _s.language_interface %}
     <script src="{{ _p.web }}web/build/main.{{ _s.language_interface }}.js"></script>
     {% else %}{# language_interface *should* always be defined, so we should never come here #}
@@ -41,12 +39,9 @@
 
             <!-- Begin Page Content -->
             <div class="container page-container">
-                {{ flash_messages }}
-
                 {% block content %}
                 {{ content }}
                 {% endblock %}
-
             </div>
             <!-- /.container-fluid -->
         </div>

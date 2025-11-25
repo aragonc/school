@@ -1,6 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 body{
     background-color: #e6e6e6 !important;
-    font-family: "Open Sans", Open Sans, serif;
+    font-family: "Open Sans", sans-serif; !important;
+    color: #212529;
+}
+.title {
+    font-size: 22px;
+    text-align: center;
+    font-weight: 800;
+    padding: 0;
+    margin: 10px 0;
+    color: #737FE7;
+}
+.title span{
+    color: #4e4957;
+}
+.help-block
+{
+    text-align: center !important;
+    font-size: 12px !important;
+    padding: 0 !important;
 }
 .logo{
     width:220px;
@@ -137,13 +156,6 @@ body{
 .element-center {
     margin: 20px 0 0 0;
     padding: 0;
-}
-.title {
-    font-size: 22px;
-    text-align: center;
-}
-.lost-password .help-block{
-    text-align: center;
 }
 
 .custom-modal {
