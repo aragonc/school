@@ -28,7 +28,7 @@ if ($enable) {
             error_log("Perfil completo para usuario $userId");
         }
     }
-
+    $countries = $plugin->getCountriesData();
     $sessionsCategories = $plugin->getSessionsByCategory($userId);
     $countCourses = $sessionsCategories['total'];
     $countHistory = $plugin->getSessionsByCategoryCount($userId, true);
@@ -40,13 +40,14 @@ if ($enable) {
     $plugin->assign('total', $countHistory);
     $plugin->assign('show_profile_completion_modal', $showProfileCompletionModal);
     $plugin->assign('current_profile_data', $currentProfileData);
-
     $plugin->setTitle($plugin->get_lang('MyTrainings'));
     if($total > 0){
         $plugin->assign('total_courses', $countCourses);
         $plugin->assign('total_history', $countHistory);
+        $plugin->assign('countries', $countries);
         $content = $plugin->fetch('school_dashboard.tpl');
     } else {
+        $plugin->assign('countries', $countries);
         $content = $plugin->fetch('school_none.tpl');
     }
     $plugin->assign('content', $content);

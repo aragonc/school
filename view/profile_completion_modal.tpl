@@ -62,29 +62,12 @@
                             País
                             <span class="text-danger">*</span>
                         </label>
+
                         <select class="form-control form-control-lg" id="country" name="country" required>
                             <option value="">-- Selecciona tu país --</option>
-                            <option value="CL" {% if current_profile_data.country == 'CL' %}selected{% endif %}>🇨🇱 Chile</option>
-                            <option value="AR" {% if current_profile_data.country == 'AR' %}selected{% endif %}>🇦🇷 Argentina</option>
-                            <option value="BO" {% if current_profile_data.country == 'BO' %}selected{% endif %}>🇧🇴 Bolivia</option>
-                            <option value="BR" {% if current_profile_data.country == 'BR' %}selected{% endif %}>🇧🇷 Brasil</option>
-                            <option value="CO" {% if current_profile_data.country == 'CO' %}selected{% endif %}>🇨🇴 Colombia</option>
-                            <option value="CR" {% if current_profile_data.country == 'CR' %}selected{% endif %}>🇨🇷 Costa Rica</option>
-                            <option value="EC" {% if current_profile_data.country == 'EC' %}selected{% endif %}>🇪🇨 Ecuador</option>
-                            <option value="SV" {% if current_profile_data.country == 'SV' %}selected{% endif %}>🇸🇻 El Salvador</option>
-                            <option value="GT" {% if current_profile_data.country == 'GT' %}selected{% endif %}>🇬🇹 Guatemala</option>
-                            <option value="HN" {% if current_profile_data.country == 'HN' %}selected{% endif %}>🇭🇳 Honduras</option>
-                            <option value="MX" {% if current_profile_data.country == 'MX' %}selected{% endif %}>🇲🇽 México</option>
-                            <option value="NI" {% if current_profile_data.country == 'NI' %}selected{% endif %}>🇳🇮 Nicaragua</option>
-                            <option value="PA" {% if current_profile_data.country == 'PA' %}selected{% endif %}>🇵🇦 Panamá</option>
-                            <option value="PY" {% if current_profile_data.country == 'PY' %}selected{% endif %}>🇵🇾 Paraguay</option>
-                            <option value="PE" {% if current_profile_data.country == 'PE' %}selected{% endif %}>🇵🇪 Perú</option>
-                            <option value="DO" {% if current_profile_data.country == 'DO' %}selected{% endif %}>🇩🇴 República Dominicana</option>
-                            <option value="UY" {% if current_profile_data.country == 'UY' %}selected{% endif %}>🇺🇾 Uruguay</option>
-                            <option value="VE" {% if current_profile_data.country == 'VE' %}selected{% endif %}>🇻🇪 Venezuela</option>
-                            <option value="ES" {% if current_profile_data.country == 'ES' %}selected{% endif %}>🇪🇸 España</option>
-                            <option value="US" {% if current_profile_data.country == 'US' %}selected{% endif %}>🇺🇸 Estados Unidos</option>
-                            <option value="OTHER">🌍 Otro</option>
+                            {% for country in countries %}
+                            <option value="{{ country.code }}" {% if current_profile_data.country == '{{ country.code }}' %} selected{% endif %}>{{ country.flag }} {{ country.name }}</option>
+                            {% endfor %}
                         </select>
                         <small class="form-text text-muted">
                             Selecciona tu país para mostrar el campo de identificación correspondiente
@@ -106,7 +89,7 @@
                                value="{{ current_profile_data.rut }}"
                                maxlength="10">
                         <small class="form-text text-muted">
-                            Ingresa tu RUT sin puntos y con guión. Ejemplo: <strong>11223344-K</strong>
+                            Ingresa tu RUN sin puntos y con guión. Ejemplo: <strong>11223344-K</strong>
                         </small>
                     </div>
 
