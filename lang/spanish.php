@@ -148,5 +148,13 @@ $strings['PasswordsDoNotMatch'] = 'Las contraseñas no coinciden';
 $strings['PasswordMinLength'] = 'La contraseña debe tener al menos 8 caracteres';
 $strings['PasswordSuccessfullyChanged'] = 'La contraseña ha sido cambiada exitosamente';
 $strings['PasswordUpdateFailed'] = 'Error al actualizar la contraseña. Por favor, inténtelo de nuevo';
+$strings['PasswordSuccessTitle'] = 'Contraseña actualizada';
+$strings['PasswordSuccessMessage'] = 'Tu contraseña de acceso al aula virtual se ha actualizado correctamente.';
+$strings['GoToLogin'] = 'Ir al aula virtual';
+$strings['Processing'] = 'Procesando...';
 $strings['Accept'] = 'Aceptar';
 $strings['Close'] = 'Cerrar';
+$strings['InvalidToken'] = 'Token de seguridad inválido';
+$strings['InvalidSession'] = 'Sesión inválida';
+$strings['UserNotFound'] = 'Usuario no encontrado';
+

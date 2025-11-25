@@ -181,6 +181,35 @@
     </div>
 </div>
 
+<!-- Modal de Éxito -->
+<div id="successModal" class="custom-success-modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <svg class="modal-icon-success" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <h3 class="modal-title" id="successModalTitle"></h3>
+        </div>
+        <div class="modal-body">
+            <p id="successModalMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-modal-primary btn-block" id="btnGoToLogin">
+                <span id="btnGoToLoginText"></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p id="loadingText">{{ 'Processing'|get_plugin_lang('SchoolPlugin') }}</p>
+    </div>
+</div>
+
 
 <script>
 
@@ -189,50 +218,38 @@
         passwordFieldsEmpty: "{{ 'PasswordFieldsCannotBeEmpty'|get_plugin_lang('SchoolPlugin') }}",
         passwordsDoNotMatch: "{{ 'PasswordsDoNotMatch'|get_plugin_lang('SchoolPlugin') }}",
         passwordMinLength: "{{ 'PasswordMinLength'|get_plugin_lang('SchoolPlugin') }}",
+        passwordSuccessTitle: "{{ 'PasswordSuccessTitle'|get_plugin_lang('SchoolPlugin') }}",
         passwordSuccess: "{{ 'PasswordSuccessfullyChanged'|get_plugin_lang('SchoolPlugin') }}",
         passwordFailed: "{{ 'PasswordUpdateFailed'|get_plugin_lang('SchoolPlugin') }}",
         accept: "{{ 'Accept'|get_plugin_lang('SchoolPlugin') }}",
-        close: "{{ 'Close'|get_plugin_lang('SchoolPlugin') }}"
+        close: "{{ 'Close'|get_plugin_lang('SchoolPlugin') }}",
+        processing: "{{ 'Processing'|get_plugin_lang('SchoolPlugin') }}",
+        goToLogin: "{{ 'GoToLogin'|get_plugin_lang('SchoolPlugin') }}",
     };
+
+    // URL del endpoint AJAX
+    const AJAX_URL = "{{ _p.web_plugin }}school/src/ajax.php";
+    const LOGIN_URL = "{{ _p.web }}";
+
 
     function showErrorModal(title, message) {
         const modal = document.getElementById('errorModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalMessage = document.getElementById('modalMessage');
-        const btnCloseText = document.getElementById('btnCloseText');
-
-        modalTitle.textContent = title;
-        modalMessage.textContent = message;
-        btnCloseText.textContent = LANG_STRINGS.accept;
-
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalMessage').textContent = message;
+        document.getElementById('btnCloseText').textContent = LANG_STRINGS.accept;
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-
-        setTimeout(() => {
-            document.getElementById('btnCloseModal').focus();
-        }, 100);
+        setTimeout(() => document.getElementById('btnCloseModal').focus(), 100);
     }
 
-    function showSuccessModal(message) {
-        const modal = document.getElementById('errorModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalMessage = document.getElementById('modalMessage');
-        const btnCloseText = document.getElementById('btnCloseText');
-        const modalIcon = modal.querySelector('.modal-icon');
-
-        modalTitle.textContent = '✓ ' + LANG_STRINGS.passwordSuccess;
-        modalMessage.textContent = message || LANG_STRINGS.passwordSuccess;
-        btnCloseText.textContent = LANG_STRINGS.accept;
-
-        // Cambiar color del icono a verde
-        modalIcon.style.fill = '#0f9d58';
-
+    function showSuccessModal(title, message) {
+        const modal = document.getElementById('successModal');
+        document.getElementById('successModalTitle').textContent = title;
+        document.getElementById('successModalMessage').textContent = message;
+        document.getElementById('btnGoToLoginText').textContent = LANG_STRINGS.goToLogin;
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-
-        setTimeout(() => {
-            document.getElementById('btnCloseModal').focus();
-        }, 100);
+        setTimeout(() => document.getElementById('btnGoToLogin').focus(), 100);
     }
 
     function closeErrorModal() {
@@ -244,6 +261,70 @@
 
         // Restaurar color rojo del icono
         modalIcon.style.fill = '#d93025';
+    }
+
+    function closeSuccessModal() {
+        document.getElementById('successModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // ==========================================
+    // FUNCIONES DE LOADING
+    // ==========================================
+
+    function showLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        document.getElementById('loadingText').textContent = LANG_STRINGS.processing;
+        loadingOverlay.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function updatePassword(formData) {
+        showLoading();
+
+        // Agregar el action al FormData
+        formData.append('action', 'update_password');
+
+        // Usar fetch API
+        fetch(AJAX_URL, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin' // Importante para enviar cookies de sesión
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+
+                if (data.success) {
+                    // Mostrar modal de éxito
+                    showSuccessModal(
+                        LANG_STRINGS.passwordSuccessTitle,
+                        LANG_STRINGS.passwordSuccess
+                    );
+                } else {
+                    // Mostrar modal de error con el mensaje del servidor
+                    showErrorModal(
+                        LANG_STRINGS.validationError,
+                        data.message || LANG_STRINGS.passwordFailed
+                    );
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showErrorModal(
+                    LANG_STRINGS.validationError,
+                    LANG_STRINGS.passwordFailed
+                );
+            });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -263,6 +344,14 @@
                 if (e.target.classList.contains('modal-overlay')) {
                     closeErrorModal();
                 }
+            });
+        }
+
+        // Modal de éxito
+        const btnGoToLogin = document.getElementById('btnGoToLogin');
+        if (btnGoToLogin) {
+            btnGoToLogin.addEventListener('click', function() {
+                window.location.href = LOGIN_URL;
             });
         }
 
@@ -365,6 +454,7 @@
         const form = document.getElementById('reset');
         if (form) {
             form.addEventListener('submit', function(e) {
+                e.preventDefault();
                 const pass1 = document.getElementById('reset_pass1');
                 const pass2 = document.getElementById('pass2');
 
@@ -374,34 +464,39 @@
                 });
 
                 let isValid = true;
+                let errorMessage = '';
 
                 // Validar que los campos no estén vacíos
                 if (!pass1 || !pass1.value.trim()) {
                     if (pass1) pass1.closest('.form-group').classList.add('has-error');
-                    errorMessage = "{{ 'PasswordFieldsCannotBeEmpty'|get_plugin_lang('SchoolPlugin') }}";
+                    errorMessage = LANG_STRINGS.passwordFieldsEmpty;
+                    isValid = false;
+                }
+                else if (!pass2 || !pass2.value.trim()) {
+                    if (pass2) pass2.closest('.form-group').classList.add('has-error');
+                    errorMessage = LANG_STRINGS.passwordFieldsEmpty;
                     isValid = false;
                 }
                 // Validar longitud mínima
                 else if (pass1.value.length < 8) {
                     pass1.closest('.form-group').classList.add('has-error');
-                    errorMessage = "{{ 'PasswordMinLength'|get_plugin_lang('SchoolPlugin') }}";
+                    errorMessage = LANG_STRINGS.passwordMinLength;
                     isValid = false;
                 }
                 // Validar que coincidan
                 else if (pass1.value !== pass2.value) {
                     pass2.closest('.form-group').classList.add('has-error');
-                    errorMessage = "{{ 'PasswordsDoNotMatch'|get_plugin_lang('SchoolPlugin') }}";
+                    errorMessage = LANG_STRINGS.passwordsDoNotMatch;
                     isValid = false;
                 }
 
                 if (!isValid) {
-                    e.preventDefault();
-                    showErrorModal(
-                        "{{ 'ValidationError'|get_plugin_lang('SchoolPlugin') }}",
-                        errorMessage
-                    );
+                    showErrorModal(LANG_STRINGS.validationError, errorMessage);
                     return false;
                 }
+                // Si la validación pasa, enviar formulario con AJAX
+                const formData = new FormData(form);
+                updatePassword(formData);
             });
         }
     });
