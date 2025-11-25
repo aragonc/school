@@ -2218,4 +2218,13 @@ class SchoolPlugin extends Plugin
         $this->setSidebar('dashboard');
         return $this->fetch('layout/footer.tpl');
     }
+
+    public  function getCountriesData(): array
+    {
+        require_once __DIR__.'/src/countries_data.php';
+
+        // Obtener todos los países
+
+        return getCountriesData();
+    }
 }
