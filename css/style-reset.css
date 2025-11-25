@@ -240,7 +240,7 @@ body{
 }
 
 .custom-error-modal .modal-header {
-    padding: 24px 24px 16px 24px;
+    padding: 16px 16px 10px 16px;
     display: flex;
     align-items: flex-start;
     gap: 16px;
@@ -263,7 +263,7 @@ body{
 }
 
 .custom-error-modal .modal-body {
-    padding: 0 24px 24px 64px;
+    padding: 20px;
 }
 
 .custom-error-modal .modal-body p {
@@ -282,7 +282,7 @@ body{
 
 .custom-error-modal .btn-modal-close {
     padding: 10px 24px;
-    background-color: #1a73e8;
+    background-color: #737FE7;
     color: white;
     border: none;
     border-radius: 4px;

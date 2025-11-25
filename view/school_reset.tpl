@@ -136,8 +136,8 @@
         </div>
         <div class="row justify-content-center">
             <div class="col-md-12 col-lg-6">
-                <div class="wrap d-md-flex card">
-                    <div class="card-body py-4 px-5">
+                <div class="wrap d-md-flex card" style="border-radius: 20px;">
+                    <div class="card-body py-4 px-5" >
                         <div class="login-wrap lost-password">
                             <div class="padding-login">
                                 <div class="text-center">
@@ -165,16 +165,16 @@
     <div class="modal-overlay"></div>
     <div class="modal-content">
         <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle"></h3>
             <svg class="modal-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
             </svg>
-            <h3 class="modal-title" id="modalTitle"></h3>
         </div>
         <div class="modal-body">
             <p id="modalMessage"></p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-modal-close" id="btnCloseModal">
+            <button type="button" class="btn-modal-close btn-block" id="btnCloseModal">
                 <span id="btnCloseText">{{ 'Accept'|get_plugin_lang('SchoolPlugin') }}</span>
             </button>
         </div>

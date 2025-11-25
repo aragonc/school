@@ -420,6 +420,7 @@ class SchoolPlugin extends Plugin
 
             $extraHeaders .= $courseLogoutCode;
             $this->assign('extra_headers', $extraHeaders);
+            $this->assign('favicon', self::get_favicon('favicon'));
         }
     }
 
@@ -722,7 +723,7 @@ class SchoolPlugin extends Plugin
         $this->assign('logo_svg', self::display_logo());
         $this->assign('logo_icon', self::display_logo_icon());
         $this->assign('enabled_search', $enabledSearch);
-        $this->assign('favicon', self::get_favicon('favicon'));
+
         $this->assign('menus', self::getMenus($section));
         $content = $this->fetch('/layout/sidebar.tpl');
         $this->assign('sidebar', $content);
