@@ -186,7 +186,7 @@
             if (rutValue && $('#country').val() === 'CL' && !validateRUT(rutValue)) {
                 $(this).addClass('is-invalid');
                 if (!$('#rut-error').length) {
-                    $(this).after('<div id="rut-error" class="invalid-feedback d-block">RUT inválido. Verifica el número y dígito verificador.</div>');
+                    $(this).after('<div id="rut-error" class="invalid-feedback d-block">RUN inválido. Verifica el número y dígito verificador.</div>');
                 }
             } else {
                 $(this).removeClass('is-invalid');
@@ -287,7 +287,7 @@
                 if (rutValue && !validateRUT(rutValue)) {
                     $('#rut').addClass('is-invalid');
                     if (!$('#rut-error').length) {
-                        $('#rut').after('<div id="rut-error" class="invalid-feedback d-block">RUT inválido. Verifica el número y dígito verificador.</div>');
+                        $('#rut').after('<div id="rut-error" class="invalid-feedback d-block">RUN inválido. Verifica el número y dígito verificador.</div>');
                     }
                     hasErrors = true;
                 }
