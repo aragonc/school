@@ -107,7 +107,7 @@ if ($enable) {
             $validPassword = false;
             $passwordWasChecked = false;
 
-            $user_data = $form->getSubmitValues(1);
+            //$user_data = $form->getSubmitValues(1);
 
             /** @var User $user */
             $user = UserManager::getRepository()->find($userId);
