@@ -46,9 +46,7 @@ if ($enable) {
         FormValidator::LAYOUT_NEW
     );
     //    PASSWORD, if auth_source is platform
-    if ($showPassword &&
-        $plugin->is_profile_editable() &&
-        api_get_setting('profile', 'password') === 'true'
+    if ($showPassword && api_get_setting('profile', 'password') === 'true'
     ) {
         $form = new FormValidator(
             'form_password',
