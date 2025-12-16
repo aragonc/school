@@ -12,12 +12,9 @@ $action = $_GET['action'] ?? '';
 
 $table_user = Database::get_main_table(TABLE_MAIN_USER);
 $allow_users_to_change_email_with_no_password = true;
-if ($plugin->is_platform_authentication() &&
-    api_get_setting('allow_users_to_change_email_with_no_password') == 'false'
-) {
+if (api_get_setting('allow_users_to_change_email_with_no_password') == 'false') {
     $allow_users_to_change_email_with_no_password = false;
 }
-
 
 if ($enable) {
 
@@ -34,7 +31,7 @@ if ($enable) {
 
     $imgSection = $plugin->get_svg_icon('security', $plugin->get_lang('HereYourNotificationsWillBe'), 500);
 
-    $showPassword = $plugin->is_platform_authentication($userId);
+    $showPassword = $plugin->is_platform_authentication($user_data['auth_source']);
 
     $plugin->setTitle($plugin->get_lang('EditProfile'));
     $form = new FormValidator(
@@ -46,7 +43,9 @@ if ($enable) {
         FormValidator::LAYOUT_NEW
     );
     //    PASSWORD, if auth_source is platform
-    if ($showPassword && api_get_setting('profile', 'password') === 'true'
+    if ($showPassword &&
+        $plugin->is_profile_editable() &&
+        api_get_setting('profile', 'password') === 'true'
     ) {
         $form = new FormValidator(
             'form_password',
