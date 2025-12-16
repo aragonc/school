@@ -1602,9 +1602,9 @@ class SchoolPlugin extends Plugin
         }
         return $menus;
     }
-    public function is_platform_authentication(): bool
+    public function is_platform_authentication($idUser): bool
     {
-        $tabUserInfo = api_get_user_info();
+        $tabUserInfo = api_get_user_info($idUser);
         return $tabUserInfo['auth_source'] === 'platform';
     }
 

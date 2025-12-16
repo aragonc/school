@@ -34,7 +34,7 @@ if ($enable) {
 
     $imgSection = $plugin->get_svg_icon('security', $plugin->get_lang('HereYourNotificationsWillBe'), 500);
 
-    $showPassword = $plugin->is_platform_authentication();
+    $showPassword = $plugin->is_platform_authentication($userId);
 
     $plugin->setTitle($plugin->get_lang('EditProfile'));
     $form = new FormValidator(
