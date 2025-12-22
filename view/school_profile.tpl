@@ -49,10 +49,25 @@
         let DniValue = null;
         let checkRut = true;
         let contentAdd = false;
+        let rutValidated = false;
 
         Rut.attr('placeholder','Ej: 11222333-K');
         Rut.attr('title','Ingresar RUN sin puntos, con guión y con dígito verificador. Ej: 11222333-K');
         Rut.attr('maxlength','10');
+
+        // Formatear RUT automáticamente (solo para Chile) - SIN PUNTOS
+        $(Rut).on('input', function () {
+            rutValidated = false; // 👈 Resetear bandera cuando cambia el RUT
+            let value = $(this).val().toUpperCase().replace(/[^0-9K]/g, '');
+
+            if (value.length > 1) {
+                let body = value.slice(0, -1);
+                let dv = value.slice(-1);
+                $(this).val(body + '-' + dv);
+            } else if (value.length === 1) {
+                $(this).val(value);
+            }
+        });
 
         if(countryCode==='CL'){
             $("#form_extra_rol_unico_tributario_group").show();
@@ -71,8 +86,8 @@
             //console.log(checkRut);
             let countrySelect;
             $( "#form_profile_country option:selected" ).each(function() {
-                countrySelect = $( this ).text();
-                if(countrySelect!=='Chile'){
+                countrySelect = $( this ).val();
+                if(countrySelect!=='CL'){
                     $("#form_extra_rol_unico_tributario_group").hide();
                     $("#form_extra_identificador_group").show();
                     Dni.prop('required', true);
@@ -98,11 +113,11 @@
             let formGroupDNI = $("#form_extra_identificador_group");
             //alert($("input[type=radio]:checked").val());
             $( "#form_profile_country option:selected" ).each(function() {
-                countrySelect = $( this ).text();
+                countrySelect = $( this ).val();
             });
 
             if(checkRut){
-                if(countrySelect==='Chile') {
+                if(countrySelect==='CL') {
                     if (!(RutValue.match('^[0-9]{7,9}[-|‐]{1}[0-9kK]{1}$'))) {
                         if (!contentAdd) {
                             formGroupRUT.addClass('flat-error flat-has-error');
