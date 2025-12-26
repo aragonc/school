@@ -39,6 +39,7 @@ class SchoolPlugin extends Plugin
                 'activate_search' => 'boolean',
                 'activate_shopping' => 'boolean',
                 'email_help' => 'text',
+                'enable_complete_profile' => 'boolean',
                 'template_certificate' => [
                     'type' => 'select',
                     'options' => [

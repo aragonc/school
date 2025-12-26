@@ -55,6 +55,26 @@
         Rut.attr('title','Ingresar RUN sin puntos, con guión y con dígito verificador. Ej: 11222333-K');
         Rut.attr('maxlength','10');
 
+        // Función para validar RUT chileno
+        function validateRUT(rut) {
+            rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+            if (rut.length < 8 || rut.length > 9) {
+                return false;
+            }
+            let body = rut.slice(0, -1);
+            let dv = rut.slice(-1);
+            let suma = 0;
+            let multiplo = 2;
+
+            for (let i = body.length - 1; i >= 0; i--) {
+                suma += parseInt(body.charAt(i)) * multiplo;
+                multiplo = multiplo < 7 ? multiplo + 1 : 2;
+            }
+            let dvEsperado = 11 - (suma % 11);
+            let dvCalculado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
+            return dv === dvCalculado;
+        }
+
         // Formatear RUT automáticamente (solo para Chile) - SIN PUNTOS
         $(Rut).on('input', function () {
             rutValidated = false; // 👈 Resetear bandera cuando cambia el RUT
@@ -107,6 +127,7 @@
         $("#form_profile").submit(function(e){
             //console.log(RUT.val());
             RutValue = Rut.val();
+            validateRUT(RutValue);
             DniValue = Dni.val();
             let countrySelect;
             let formGroupRUT = $("#form_extra_rol_unico_tributario_group");
