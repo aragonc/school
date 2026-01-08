@@ -4,6 +4,9 @@ require_once __DIR__.'/config.php';
 require_once __DIR__.'/../../main/auth/external_login/check_profile_completion.php';
 
 $plugin = SchoolPlugin::create();
+// Simplemente llama la función
+$plugin->requireLogin();
+
 $enable = $plugin->get('tool_enable') == 'true';
 $enableCompleteProfile = $plugin->get('enable_complete_profile') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');

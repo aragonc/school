@@ -2237,4 +2237,52 @@ class SchoolPlugin extends Plugin
             ['id = ?' => (int)$idUser]
         );
     }
+
+    public function requireLogin()
+    {
+        if (!api_get_user_id()) {
+            $currentUrl = $_SERVER['REQUEST_URI'];
+            $_SESSION['school_plugin_redirect'] = $currentUrl;
+
+            // Apuntar al archivo intermedio que manejará la redirección
+            $checkUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/check_redirect.php';
+            $_SESSION['redirect_after_login'] = $checkUrl;
+
+            $loginUrl = api_get_path(WEB_PATH) . 'index.php';
+
+            echo '<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="refresh" content="0;url=' . htmlspecialchars($loginUrl) . '">
+            <script type="text/javascript">
+                if (window.top !== window.self) {
+                    window.top.location.href = "' . htmlspecialchars($loginUrl) . '";
+                } else {
+                    window.location.href = "' . htmlspecialchars($loginUrl) . '";
+                }
+            </script>
+        </head>
+        <body>
+            <p>Sesión expirada. Redirigiendo...</p>
+        </body>
+        </html>';
+            exit;
+        }
+        return true;
+    }
+
+    /**
+     * Procesa la redirección después del login
+     * Llamar esto después de un login exitoso
+     */
+    public function handleLoginRedirect()
+    {
+        if (!empty($_SESSION['school_plugin_redirect'])) {
+            $redirectUrl = $_SESSION['school_plugin_redirect'];
+            unset($_SESSION['school_plugin_redirect']);
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+    }
 }

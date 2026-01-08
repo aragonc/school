@@ -6,6 +6,9 @@ require __DIR__ . '/vendor/autoload.php';
 use School\PipedriveAPI;
 
 $plugin = SchoolPlugin::create();
+// Simplemente llama la función
+$plugin->requireLogin();
+
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
 $certificateId = $_GET['id'] ?? 0;
