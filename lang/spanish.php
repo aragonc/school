@@ -158,4 +158,5 @@ $strings['InvalidToken'] = 'Token de seguridad inválido';
 $strings['InvalidSession'] = 'Sesión inválida';
 $strings['UserNotFound'] = 'Usuario no encontrado';
 $strings['enable_complete_profile'] = 'Habilitar completar perfil';
-
+$strings['DownloadFolder'] = 'Descargar todo';
+$strings['ComplementaryMaterial'] = 'Material Complementario';
