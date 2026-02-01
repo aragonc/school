@@ -13,6 +13,8 @@ require_once __DIR__.'/config.php';
 require_once __DIR__ . '/lib/DocumentHelper.php';
 
 $plugin = SchoolPlugin::create();
+$plugin->setCurrentSection('dashboard');
+$plugin->setSidebar('dashboard');
 // Verificar acceso
 api_protect_course_script(true);
 api_protect_course_group(GroupManager::GROUP_TOOL_DOCUMENTS);
@@ -26,7 +28,7 @@ $groupId = api_get_group_id();
 
 // Verificar si es estudiante
 $isStudent = !api_is_allowed_to_edit(null, true);
-$plugin->setSidebar('dashboard');
+
 if (!$isStudent) {
     // Redirigir a profesores a la vista estándar
     header('Location: ' . api_get_path(WEB_CODE_PATH) . 'document/document.php?' . api_get_cidreq());
@@ -38,6 +40,15 @@ $current_course_tool = TOOL_DOCUMENT;
 $this_section = SECTION_COURSES;
 $base_work_dir = api_get_path(SYS_COURSE_PATH) . $courseInfo['directory'] . '/document';
 $http_www = api_get_path(WEB_COURSE_PATH) . $courseInfo['directory'] . '/document';
+
+// URL base amigable para el plugin
+$useRewriteUrl = api_get_configuration_value('use_friendly_document_urls');
+if ($useRewriteUrl) {
+    $baseUrl = api_get_path(WEB_PATH) . 'documents';
+} else {
+    $baseUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/student_documents.php';
+}
+$currentUrlParams = api_get_cidreq();
 
 // Obtener parámetros
 $documentId = isset($_REQUEST['id']) ? (int) $_REQUEST['id'] : null;
@@ -124,23 +135,23 @@ $templateData = [
     'documents' => $documentsData['documents'],
     'can_download_folders' => api_get_setting('students_download_folders') == 'true',
     'keyword' => $keyword,
-    'base_url' => api_get_self() . '?' . api_get_cidreq(),
+    'base_url' => $baseUrl . '?' . $currentUrlParams,
     'has_search' => !empty($keyword),
 ];
 
 // Registrar acceso
 Event::event_access_tool(TOOL_DOCUMENT);
 
-// Renderizar vista
-$plugin->setTitle($plugin->get_lang('ComplementaryMaterial'));
-$plugin->assign('data', $templateData);
-$content = $plugin->fetch('school_student_documents.tpl');
-
 // Agregar breadcrumb
 $interbreadcrumb[] = [
     'url' => api_get_path(WEB_CODE_PATH) . 'document/document.php?' . api_get_cidreq(),
     'name' => $plugin->get_lang('ComplementaryMaterial'),
 ];
+
+// Renderizar vista
+$plugin->setTitle($plugin->get_lang('ComplementaryMaterial'));
+$plugin->assign('data', $templateData);
+$content = $plugin->fetch('school_student_documents.tpl');
 
 // Mostrar página
 $plugin->assign('header', get_lang('Documents'));

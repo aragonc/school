@@ -228,6 +228,11 @@ class DocumentHelper
     private static function getDocumentUrl($document, $courseInfo)
     {
         if ($document['filetype'] === 'folder') {
+            // URL amigable para carpetas
+            $useRewriteUrl = api_get_configuration_value('use_friendly_document_urls');
+            if ($useRewriteUrl) {
+                return api_get_path(WEB_PATH) . 'documents?' . api_get_cidreq() . '&id=' . $document['id'];
+            }
             return api_get_self() . '?' . api_get_cidreq() . '&id=' . $document['id'];
         }
 
@@ -243,6 +248,10 @@ class DocumentHelper
      */
     private static function getDownloadUrl($documentId)
     {
+        $useRewriteUrl = api_get_configuration_value('use_friendly_document_urls');
+        if ($useRewriteUrl) {
+            return api_get_path(WEB_PATH) . 'documents?' . api_get_cidreq() . '&action=download&id=' . $documentId;
+        }
         return api_get_self() . '?' . api_get_cidreq() . '&action=download&id=' . $documentId;
     }
 
