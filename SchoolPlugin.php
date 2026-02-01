@@ -2118,7 +2118,7 @@ class SchoolPlugin extends Plugin
                 'name' => $toolName,
                 'label' => $tool['label'],
                 'icon' => self::get_svg_icon($tool['label'], self::get_lang('SupplementaryMaterial'), 64),
-                'link' => $link,
+                'link' => api_get_path(WEB_PATH).'documents',
             ];
         }
 
