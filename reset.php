@@ -3,6 +3,8 @@
 
 require_once __DIR__ . '/config.php';
 $plugin = SchoolPlugin::create();
+// Simplemente llama la función
+
 $enable = $plugin->get('tool_enable') == 'true';
 
 $token = isset($_GET['token']) ? $_GET['token'] : '';
