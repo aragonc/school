@@ -3,7 +3,7 @@
         <div class="row justify-content-center">
             <div class="col-md-6 text-center mb-5">
                 <a href="{{ redirect_url }}">
-                    <img src="{{ _p.web }}custompages/images/logo-educacion-chile.svg" class="img-fluid logo"
+                    <img src="{{ _p.web }}custompages/images/logo-otec.svg" class="img-fluid logo"
                          alt="Educación Chile - Registro ATE - Ministerio de Educación">
                 </a>
             </div>
