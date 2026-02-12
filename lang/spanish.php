@@ -161,4 +161,5 @@ $strings['enable_complete_profile'] = 'Habilitar completar perfil';
 $strings['show_base_courses'] = 'Mostrar cursos base';
 $strings['BaseCourses'] = 'Mis Cursos';
 $strings['NoCourses'] = 'No tienes cursos asignados.';
-
+$strings['DownloadFolder'] = 'Descargar todo';
+$strings['ComplementaryMaterial'] = 'Material Complementario';

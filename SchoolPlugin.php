@@ -2143,7 +2143,7 @@ class SchoolPlugin extends Plugin
             ) {
                 $toolName = get_lang('Tool'.$toolName);
             }
-
+            $newDocumentsLinks = api_get_path(WEB_PATH).'documents';
             $tmpTools[] = [
                 'iid' => $tool['iid'],
                 'id' => $tool['id'],
@@ -2151,7 +2151,7 @@ class SchoolPlugin extends Plugin
                 'name' => $toolName,
                 'label' => $tool['label'],
                 'icon' => self::get_svg_icon($tool['label'], self::get_lang('SupplementaryMaterial'), 64),
-                'link' => $link,
+                'link' => ($tool['label'] === 'folder_document') ? $newDocumentsLinks : $link,
             ];
         }
 
@@ -2214,6 +2214,7 @@ class SchoolPlugin extends Plugin
                     break;
             }
         }
+
         return $results;
 
     }
