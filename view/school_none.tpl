@@ -19,8 +19,3 @@
 {% if show_profile_completion_modal %}
 {% include 'profile_completion_modal.tpl' %}
 {% endif %}
-
-
-
-
-

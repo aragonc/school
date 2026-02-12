@@ -19,7 +19,10 @@ $action = !empty($_GET['action']) ? Security::remove_XSS($_GET['action']) : '';
 $plugin->setSidebar('course');
 api_protect_course_script(true);
 
-$session = $plugin->getInfoSession($sessionId);
+$session = [];
+if (!empty($sessionId)) {
+    $session = $plugin->getInfoSession($sessionId);
+}
 $courseInfo = api_get_course_info_by_id($courseId);
 
 $words = explode(' ', $courseInfo['title']);

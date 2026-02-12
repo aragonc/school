@@ -158,3 +158,6 @@ $strings['InvalidToken'] = 'Invalid security token';
 $strings['InvalidSession'] = 'Invalid session';
 $strings['UserNotFound'] = 'User not found';
 $strings['enable_complete_profile'] = 'Enable complete profile';
+$strings['show_base_courses'] = 'Show base courses';
+$strings['BaseCourses'] = 'My Courses';
+$strings['NoCourses'] = 'You have no assigned courses.';

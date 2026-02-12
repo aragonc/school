@@ -2,7 +2,7 @@
 <ul class="nav nav-tabs">
     <li class="nav-item">
         <a class="nav-link active" href="/dashboard">
-            {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_courses }}</span>
+            {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_courses + total_base_courses }}</span>
         </a>
     </li>
     {% if total_history > 0 %}
@@ -15,6 +15,53 @@
 </ul>
 <div class="tab-content" id="tab_courses">
     <div class="tab-pane fade show active" id="current_courses" role="tabpanel" aria-labelledby="current_courses-tab">
+
+        {% if show_base_courses and total_base_courses > 0 %}
+        <div class="pt-0 pb-4">
+            <div id="category_base_courses" class="category">
+                <div class="container-fluid">
+                    <div class="row align-items-center pb-3 pt-3">
+                        <div class="col">
+                            <div class="d-flex flex-row align-items-center">
+                                <div class="p-0 p-md-2"><h4 class="category-name">{{ 'BaseCourses'|get_plugin_lang('SchoolPlugin') }}</h4></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% for course in base_courses %}
+            <div class="card pl-0 pr-0 pl-lg-4 pr-lg-4 mb-2 d-none d-md-block">
+                <div class="course-box box-{{ course.ribbon }} pt-1 pb-1 pr-3 pl-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                {{ course.icon }} <span class="course-title">{{ course.title }}</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="course-mobile d-md-none">
+                <div class="row align-items-center">
+                    <div class="col-10 pr-0">
+                        <div class="d-flex justify-content-start">
+                            <div class="icon-mobile">
+                                {{ course.icon_mobile }}
+                            </div>
+                            <div class="mobile-title">
+                                <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
+                                    <span class="course-title">{{ course.title }}</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% if categories %}
         <div class="pt-0 pb-4">
         {% for category in categories %}
@@ -186,12 +233,14 @@
         </div>
 
         {% else %}
+            {% if not show_base_courses or total_base_courses == 0 %}
             <div class="p-5 text-center">
                 <h3>{{ 'NoTrainingInProgress'|get_plugin_lang('SchoolPlugin') }}</h3>
                 <p>{{ 'CompletedTrainings'|get_plugin_lang('SchoolPlugin') }} <a href="/previous">{{ 'ClickHere'|get_plugin_lang('SchoolPlugin') }}</a></p>
                 {{ img_section }}
 
             </div>
+            {% endif %}
         {% endif %}
     </div>
 </div>

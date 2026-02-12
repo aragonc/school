@@ -40,6 +40,7 @@ class SchoolPlugin extends Plugin
                 'activate_shopping' => 'boolean',
                 'email_help' => 'text',
                 'enable_complete_profile' => 'boolean',
+                'show_base_courses' => 'boolean',
                 'template_certificate' => [
                     'type' => 'select',
                     'options' => [
@@ -929,6 +930,37 @@ class SchoolPlugin extends Plugin
             'categories' => $categories
         ];
 
+    }
+
+    public function getBaseCoursesByUser($userID): array
+    {
+        $courseList = CourseManager::get_courses_list_by_user_id($userID, false);
+        $courses = [];
+        $count = 0;
+
+        foreach ($courseList as $course) {
+            $count++;
+            $courseId = $course['real_id'];
+            $courseCode = $course['code'];
+            $courseTitle = $course['title'];
+
+            $ribbon = ($count % 2 == 0) ? 'even' : 'odd';
+
+            $courses[] = [
+                'id' => $courseId,
+                'code' => $courseCode,
+                'title' => $courseTitle,
+                'icon' => self::get_svg_icon('course', $courseTitle, 32),
+                'icon_mobile' => self::get_svg_icon('course', $courseTitle, 22, true),
+                'url' => api_get_path(WEB_PATH).'home/course/'.$courseCode,
+                'ribbon' => $ribbon,
+            ];
+        }
+
+        return [
+            'total' => count($courses),
+            'courses' => $courses,
+        ];
     }
 
     function generateBarcode($code): string
@@ -2063,7 +2095,8 @@ class SchoolPlugin extends Plugin
         }
         $calendarCourseHTML .= '</ul>';
 
-        if($session['session_category_id'] != 5){
+        $sessionCategoryId = !empty($session['session_category_id']) ? $session['session_category_id'] : 0;
+        if($sessionCategoryId != 5){
             $ArrayDescription = self::getDescriptionCourse($sessionId, $courseId);
             $ArrayDescription = array_filter($ArrayDescription, function($item) {
                 return $item['description_type'] != '8';
@@ -2168,6 +2201,7 @@ class SchoolPlugin extends Plugin
                     break;
 
                 case 'folder_document':
+                    $tool['link'] = api_get_path(WEB_PATH).'documents?'.$cidReq;
                     $results['home'][] = $tool;
                     break;
 
