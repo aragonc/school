@@ -602,6 +602,9 @@ class SchoolPlugin extends Plugin
             UNIQUE KEY unique_variable (variable)
         )";
         Database::query($sql2);
+
+        // Add rewrite rules to .htaccess
+        $this->addHtaccessRules();
     }
 
     public function uninstall()
@@ -615,6 +618,96 @@ class SchoolPlugin extends Plugin
             $sql = "DROP TABLE IF EXISTS $table";
             Database::query($sql);
         }
+
+        // Remove rewrite rules from .htaccess
+        $this->removeHtaccessRules();
+    }
+
+    /**
+     * Get the rewrite rules for the School plugin.
+     */
+    private function getHtaccessRules(): string
+    {
+        return
+            "# BEGIN School Plugin\n".
+            "RewriteRule ^dashboard$ plugin/school/start.php [L]\n".
+            "RewriteRule ^previous$ plugin/school/previous.php [L]\n".
+            "RewriteRule ^certified$ plugin/school/certificates.php [L]\n".
+            "RewriteRule ^notifications$ plugin/school/notifications.php [L]\n".
+            "RewriteRule ^profile$ plugin/school/profile.php [L]\n".
+            "RewriteRule ^avatar$ plugin/school/avatar.php [L]\n".
+            "RewriteRule ^password$ plugin/school/password.php [L]\n".
+            "RewriteRule ^requests$ plugin/school/requests.php [L]\n".
+            "RewriteRule ^shopping$ plugin/school/shopping.php [L]\n".
+            "RewriteRule ^help$ plugin/school/help.php [L]\n".
+            "RewriteRule ^school-admin$ plugin/school/admin.php [L]\n".
+            "RewriteRule ^documents$ plugin/school/student_documents.php?%{QUERY_STRING} [L,QSA]\n".
+            "RewriteRule ^view/course/(\\d{1,})$ plugin/school/view.php?session_id=$1 [L]\n".
+            "RewriteRule ^home/course/([^/]+)$ plugin/school/home.php?cDir=$1 [L]\n".
+            "RewriteRule ^reset/token/([^/]+)$ plugin/school/reset.php?token=$1 [L]\n".
+            "# END School Plugin";
+    }
+
+    /**
+     * Add School plugin rewrite rules to .htaccess.
+     */
+    private function addHtaccessRules(): bool
+    {
+        $htaccessPath = api_get_path(SYS_PATH).'.htaccess';
+
+        if (!file_exists($htaccessPath) || !is_writable($htaccessPath)) {
+            return false;
+        }
+
+        $content = file_get_contents($htaccessPath);
+
+        // Already added
+        if (strpos($content, '# BEGIN School Plugin') !== false) {
+            return true;
+        }
+
+        $rules = $this->getHtaccessRules();
+
+        // Insert after the certificates rewrite rule block
+        $marker = "RewriteRule ^certificates/$ certificates/index.php?id=%1 [L]\n";
+        $pos = strpos($content, $marker);
+
+        if ($pos !== false) {
+            $insertPos = $pos + strlen($marker);
+            $content = substr($content, 0, $insertPos)."\n".$rules."\n".substr($content, $insertPos);
+        } else {
+            // Fallback: insert after RewriteEngine on
+            $marker2 = "RewriteEngine on\n";
+            $pos2 = strpos($content, $marker2);
+            if ($pos2 !== false) {
+                $insertPos = $pos2 + strlen($marker2);
+                $content = substr($content, 0, $insertPos)."\n".$rules."\n".substr($content, $insertPos);
+            } else {
+                return false;
+            }
+        }
+
+        return file_put_contents($htaccessPath, $content) !== false;
+    }
+
+    /**
+     * Remove School plugin rewrite rules from .htaccess.
+     */
+    private function removeHtaccessRules(): bool
+    {
+        $htaccessPath = api_get_path(SYS_PATH).'.htaccess';
+
+        if (!file_exists($htaccessPath) || !is_writable($htaccessPath)) {
+            return false;
+        }
+
+        $content = file_get_contents($htaccessPath);
+
+        // Remove the block between markers including surrounding blank lines
+        $pattern = '/\n?# BEGIN School Plugin\n.*?# END School Plugin\n?/s';
+        $content = preg_replace($pattern, "\n", $content);
+
+        return file_put_contents($htaccessPath, $content) !== false;
     }
 
     /**
