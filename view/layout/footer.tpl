@@ -62,6 +62,25 @@
 <script>
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
+
+        // Sidebar: restaurar estado guardado
+        var $sidebar = $('#accordionSidebar');
+        var sidebarState = localStorage.getItem('sidebarState');
+        if (sidebarState === 'expanded') {
+            $sidebar.removeClass('toggled');
+            $('body').removeClass('sidebar-toggled');
+        } else {
+            $sidebar.addClass('toggled');
+            $('body').addClass('sidebar-toggled');
+        }
+
+        // Sidebar toggle desktop
+        $('#sidebarToggleDesktop').on('click', function (e) {
+            e.preventDefault();
+            $sidebar.toggleClass('toggled');
+            $('body').toggleClass('sidebar-toggled');
+            localStorage.setItem('sidebarState', $sidebar.hasClass('toggled') ? 'collapsed' : 'expanded');
+        });
     });
 
     function setCheckboxTable(value, table_id) {

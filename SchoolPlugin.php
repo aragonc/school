@@ -707,7 +707,9 @@ class SchoolPlugin extends Plugin
     public function setSidebar($section = '')
     {
         $institution = api_get_setting('Institution');
-        $logoPath = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/logo-educhile.svg';
+        $theme = api_get_visual_theme();
+        $themeDir = Template::getThemeDir($theme);
+        $logoPath = api_get_path(WEB_CSS_PATH).$themeDir."images/header-logo-vector.svg";
         $siteName = api_get_setting('siteName');
         $imageAttributes = [
             'title' => $siteName,
@@ -726,7 +728,18 @@ class SchoolPlugin extends Plugin
         $this->assign('logo_icon', self::display_logo_icon());
         $this->assign('enabled_search', $enabledSearch);
 
-        $this->assign('menus', self::getMenus($section));
+        $menus = self::getMenus($section);
+        $this->assign('menus', $menus);
+
+        $currentSectionLabel = '';
+        foreach ($menus as $menu) {
+            if (!empty($menu['class']) && $menu['class'] === 'active') {
+                $currentSectionLabel = $menu['label'];
+                break;
+            }
+        }
+        $this->assign('current_section_label', $currentSectionLabel);
+
         $content = $this->fetch('/layout/sidebar.tpl');
         $this->assign('sidebar', $content);
     }

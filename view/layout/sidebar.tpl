@@ -3,9 +3,6 @@
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ _p.web }}">
-        <div class="sidebar-brand-icon">
-            {{ logo_icon }}
-        </div>
         <div class="sidebar-brand-big">
             {{ logo_svg }}
         </div>

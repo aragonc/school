@@ -2,6 +2,12 @@
     <button id="sidebarToggleTop" class="btn btn-link d-lg-none rounded-circle">
         <i class="fa fa-bars"></i>
     </button>
+    <button id="sidebarToggleDesktop" class="btn btn-link d-none d-lg-inline-block rounded-circle" title="Menu">
+        <i class="fa fa-bars"></i>
+    </button>
+    {% if current_section_label %}
+    <span class="d-none d-lg-inline-block text-gray-600 font-weight-bold ml-2">{{ current_section_label }}</span>
+    {% endif %}
 
     <div class="logo-campus d-sm-inline-block d-md-none">
         <a href="{{ _p.web }}">{{ logo }}</a>
