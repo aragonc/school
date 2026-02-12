@@ -26,6 +26,72 @@
     {% else %}{# language_interface *should* always be defined, so we should never come here #}
     <script src="{{ _p.web }}web/build/main.js"></script>
     {% endif %}
+
+    {% if custom_logo_width or custom_logo_height or custom_primary_color or custom_sidebar_brand_color or custom_sidebar_color or custom_sidebar_item_color or custom_sidebar_item_active_text or custom_sidebar_text_color %}
+    <style>
+        {% if custom_logo_width or custom_logo_height %}
+        .sidebar-brand .logo-site,
+        .logo-campus .logo-site {
+            {% if custom_logo_width %}
+            width: {{ custom_logo_width }}px !important;
+            {% endif %}
+            {% if custom_logo_height %}
+            height: {{ custom_logo_height }}px !important;
+            {% endif %}
+            object-fit: contain;
+        }
+        {% endif %}
+        {% if custom_sidebar_brand_color %}
+        .bg-sidebar .sidebar-brand {
+            background: {{ custom_sidebar_brand_color }} !important;
+        }
+        {% endif %}
+        {% if custom_sidebar_color %}
+        .bg-sidebar {
+            background: {{ custom_sidebar_color }} !important;
+        }
+        {% endif %}
+        {% if custom_primary_color %}
+        .sidebar-dark .nav-item.active .nav-link {
+            background: {{ custom_primary_color }} !important;
+        }
+        .sidebar-dark #sidebarToggle {
+            background-color: {{ custom_primary_color }} !important;
+        }
+        .sidebar-dark #sidebarToggle:hover {
+            opacity: 0.8;
+        }
+        .nav-mobile .nav-item.active {
+            background: {{ custom_primary_color }} !important;
+            color: #fff !important;
+        }
+        {% endif %}
+        {% if custom_sidebar_item_color %}
+        .sidebar .nav-item .nav-link {
+            background: {{ custom_sidebar_item_color }} !important;
+        }
+        .sidebar.toggled .nav-item .nav-link {
+            background: {{ custom_sidebar_item_color }} !important;
+        }
+        {% endif %}
+        {% if custom_sidebar_item_active_text %}
+        .sidebar-dark .nav-item.active .nav-link {
+            color: {{ custom_sidebar_item_active_text }} !important;
+        }
+        .sidebar-dark .nav-item.active .nav-link i {
+            color: {{ custom_sidebar_item_active_text }} !important;
+        }
+        {% endif %}
+        {% if custom_sidebar_text_color %}
+        .sidebar-dark .nav-item .nav-link {
+            color: {{ custom_sidebar_text_color }} !important;
+        }
+        .sidebar-dark .nav-item .nav-link i {
+            color: {{ custom_sidebar_text_color }} !important;
+        }
+        {% endif %}
+    </style>
+    {% endif %}
 </head>
 
 <body id="page-top" class="sidebar-toggled">

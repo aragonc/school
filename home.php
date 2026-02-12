@@ -16,8 +16,9 @@ $sessionId = api_get_session_id();
 
 $iconCourse = $plugin->get_svg_icon('course_white','' ,32);
 $action = !empty($_GET['action']) ? Security::remove_XSS($_GET['action']) : '';
-$plugin->setSidebar('course');
+
 api_protect_course_script(true);
+$plugin->setSidebar('dashboard');
 
 $session = [];
 if (!empty($sessionId)) {

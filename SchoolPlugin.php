@@ -21,6 +21,7 @@ class SchoolPlugin extends Plugin
     public $show_header = true;
 
     const TABLE_SCHOOL_REQUEST = 'plugin_school_request';
+    const TABLE_SCHOOL_SETTINGS = 'plugin_school_settings';
     const TABLE_SHORTIFY_TAGS = 'plugin_shortify_tags';
     const TABLE_SHORTIFY_URL_TAGS = 'plugin_shortify_url_tags';
     const TABLE_SHORTIFY_URL = 'plugin_shortify_urls';
@@ -593,12 +594,21 @@ class SchoolPlugin extends Plugin
             activate INT
         )";
         Database::query($sql);
+
+        $sql2 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_SETTINGS." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            variable VARCHAR(255) NOT NULL,
+            value TEXT NULL,
+            UNIQUE KEY unique_variable (variable)
+        )";
+        Database::query($sql2);
     }
 
     public function uninstall()
     {
-
-        $tablesToBeDeleted = [];
+        $tablesToBeDeleted = [
+            self::TABLE_SCHOOL_SETTINGS,
+        ];
 
         foreach ($tablesToBeDeleted as $tableToBeDeleted) {
             $table = Database::get_main_table($tableToBeDeleted);
@@ -606,6 +616,50 @@ class SchoolPlugin extends Plugin
             Database::query($sql);
         }
     }
+
+    /**
+     * Get a setting from the plugin_school_settings table.
+     */
+    public function getSchoolSetting(string $variable): ?string
+    {
+        $table = self::TABLE_SCHOOL_SETTINGS;
+        $variable = Database::escape_string($variable);
+        $sql = "SELECT value FROM $table WHERE variable = '$variable' LIMIT 1";
+        $result = Database::query($sql);
+        if ($row = Database::fetch_assoc($result)) {
+            return $row['value'];
+        }
+        return null;
+    }
+
+    /**
+     * Save or update a setting in the plugin_school_settings table.
+     */
+    public function setSchoolSetting(string $variable, ?string $value): void
+    {
+        $table = self::TABLE_SCHOOL_SETTINGS;
+        $variable = Database::escape_string($variable);
+        $value = Database::escape_string($value ?? '');
+        $sql = "INSERT INTO $table (variable, value) VALUES ('$variable', '$value')
+                ON DUPLICATE KEY UPDATE value = '$value'";
+        Database::query($sql);
+    }
+
+    /**
+     * Get the custom logo URL, or null if not set.
+     */
+    public function getCustomLogo(): ?string
+    {
+        $logo = $this->getSchoolSetting('custom_logo');
+        if (!empty($logo)) {
+            $fullPath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$logo;
+            if (file_exists($fullPath)) {
+                return api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$logo;
+            }
+        }
+        return null;
+    }
+
     /**
      * @param string $variable
      * @param mixed  $value
@@ -717,6 +771,13 @@ class SchoolPlugin extends Plugin
             'class' => 'logo-site',
             'id' => 'header-logo',
         ];
+
+        // Use custom logo if set
+        $customLogo = $this->getCustomLogo();
+        if ($customLogo) {
+            $logoPath = $customLogo;
+        }
+
         $enabledSearch = false;
         if($this->get('activate_search') == 'true'){
             $enabledSearch = true;
@@ -725,8 +786,8 @@ class SchoolPlugin extends Plugin
         $logoPathImg = Display::img($logoPath, $institution, $imageAttributes);
 
         $this->assign('logo', $logoPathImg);
-        $this->assign('logo_svg', self::display_logo());
-        $this->assign('logo_icon', self::display_logo_icon());
+        $this->assign('logo_svg', $customLogo ? $logoPathImg : self::display_logo());
+        $this->assign('logo_icon', $customLogo ? $logoPathImg : self::display_logo_icon());
         $this->assign('enabled_search', $enabledSearch);
 
         $menus = self::getMenus($section);
@@ -740,6 +801,18 @@ class SchoolPlugin extends Plugin
             }
         }
         $this->assign('current_section_label', $currentSectionLabel);
+
+        // Custom logo dimensions from admin settings
+        $this->assign('custom_logo_width', $this->getSchoolSetting('logo_width') ?? '');
+        $this->assign('custom_logo_height', $this->getSchoolSetting('logo_height') ?? '');
+
+        // Custom colors from admin settings
+        $this->assign('custom_primary_color', $this->getSchoolSetting('primary_color') ?? '');
+        $this->assign('custom_sidebar_brand_color', $this->getSchoolSetting('sidebar_brand_color') ?? '');
+        $this->assign('custom_sidebar_color', $this->getSchoolSetting('sidebar_color') ?? '');
+        $this->assign('custom_sidebar_item_color', $this->getSchoolSetting('sidebar_item_color') ?? '');
+        $this->assign('custom_sidebar_item_active_text', $this->getSchoolSetting('sidebar_item_active_text') ?? '');
+        $this->assign('custom_sidebar_text_color', $this->getSchoolSetting('sidebar_text_color') ?? '');
 
         $content = $this->fetch('/layout/sidebar.tpl');
         $this->assign('sidebar', $content);
@@ -949,6 +1022,12 @@ class SchoolPlugin extends Plugin
     public function getBaseCoursesByUser($userID): array
     {
         $courseList = CourseManager::get_courses_list_by_user_id($userID, false);
+
+        // Order descending by id (most recent first)
+        usort($courseList, function($a, $b) {
+            return $b['real_id'] <=> $a['real_id'];
+        });
+
         $courses = [];
         $count = 0;
 
@@ -1628,6 +1707,20 @@ class SchoolPlugin extends Plugin
                 return $menu['name'] !== 'shopping';
             });
         }
+
+        if (api_is_platform_admin()) {
+            $menus[] = [
+                'id' => 10,
+                'name' => 'admin',
+                'label' => $this->get_lang('PluginAdmin'),
+                'current' => false,
+                'icon' => 'cog',
+                'url' => '/school-admin',
+                'class' => $currentSection === 'admin' ? 'active' : '',
+                'items' => []
+            ];
+        }
+
         return array_values($menus);
     }
     public function is_platform_authentication(string $auth_source): bool
