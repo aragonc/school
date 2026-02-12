@@ -2,7 +2,7 @@
 <ul class="navbar-nav bg-sidebar sidebar sidebar-dark accordion d-none d-lg-block toggled" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ _p.web }}">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ _p.web }}dashboard">
         <div class="sidebar-brand-big">
             {{ logo_svg }}
         </div>

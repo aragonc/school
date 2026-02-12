@@ -10,7 +10,7 @@
     {% endif %}
 
     <div class="logo-campus d-sm-inline-block d-md-none">
-        <a href="{{ _p.web }}">{{ logo }}</a>
+        <a href="{{ _p.web }}dashboard">{{ logo }}</a>
     </div>
 
     {% if enabled_search %}

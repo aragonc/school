@@ -41,6 +41,7 @@ class SchoolPlugin extends Plugin
                 'email_help' => 'text',
                 'enable_complete_profile' => 'boolean',
                 'show_base_courses' => 'boolean',
+                'show_certificates' => 'boolean',
                 'template_certificate' => [
                     'type' => 'select',
                     'options' => [
@@ -1584,7 +1585,10 @@ class SchoolPlugin extends Plugin
                 'url' => '/notifications',
                 'items' => []
             ],
-            [
+        ];
+
+        if ($this->get('show_certificates') == 'true') {
+            $menus[] = [
                 'id' => 3,
                 'name' => 'certificates',
                 'label' => $this->get_lang('MyCertificates'),
@@ -1593,7 +1597,10 @@ class SchoolPlugin extends Plugin
                 'url' => '/certified',
                 'class' => $currentSection === 'certificates' ? 'active':'',
                 'items' => []
-            ],
+            ];
+        }
+
+        $menus = array_merge($menus, [
             [
                 'id' => 4,
                 'name' => 'help',
@@ -1614,39 +1621,14 @@ class SchoolPlugin extends Plugin
                 'class' => $currentSection === 'shopping' ? 'active':'',
                 'items' => []
             ]
+        ]);
 
-            /*[
-                'id' => 6,
-                'name' => 'buy',
-                'label' => 'Comprar',
-                'current' => false,
-                'icon' => 'shopping-cart',
-                'class' => '',
-                'items' => [
-                    [
-                        'id' => 601,
-                        'name' => 'courses',
-                        'label' => 'Cursos',
-                        'current' => false,
-                        'class' => '',
-                        'url' => '/comprar/cursos'
-                    ],
-                    [
-                        'id' => 602,
-                        'name' => 'graduates',
-                        'label' => 'Diplomados',
-                        'current' => false,
-                        'class' => '',
-                        'url' => '/comprar/diplomados'
-                    ]
-                ]
-            ]*/
-        ];
-
-        if($this->get('activate_shopping') == 'false'){
-            unset($menus[4]);
+        if ($this->get('activate_shopping') == 'false') {
+            $menus = array_filter($menus, function ($menu) {
+                return $menu['name'] !== 'shopping';
+            });
         }
-        return $menus;
+        return array_values($menus);
     }
     public function is_platform_authentication(string $auth_source): bool
     {

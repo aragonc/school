@@ -62,6 +62,7 @@ if ($enable) {
     $plugin->assign('img_section', $imgSection);
     $plugin->assign('total', $countHistory);
     $plugin->assign('show_base_courses', $showBaseCourses);
+    $plugin->assign('show_certificates', $plugin->get('show_certificates') == 'true');
     $plugin->assign('base_courses', $baseCourses);
     $plugin->assign('total_base_courses', $totalBaseCourses);
     if($enableCompleteProfile){

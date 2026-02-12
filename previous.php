@@ -20,6 +20,7 @@ if ($enable) {
     $plugin->assign('categories', $sessionsCategories['categories']);
     $plugin->assign('img_section', $imgSection);
     $plugin->assign('total', $countHistory);
+    $plugin->assign('show_certificates', $plugin->get('show_certificates') == 'true');
     $plugin->setTitle($plugin->get_lang('MyTrainings'));
     if($total > 0){
         $plugin->assign('total_courses', $countCourses);

@@ -16,11 +16,8 @@
         }
 
         .nav-link {
-          text-align: center;
           padding: 0.70rem;
-          //width: $sidebar-collapsed-width;
-          width: 2.5rem;
-          height: 2.2rem;
+          width: $sidebar-collapsed-width;
           margin: auto;
           border-radius: 10px;
           background: $bgcolor;
@@ -43,11 +40,6 @@
 
         &.active {
             .nav-link {
-                text-align: center;
-                padding: 0.70rem;
-                //width: $sidebar-collapsed-width;
-                width: 2.5rem;
-                height: 2.2rem;
                 margin: auto;
                 border-radius: 10px;
                 background: $bgcolor;

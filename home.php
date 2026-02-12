@@ -44,6 +44,14 @@ $checkIcon = $plugin->get_svg_icon('smile', $plugin->get_lang('Welcome'), 64);
 $tools = $plugin->getToolsCourseHome($sessionId, $courseId);
 $plugin->setTitle('');
 
+// Obtener introduction_text del curso
+$introText = '';
+$em = Database::getManager();
+$toolIntro = $em
+    ->getRepository('ChamiloCourseBundle:CToolIntro')
+    ->findOneBy(['cId' => $courseId, 'id' => TOOL_COURSE_HOMEPAGE, 'sessionId' => $sessionId]);
+$introText = $toolIntro ? $toolIntro->getIntroText() : '';
+
 $modalSence = '';
 //check enabled plugin sence
 if(class_exists('SencePlugin')){
@@ -55,6 +63,7 @@ if(class_exists('SencePlugin')){
 }
 
 $plugin->assign('session', $session);
+$plugin->assign('intro_text', $introText);
 $plugin->assign('course', $courseInfo);
 $plugin->assign('icon_course', $iconCourse);
 $plugin->assign('icon_smile', $checkIcon);
