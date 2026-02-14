@@ -5,7 +5,7 @@
             {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_courses + total_base_courses }}</span>
         </a>
     </li>
-    {% if total_history > 0 %}
+    {% if show_previous_tab and total_history > 0 %}
     <li class="nav-item">
         <a class="nav-link " href="/previous" >
             {{ 'Previous'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_history }}</span>
@@ -74,16 +74,6 @@
                                 <div class="p-0 p-md-2"><h4 class="category-name">{{ category.category_name }}</h4></div>
                             </div>
                         </div>
-                        <div class="col-md-3 d-none d-sm-block">
-                            <div class="section-col-table">
-                                {{ 'EndDate'|get_plugin_lang('SchoolPlugin') }}
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-lg-2 d-none d-sm-block">
-                            <div class="section-col-certification">
-                                {{ 'Certificate'|get_plugin_lang('SchoolPlugin') }}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -100,21 +90,13 @@
                                             {{ course.icon }} <span class="course-title">{{ session.name }}</span>
                                         </a>
                                     </div>
-                                    <div class="col-md-auto text-center">
-                                        <span class="row-date">{{ session.short_date }}</span>
-                                    </div>
-                                    <div class="col-md-auto text-center">
-                                        <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
-                                            <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
-                                        </a>
-                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="course-mobile d-md-none">
                             <div class="row align-items-center">
-                                <div class="col-10 pr-0">
+                                <div class="col pr-0">
                                     <div class="d-flex justify-content-start">
                                         <div class="icon-mobile">
                                             {{ course.icon_mobile }}
@@ -123,17 +105,7 @@
                                             <a class="course-link" href="{{ course.url }}" title="{{ course.title }}">
                                                 <span class="course-title">{{ session.name }}</span>
                                             </a>
-                                            <div class="certificate-regular">
-                                                <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
-                                                    <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
-                                                </a>
-                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="col-2">
-                                    <div class="date-mobile">
-                                        {{ session.short_date }}
                                     </div>
                                 </div>
                             </div>
@@ -153,14 +125,6 @@
                                         </button>
                                     </h2>
                                 </div>
-                                <div class="col-md-auto text-center">
-                                    <span class="row-date">{{ session.short_date }}</span>
-                                </div>
-                                <div class="col-md-auto text-center pr-4">
-                                    <a class="btn btn-primary btn-download" href="{{session.certificate_url}}" role="button"  target="_blank">
-                                        <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
-                                    </a>
-                                </div>
                             </div>
                         </div>
 
@@ -169,28 +133,16 @@
 
                         <div class="course-mobile d-md-none">
                             <div class="row align-items-center">
-                                <div class="col-10 pr-0">
+                                <div class="col pr-0">
                                     <div class="d-flex justify-content-start">
                                         <div class="icon-mobile">
                                             {{ session.session_image_mobile }}
                                         </div>
                                         <div class="mobile-title">
-
                                             <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse_session_{{ session.id }}" aria-expanded="true" aria-controls="collapse_session_{{ session.id }}">
                                                  <span class="course-title">{{ session.name }}</span>
                                             </button>
-
-                                            <div class="certificate-regular">
-                                                <a class="btn btn-primary btn-download" href="{{ session.certificate_url }}" target="_blank" role="button">
-                                                    <i class="fas fa-download"></i> {{ 'RegularStudent'|get_plugin_lang('SchoolPlugin') }}
-                                                </a>
-                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="col-2">
-                                    <div class="date-mobile">
-                                        {{ session.short_date }}
                                     </div>
                                 </div>
                             </div>

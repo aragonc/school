@@ -43,6 +43,7 @@ class SchoolPlugin extends Plugin
                 'enable_complete_profile' => 'boolean',
                 'show_base_courses' => 'boolean',
                 'show_certificates' => 'boolean',
+                'show_previous_tab' => 'boolean',
                 'template_certificate' => [
                     'type' => 'select',
                     'options' => [
@@ -923,21 +924,23 @@ class SchoolPlugin extends Plugin
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
         $table_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
         $table_session_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+        $table_session_course_user = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
         $table_access_url_session = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
 
         $sql = "
-            SELECT
-                COUNT(*) AS total_courses
-            FROM $table_session s
-            INNER JOIN $table_session_user srs ON srs.session_id = s.id
-            LEFT JOIN $table_session_category sc ON sc.id = s.session_category_id
-            INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
-            WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
-        if($history){
-            $sql .= " AND s.access_end_date <= CURDATE();";
-        } else {
-            $sql .= " AND s.access_end_date >= CURDATE();";
-        }
+            SELECT COUNT(*) AS total_courses FROM (
+                SELECT DISTINCT s.id
+                FROM $table_session s
+                INNER JOIN $table_session_user srs ON srs.session_id = s.id
+                INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
+                WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId
+                UNION
+                SELECT DISTINCT s.id
+                FROM $table_session s
+                INNER JOIN $table_session_course_user scru ON scru.session_id = s.id
+                INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
+                WHERE scru.user_id = $userID AND scru.status = 2 AND aus.access_url_id = $accessUrlId
+            ) AS user_sessions ";
         $result = Database::query($sql);
 
         if (empty($result)) {
@@ -1026,6 +1029,7 @@ class SchoolPlugin extends Plugin
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
         $table_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
         $table_session_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+        $table_session_course_user = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
         $table_access_url_session = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
         $sql = "
             SELECT
@@ -1041,24 +1045,18 @@ class SchoolPlugin extends Plugin
                 s.display_end_date,
                 s.access_start_date,
                 s.access_end_date,
-                DATE(srs.registered_at) AS 'registered_at',
+                COALESCE(DATE(srs.registered_at), CURDATE()) AS 'registered_at',
                 CASE
-                    WHEN s.id_coach = srs.user_id THEN 'true'
+                    WHEN s.id_coach = $userID THEN 'true'
                     ELSE 'false'
                 END AS coach
             FROM $table_session s
-            INNER JOIN $table_session_user srs ON srs.session_id = s.id
+            LEFT JOIN $table_session_user srs ON srs.session_id = s.id AND srs.user_id = $userID
+            LEFT JOIN $table_session_course_user scru ON scru.session_id = s.id AND scru.user_id = $userID AND scru.status = 2
             LEFT JOIN $table_session_category sc ON sc.id = s.session_category_id
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
-            WHERE srs.user_id = $userID AND aus.access_url_id = $accessUrlId ";
-
-        if(!$alls){
-            if($history){
-                $sql .= " AND s.access_end_date <= CURDATE();";
-            } else {
-                $sql .= " AND s.access_end_date >= CURDATE();";
-            }
-        }
+            WHERE (srs.user_id = $userID OR scru.user_id = $userID) AND aus.access_url_id = $accessUrlId
+            GROUP BY s.id ";
 
         $result = Database::query($sql);
 
@@ -1190,7 +1188,6 @@ class SchoolPlugin extends Plugin
 
         $sql = "SELECT DISTINCT
                     c.title,
-                    sc.visibility,
                     c.id as real_id,
                     c.code as course_code,
                     sc.id as insertion_order,
@@ -1204,7 +1201,8 @@ class SchoolPlugin extends Plugin
                 $join_access_url
                 WHERE
                     scu.user_id = $user_id AND
-                    scu.session_id = $session_id
+                    scu.session_id = $session_id AND
+                    scu.status IN (0, 2)
                     $where_access_url ORDER BY sc.position ASC ";
 
         $myCourseList = [];
@@ -1218,7 +1216,7 @@ class SchoolPlugin extends Plugin
             foreach ($rows as $result_row) {
                 $count++;
                 $result_row['status'] = 5;
-                $result_row['visible'] = boolval($result_row['visibility'] ?? true);
+                $result_row['visible'] = true;
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
@@ -1860,7 +1858,6 @@ class SchoolPlugin extends Plugin
         if(empty($item)){
             return [];
         }
-        $buy = BuyCoursesPlugin::create();
         $session = api_get_session_info($item);
 
         $em = Database::getManager();
@@ -1888,7 +1885,6 @@ class SchoolPlugin extends Plugin
         if($enabledPluginTags === 'true'){
             $tags = $this->getTagsSession($session['id']);
         }
-        $enrolled = $buy->getUserStatusForSession(api_get_user_id(), $sessionEntity);
         return [
             'id' => $session['id'],
             'name' => $session['name'],
@@ -1900,13 +1896,12 @@ class SchoolPlugin extends Plugin
             'session_category' => $category,
             'display_category' => $displayCategory,
             'n_courses' => $n_course,
-            'image' => $session['image'],
+            'image' => $session['image'] ?? '',
             'courses' => $courses,
             'link' => api_get_path(WEB_PATH).'session/'.$session['id'].'/about',
             'extra_fields' => $extraFieldData,
-            'reference_session' => $session['reference_session'],
+            'reference_session' => $session['reference_session'] ?? '',
             'calendar_course' => $lists,
-            'enrolled' => $enrolled,
         ];
     }
 
