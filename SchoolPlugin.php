@@ -895,6 +895,8 @@ class SchoolPlugin extends Plugin
             }
         }
         $this->assign('current_section_label', $currentSectionLabel);
+        $this->assign('platform_name', api_get_setting('siteName'));
+        $this->assign('institution_name', api_get_setting('Institution'));
 
         // Custom logo dimensions from admin settings
         $this->assign('custom_logo_width', $this->getSchoolSetting('logo_width') ?? '');

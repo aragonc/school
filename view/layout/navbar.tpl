@@ -5,8 +5,8 @@
     <button id="sidebarToggleDesktop" class="btn btn-link d-none d-lg-inline-block rounded-circle" title="Menu">
         <i class="fa fa-bars"></i>
     </button>
-    {% if current_section_label %}
-    <span class="d-none d-lg-inline-block text-gray-600 font-weight-bold ml-2">{{ current_section_label }}</span>
+    {% if platform_name %}
+    <span class="d-none d-lg-inline-block text-gray-600 font-weight-bold ml-2">{{ platform_name }}{% if institution_name %} - {{ institution_name }}{% endif %}</span>
     {% endif %}
 
     <div class="logo-campus d-sm-inline-block d-md-none">
