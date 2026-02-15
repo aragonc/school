@@ -31,7 +31,7 @@
                     {{ form }}
                 </div>
                 <div class="col-12 col-lg-6">
-                    <div class="d-none d-md-block text-center">
+                    <div class="d-md-block text-center">
                         {% if qr_image %}
                         <div class="mb-4">
                             <img src="data:image/png;base64,{{ qr_image }}" alt="QR Code" style="width:150px;height:150px;">
