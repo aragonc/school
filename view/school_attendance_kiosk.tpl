@@ -9,8 +9,8 @@
     }
     .kiosk-left {
         flex: 1; display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        padding: 20px; position: relative;
+        align-items: center;
+        padding: 0; position: relative; overflow: hidden;
     }
     .kiosk-right {
         width: 400px; background: #16213e; display: flex;
@@ -39,6 +39,11 @@
         letter-spacing: 2px; color: #e94560;
     }
     .clock-date { font-size: 1rem; color: #6c757d; margin-top: 4px; }
+    .camera-section {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 20px; width: 100%;
+    }
     .camera-wrapper {
         position: relative; width: 100%; max-width: 640px;
         border-radius: 16px; overflow: hidden;
@@ -164,7 +169,7 @@
 <div class="kiosk-container">
     <!-- Left: Camera + Clock -->
     <div class="kiosk-left">
-        <div class="clock-container" style="position:absolute;top:0;left:0;right:0;z-index:10;border-radius:0;">
+        <div class="clock-container" id="kioskHeader">
             <div class="clock-header">
                 <div class="clock-logo">
                     {% if kiosk_logo %}
@@ -183,15 +188,17 @@
             </div>
         </div>
 
-        <div class="camera-wrapper" style="margin-top:80px;">
-            <video id="video" autoplay playsinline muted></video>
-            <canvas id="canvas"></canvas>
-            <div class="scan-overlay">
-                <div class="scan-frame"></div>
+        <div class="camera-section">
+            <div class="camera-wrapper">
+                <video id="video" autoplay playsinline muted></video>
+                <canvas id="canvas"></canvas>
+                <div class="scan-overlay">
+                    <div class="scan-frame"></div>
+                </div>
             </div>
-        </div>
-        <div class="scan-label">
-            <i class="fas fa-qrcode"></i> Escanea tu código QR frente a la cámara
+            <div class="scan-label">
+                <i class="fas fa-qrcode"></i> Escanea tu código QR frente a la cámara
+            </div>
         </div>
     </div>
 
