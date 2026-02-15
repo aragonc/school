@@ -1,7 +1,23 @@
 <style>
-    body { background: #1a1a2e; color: #fff; overflow: hidden; }
+    body { background: #f0f2f5 !important; color: #333 !important; overflow: hidden !important; }
     #wrapper, #content-wrapper, #content, .page-container {
         padding: 0 !important; margin: 0 !important; max-width: 100% !important;
+        background: transparent !important;
+    }
+    /* Prevent video.js or media player from hijacking the video element */
+    .camera-wrapper .video-js,
+    .camera-wrapper .vjs-tech,
+    .camera-wrapper .vjs-poster,
+    .camera-wrapper .vjs-text-track-display,
+    .camera-wrapper .vjs-loading-spinner,
+    .camera-wrapper .vjs-big-play-button,
+    .camera-wrapper .vjs-control-bar {
+        display: none !important;
+    }
+    .camera-wrapper video {
+        width: 100% !important; height: auto !important;
+        display: block !important; background: #000 !important;
+        position: relative !important; object-fit: cover !important;
     }
     .kiosk-container {
         display: flex; height: 100vh; width: 100vw;
@@ -50,9 +66,6 @@
         box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
         border: 3px solid #e94560;
     }
-    .camera-wrapper video {
-        width: 100%; display: block; background: #000;
-    }
     .camera-wrapper canvas { display: none; }
     .scan-overlay {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -71,7 +84,7 @@
     }
     .scan-label {
         text-align: center; margin-top: 20px;
-        font-size: 1.2rem; color: #a8a8b3;
+        font-size: 1.2rem; color: #6c757d;
     }
     .scan-label i { color: #e94560; margin-right: 8px; }
 
@@ -190,7 +203,7 @@
 
         <div class="camera-section">
             <div class="camera-wrapper">
-                <video id="video" autoplay playsinline muted></video>
+                <video id="video" class="kiosk-camera" autoplay playsinline muted></video>
                 <canvas id="canvas"></canvas>
                 <div class="scan-overlay">
                     <div class="scan-frame"></div>
@@ -229,6 +242,32 @@
     </div>
 </div>
 
+<script>
+// Prevent video.js from auto-initializing our camera video element
+(function() {
+    var vid = document.getElementById('video');
+    if (vid) {
+        vid.removeAttribute('data-setup');
+        vid.classList.remove('video-js', 'vjs-default-skin');
+        // Remove any video.js wrapper if it was already initialized
+        var wrapper = vid.closest('.video-js');
+        if (wrapper && wrapper !== vid) {
+            wrapper.parentNode.insertBefore(vid, wrapper);
+            wrapper.parentNode.removeChild(wrapper);
+        }
+    }
+    // Block videojs from initializing on our element
+    if (window.videojs) {
+        var origVideojs = window.videojs;
+        window.videojs = function(el) {
+            if (typeof el === 'string' && el === 'video') return null;
+            if (el && el.id === 'video') return null;
+            return origVideojs.apply(this, arguments);
+        };
+        Object.keys(origVideojs).forEach(function(k) { window.videojs[k] = origVideojs[k]; });
+    }
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 (function() {
