@@ -17,16 +17,28 @@
         flex-direction: column; border-left: 2px solid #0f3460;
     }
     .clock-container {
-        text-align: center; padding: 15px;
-        background: linear-gradient(135deg, #0f3460, #533483);
-        border-bottom: 2px solid #0f3460;
+        padding: 15px 20px;
+        background: #FFFFFF;
+        box-shadow: 0 10px 30px 0 rgba(82, 63, 105, .08);
+    }
+    .clock-header {
+        display: flex; align-items: center; width: 100%;
+    }
+    .clock-logo {
+        flex: 0 0 auto; margin-right: 20px;
+    }
+    .clock-logo img {
+        max-height: 50px; max-width: 180px; object-fit: contain;
+    }
+    .clock-center {
+        flex: 1; text-align: center;
     }
     .clock-time {
         font-size: 3rem; font-weight: 700;
         font-variant-numeric: tabular-nums;
         letter-spacing: 2px; color: #e94560;
     }
-    .clock-date { font-size: 1rem; color: #a8a8b3; margin-top: 4px; }
+    .clock-date { font-size: 1rem; color: #6c757d; margin-top: 4px; }
     .camera-wrapper {
         position: relative; width: 100%; max-width: 640px;
         border-radius: 16px; overflow: hidden;
@@ -153,8 +165,22 @@
     <!-- Left: Camera + Clock -->
     <div class="kiosk-left">
         <div class="clock-container" style="position:absolute;top:0;left:0;right:0;z-index:10;border-radius:0;">
-            <div class="clock-time" id="clockTime">--:--:--</div>
-            <div class="clock-date" id="clockDate"></div>
+            <div class="clock-header">
+                <div class="clock-logo">
+                    {% if kiosk_logo %}
+                    <img src="{{ kiosk_logo }}" alt="{{ institution_name }}">
+                    {% endif %}
+                </div>
+                <div class="clock-center">
+                    <div class="clock-time" id="clockTime">--:--:--</div>
+                    <div class="clock-date" id="clockDate"></div>
+                </div>
+                <div class="clock-logo" style="visibility:hidden;">
+                    {% if kiosk_logo %}
+                    <img src="{{ kiosk_logo }}" alt="">
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <div class="camera-wrapper" style="margin-top:80px;">
