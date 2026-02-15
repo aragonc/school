@@ -4,15 +4,60 @@ require_once __DIR__.'/../config.php';
 
 $plugin = SchoolPlugin::create();
 
+$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+
+header('Content-Type: application/json');
+
+// Kiosk mode: public endpoint, no login required
+if ($action === 'scan_qr_kiosk') {
+    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+
+    if (empty($username)) {
+        echo json_encode(['success' => false, 'message' => 'Username is required']);
+        exit;
+    }
+
+    $userInfo = api_get_user_info_from_username(Database::escape_string($username));
+
+    if (!$userInfo) {
+        echo json_encode(['success' => false, 'message' => 'UserNotFound']);
+        exit;
+    }
+
+    $userId = (int) $userInfo['user_id'];
+    $result = $plugin->markAttendance($userId, 'qr');
+
+    // Get avatar URL
+    $avatarUrl = $userInfo['avatar'] ?? '';
+
+    // Get last 10 records for today
+    $todayRecords = $plugin->getAttendanceByDate(date('Y-m-d'));
+    $lastRecords = array_slice(array_reverse($todayRecords), 0, 10);
+
+    echo json_encode([
+        'success' => $result['success'],
+        'message' => $result['message'],
+        'status' => $result['status'] ?? '',
+        'user_info' => [
+            'firstname' => $userInfo['firstname'],
+            'lastname' => $userInfo['lastname'],
+            'username' => $userInfo['username'],
+            'avatar_url' => $avatarUrl,
+        ],
+        'check_in_time' => date('H:i:s'),
+        'server_time' => date('Y-m-d H:i:s'),
+        'today_records' => $lastRecords,
+    ]);
+    exit;
+}
+
+// All other actions require authentication
 if (!api_get_user_id()) {
     echo json_encode(['success' => false, 'message' => 'Not authenticated']);
     exit;
 }
 
-$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
 $isAdmin = api_is_platform_admin();
-
-header('Content-Type: application/json');
 
 switch ($action) {
     case 'generate_qr':
