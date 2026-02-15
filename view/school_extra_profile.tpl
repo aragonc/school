@@ -42,3 +42,109 @@
         </div>
     </div>
 </div>
+
+<script>
+$(function() {
+    var provinciasData = null;
+    var distritosData = null;
+    var selectOptionText = "{{ select_option_text }}";
+    var ubigeoPath = "{{ ubigeo_path }}";
+
+    $("#region").on("change", function() {
+        var regionId = $(this).val();
+        var $province = $("#province");
+        var $district = $("#district");
+
+        $province.html('<option value="">' + selectOptionText + '</option>').attr("disabled", "disabled");
+        $district.html('<option value="">' + selectOptionText + '</option>').attr("disabled", "disabled");
+
+        if (!regionId) {
+            return;
+        }
+
+        if (provinciasData) {
+            fillProvincias(regionId);
+        } else {
+            $.getJSON(ubigeoPath + "ubigeo_peru_2016_provincias.json", function(data) {
+                provinciasData = data;
+                fillProvincias(regionId);
+            });
+        }
+    });
+
+    $("#province").on("change", function() {
+        var provinceId = $(this).val();
+        var $district = $("#district");
+
+        $district.html('<option value="">' + selectOptionText + '</option>').attr("disabled", "disabled");
+
+        if (!provinceId) {
+            return;
+        }
+
+        if (distritosData) {
+            fillDistritos(provinceId);
+        } else {
+            $.getJSON(ubigeoPath + "ubigeo_peru_2016_distritos.json", function(data) {
+                distritosData = data;
+                fillDistritos(provinceId);
+            });
+        }
+    });
+
+    function fillProvincias(regionId) {
+        var $province = $("#province");
+        $province.html('<option value="">' + selectOptionText + '</option>');
+
+        $.each(provinciasData, function(i, item) {
+            if (item.department_id === regionId) {
+                $province.append('<option value="' + item.id + '">' + item.name + '</option>');
+            }
+        });
+
+        $province.removeAttr("disabled");
+    }
+
+    function fillDistritos(provinceId) {
+        var $district = $("#district");
+        $district.html('<option value="">' + selectOptionText + '</option>');
+
+        $.each(distritosData, function(i, item) {
+            if (item.province_id === provinceId) {
+                $district.append('<option value="' + item.id + '">' + item.name + '</option>');
+            }
+        });
+
+        $district.removeAttr("disabled");
+    }
+
+    $("form[name='extra_profile_form']").on("submit", function() {
+        $("#province, #district").removeAttr("disabled");
+    });
+
+    // Load saved values on page init
+    var savedRegion = "{{ saved_region }}";
+    var savedProvince = "{{ saved_province }}";
+    var savedDistrict = "{{ saved_district }}";
+
+    if (savedRegion) {
+        $("#region").val(savedRegion);
+        $.getJSON(ubigeoPath + "ubigeo_peru_2016_provincias.json", function(data) {
+            provinciasData = data;
+            fillProvincias(savedRegion);
+
+            if (savedProvince) {
+                $("#province").val(savedProvince);
+                $.getJSON(ubigeoPath + "ubigeo_peru_2016_distritos.json", function(data) {
+                    distritosData = data;
+                    fillDistritos(savedProvince);
+
+                    if (savedDistrict) {
+                        $("#district").val(savedDistrict);
+                    }
+                });
+            }
+        });
+    }
+});
+</script>

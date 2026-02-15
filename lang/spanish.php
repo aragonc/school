@@ -258,6 +258,7 @@ $strings['Birthdate'] = 'Fecha de nacimiento';
 $strings['Address'] = 'Dirección de domicilio';
 $strings['AddressReference'] = 'Referencia';
 $strings['PhoneWhatsApp'] = 'Celular (WhatsApp)';
+$strings['EmergencyPhone'] = 'Teléfono de emergencia';
 $strings['District'] = 'Distrito';
 $strings['Province'] = 'Provincia';
 $strings['Region'] = 'Región';

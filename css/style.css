@@ -9914,3 +9914,57 @@ ul.nav-tabs li a[aria-selected="false"]:hover {
 
   .card-catalog .container-fluid, .card-catalog .container-sm, .card-catalog .container-md, .card-catalog .container-lg, .card-catalog .container-xl {
     padding: 0 !important; } }
+
+/* DatePicker - Bootstrap 3 compatibility */
+.input-group .input-group-addon {
+  display: flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #495057;
+  text-align: center;
+  white-space: nowrap;
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem 0 0 0.25rem;
+  border-right: 0;
+}
+.input-group .input-group-addon input[type="hidden"],
+.input-group .input-group-addon input[type="text"] {
+  margin: 0;
+}
+.input-group .input-group-addon .ui-datepicker-trigger {
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+}
+.input-group p.form-control.disabled {
+  flex: 1;
+  margin-bottom: 0;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 0;
+}
+.input-group input.form-control[type="hidden"] {
+  display: none;
+}
+.input-group .input-group-btn {
+  display: flex;
+}
+.input-group .input-group-btn .btn {
+  border-radius: 0 0.25rem 0.25rem 0;
+  border: 1px solid #ced4da;
+  border-left: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+}
+.form-group > label,
+.form-group > .control-label {
+  width: 100%;
+  font-weight: 700;
+}

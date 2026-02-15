@@ -256,6 +256,7 @@ $strings['Birthdate'] = 'Date of birth';
 $strings['Address'] = 'Home address';
 $strings['AddressReference'] = 'Address reference';
 $strings['PhoneWhatsApp'] = 'Cell phone (WhatsApp)';
+$strings['EmergencyPhone'] = 'Emergency phone';
 $strings['District'] = 'District';
 $strings['Province'] = 'Province';
 $strings['Region'] = 'Region';

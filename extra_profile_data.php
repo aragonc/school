@@ -15,14 +15,9 @@ api_block_anonymous_users();
 
 $userId = api_get_user_id();
 
-// Peru regions data
-$regions = [
-    'Amazonas', 'Áncash', 'Apurímac', 'Arequipa', 'Ayacucho',
-    'Cajamarca', 'Callao', 'Cusco', 'Huancavelica', 'Huánuco',
-    'Ica', 'Junín', 'La Libertad', 'Lambayeque', 'Lima',
-    'Loreto', 'Madre de Dios', 'Moquegua', 'Pasco', 'Piura',
-    'Puno', 'San Martín', 'Tacna', 'Tumbes', 'Ucayali'
-];
+// Peru regions data from JSON
+$regionsJson = file_get_contents(__DIR__.'/ajax/ubigeo/ubigeo_peru_2016_region.json');
+$regions = json_decode($regionsJson, true);
 
 // Get existing data
 $extraData = $plugin->getExtraProfileData($userId);
@@ -60,20 +55,30 @@ $form->addText('address', $plugin->get_lang('Address'), false, ['maxlength' => 5
 $form->addText('address_reference', $plugin->get_lang('AddressReference'), false, ['maxlength' => 255]);
 
 // Phone / WhatsApp
-$form->addText('phone', $plugin->get_lang('PhoneWhatsApp'), false, ['maxlength' => 50]);
+$form->addText('phone', $plugin->get_lang('EmergencyPhone'), false, ['maxlength' => 50]);
 
 // Region
 $regionOptions = ['' => '-- ' . $plugin->get_lang('SelectOption') . ' --'];
 foreach ($regions as $region) {
-    $regionOptions[$region] = $region;
+    $regionOptions[$region['id']] = $region['name'];
 }
-$form->addSelect('region', $plugin->get_lang('Region'), $regionOptions);
+$form->addSelect('region', $plugin->get_lang('Region'), $regionOptions, ['id' => 'region']);
 
 // Province
-$form->addText('province', $plugin->get_lang('Province'), false, ['maxlength' => 100]);
+$form->addSelect(
+    'province',
+    $plugin->get_lang('Province'),
+    ['' => '-- ' . $plugin->get_lang('SelectOption') . ' --'],
+    ['id' => 'province', 'disabled' => 'disabled']
+);
 
 // District
-$form->addText('district', $plugin->get_lang('District'), false, ['maxlength' => 100]);
+$form->addSelect(
+    'district',
+    $plugin->get_lang('District'),
+    ['' => '-- ' . $plugin->get_lang('SelectOption') . ' --'],
+    ['id' => 'district', 'disabled' => 'disabled']
+);
 
 $form->addButton('submit', $plugin->get_lang('SaveChanges'), '', 'primary', 'default', 'btn-block');
 
@@ -104,6 +109,11 @@ if ($form->validate()) {
 }
 
 $plugin->setTitle($plugin->get_lang('ExtraProfileData'));
+$plugin->assign('ubigeo_path', api_get_path(WEB_PLUGIN_PATH).'school/ajax/ubigeo/');
+$plugin->assign('select_option_text', '-- ' . $plugin->get_lang('SelectOption') . ' --');
+$plugin->assign('saved_region', $extraData['region'] ?? '');
+$plugin->assign('saved_province', $extraData['province'] ?? '');
+$plugin->assign('saved_district', $extraData['district'] ?? '');
 $plugin->assign('form', $form->returnForm());
 $content = $plugin->fetch('school_extra_profile.tpl');
 $plugin->assign('content', $content);
