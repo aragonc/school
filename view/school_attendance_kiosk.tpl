@@ -51,13 +51,14 @@
             padding: 20px; width: 100%;
         }
         .camera-wrapper {
-            position: relative; width: 100%; max-width: 640px;
+            position: relative; width: 480px;
             border-radius: 16px; overflow: hidden;
             box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
             border: 3px solid #e94560;
         }
         .camera-wrapper video {
-            width: 100%; display: block; background: #000;
+            width: 480px; height: 360px; display: block;
+            background: #000; object-fit: cover;
         }
         .camera-wrapper canvas { display: none; }
         .scan-overlay {
@@ -163,7 +164,8 @@
             .kiosk-right { width: 100%; height: 40vh; border-left: none; border-top: 2px solid #0f3460; }
             .kiosk-left { height: 60vh; }
             .clock-time { font-size: 2rem; }
-            .camera-wrapper { max-width: 90%; }
+            .camera-wrapper { width: 320px; }
+            .camera-wrapper video { width: 320px; height: 240px; }
         }
     </style>
 </head>
