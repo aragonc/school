@@ -1,188 +1,178 @@
-<style>
-    body { background: #f0f2f5 !important; color: #333 !important; overflow: hidden !important; }
-    #wrapper, #content-wrapper, #content, .page-container {
-        padding: 0 !important; margin: 0 !important; max-width: 100% !important;
-        background: transparent !important;
-    }
-    /* Prevent video.js or media player from hijacking the video element */
-    .camera-wrapper .video-js,
-    .camera-wrapper .vjs-tech,
-    .camera-wrapper .vjs-poster,
-    .camera-wrapper .vjs-text-track-display,
-    .camera-wrapper .vjs-loading-spinner,
-    .camera-wrapper .vjs-big-play-button,
-    .camera-wrapper .vjs-control-bar {
-        display: none !important;
-    }
-    .camera-wrapper video {
-        width: 100% !important; height: auto !important;
-        display: block !important; background: #000 !important;
-        position: relative !important; object-fit: cover !important;
-    }
-    .kiosk-container {
-        display: flex; height: 100vh; width: 100vw;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .kiosk-left {
-        flex: 1; display: flex; flex-direction: column;
-        align-items: center;
-        padding: 0; position: relative; overflow: hidden;
-    }
-    .kiosk-right {
-        width: 400px; background: #16213e; display: flex;
-        flex-direction: column; border-left: 2px solid #0f3460;
-    }
-    .clock-container {
-        padding: 15px 20px;
-        background: #FFFFFF;
-        box-shadow: 0 10px 30px 0 rgba(82, 63, 105, .08);
-    }
-    .clock-header {
-        display: flex; align-items: center; width: 100%;
-    }
-    .clock-logo {
-        flex: 0 0 auto; margin-right: 20px;
-    }
-    .clock-logo img {
-        max-height: 50px; max-width: 180px; object-fit: contain;
-    }
-    .clock-center {
-        flex: 1; text-align: center;
-    }
-    .clock-time {
-        font-size: 3rem; font-weight: 700;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: 2px; color: #e94560;
-    }
-    .clock-date { font-size: 1rem; color: #6c757d; margin-top: 4px; }
-    .camera-section {
-        flex: 1; display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        padding: 20px; width: 100%;
-    }
-    .camera-wrapper {
-        position: relative; width: 100%; max-width: 640px;
-        border-radius: 16px; overflow: hidden;
-        box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
-        border: 3px solid #e94560;
-    }
-    .camera-wrapper canvas { display: none; }
-    .scan-overlay {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        display: flex; align-items: center; justify-content: center;
-        pointer-events: none;
-    }
-    .scan-frame {
-        width: 250px; height: 250px;
-        border: 3px solid rgba(233, 69, 96, 0.8);
-        border-radius: 16px;
-        animation: pulse-border 2s infinite;
-    }
-    @keyframes pulse-border {
-        0%, 100% { border-color: rgba(233, 69, 96, 0.4); box-shadow: 0 0 20px rgba(233, 69, 96, 0.1); }
-        50% { border-color: rgba(233, 69, 96, 1); box-shadow: 0 0 30px rgba(233, 69, 96, 0.4); }
-    }
-    .scan-label {
-        text-align: center; margin-top: 20px;
-        font-size: 1.2rem; color: #6c757d;
-    }
-    .scan-label i { color: #e94560; margin-right: 8px; }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{{ institution_name }} - {{ site_name }}</title>
+    <link rel="stylesheet" href="{{ fa_css }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f0f2f5; color: #333; overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .kiosk-container {
+            display: flex; height: 100vh; width: 100vw;
+        }
+        .kiosk-left {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; overflow: hidden;
+        }
+        .kiosk-right {
+            width: 400px; background: #16213e; display: flex;
+            flex-direction: column; border-left: 2px solid #0f3460;
+        }
+        .clock-container {
+            width: 100%; padding: 15px 20px;
+            background: #FFFFFF;
+            box-shadow: 0 10px 30px 0 rgba(82, 63, 105, .08);
+        }
+        .clock-header {
+            display: flex; align-items: center; width: 100%;
+        }
+        .clock-logo {
+            flex: 0 0 auto; margin-right: 20px;
+        }
+        .clock-logo img {
+            max-height: 50px; max-width: 180px; object-fit: contain;
+        }
+        .clock-center {
+            flex: 1; text-align: center;
+        }
+        .clock-time {
+            font-size: 3rem; font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 2px; color: #e94560;
+        }
+        .clock-date { font-size: 1rem; color: #6c757d; margin-top: 4px; }
+        .camera-section {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px; width: 100%;
+        }
+        .camera-wrapper {
+            position: relative; width: 100%; max-width: 640px;
+            border-radius: 16px; overflow: hidden;
+            box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
+            border: 3px solid #e94560;
+        }
+        .camera-wrapper video {
+            width: 100%; display: block; background: #000;
+        }
+        .camera-wrapper canvas { display: none; }
+        .scan-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none;
+        }
+        .scan-frame {
+            width: 250px; height: 250px;
+            border: 3px solid rgba(233, 69, 96, 0.8);
+            border-radius: 16px;
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(233, 69, 96, 0.4); box-shadow: 0 0 20px rgba(233, 69, 96, 0.1); }
+            50% { border-color: rgba(233, 69, 96, 1); box-shadow: 0 0 30px rgba(233, 69, 96, 0.4); }
+        }
+        .scan-label {
+            text-align: center; margin-top: 20px;
+            font-size: 1.2rem; color: #6c757d;
+        }
+        .scan-label i { color: #e94560; margin-right: 8px; }
 
-    /* Result overlay */
-    .result-overlay {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.85); display: none;
-        align-items: center; justify-content: center; z-index: 1000;
-    }
-    .result-overlay.show { display: flex; }
-    .result-card {
-        background: #16213e; border-radius: 20px; padding: 40px;
-        text-align: center; min-width: 400px; max-width: 500px;
-        animation: slideUp 0.4s ease-out;
-        border: 2px solid #0f3460;
-    }
-    @keyframes slideUp {
-        from { transform: translateY(60px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    .result-avatar {
-        width: 120px; height: 120px; border-radius: 50%;
-        object-fit: cover; margin-bottom: 16px;
-        border: 4px solid #e94560;
-    }
-    .result-avatar-placeholder {
-        width: 120px; height: 120px; border-radius: 50%;
-        background: #0f3460; display: flex; align-items: center;
-        justify-content: center; margin: 0 auto 16px;
-        font-size: 3rem; color: #e94560;
-        border: 4px solid #e94560;
-    }
-    .result-name { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
-    .result-time { font-size: 2.5rem; font-weight: 700; color: #e94560; margin: 12px 0; }
-    .result-status {
-        display: inline-block; padding: 8px 24px;
-        border-radius: 50px; font-size: 1.1rem; font-weight: 600;
-    }
-    .status-on_time { background: #28a745; color: #fff; }
-    .status-late { background: #ffc107; color: #212529; }
-    .status-already { background: #6c757d; color: #fff; }
-    .status-error { background: #dc3545; color: #fff; }
-    .result-countdown {
-        margin-top: 16px; font-size: 0.9rem; color: #a8a8b3;
-    }
+        /* Result overlay */
+        .result-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); display: none;
+            align-items: center; justify-content: center; z-index: 1000;
+        }
+        .result-overlay.show { display: flex; }
+        .result-card {
+            background: #16213e; border-radius: 20px; padding: 40px;
+            text-align: center; min-width: 400px; max-width: 500px;
+            animation: slideUp 0.4s ease-out;
+            border: 2px solid #0f3460; color: #fff;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(60px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .result-avatar {
+            width: 120px; height: 120px; border-radius: 50%;
+            object-fit: cover; margin-bottom: 16px;
+            border: 4px solid #e94560;
+        }
+        .result-avatar-placeholder {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: #0f3460; display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 16px;
+            font-size: 3rem; color: #e94560;
+            border: 4px solid #e94560;
+        }
+        .result-name { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
+        .result-time { font-size: 2.5rem; font-weight: 700; color: #e94560; margin: 12px 0; }
+        .result-status {
+            display: inline-block; padding: 8px 24px;
+            border-radius: 50px; font-size: 1.1rem; font-weight: 600;
+        }
+        .status-on_time { background: #28a745; color: #fff; }
+        .status-late { background: #ffc107; color: #212529; }
+        .status-already { background: #6c757d; color: #fff; }
+        .status-error { background: #dc3545; color: #fff; }
+        .result-countdown {
+            margin-top: 16px; font-size: 0.9rem; color: #a8a8b3;
+        }
 
-    /* Records list */
-    .records-header {
-        padding: 12px 16px; font-size: 1rem; font-weight: 600;
-        background: #0f3460; color: #e94560;
-    }
-    .records-list { flex: 1; overflow-y: auto; padding: 0; }
-    .record-item {
-        display: flex; align-items: center; padding: 10px 16px;
-        border-bottom: 1px solid #0f3460;
-        animation: fadeIn 0.3s ease-out;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateX(20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-    .record-item:nth-child(odd) { background: rgba(15, 52, 96, 0.3); }
-    .record-avatar-sm {
-        width: 36px; height: 36px; border-radius: 50%;
-        margin-right: 10px; object-fit: cover;
-        border: 2px solid #533483;
-    }
-    .record-info { flex: 1; }
-    .record-name { font-size: 0.9rem; font-weight: 600; }
-    .record-time-sm { font-size: 0.8rem; color: #a8a8b3; }
-    .record-badge {
-        padding: 3px 10px; border-radius: 12px;
-        font-size: 0.75rem; font-weight: 600;
-    }
-    .badge-on_time { background: #28a745; color: #fff; }
-    .badge-late { background: #ffc107; color: #212529; }
-    .badge-absent { background: #dc3545; color: #fff; }
+        /* Records list */
+        .records-header {
+            padding: 12px 16px; font-size: 1rem; font-weight: 600;
+            background: #0f3460; color: #e94560;
+        }
+        .records-list { flex: 1; overflow-y: auto; padding: 0; color: #fff; }
+        .record-item {
+            display: flex; align-items: center; padding: 10px 16px;
+            border-bottom: 1px solid #0f3460;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .record-item:nth-child(odd) { background: rgba(15, 52, 96, 0.3); }
+        .record-info { flex: 1; }
+        .record-name { font-size: 0.9rem; font-weight: 600; }
+        .record-time-sm { font-size: 0.8rem; color: #a8a8b3; }
+        .record-badge {
+            padding: 3px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-on_time { background: #28a745; color: #fff; }
+        .badge-late { background: #ffc107; color: #212529; }
+        .badge-absent { background: #dc3545; color: #fff; }
 
-    .total-counter {
-        padding: 12px 16px; background: #0f3460;
-        text-align: center; font-size: 0.9rem;
-        border-top: 2px solid #533483;
-    }
-    .total-counter span { color: #e94560; font-weight: 700; }
+        .total-counter {
+            padding: 12px 16px; background: #0f3460; color: #fff;
+            text-align: center; font-size: 0.9rem;
+            border-top: 2px solid #533483;
+        }
+        .total-counter span { color: #e94560; font-weight: 700; }
 
-    @media (max-width: 900px) {
-        .kiosk-container { flex-direction: column; }
-        .kiosk-right { width: 100%; height: 40vh; border-left: none; border-top: 2px solid #0f3460; }
-        .kiosk-left { height: 60vh; }
-        .clock-time { font-size: 2rem; }
-        .camera-wrapper { max-width: 90%; }
-    }
-</style>
+        @media (max-width: 900px) {
+            .kiosk-container { flex-direction: column; }
+            .kiosk-right { width: 100%; height: 40vh; border-left: none; border-top: 2px solid #0f3460; }
+            .kiosk-left { height: 60vh; }
+            .clock-time { font-size: 2rem; }
+            .camera-wrapper { max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
 
 <div class="kiosk-container">
     <!-- Left: Camera + Clock -->
     <div class="kiosk-left">
-        <div class="clock-container" id="kioskHeader">
+        <div class="clock-container">
             <div class="clock-header">
                 <div class="clock-logo">
                     {% if kiosk_logo %}
@@ -203,7 +193,7 @@
 
         <div class="camera-section">
             <div class="camera-wrapper">
-                <video id="video" class="kiosk-camera" autoplay playsinline muted></video>
+                <video id="video" autoplay playsinline muted></video>
                 <canvas id="canvas"></canvas>
                 <div class="scan-overlay">
                     <div class="scan-frame"></div>
@@ -233,7 +223,7 @@
 
 <!-- Result Overlay -->
 <div class="result-overlay" id="resultOverlay">
-    <div class="result-card" id="resultCard">
+    <div class="result-card">
         <div id="resultAvatarContainer"></div>
         <div class="result-name" id="resultName"></div>
         <div class="result-time" id="resultTime"></div>
@@ -242,32 +232,6 @@
     </div>
 </div>
 
-<script>
-// Prevent video.js from auto-initializing our camera video element
-(function() {
-    var vid = document.getElementById('video');
-    if (vid) {
-        vid.removeAttribute('data-setup');
-        vid.classList.remove('video-js', 'vjs-default-skin');
-        // Remove any video.js wrapper if it was already initialized
-        var wrapper = vid.closest('.video-js');
-        if (wrapper && wrapper !== vid) {
-            wrapper.parentNode.insertBefore(vid, wrapper);
-            wrapper.parentNode.removeChild(wrapper);
-        }
-    }
-    // Block videojs from initializing on our element
-    if (window.videojs) {
-        var origVideojs = window.videojs;
-        window.videojs = function(el) {
-            if (typeof el === 'string' && el === 'video') return null;
-            if (el && el.id === 'video') return null;
-            return origVideojs.apply(this, arguments);
-        };
-        Object.keys(origVideojs).forEach(function(k) { window.videojs[k] = origVideojs[k]; });
-    }
-})();
-</script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 (function() {
@@ -527,3 +491,6 @@
 
 })();
 </script>
+
+</body>
+</html>

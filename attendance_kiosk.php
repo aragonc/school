@@ -9,8 +9,6 @@ if (!$enable) {
     api_not_allowed(true);
 }
 
-$plugin->setCurrentSection('attendance');
-
 $serverTime = date('Y-m-d H:i:s');
 
 $plugin->assign('server_time', $serverTime);
@@ -21,7 +19,9 @@ $plugin->assign('web_path', api_get_path(WEB_PATH));
 $customLogo = $plugin->getCustomLogo();
 $plugin->assign('kiosk_logo', $customLogo ?? '');
 $plugin->assign('institution_name', api_get_setting('Institution'));
+$plugin->assign('site_name', api_get_setting('siteName'));
 
-$content = $plugin->fetch('school_attendance_kiosk.tpl');
-$plugin->assign('content', $content);
-$plugin->display_none_template();
+// FontAwesome path
+$plugin->assign('fa_css', api_get_path(WEB_PATH).'web/assets/fontawesome-free/css/all.min.css');
+
+echo $plugin->fetch('school_attendance_kiosk.tpl');
