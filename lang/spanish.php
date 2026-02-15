@@ -276,3 +276,6 @@ $strings['UserNotFound'] = 'Usuario no encontrado';
 $strings['ScanSuccess'] = 'Escaneo exitoso';
 $strings['ServerTime'] = 'Hora del servidor';
 $strings['LastRecords'] = 'Últimos registros';
+$strings['DeleteAttendance'] = 'Eliminar asistencia';
+$strings['ConfirmDeleteAttendance'] = '¿Está seguro de eliminar el registro de asistencia de:';
+$strings['AttendanceDeleted'] = 'Registro de asistencia eliminado';

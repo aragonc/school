@@ -225,6 +225,11 @@
                                             <button type="button" class="btn btn-danger btn-mark-single" data-user-id="{{ user.id }}" data-status="absent" title="{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}">
                                                 <i class="fas fa-times"></i>
                                             </button>
+                                            {% if user.attendance_id %}
+                                            <button type="button" class="btn btn-outline-danger btn-delete-attendance" data-attendance-id="{{ user.attendance_id }}" data-user-name="{{ user.lastname }}, {{ user.firstname }}" title="{{ 'DeleteAttendance'|get_plugin_lang('SchoolPlugin') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -636,6 +641,29 @@ function clearScheduleForm() {
     document.getElementById('schedule_active').checked = true;
     document.getElementById('scheduleModalTitle').textContent = '{{ 'AddSchedule'|get_plugin_lang('SchoolPlugin') }}';
 }
+
+// Delete attendance record
+document.querySelectorAll('.btn-delete-attendance').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var attendanceId = this.getAttribute('data-attendance-id');
+        var userName = this.getAttribute('data-user-name');
+        if (!confirm('{{ 'ConfirmDeleteAttendance'|get_plugin_lang('SchoolPlugin') }}\n' + userName)) return;
+
+        var formData = new FormData();
+        formData.append('action', 'delete_attendance');
+        formData.append('attendance_id', attendanceId);
+
+        fetch(ajaxUrl, { method: 'POST', body: formData })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.location.href = window.location.pathname + '?tab=manual';
+                } else {
+                    alert(data.message || 'Error');
+                }
+            });
+    });
+});
 
 // Print QR
 function printQR() {

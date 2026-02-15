@@ -30,8 +30,17 @@ if ($action === 'scan_qr_kiosk') {
     // Get avatar URL
     $avatarUrl = $userInfo['avatar'] ?? '';
 
-    // Get last 10 records for today
+    // Get last 10 records for today, converting UTC times to local
     $todayRecords = $plugin->getAttendanceByDate(date('Y-m-d'));
+    foreach ($todayRecords as &$record) {
+        if (!empty($record['check_in'])) {
+            $record['check_in'] = api_get_local_time($record['check_in']);
+        }
+        if (!empty($record['created_at'])) {
+            $record['created_at'] = api_get_local_time($record['created_at']);
+        }
+    }
+    unset($record);
     $lastRecords = array_slice(array_reverse($todayRecords), 0, 10);
 
     echo json_encode([
@@ -171,6 +180,22 @@ switch ($action) {
         $endDate = isset($_GET['end_date']) ? $_GET['end_date'] : null;
         $userType = isset($_GET['user_type']) ? $_GET['user_type'] : null;
         $plugin->exportAttendancePDF($startDate, $endDate, $userType);
+        break;
+
+    case 'delete_attendance':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $attendanceId = isset($_POST['attendance_id']) ? (int) $_POST['attendance_id'] : 0;
+        if ($attendanceId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid record']);
+            exit;
+        }
+        $table = Database::get_main_table('plugin_school_attendance_log');
+        $sql = "DELETE FROM $table WHERE id = $attendanceId";
+        Database::query($sql);
+        echo json_encode(['success' => true, 'message' => 'AttendanceDeleted']);
         break;
 
     default:

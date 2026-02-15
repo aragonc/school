@@ -274,3 +274,6 @@ $strings['UserNotFound'] = 'User not found';
 $strings['ScanSuccess'] = 'Scan successful';
 $strings['ServerTime'] = 'Server time';
 $strings['LastRecords'] = 'Last records';
+$strings['DeleteAttendance'] = 'Delete attendance';
+$strings['ConfirmDeleteAttendance'] = 'Are you sure you want to delete the attendance record for:';
+$strings['AttendanceDeleted'] = 'Attendance record deleted';
