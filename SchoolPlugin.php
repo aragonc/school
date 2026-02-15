@@ -27,6 +27,11 @@ class SchoolPlugin extends Plugin
     const TABLE_SHORTIFY_URL = 'plugin_shortify_urls';
     const TABLE_BUYCOURSE_ITEM = 'plugin_buycourses_item';
 
+    const TABLE_SCHOOL_ATTENDANCE_SCHEDULE = 'plugin_school_attendance_schedule';
+    const TABLE_SCHOOL_ATTENDANCE_LOG = 'plugin_school_attendance_log';
+    const TABLE_SCHOOL_ATTENDANCE_QR = 'plugin_school_attendance_qr_token';
+    const TABLE_SCHOOL_EXTRA_PROFILE = 'plugin_school_extra_profile';
+
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
     protected function __construct()
@@ -604,6 +609,60 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sql2);
 
+        $sql3 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            entry_time TIME NOT NULL,
+            late_time TIME NOT NULL,
+            applies_to ENUM('all','staff','students') NOT NULL DEFAULT 'all',
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sql3);
+
+        $sql4 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ATTENDANCE_LOG." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            user_id INT NOT NULL,
+            schedule_id INT unsigned NULL,
+            check_in DATETIME NOT NULL,
+            status ENUM('on_time','late','absent') NOT NULL DEFAULT 'on_time',
+            method ENUM('qr','manual') NOT NULL DEFAULT 'manual',
+            registered_by INT NULL,
+            date DATE NOT NULL,
+            notes TEXT NULL,
+            created_at DATETIME NOT NULL,
+            UNIQUE KEY unique_user_date (user_id, date)
+        )";
+        Database::query($sql4);
+
+        $sql5 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ATTENDANCE_QR." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            token VARCHAR(64) NOT NULL,
+            date DATE NOT NULL,
+            created_by INT NOT NULL,
+            expires_at DATETIME NOT NULL,
+            created_at DATETIME NOT NULL,
+            UNIQUE KEY unique_token (token)
+        )";
+        Database::query($sql5);
+
+        $sql6 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_EXTRA_PROFILE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            user_id INT NOT NULL,
+            document_type ENUM('DNI','CE','PASAPORTE','OTRO') NOT NULL DEFAULT 'DNI',
+            document_number VARCHAR(50) NULL,
+            birthdate DATE NULL,
+            address VARCHAR(500) NULL,
+            address_reference VARCHAR(255) NULL,
+            phone VARCHAR(50) NULL,
+            district VARCHAR(100) NULL,
+            province VARCHAR(100) NULL,
+            region VARCHAR(100) NULL,
+            updated_at DATETIME NULL,
+            UNIQUE KEY unique_user (user_id)
+        )";
+        Database::query($sql6);
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -612,6 +671,10 @@ class SchoolPlugin extends Plugin
     {
         $tablesToBeDeleted = [
             self::TABLE_SCHOOL_SETTINGS,
+            self::TABLE_SCHOOL_ATTENDANCE_LOG,
+            self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE,
+            self::TABLE_SCHOOL_ATTENDANCE_QR,
+            self::TABLE_SCHOOL_EXTRA_PROFILE,
         ];
 
         foreach ($tablesToBeDeleted as $tableToBeDeleted) {
@@ -638,6 +701,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^profile$ plugin/school/profile.php [L]\n".
             "RewriteRule ^avatar$ plugin/school/avatar.php [L]\n".
             "RewriteRule ^password$ plugin/school/password.php [L]\n".
+            "RewriteRule ^extra-profile$ plugin/school/extra_profile_data.php [L]\n".
             "RewriteRule ^requests$ plugin/school/requests.php [L]\n".
             "RewriteRule ^shopping$ plugin/school/shopping.php [L]\n".
             "RewriteRule ^help$ plugin/school/help.php [L]\n".
@@ -646,6 +710,8 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^view/course/(\\d{1,})$ plugin/school/view.php?session_id=$1 [L]\n".
             "RewriteRule ^home/course/([^/]+)$ plugin/school/home.php?cDir=$1 [L]\n".
             "RewriteRule ^reset/token/([^/]+)$ plugin/school/reset.php?token=$1 [L]\n".
+            "RewriteRule ^attendance$ plugin/school/attendance.php [L]\n".
+            "RewriteRule ^attendance/scan$ plugin/school/attendance_scan.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -1801,6 +1867,17 @@ class SchoolPlugin extends Plugin
             });
         }
 
+        $menus[] = [
+            'id' => 6,
+            'name' => 'attendance',
+            'label' => $this->get_lang('Attendance'),
+            'current' => false,
+            'icon' => 'clipboard-check',
+            'class' => $currentSection === 'attendance' ? 'active' : '',
+            'url' => '/attendance',
+            'items' => []
+        ];
+
         if (api_is_platform_admin()) {
             $menus[] = [
                 'id' => 10,
@@ -2497,5 +2574,641 @@ class SchoolPlugin extends Plugin
             header('Location: ' . $redirectUrl);
             exit;
         }
+    }
+
+    // ==================== ATTENDANCE METHODS ====================
+
+    /**
+     * Get all attendance schedules.
+     */
+    public function getSchedules(bool $activeOnly = false): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $where = $activeOnly ? "WHERE active = 1" : "";
+        $sql = "SELECT * FROM $table $where ORDER BY entry_time ASC";
+        $result = Database::query($sql);
+        $schedules = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $schedules[] = $row;
+        }
+        return $schedules;
+    }
+
+    /**
+     * Save or update an attendance schedule.
+     */
+    public function saveSchedule(array $data): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+
+        $params = [
+            'name' => Database::escape_string($data['name']),
+            'entry_time' => Database::escape_string($data['entry_time']),
+            'late_time' => Database::escape_string($data['late_time']),
+            'applies_to' => in_array($data['applies_to'], ['all', 'staff', 'students']) ? $data['applies_to'] : 'all',
+            'active' => isset($data['active']) ? (int) $data['active'] : 1,
+        ];
+
+        if (!empty($data['id'])) {
+            $id = (int) $data['id'];
+            Database::update($table, $params, ['id = ?' => $id]);
+        } else {
+            $params['created_at'] = api_get_utc_datetime();
+            Database::insert($table, $params);
+        }
+        return true;
+    }
+
+    /**
+     * Delete an attendance schedule.
+     */
+    public function deleteSchedule(int $id): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        Database::delete($table, ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Get the applicable schedule for a user based on their role.
+     */
+    public function getApplicableSchedule(int $userId): ?array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+
+        $user = api_get_user_info($userId);
+        // Staff = docentes (COURSEMANAGER) + administrativos (DRH, platform admins)
+        $isStaff = false;
+        if ($user) {
+            $isStaff = ($user['status'] == COURSEMANAGER
+                || $user['status'] == DRH
+                || api_is_platform_admin_by_id($userId));
+        }
+
+        $roleFilter = $isStaff ? "'staff'" : "'students'";
+        $sql = "SELECT * FROM $table
+                WHERE active = 1 AND (applies_to = 'all' OR applies_to = $roleFilter)
+                ORDER BY entry_time ASC LIMIT 1";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        return $row ?: null;
+    }
+
+    /**
+     * Calculate attendance status based on check-in time and schedule.
+     */
+    public function calculateAttendanceStatus(string $checkInTime, ?int $scheduleId): string
+    {
+        if (!$scheduleId) {
+            return 'on_time';
+        }
+
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $sql = "SELECT * FROM $table WHERE id = $scheduleId LIMIT 1";
+        $result = Database::query($sql);
+        $schedule = Database::fetch_array($result, 'ASSOC');
+
+        if (!$schedule) {
+            return 'on_time';
+        }
+
+        $checkTime = strtotime(date('H:i:s', strtotime($checkInTime)));
+        $lateTime = strtotime($schedule['late_time']);
+
+        if ($checkTime > $lateTime) {
+            return 'late';
+        }
+
+        return 'on_time';
+    }
+
+    /**
+     * Mark attendance for a user.
+     */
+    public function markAttendance(
+        int $userId,
+        string $method = 'manual',
+        ?int $registeredBy = null,
+        ?string $notes = null,
+        ?string $forcedStatus = null
+    ): array {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $today = date('Y-m-d');
+        $now = api_get_utc_datetime();
+
+        // Check if already registered today
+        $existingSQL = "SELECT id, status FROM $table WHERE user_id = $userId AND date = '$today' LIMIT 1";
+        $existingResult = Database::query($existingSQL);
+        $existing = Database::fetch_array($existingResult, 'ASSOC');
+
+        if ($existing) {
+            // If manual and forcing a different status, update the existing record
+            if ($method === 'manual' && $forcedStatus && $existing['status'] !== $forcedStatus) {
+                Database::update(
+                    $table,
+                    [
+                        'status' => $forcedStatus,
+                        'registered_by' => $registeredBy,
+                        'notes' => $notes ? Database::escape_string($notes) : null,
+                    ],
+                    ['id = ?' => (int) $existing['id']]
+                );
+                return [
+                    'success' => true,
+                    'message' => 'AttendanceUpdated',
+                    'status' => $forcedStatus,
+                    'id' => (int) $existing['id'],
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'AttendanceAlreadyRegistered',
+                'status' => $existing['status'],
+            ];
+        }
+
+        $schedule = $this->getApplicableSchedule($userId);
+        $scheduleId = $schedule ? (int) $schedule['id'] : null;
+
+        // Use forced status for manual registration, auto-calculate for QR
+        if ($forcedStatus && in_array($forcedStatus, ['on_time', 'late', 'absent'])) {
+            $status = $forcedStatus;
+        } else {
+            $status = $this->calculateAttendanceStatus($now, $scheduleId);
+        }
+
+        $checkIn = $status === 'absent' ? $today . ' 00:00:00' : $now;
+
+        $params = [
+            'user_id' => $userId,
+            'schedule_id' => $scheduleId,
+            'check_in' => $checkIn,
+            'status' => $status,
+            'method' => $method,
+            'registered_by' => $registeredBy,
+            'date' => $today,
+            'notes' => $notes ? Database::escape_string($notes) : null,
+            'created_at' => $now,
+        ];
+
+        $id = Database::insert($table, $params);
+
+        if ($id) {
+            return [
+                'success' => true,
+                'message' => 'AttendanceRegistered',
+                'status' => $status,
+                'id' => $id,
+            ];
+        }
+
+        return ['success' => false, 'message' => 'AttendanceError'];
+    }
+
+    /**
+     * Mark a user as absent for a given date.
+     */
+    public function markAbsent(int $userId, ?string $date = null): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $date = $date ?: date('Y-m-d');
+        $now = api_get_utc_datetime();
+
+        // Check existing
+        $sql = "SELECT id FROM $table WHERE user_id = $userId AND date = '$date' LIMIT 1";
+        $result = Database::query($sql);
+        $existing = Database::fetch_array($result, 'ASSOC');
+
+        if ($existing) {
+            Database::update(
+                $table,
+                ['status' => 'absent', 'notes' => 'Marcado como ausente'],
+                ['id = ?' => (int) $existing['id']]
+            );
+            return ['success' => true, 'message' => 'MarkedAsAbsent'];
+        }
+
+        $params = [
+            'user_id' => $userId,
+            'schedule_id' => null,
+            'check_in' => $date . ' 00:00:00',
+            'status' => 'absent',
+            'method' => 'manual',
+            'registered_by' => api_get_user_id(),
+            'date' => $date,
+            'notes' => 'Marcado como ausente',
+            'created_at' => $now,
+        ];
+
+        Database::insert($table, $params);
+        return ['success' => true, 'message' => 'MarkedAsAbsent'];
+    }
+
+    /**
+     * Get attendance records for a specific date.
+     */
+    public function getAttendanceByDate(string $date): array
+    {
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        $sql = "SELECT al.*, u.firstname, u.lastname, u.username, u.status as user_status
+                FROM $logTable al
+                INNER JOIN $userTable u ON al.user_id = u.id
+                WHERE al.date = '".Database::escape_string($date)."'
+                ORDER BY al.check_in ASC";
+        $result = Database::query($sql);
+        $records = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $records[] = $row;
+        }
+        return $records;
+    }
+
+    /**
+     * Get attendance history for a specific user.
+     */
+    public function getAttendanceByUser(int $userId, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+
+        $where = "WHERE al.user_id = $userId";
+        if ($startDate) {
+            $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        }
+        if ($endDate) {
+            $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+        }
+
+        $sql = "SELECT al.*, s.name as schedule_name
+                FROM $logTable al
+                LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $where
+                ORDER BY al.date DESC";
+        $result = Database::query($sql);
+        $records = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $records[] = $row;
+        }
+        return $records;
+    }
+
+    /**
+     * Get attendance statistics for a date range.
+     */
+    public function getAttendanceStats(?string $startDate = null, ?string $endDate = null, ?string $userType = null): array
+    {
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        $where = "WHERE 1=1";
+        if ($startDate) {
+            $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        }
+        if ($endDate) {
+            $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+        }
+        if ($userType === 'staff') {
+            $where .= " AND (u.status = ".COURSEMANAGER." OR u.status = ".DRH.")";
+        } elseif ($userType === 'students') {
+            $where .= " AND u.status = ".STUDENT;
+        }
+
+        $sql = "SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN al.status = 'on_time' THEN 1 ELSE 0 END) as on_time,
+                    SUM(CASE WHEN al.status = 'late' THEN 1 ELSE 0 END) as late,
+                    SUM(CASE WHEN al.status = 'absent' THEN 1 ELSE 0 END) as absent
+                FROM $logTable al
+                INNER JOIN $userTable u ON al.user_id = u.id
+                $where";
+        $result = Database::query($sql);
+        return Database::fetch_array($result, 'ASSOC') ?: ['total' => 0, 'on_time' => 0, 'late' => 0, 'absent' => 0];
+    }
+
+    /**
+     * Generate a daily QR token for attendance scanning.
+     */
+    public function generateDailyQRToken(): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_QR);
+        $today = date('Y-m-d');
+        $userId = api_get_user_id();
+
+        // Check if a valid token already exists for today
+        $now = api_get_utc_datetime();
+        $sql = "SELECT * FROM $table WHERE date = '$today' AND expires_at > '$now' ORDER BY id DESC LIMIT 1";
+        $result = Database::query($sql);
+        $existing = Database::fetch_array($result, 'ASSOC');
+
+        if ($existing) {
+            $scanUrl = api_get_path(WEB_PATH) . 'attendance/scan?token=' . $existing['token'];
+            $qrImage = self::generateQRImage($scanUrl);
+            return [
+                'token' => $existing['token'],
+                'qr_image' => $qrImage,
+                'scan_url' => $scanUrl,
+                'expires_at' => $existing['expires_at'],
+                'is_new' => false,
+            ];
+        }
+
+        // Generate new token
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d 23:59:59');
+
+        $params = [
+            'token' => $token,
+            'date' => $today,
+            'created_by' => $userId,
+            'expires_at' => $expiresAt,
+            'created_at' => $now,
+        ];
+        Database::insert($table, $params);
+
+        $scanUrl = api_get_path(WEB_PATH) . 'attendance/scan?token=' . $token;
+        $qrImage = self::generateQRImage($scanUrl);
+
+        return [
+            'token' => $token,
+            'qr_image' => $qrImage,
+            'scan_url' => $scanUrl,
+            'expires_at' => $expiresAt,
+            'is_new' => true,
+        ];
+    }
+
+    /**
+     * Validate a QR token for attendance.
+     */
+    public function validateQRToken(string $token): ?array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_QR);
+        $token = Database::escape_string($token);
+        $now = api_get_utc_datetime();
+
+        $sql = "SELECT * FROM $table WHERE token = '$token' AND expires_at > '$now' LIMIT 1";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        return $row ?: null;
+    }
+
+    /**
+     * Get all platform users for manual attendance (teachers and students).
+     */
+    public function getUsersForAttendance(?string $type = null): array
+    {
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $today = date('Y-m-d');
+
+        // Include teachers (COURSEMANAGER), DRH, students, and platform admins
+        $where = "WHERE u.active = 1 AND (u.status IN (".COURSEMANAGER.", ".STUDENT.", ".DRH.") OR a.user_id IS NOT NULL)";
+        if ($type === 'staff') {
+            $where = "WHERE u.active = 1 AND (u.status IN (".COURSEMANAGER.", ".DRH.") OR a.user_id IS NOT NULL)";
+        } elseif ($type === 'students') {
+            $where = "WHERE u.active = 1 AND u.status = ".STUDENT." AND a.user_id IS NULL";
+        }
+
+        $sql = "SELECT u.id, u.firstname, u.lastname, u.username, u.status,
+                       CASE WHEN a.user_id IS NOT NULL THEN 1 ELSE 0 END as is_admin,
+                       al.id as attendance_id, al.check_in, al.status as attendance_status, al.method
+                FROM $userTable u
+                LEFT JOIN $adminTable a ON u.id = a.user_id
+                LEFT JOIN $logTable al ON u.id = al.user_id AND al.date = '$today'
+                $where
+                ORDER BY u.lastname ASC, u.firstname ASC";
+        $result = Database::query($sql);
+        $users = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            if ($row['is_admin'] || $row['status'] == COURSEMANAGER || $row['status'] == DRH) {
+                $row['role_label'] = $row['is_admin'] ? 'Administrativo' : 'Docente';
+                $row['role_type'] = 'staff';
+            } else {
+                $row['role_label'] = 'Alumno';
+                $row['role_type'] = 'students';
+            }
+            $users[] = $row;
+        }
+        return $users;
+    }
+
+    /**
+     * Export attendance data to CSV.
+     */
+    public function exportAttendanceCSV(?string $startDate = null, ?string $endDate = null, ?string $userType = null): void
+    {
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+
+        $where = "WHERE 1=1";
+        if ($startDate) {
+            $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        }
+        if ($endDate) {
+            $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+        }
+        if ($userType === 'staff') {
+            $where .= " AND (u.status = ".COURSEMANAGER." OR u.status = ".DRH.")";
+        } elseif ($userType === 'students') {
+            $where .= " AND u.status = ".STUDENT;
+        }
+
+        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
+                       CASE
+                           WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
+                           WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
+                           WHEN u.status = ".DRH." THEN 'Administrativo'
+                           ELSE 'Alumno'
+                       END as role,
+                       al.check_in, al.status, al.method, s.name as schedule_name, al.notes
+                FROM $logTable al
+                INNER JOIN $userTable u ON al.user_id = u.id
+                LEFT JOIN $adminTable adm ON u.id = adm.user_id
+                LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $where
+                ORDER BY al.date DESC, u.lastname ASC";
+        $result = Database::query($sql);
+
+        $filename = 'asistencia_' . date('Y-m-d_His') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+        fputcsv($output, ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Turno', 'Notas'], ';');
+
+        $statusLabels = ['on_time' => 'Asistio puntualmente', 'late' => 'Asistio con tardanza', 'absent' => 'No asistio'];
+        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
+
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            fputcsv($output, [
+                $row['date'],
+                $row['lastname'],
+                $row['firstname'],
+                $row['username'],
+                $row['role'],
+                date('H:i:s', strtotime($row['check_in'])),
+                $statusLabels[$row['status']] ?? $row['status'],
+                $methodLabels[$row['method']] ?? $row['method'],
+                $row['schedule_name'] ?? '-',
+                $row['notes'] ?? '',
+            ], ';');
+        }
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Export attendance data to PDF.
+     */
+    public function exportAttendancePDF(?string $startDate = null, ?string $endDate = null, ?string $userType = null): void
+    {
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+
+        $where = "WHERE 1=1";
+        if ($startDate) {
+            $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        }
+        if ($endDate) {
+            $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+        }
+        if ($userType === 'staff') {
+            $where .= " AND (u.status = ".COURSEMANAGER." OR u.status = ".DRH.")";
+        } elseif ($userType === 'students') {
+            $where .= " AND u.status = ".STUDENT;
+        }
+
+        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
+                       CASE
+                           WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
+                           WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
+                           WHEN u.status = ".DRH." THEN 'Administrativo'
+                           ELSE 'Alumno'
+                       END as role,
+                       al.check_in, al.status, al.method, s.name as schedule_name, al.notes
+                FROM $logTable al
+                INNER JOIN $userTable u ON al.user_id = u.id
+                LEFT JOIN $adminTable adm ON u.id = adm.user_id
+                LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $where
+                ORDER BY al.date DESC, u.lastname ASC";
+        $result = Database::query($sql);
+
+        $statusLabels = ['on_time' => 'Asistió puntualmente', 'late' => 'Asistió con tardanza', 'absent' => 'No asistió'];
+        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
+
+        $records = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $row['status_label'] = $statusLabels[$row['status']] ?? $row['status'];
+            $row['method_label'] = $methodLabels[$row['method']] ?? $row['method'];
+            $row['check_in_time'] = date('H:i:s', strtotime($row['check_in']));
+            $records[] = $row;
+        }
+
+        $dateRange = '';
+        if ($startDate && $endDate) {
+            $dateRange = "Del $startDate al $endDate";
+        } elseif ($startDate) {
+            $dateRange = "Desde $startDate";
+        } elseif ($endDate) {
+            $dateRange = "Hasta $endDate";
+        }
+
+        $this->assign('records', $records);
+        $this->assign('date_range', $dateRange);
+        $this->assign('report_date', date('Y-m-d H:i:s'));
+        $this->assign('institution', api_get_setting('Institution'));
+
+        $content = $this->fetch('school_attendance_pdf.tpl');
+
+        $filename = 'asistencia_' . date('Y-m-d_His');
+
+        $params = [
+            'filename' => $filename,
+            'pdf_title' => 'Reporte de Asistencia',
+            'pdf_description' => $dateRange,
+            'format' => 'A4-L',
+            'orientation' => 'L',
+        ];
+
+        $pdf = new PDF($params['format'], $params['orientation']);
+        $pdf->content_to_pdf($content, null, $filename, null, 'D');
+    }
+
+    // ==================== EXTRA PROFILE METHODS ====================
+
+    /**
+     * Get extra profile data for a user.
+     */
+    public function getExtraProfileData(int $userId): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_EXTRA_PROFILE);
+        $sql = "SELECT * FROM $table WHERE user_id = $userId LIMIT 1";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+
+        if (!$row) {
+            return [
+                'user_id' => $userId,
+                'document_type' => '',
+                'document_number' => '',
+                'birthdate' => '',
+                'address' => '',
+                'address_reference' => '',
+                'phone' => '',
+                'district' => '',
+                'province' => '',
+                'region' => '',
+            ];
+        }
+        return $row;
+    }
+
+    /**
+     * Save extra profile data for a user.
+     */
+    public function saveExtraProfileData(int $userId, array $data): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_EXTRA_PROFILE);
+        $now = api_get_utc_datetime();
+
+        $validDocTypes = ['DNI', 'CE', 'PASAPORTE', 'OTRO'];
+        $docType = in_array($data['document_type'], $validDocTypes) ? $data['document_type'] : 'DNI';
+
+        $params = [
+            'document_type' => $docType,
+            'document_number' => Database::escape_string(trim($data['document_number'] ?? '')),
+            'birthdate' => !empty($data['birthdate']) ? Database::escape_string($data['birthdate']) : null,
+            'address' => Database::escape_string(trim($data['address'] ?? '')),
+            'address_reference' => Database::escape_string(trim($data['address_reference'] ?? '')),
+            'phone' => Database::escape_string(trim($data['phone'] ?? '')),
+            'district' => Database::escape_string(trim($data['district'] ?? '')),
+            'province' => Database::escape_string(trim($data['province'] ?? '')),
+            'region' => Database::escape_string(trim($data['region'] ?? '')),
+            'updated_at' => $now,
+        ];
+
+        // Check if record exists
+        $sql = "SELECT id FROM $table WHERE user_id = $userId LIMIT 1";
+        $result = Database::query($sql);
+        $existing = Database::fetch_array($result, 'ASSOC');
+
+        if ($existing) {
+            Database::update($table, $params, ['user_id = ?' => $userId]);
+        } else {
+            $params['user_id'] = $userId;
+            Database::insert($table, $params);
+        }
+
+        return true;
     }
 }

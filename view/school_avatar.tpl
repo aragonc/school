@@ -6,6 +6,11 @@
     </li>
 
     <li class="nav-item">
+        <a class="nav-link" href="/extra-profile">
+            {{ 'ExtraProfileData'|get_plugin_lang('SchoolPlugin') }}
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link " href="/password" >
             {{ 'ChangePassword'|get_plugin_lang('SchoolPlugin') }}
         </a>
