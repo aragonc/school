@@ -32,6 +32,12 @@
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="d-none d-md-block text-center">
+                        {% if qr_image %}
+                        <div class="mb-4">
+                            <img src="data:image/png;base64,{{ qr_image }}" alt="QR Code" style="width:150px;height:150px;">
+                            <p class="mt-2 mb-0"><strong>{{ username_qr }}</strong></p>
+                        </div>
+                        {% endif %}
                         <div class="bd-callout bd-callout-info">
                             <p>{{ 'UsernameHelp'|get_plugin_lang('SchoolPlugin') }}
                             <a href="mailto: {{ administrator_mail }}">{{ administrator_mail }}</a></p>

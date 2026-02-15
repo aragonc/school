@@ -192,6 +192,8 @@ if ($enable) {
     $plugin->assign('img_section', $imgSection);
     $plugin->assign('form', $form->returnForm());
     $plugin->assign('error_rut', $plugin->get_lang('errorRUT'));
+    $plugin->assign('qr_image', SchoolPlugin::generateQRImage($user_data['username']));
+    $plugin->assign('username_qr', $user_data['username']);
     $content = $plugin->fetch('school_profile.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
