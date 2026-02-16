@@ -2675,7 +2675,10 @@ class SchoolPlugin extends Plugin
             return 'on_time';
         }
 
-        $checkTime = strtotime(date('H:i:s', strtotime($checkInTime)));
+        // Convert UTC check-in time to local time for comparison
+        // Schedule times are stored as local "wall clock" times
+        $localCheckIn = api_get_local_time($checkInTime);
+        $checkTime = strtotime(date('H:i:s', strtotime($localCheckIn)));
         $lateTime = strtotime($schedule['late_time']);
 
         if ($checkTime > $lateTime) {

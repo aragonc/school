@@ -24,7 +24,23 @@ $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'today';
 
 // Data for today's attendance tab
 $todayRecords = $plugin->getAttendanceByDate($today);
+// Convert UTC times to local
+foreach ($todayRecords as &$record) {
+    if (!empty($record['check_in'])) {
+        $record['check_in'] = api_get_local_time($record['check_in']);
+    }
+}
+unset($record);
+
 $users = $plugin->getUsersForAttendance();
+// Convert UTC times to local for users with attendance
+foreach ($users as &$user) {
+    if (!empty($user['check_in'])) {
+        $user['check_in'] = api_get_local_time($user['check_in']);
+    }
+}
+unset($user);
+
 $schedules = $plugin->getSchedules();
 
 // Stats for today
@@ -33,6 +49,13 @@ $todayStats = $plugin->getAttendanceStats($today, $today);
 // My attendance (last 30 days for personal view)
 $startDate30 = date('Y-m-d', strtotime('-30 days'));
 $myAttendance = $plugin->getAttendanceByUser($userId, $startDate30, $today);
+// Convert UTC times to local for my attendance
+foreach ($myAttendance as &$record) {
+    if (!empty($record['check_in'])) {
+        $record['check_in'] = api_get_local_time($record['check_in']);
+    }
+}
+unset($record);
 
 // Report filters
 $reportStartDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
@@ -46,12 +69,6 @@ if ($isAdmin && $activeTab === 'reports') {
     $reportStats = $plugin->getAttendanceStats($reportStartDate, $reportEndDate, $reportUserType);
 }
 
-// QR data for admin
-$qrData = null;
-if ($isAdmin) {
-    $qrData = $plugin->generateDailyQRToken();
-}
-
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('is_teacher', $isTeacher);
 $plugin->assign('active_tab', $activeTab);
@@ -61,7 +78,6 @@ $plugin->assign('today_stats', $todayStats);
 $plugin->assign('users', $users);
 $plugin->assign('schedules', $schedules);
 $plugin->assign('my_attendance', $myAttendance);
-$plugin->assign('qr_data', $qrData);
 $plugin->assign('report_start_date', $reportStartDate);
 $plugin->assign('report_end_date', $reportEndDate);
 $plugin->assign('report_user_type', $reportUserType);

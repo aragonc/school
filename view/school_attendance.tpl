@@ -35,30 +35,8 @@
     <!-- TAB: Today's Attendance -->
     <div class="tab-pane fade {{ active_tab == 'today' ? 'show active' : '' }}" id="today" role="tabpanel">
         <div class="row">
-            <!-- QR Code Section -->
-            <div class="col-lg-4 mb-4">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-qrcode"></i> {{ 'QRCodeForToday'|get_plugin_lang('SchoolPlugin') }}
-                    </div>
-                    <div class="card-body text-center">
-                        {% if qr_data %}
-                            <img src="data:image/png;base64,{{ qr_data.qr_image }}" alt="QR Code" class="img-fluid mb-3" style="max-width: 250px;">
-                            <p class="text-muted small">{{ 'QRInstructions'|get_plugin_lang('SchoolPlugin') }}</p>
-                            <button class="btn btn-outline-primary btn-sm" onclick="printQR()">
-                                <i class="fas fa-print"></i> {{ 'PrintQR'|get_plugin_lang('SchoolPlugin') }}
-                            </button>
-                        {% else %}
-                            <button class="btn btn-primary" id="btnGenerateQR">
-                                <i class="fas fa-qrcode"></i> {{ 'GenerateQR'|get_plugin_lang('SchoolPlugin') }}
-                            </button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
             <!-- Today's Stats -->
-            <div class="col-lg-8 mb-4">
+            <div class="col-lg-12 mb-4">
                 <div class="card">
                     <div class="card-header">
                         <i class="fas fa-chart-pie"></i> {{ 'AttendanceSummary'|get_plugin_lang('SchoolPlugin') }} - {{ today }}
@@ -665,17 +643,4 @@ document.querySelectorAll('.btn-delete-attendance').forEach(function(btn) {
     });
 });
 
-// Print QR
-function printQR() {
-    var qrImg = document.querySelector('#today img[alt="QR Code"]');
-    if (!qrImg) return;
-    var win = window.open('', '_blank');
-    win.document.write('<html><head><title>QR Asistencia</title></head><body style="text-align:center; padding:40px;">');
-    win.document.write('<h2>{{ 'QRCodeForToday'|get_plugin_lang('SchoolPlugin') }} - {{ today }}</h2>');
-    win.document.write('<img src="' + qrImg.src + '" style="width:400px;height:400px;">');
-    win.document.write('<p>{{ 'QRInstructions'|get_plugin_lang('SchoolPlugin') }}</p>');
-    win.document.write('</body></html>');
-    win.document.close();
-    win.print();
-}
 </script>
