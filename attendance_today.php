@@ -41,6 +41,7 @@ $plugin->assign('active_tab', 'today');
 $plugin->assign('today', $today);
 $plugin->assign('today_records', $todayRecords);
 $plugin->assign('today_stats', $todayStats);
+$plugin->assign('kiosk_url', api_get_path(WEB_PLUGIN_PATH).'school/attendance_kiosk.php');
 
 $plugin->setTitle($plugin->get_lang('AttendanceControl'));
 

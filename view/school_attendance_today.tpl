@@ -4,8 +4,11 @@
     <!-- Today's Stats -->
     <div class="col-lg-12 mb-4">
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-chart-pie"></i> {{ 'AttendanceSummary'|get_plugin_lang('SchoolPlugin') }} - {{ today }}
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-chart-pie"></i> {{ 'AttendanceSummary'|get_plugin_lang('SchoolPlugin') }} - {{ today }}</span>
+                <a href="{{ kiosk_url }}" target="_blank" class="btn btn-info btn-sm">
+                    <i class="fas fa-desktop"></i> {{ 'AttendanceKiosk'|get_plugin_lang('SchoolPlugin') }}
+                </a>
             </div>
             <div class="card-body">
                 <div class="row text-center">
