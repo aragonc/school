@@ -579,7 +579,7 @@ class SchoolPlugin extends Plugin
             name VARCHAR(255) NOT NULL,
             entry_time TIME NOT NULL,
             late_time TIME NOT NULL,
-            applies_to ENUM('all','staff','students') NOT NULL DEFAULT 'all',
+            applies_to VARCHAR(255) NOT NULL DEFAULT 'all',
             active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL
         )";
@@ -628,6 +628,17 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sql6);
 
+        // Migrate applies_to column from ENUM to VARCHAR if needed
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $sql7 = "ALTER TABLE $scheduleTable MODIFY applies_to VARCHAR(255) NOT NULL DEFAULT 'all'";
+        @Database::query($sql7);
+
+        // Migrate old values: 'staff' -> 'teacher,secretary,auxiliary', 'students' -> 'student'
+        $sql8 = "UPDATE $scheduleTable SET applies_to = 'teacher,secretary,auxiliary' WHERE applies_to = 'staff'";
+        @Database::query($sql8);
+        $sql9 = "UPDATE $scheduleTable SET applies_to = 'student' WHERE applies_to = 'students'";
+        @Database::query($sql9);
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -660,6 +671,7 @@ class SchoolPlugin extends Plugin
         return
             "# BEGIN School Plugin\n".
             "RewriteRule ^dashboard$ plugin/school/start.php [L]\n".
+            "RewriteRule ^courses$ plugin/school/courses.php [L]\n".
             "RewriteRule ^previous$ plugin/school/previous.php [L]\n".
             "RewriteRule ^certified$ plugin/school/certificates.php [L]\n".
             "RewriteRule ^notifications$ plugin/school/notifications.php [L]\n".
@@ -1790,13 +1802,23 @@ class SchoolPlugin extends Plugin
     {
         $menus = [
             [
-                'id' => 1,
+                'id' => 0,
                 'name' => 'dashboard',
-                'label' => $this->get_lang('MyTrainings'),
+                'label' => $this->get_lang('Dashboard'),
                 'current' => $currentSection === 'dashboard',
-                'icon' => 'book-open',
+                'icon' => 'home',
                 'class' => $currentSection === 'dashboard' ? 'active':'',
                 'url' => '/dashboard',
+                'items' => []
+            ],
+            [
+                'id' => 1,
+                'name' => 'courses',
+                'label' => $this->get_lang('MyCourses'),
+                'current' => $currentSection === 'courses',
+                'icon' => 'book-open',
+                'class' => $currentSection === 'courses' ? 'active':'',
+                'url' => '/courses',
                 'items' => []
             ],
             [
@@ -2598,11 +2620,23 @@ class SchoolPlugin extends Plugin
     {
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
 
+        $validRoles = ['all', 'teacher', 'student', 'parent', 'secretary', 'auxiliary'];
+        $appliesTo = 'all';
+        if (!empty($data['applies_to'])) {
+            if (is_array($data['applies_to'])) {
+                $roles = array_intersect($data['applies_to'], $validRoles);
+                $appliesTo = !empty($roles) ? implode(',', $roles) : 'all';
+            } else {
+                $roles = array_intersect(explode(',', $data['applies_to']), $validRoles);
+                $appliesTo = !empty($roles) ? implode(',', $roles) : 'all';
+            }
+        }
+
         $params = [
             'name' => Database::escape_string($data['name']),
             'entry_time' => Database::escape_string($data['entry_time']),
             'late_time' => Database::escape_string($data['late_time']),
-            'applies_to' => in_array($data['applies_to'], ['all', 'staff', 'students']) ? $data['applies_to'] : 'all',
+            'applies_to' => Database::escape_string($appliesTo),
             'active' => isset($data['active']) ? (int) $data['active'] : 1,
         ];
 
@@ -2634,19 +2668,24 @@ class SchoolPlugin extends Plugin
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
 
         $user = api_get_user_info($userId);
-        // Staff = docentes (COURSEMANAGER) + administrativos (DRH, platform admins, SCHOOL_SECRETARY, SCHOOL_AUXILIARY)
-        $isStaff = false;
+        $userRole = 'student';
         if ($user) {
-            $isStaff = ($user['status'] == COURSEMANAGER
-                || $user['status'] == DRH
-                || $user['status'] == SCHOOL_SECRETARY
-                || $user['status'] == SCHOOL_AUXILIARY
-                || api_is_platform_admin_by_id($userId));
+            if ($user['status'] == COURSEMANAGER || api_is_platform_admin_by_id($userId)) {
+                $userRole = 'teacher';
+            } elseif ($user['status'] == SCHOOL_SECRETARY) {
+                $userRole = 'secretary';
+            } elseif ($user['status'] == SCHOOL_AUXILIARY) {
+                $userRole = 'auxiliary';
+            } elseif (in_array($user['status'], [SCHOOL_PARENT, SCHOOL_GUARDIAN])) {
+                $userRole = 'parent';
+            } elseif ($user['status'] == DRH) {
+                $userRole = 'teacher';
+            }
         }
 
-        $roleFilter = $isStaff ? "'staff'" : "'students'";
+        $userRole = Database::escape_string($userRole);
         $sql = "SELECT * FROM $table
-                WHERE active = 1 AND (applies_to = 'all' OR applies_to = $roleFilter)
+                WHERE active = 1 AND (applies_to = 'all' OR FIND_IN_SET('$userRole', applies_to))
                 ORDER BY entry_time ASC LIMIT 1";
         $result = Database::query($sql);
         $row = Database::fetch_array($result, 'ASSOC');

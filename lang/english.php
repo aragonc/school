@@ -8,6 +8,13 @@ $strings['activate_shopping'] = 'Activate shopping catalog';
 $strings['email_help'] = 'Help Email';
 $strings['Logout'] = 'Log out';
 $strings['EditProfile'] = 'Edit profile';
+$strings['Dashboard'] = 'Dashboard';
+$strings['MyCourses'] = 'My Courses';
+$strings['ActiveCourses'] = 'Active Courses';
+$strings['CompletedCourses'] = 'Completed Courses';
+$strings['Welcome'] = 'Welcome';
+$strings['NoRecord'] = 'No record';
+$strings['View'] = 'View';
 $strings['MyTrainings'] = 'My Trainings';
 $strings['MyNotifications'] = 'My Notifications';
 $strings['Current'] = 'Current';
@@ -284,6 +291,7 @@ $strings['RoleSecretary'] = 'Secretary';
 $strings['RoleAuxiliary'] = 'Auxiliary';
 $strings['RoleParent'] = 'Parent';
 $strings['RoleGuardian'] = 'Guardian';
+$strings['HoldCtrlToSelectMultiple'] = 'Hold Ctrl to select multiple roles';
 
 // Login
 $strings['LoginFailed'] = 'Invalid username or password.';

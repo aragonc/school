@@ -1,7 +1,7 @@
 {% if categories %}
 <ul class="nav nav-tabs">
     <li class="nav-item">
-        <a class="nav-link" href="/dashboard">
+        <a class="nav-link" href="/courses">
             {{ 'Current'|get_plugin_lang('SchoolPlugin') }} <span class="badge badge-info">{{ total_courses }}</span>
         </a>
     </li>

@@ -8,6 +8,13 @@ $strings['activate_shopping'] = 'Activar catálogo de compras';
 $strings['email_help'] = 'Correo de Ayuda';
 $strings['Logout'] = 'Cerrar sesión';
 $strings['EditProfile'] = 'Editar perfil';
+$strings['Dashboard'] = 'Inicio';
+$strings['MyCourses'] = 'Mis Cursos';
+$strings['ActiveCourses'] = 'Cursos Activos';
+$strings['CompletedCourses'] = 'Cursos Completados';
+$strings['Welcome'] = 'Bienvenido(a)';
+$strings['NoRecord'] = 'Sin registro';
+$strings['View'] = 'Ver';
 $strings['MyTrainings'] = 'Mis Cursos';
 $strings['MyNotifications'] = 'Mis Notificaciones';
 $strings['Current'] = 'Actuales';
@@ -286,6 +293,7 @@ $strings['RoleSecretary'] = 'Secretaria';
 $strings['RoleAuxiliary'] = 'Auxiliar';
 $strings['RoleParent'] = 'Padre de familia';
 $strings['RoleGuardian'] = 'Apoderado';
+$strings['HoldCtrlToSelectMultiple'] = 'Mantén presionado Ctrl para seleccionar varios roles';
 
 // Login
 $strings['LoginFailed'] = 'Usuario o contraseña incorrectos.';

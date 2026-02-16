@@ -7,7 +7,7 @@ $plugin->requireLogin();
 
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
-$plugin->setSidebar('dashboard');
+$plugin->setSidebar('courses');
 
 if ($enable) {
     $userId = api_get_user_id();

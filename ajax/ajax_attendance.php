@@ -133,7 +133,7 @@ switch ($action) {
             'name' => isset($_POST['name']) ? trim($_POST['name']) : '',
             'entry_time' => isset($_POST['entry_time']) ? $_POST['entry_time'] : '',
             'late_time' => isset($_POST['late_time']) ? $_POST['late_time'] : '',
-            'applies_to' => isset($_POST['applies_to']) ? $_POST['applies_to'] : 'all',
+            'applies_to' => isset($_POST['applies_to']) ? $_POST['applies_to'] : ['all'],
             'active' => isset($_POST['active']) ? (int) $_POST['active'] : 1,
         ];
 

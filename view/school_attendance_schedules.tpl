@@ -27,13 +27,28 @@
                         <td>{{ schedule.entry_time }}</td>
                         <td>{{ schedule.late_time }}</td>
                         <td>
-                            {% if schedule.applies_to == 'all' %}
-                                {{ 'AllUsers'|get_plugin_lang('SchoolPlugin') }}
-                            {% elseif schedule.applies_to == 'staff' %}
-                                {{ 'Staff'|get_plugin_lang('SchoolPlugin') }}
-                            {% else %}
-                                {{ 'Students'|get_plugin_lang('SchoolPlugin') }}
-                            {% endif %}
+                            {% set roles = schedule.applies_to|split(',') %}
+                            {% set labels = [] %}
+                            {% for role in roles %}
+                                {% if role == 'all' %}
+                                    {% set labels = labels|merge([('AllUsers'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% elseif role == 'teacher' %}
+                                    {% set labels = labels|merge([('RoleTeacher'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% elseif role == 'student' %}
+                                    {% set labels = labels|merge([('RoleStudent'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% elseif role == 'parent' %}
+                                    {% set labels = labels|merge([('RoleParent'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% elseif role == 'auxiliary' %}
+                                    {% set labels = labels|merge([('RoleAuxiliary'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% elseif role == 'secretary' %}
+                                    {% set labels = labels|merge([('RoleSecretary'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% elseif role == 'staff' %}
+                                    {% set labels = labels|merge([('Staff'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% elseif role == 'students' %}
+                                    {% set labels = labels|merge([('Students'|get_plugin_lang('SchoolPlugin'))]) %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ labels|join(', ') }}
                         </td>
                         <td>
                             {% if schedule.active %}
@@ -89,11 +104,15 @@
                     </div>
                     <div class="form-group">
                         <label>{{ 'AppliesTo'|get_plugin_lang('SchoolPlugin') }}</label>
-                        <select class="form-control" id="schedule_applies_to" name="applies_to">
+                        <select class="form-control" id="schedule_applies_to" name="applies_to[]" multiple size="6">
                             <option value="all">{{ 'AllUsers'|get_plugin_lang('SchoolPlugin') }}</option>
-                            <option value="staff">{{ 'Staff'|get_plugin_lang('SchoolPlugin') }}</option>
-                            <option value="students">{{ 'Students'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="teacher">{{ 'RoleTeacher'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="student">{{ 'RoleStudent'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="parent">{{ 'RoleParent'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="auxiliary">{{ 'RoleAuxiliary'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="secretary">{{ 'RoleSecretary'|get_plugin_lang('SchoolPlugin') }}</option>
                         </select>
+                        <small class="form-text text-muted">{{ 'HoldCtrlToSelectMultiple'|get_plugin_lang('SchoolPlugin') }}</small>
                     </div>
                     <div class="form-group">
                         <div class="custom-control custom-switch">
@@ -122,7 +141,11 @@ document.getElementById('btnSaveSchedule').addEventListener('click', function() 
     formData.append('name', document.getElementById('schedule_name').value);
     formData.append('entry_time', document.getElementById('schedule_entry_time').value);
     formData.append('late_time', document.getElementById('schedule_late_time').value);
-    formData.append('applies_to', document.getElementById('schedule_applies_to').value);
+    var appliesSelect = document.getElementById('schedule_applies_to');
+    var selectedRoles = Array.from(appliesSelect.selectedOptions).map(function(opt) { return opt.value; });
+    selectedRoles.forEach(function(role) {
+        formData.append('applies_to[]', role);
+    });
     formData.append('active', document.getElementById('schedule_active').checked ? 1 : 0);
 
     if (!document.getElementById('schedule_name').value || !document.getElementById('schedule_entry_time').value || !document.getElementById('schedule_late_time').value) {
@@ -148,7 +171,11 @@ document.querySelectorAll('.btn-edit-schedule').forEach(function(btn) {
         document.getElementById('schedule_name').value = this.getAttribute('data-name');
         document.getElementById('schedule_entry_time').value = this.getAttribute('data-entry-time');
         document.getElementById('schedule_late_time').value = this.getAttribute('data-late-time');
-        document.getElementById('schedule_applies_to').value = this.getAttribute('data-applies-to');
+        var appliesValues = this.getAttribute('data-applies-to').split(',');
+        var appliesSelect = document.getElementById('schedule_applies_to');
+        Array.from(appliesSelect.options).forEach(function(opt) {
+            opt.selected = appliesValues.indexOf(opt.value) !== -1;
+        });
         document.getElementById('schedule_active').checked = this.getAttribute('data-active') == '1';
         document.getElementById('scheduleModalTitle').textContent = '{{ 'EditSchedule'|get_plugin_lang('SchoolPlugin') }}';
         $('#scheduleModal').modal('show');
@@ -178,7 +205,10 @@ function clearScheduleForm() {
     document.getElementById('schedule_name').value = '';
     document.getElementById('schedule_entry_time').value = '';
     document.getElementById('schedule_late_time').value = '';
-    document.getElementById('schedule_applies_to').value = 'all';
+    var appliesSelect = document.getElementById('schedule_applies_to');
+    Array.from(appliesSelect.options).forEach(function(opt) {
+        opt.selected = opt.value === 'all';
+    });
     document.getElementById('schedule_active').checked = true;
     document.getElementById('scheduleModalTitle').textContent = '{{ 'AddSchedule'|get_plugin_lang('SchoolPlugin') }}';
 }
