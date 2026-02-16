@@ -713,8 +713,14 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^view/course/(\\d{1,})$ plugin/school/view.php?session_id=$1 [L]\n".
             "RewriteRule ^home/course/([^/]+)$ plugin/school/home.php?cDir=$1 [L]\n".
             "RewriteRule ^reset/token/([^/]+)$ plugin/school/reset.php?token=$1 [L]\n".
-            "RewriteRule ^attendance$ plugin/school/attendance.php [L]\n".
+            "RewriteRule ^attendance$ plugin/school/attendance_today.php [L]\n".
+            "RewriteRule ^attendance/today$ plugin/school/attendance_today.php [L]\n".
+            "RewriteRule ^attendance/manual$ plugin/school/attendance_manual.php [L]\n".
+            "RewriteRule ^attendance/schedules$ plugin/school/attendance_schedules.php [L]\n".
+            "RewriteRule ^attendance/reports$ plugin/school/attendance_reports.php [L]\n".
+            "RewriteRule ^attendance/my$ plugin/school/attendance_my.php [L]\n".
             "RewriteRule ^attendance/scan$ plugin/school/attendance_scan.php [L,QSA]\n".
+            "RewriteRule ^attendance/kiosk$ plugin/school/attendance_kiosk.php [L]\n".
             "# END School Plugin";
     }
 
@@ -2640,11 +2646,13 @@ class SchoolPlugin extends Plugin
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
 
         $user = api_get_user_info($userId);
-        // Staff = docentes (COURSEMANAGER) + administrativos (DRH, platform admins)
+        // Staff = docentes (COURSEMANAGER) + administrativos (DRH, platform admins, SCHOOL_SECRETARY, SCHOOL_AUXILIARY)
         $isStaff = false;
         if ($user) {
             $isStaff = ($user['status'] == COURSEMANAGER
                 || $user['status'] == DRH
+                || $user['status'] == SCHOOL_SECRETARY
+                || $user['status'] == SCHOOL_AUXILIARY
                 || api_is_platform_admin_by_id($userId));
         }
 
@@ -2862,6 +2870,26 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Build SQL WHERE clause fragment to filter by user type/role.
+     */
+    private function getUserTypeFilter(?string $userType): string
+    {
+        if (empty($userType)) {
+            return '';
+        }
+        $filterMap = [
+            'staff' => " AND (u.status IN (".COURSEMANAGER.", ".DRH.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY."))",
+            'students' => " AND u.status = ".STUDENT,
+            'teacher' => " AND u.status = ".COURSEMANAGER,
+            'secretary' => " AND u.status = ".SCHOOL_SECRETARY,
+            'auxiliary' => " AND u.status = ".SCHOOL_AUXILIARY,
+            'parent' => " AND u.status = ".SCHOOL_PARENT,
+            'guardian' => " AND u.status = ".SCHOOL_GUARDIAN,
+        ];
+        return isset($filterMap[$userType]) ? $filterMap[$userType] : '';
+    }
+
+    /**
      * Get attendance statistics for a date range.
      */
     public function getAttendanceStats(?string $startDate = null, ?string $endDate = null, ?string $userType = null): array
@@ -2876,11 +2904,7 @@ class SchoolPlugin extends Plugin
         if ($endDate) {
             $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
         }
-        if ($userType === 'staff') {
-            $where .= " AND (u.status = ".COURSEMANAGER." OR u.status = ".DRH.")";
-        } elseif ($userType === 'students') {
-            $where .= " AND u.status = ".STUDENT;
-        }
+        $where .= $this->getUserTypeFilter($userType);
 
         $sql = "SELECT
                     COUNT(*) as total,
@@ -2971,10 +2995,12 @@ class SchoolPlugin extends Plugin
         $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
         $today = date('Y-m-d');
 
-        // Include teachers (COURSEMANAGER), DRH, students, and platform admins
-        $where = "WHERE u.active = 1 AND (u.status IN (".COURSEMANAGER.", ".STUDENT.", ".DRH.") OR a.user_id IS NOT NULL)";
+        // Include teachers (COURSEMANAGER), DRH, students, school roles, and platform admins
+        $allStatuses = COURSEMANAGER.", ".STUDENT.", ".DRH.", ".SCHOOL_PARENT.", ".SCHOOL_GUARDIAN.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY;
+        $staffStatuses = COURSEMANAGER.", ".DRH.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY;
+        $where = "WHERE u.active = 1 AND (u.status IN ($allStatuses) OR a.user_id IS NOT NULL)";
         if ($type === 'staff') {
-            $where = "WHERE u.active = 1 AND (u.status IN (".COURSEMANAGER.", ".DRH.") OR a.user_id IS NOT NULL)";
+            $where = "WHERE u.active = 1 AND (u.status IN ($staffStatuses) OR a.user_id IS NOT NULL)";
         } elseif ($type === 'students') {
             $where = "WHERE u.active = 1 AND u.status = ".STUDENT." AND a.user_id IS NULL";
         }
@@ -2990,11 +3016,23 @@ class SchoolPlugin extends Plugin
         $result = Database::query($sql);
         $users = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
-            if ($row['is_admin'] || $row['status'] == COURSEMANAGER || $row['status'] == DRH) {
-                $row['role_label'] = $row['is_admin'] ? 'Administrativo' : 'Docente';
-                $row['role_type'] = 'staff';
+            if ($row['status'] == COURSEMANAGER) {
+                $row['role_label'] = $this->get_lang('RoleTeacher');
+                $row['role_type'] = 'teacher';
+            } elseif ($row['status'] == SCHOOL_SECRETARY) {
+                $row['role_label'] = $this->get_lang('RoleSecretary');
+                $row['role_type'] = 'secretary';
+            } elseif ($row['status'] == SCHOOL_AUXILIARY) {
+                $row['role_label'] = $this->get_lang('RoleAuxiliary');
+                $row['role_type'] = 'auxiliary';
+            } elseif ($row['is_admin'] || $row['status'] == DRH) {
+                $row['role_label'] = $this->get_lang('RoleAdmin');
+                $row['role_type'] = 'admin';
+            } elseif (in_array($row['status'], [SCHOOL_PARENT, SCHOOL_GUARDIAN])) {
+                $row['role_label'] = $row['status'] == SCHOOL_PARENT ? $this->get_lang('RoleParent') : $this->get_lang('RoleGuardian');
+                $row['role_type'] = 'family';
             } else {
-                $row['role_label'] = 'Alumno';
+                $row['role_label'] = $this->get_lang('RoleStudent');
                 $row['role_type'] = 'students';
             }
             $users[] = $row;
@@ -3018,11 +3056,7 @@ class SchoolPlugin extends Plugin
         if ($endDate) {
             $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
         }
-        if ($userType === 'staff') {
-            $where .= " AND (u.status = ".COURSEMANAGER." OR u.status = ".DRH.")";
-        } elseif ($userType === 'students') {
-            $where .= " AND u.status = ".STUDENT;
-        }
+        $where .= $this->getUserTypeFilter($userType);
 
         $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
         $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
@@ -3030,6 +3064,10 @@ class SchoolPlugin extends Plugin
                            WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
                            WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
                            WHEN u.status = ".DRH." THEN 'Administrativo'
+                           WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
+                           WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
+                           WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
                            ELSE 'Alumno'
                        END as role,
                        al.check_in, al.status, al.method, s.name as schedule_name, al.notes
@@ -3086,11 +3124,7 @@ class SchoolPlugin extends Plugin
         if ($endDate) {
             $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
         }
-        if ($userType === 'staff') {
-            $where .= " AND (u.status = ".COURSEMANAGER." OR u.status = ".DRH.")";
-        } elseif ($userType === 'students') {
-            $where .= " AND u.status = ".STUDENT;
-        }
+        $where .= $this->getUserTypeFilter($userType);
 
         $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
         $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
@@ -3098,6 +3132,10 @@ class SchoolPlugin extends Plugin
                            WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
                            WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
                            WHEN u.status = ".DRH." THEN 'Administrativo'
+                           WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
+                           WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
+                           WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
                            ELSE 'Alumno'
                        END as role,
                        al.check_in, al.status, al.method, s.name as schedule_name, al.notes
