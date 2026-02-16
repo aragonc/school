@@ -43,25 +43,19 @@ $form->addText(
     'primary_color',
     [$plugin->get_lang('PrimaryColor'), $plugin->get_lang('PrimaryColorHelp')],
     false,
-    ['placeholder' => '#697EEA', 'class' => 'form-control color-input']
+    ['placeholder' => '#4e73df', 'class' => 'form-control color-input']
 );
 $form->addText(
     'sidebar_brand_color',
     [$plugin->get_lang('SidebarBrandColor'), $plugin->get_lang('SidebarBrandColorHelp')],
     false,
-    ['placeholder' => '#697EEA', 'class' => 'form-control color-input']
+    ['placeholder' => '#4e73df', 'class' => 'form-control color-input']
 );
 $form->addText(
     'sidebar_color',
     [$plugin->get_lang('SidebarColor'), $plugin->get_lang('SidebarColorHelp')],
     false,
-    ['placeholder' => '#ffffff', 'class' => 'form-control color-input']
-);
-$form->addText(
-    'sidebar_item_color',
-    [$plugin->get_lang('SidebarItemColor'), $plugin->get_lang('SidebarItemColorHelp')],
-    false,
-    ['placeholder' => '#e6e6e6', 'class' => 'form-control color-input']
+    ['placeholder' => '#4e73df', 'class' => 'form-control color-input']
 );
 $form->addText(
     'sidebar_item_active_text',
@@ -73,7 +67,7 @@ $form->addText(
     'sidebar_text_color',
     [$plugin->get_lang('SidebarTextColor'), $plugin->get_lang('SidebarTextColorHelp')],
     false,
-    ['placeholder' => '#333333', 'class' => 'form-control color-input']
+    ['placeholder' => 'rgba(255,255,255,0.8)', 'class' => 'form-control color-input']
 );
 
 $form->addCheckBox('remove_logo', '', $plugin->get_lang('RemoveLogo'));
@@ -86,7 +80,6 @@ $defaults = [
     'primary_color' => $plugin->getSchoolSetting('primary_color') ?? '',
     'sidebar_brand_color' => $plugin->getSchoolSetting('sidebar_brand_color') ?? '',
     'sidebar_color' => $plugin->getSchoolSetting('sidebar_color') ?? '',
-    'sidebar_item_color' => $plugin->getSchoolSetting('sidebar_item_color') ?? '',
     'sidebar_item_active_text' => $plugin->getSchoolSetting('sidebar_item_active_text') ?? '',
     'sidebar_text_color' => $plugin->getSchoolSetting('sidebar_text_color') ?? '',
 ];
