@@ -284,3 +284,8 @@ $strings['RoleSecretary'] = 'Secretary';
 $strings['RoleAuxiliary'] = 'Auxiliary';
 $strings['RoleParent'] = 'Parent';
 $strings['RoleGuardian'] = 'Guardian';
+
+// Login
+$strings['LoginFailed'] = 'Invalid username or password.';
+$strings['AccountInactive'] = 'Your account is inactive. Please contact the administrator.';
+$strings['AccountExpired'] = 'Your account has expired. Please contact the administrator.';

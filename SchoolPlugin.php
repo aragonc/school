@@ -890,6 +890,12 @@ class SchoolPlugin extends Plugin
         $this->display($tpl);
     }
 
+    public function display_login_template()
+    {
+        $tpl = $this->twig->loadTemplate('layout/login.tpl');
+        $this->display($tpl);
+    }
+
     public function setSidebar($section = '')
     {
         $institution = api_get_setting('Institution');
@@ -2529,11 +2535,7 @@ class SchoolPlugin extends Plugin
             $currentUrl = $_SERVER['REQUEST_URI'];
             $_SESSION['school_plugin_redirect'] = $currentUrl;
 
-            // Apuntar al archivo intermedio que manejará la redirección
-            $checkUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/check_redirect.php';
-            $_SESSION['redirect_after_login'] = $checkUrl;
-
-            $loginUrl = api_get_path(WEB_PATH) . 'index.php';
+            $loginUrl = api_get_path(WEB_PATH) . 'login';
 
             echo '<!DOCTYPE html>
         <html>
