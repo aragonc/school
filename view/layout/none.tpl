@@ -28,7 +28,7 @@
     {% endif %}
 </head>
 
-<body id="page-top" class="sidebar-toggled">
+<body id="page-top">
 <!-- Page Wrapper -->
 <div id="wrapper">
 

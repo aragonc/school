@@ -1876,15 +1876,30 @@ class SchoolPlugin extends Plugin
             });
         }
 
+        $attendanceItems = [];
+        if (api_is_platform_admin()) {
+            $attendanceItems = [
+                ['name' => 'attendance-today', 'label' => $this->get_lang('TodayAttendance'), 'url' => '/attendance/today'],
+                ['name' => 'attendance-manual', 'label' => $this->get_lang('ManualRegistration'), 'url' => '/attendance/manual'],
+                ['name' => 'attendance-schedules', 'label' => $this->get_lang('Schedules'), 'url' => '/attendance/schedules'],
+                ['name' => 'attendance-reports', 'label' => $this->get_lang('Reports'), 'url' => '/attendance/reports'],
+                ['name' => 'attendance-my', 'label' => $this->get_lang('MyAttendance'), 'url' => '/attendance/my'],
+            ];
+        } else {
+            $attendanceItems = [
+                ['name' => 'attendance-my', 'label' => $this->get_lang('MyAttendance'), 'url' => '/attendance/my'],
+            ];
+        }
+
         $menus[] = [
             'id' => 6,
             'name' => 'attendance',
             'label' => $this->get_lang('Attendance'),
-            'current' => false,
+            'current' => $currentSection === 'attendance',
             'icon' => 'clipboard-check',
-            'class' => $currentSection === 'attendance' ? 'active' : '',
+            'class' => $currentSection === 'attendance' ? 'show' : '',
             'url' => '/attendance',
-            'items' => []
+            'items' => $attendanceItems
         ];
 
         if (api_is_platform_admin()) {

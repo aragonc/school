@@ -1,5 +1,5 @@
 <!-- Sidebar -->
-<ul class="navbar-nav bg-sidebar sidebar sidebar-dark accordion d-none d-lg-block toggled" id="accordionSidebar">
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ _p.web }}dashboard">
@@ -8,7 +8,6 @@
         </div>
     </a>
 
-    <div class="pb-5"></div>
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
 

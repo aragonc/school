@@ -42,13 +42,14 @@
         }
         {% endif %}
         {% if custom_sidebar_brand_color %}
-        .bg-sidebar .sidebar-brand {
+        .bg-gradient-primary .sidebar-brand {
             background: {{ custom_sidebar_brand_color }} !important;
         }
         {% endif %}
         {% if custom_sidebar_color %}
-        .bg-sidebar {
+        .bg-gradient-primary {
             background: {{ custom_sidebar_color }} !important;
+            background-image: none !important;
         }
         {% endif %}
         {% if custom_primary_color %}
@@ -94,7 +95,7 @@
     {% endif %}
 </head>
 
-<body id="page-top" class="sidebar-toggled">
+<body id="page-top">
 <!-- Page Wrapper -->
 <div id="wrapper">
 
