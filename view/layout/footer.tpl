@@ -63,23 +63,50 @@
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
 
-        // Sidebar: restaurar estado guardado
-        var $sidebar = $('#accordionSidebar');
-        var sidebarState = localStorage.getItem('sidebarState');
-        if (sidebarState === 'expanded') {
-            $sidebar.removeClass('toggled');
-            $('body').removeClass('sidebar-toggled');
-        } else {
-            $sidebar.addClass('toggled');
-            $('body').addClass('sidebar-toggled');
-        }
-
-        // Sidebar toggle desktop
-        $('#sidebarToggleDesktop').on('click', function (e) {
+        // Toggle the side navigation
+        $('#sidebarToggle, #sidebarToggleTop, #sidebarToggleDesktop').on('click', function (e) {
             e.preventDefault();
-            $sidebar.toggleClass('toggled');
             $('body').toggleClass('sidebar-toggled');
-            localStorage.setItem('sidebarState', $sidebar.hasClass('toggled') ? 'collapsed' : 'expanded');
+            $('.sidebar').toggleClass('toggled');
+            if ($('.sidebar').hasClass('toggled')) {
+                $('.sidebar .collapse').collapse('hide');
+            }
+        });
+
+        // Close any open menu accordions when window is resized below 768px
+        $(window).resize(function () {
+            if ($(window).width() < 768) {
+                $('.sidebar .collapse').collapse('hide');
+            }
+        });
+
+        // Prevent the content wrapper from scrolling when the fixed side navigation hovered over
+        $('body.fixed-nav .sidebar').on('mousewheel DOMMouseScroll wheel', function (e) {
+            if ($(window).width() > 768) {
+                var e0 = e.originalEvent,
+                    delta = e0.wheelDelta || -e0.detail;
+                this.scrollTop += (delta < 0 ? 1 : -1) * 30;
+                e.preventDefault();
+            }
+        });
+
+        // Scroll to top button appear
+        $(document).on('scroll', function () {
+            var scrollDistance = $(this).scrollTop();
+            if (scrollDistance > 100) {
+                $('.scroll-to-top').fadeIn();
+            } else {
+                $('.scroll-to-top').fadeOut();
+            }
+        });
+
+        // Smooth scrolling using jQuery easing
+        $(document).on('click', 'a.scroll-to-top', function (e) {
+            var $anchor = $(this);
+            $('html, body').stop().animate({
+                scrollTop: ($($anchor.attr('href')).offset().top)
+            }, 1000, 'easeInOutExpo');
+            e.preventDefault();
         });
     });
 
@@ -309,63 +336,6 @@
         });
     });
 
-    $(document).ready(function () {
-        var $nav = $(".nav-mobile");
-        var $toggle = $("#sidebarToggleTop");
-        var $close = $("#closeMobile");
-        var $body = $("body");
-        var $overlay = $(".menu-overlay");
-
-        function openMenu() {
-            $nav.addClass("is-active");
-            $body.addClass("no-scroll");
-        }
-
-        function closeMenu() {
-            $nav.removeClass("is-active");
-            $body.removeClass("no-scroll");
-        }
-
-        if ($nav.length) {
-            if ($toggle.length) {
-                $toggle.on("click", function (e) {
-                    e.stopPropagation();
-                    if ($nav.hasClass("is-active")) {
-                        closeMenu();
-                    } else {
-                        openMenu();
-                    }
-                });
-            }
-
-            if ($close.length) {
-                $close.on("click", function (e) {
-                    e.stopPropagation();
-                    closeMenu();
-                });
-            }
-
-            if ($overlay.length) {
-                $overlay.on("click", function () {
-                    closeMenu();
-                });
-            }
-
-            $(document).on("keydown", function (e) {
-                if (e.key === "Escape") {
-                    closeMenu();
-                }
-            });
-
-            $(".logo-site").on("click", function (e) {
-                closeMenu();
-            });
-
-            $(document).on("click", function (e) {
-
-            });
-        }
-    });
 
 
 

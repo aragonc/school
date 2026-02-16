@@ -50,33 +50,10 @@
     <hr class="sidebar-divider d-none d-md-block">
 
 
-    <!--<div class="text-center d-none d-md-inline">
+    <!-- Sidebar Toggler (Sidebar) -->
+    <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
-    </div>-->
+    </div>
 
 </ul>
 <!-- End of Sidebar -->
-<!-- Sidebar Mobile -->
-<div class="menu-overlay"></div>
-<div class="nav-mobile d-sm-block d-md-block d-lg-none"  tabindex="0">
-    <nav class="nav-items">
-        <div class="d-flex flex-row justify-content-between align-items-center">
-            <div class="logo-campus">
-                <a href="{{ _p.web }}">{{ logo }}</a>
-            </div>
-            <div class="p-2">
-                <button type="button" id="closeMobile" class="btn btn-outline-primary">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-
-        {% for menu in menus %}
-        <a id="menu-{{ menu.name }}" class="nav-item {{ menu.class }}" href="{{ menu.url }}" title="{{ menu.label }}">
-            <i class="fas fa-fw fa-{{ menu.icon }}"></i>
-            <span>{{ menu.label }}</span>
-        </a>
-        {% endfor %}
-    </nav>
-</div>
-<!-- End of Sidebar Mobile -->

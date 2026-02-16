@@ -1,17 +1,11 @@
 <nav class="navbar navbar-expand navbar-light topbar mb-4 static-top">
-    <button id="sidebarToggleTop" class="btn btn-link d-lg-none rounded-circle">
-        <i class="fa fa-bars"></i>
-    </button>
-    <button id="sidebarToggleDesktop" class="btn btn-link d-none d-lg-inline-block rounded-circle" title="Menu">
+    <!-- Sidebar Toggle (Topbar) -->
+    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
         <i class="fa fa-bars"></i>
     </button>
     {% if platform_name %}
     <span class="d-none d-lg-inline-block text-gray-600 font-weight-bold ml-2">{{ platform_name }}{% if institution_name %} - {{ institution_name }}{% endif %}</span>
     {% endif %}
-
-    <div class="logo-campus d-sm-inline-block d-md-none">
-        <a href="{{ _p.web }}dashboard">{{ logo }}</a>
-    </div>
 
     {% if enabled_search %}
     <form class="d-none d-sm-inline-block form-inline ml-auto my-2 my-md-0 mw-100 navbar-search">
