@@ -62,7 +62,7 @@ if ($enable) {
     }
 
     $plugin->setTitle($plugin->get_lang('Dashboard'));
-    $content = $plugin->fetch('school_start.tpl');
+    $content = $plugin->fetch('dashboard/start.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();
 }

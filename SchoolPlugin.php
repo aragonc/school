@@ -671,30 +671,30 @@ class SchoolPlugin extends Plugin
         return
             "# BEGIN School Plugin\n".
             "RewriteRule ^dashboard$ plugin/school/start.php [L]\n".
-            "RewriteRule ^courses$ plugin/school/courses.php [L]\n".
-            "RewriteRule ^previous$ plugin/school/previous.php [L]\n".
-            "RewriteRule ^certified$ plugin/school/certificates.php [L]\n".
-            "RewriteRule ^notifications$ plugin/school/notifications.php [L]\n".
-            "RewriteRule ^profile$ plugin/school/profile.php [L]\n".
-            "RewriteRule ^avatar$ plugin/school/avatar.php [L]\n".
-            "RewriteRule ^password$ plugin/school/password.php [L]\n".
-            "RewriteRule ^extra-profile$ plugin/school/extra_profile_data.php [L]\n".
-            "RewriteRule ^requests$ plugin/school/requests.php [L]\n".
-            "RewriteRule ^shopping$ plugin/school/shopping.php [L]\n".
-            "RewriteRule ^help$ plugin/school/help.php [L]\n".
-            "RewriteRule ^school-admin$ plugin/school/admin.php [L]\n".
-            "RewriteRule ^documents$ plugin/school/student_documents.php?%{QUERY_STRING} [L,QSA]\n".
-            "RewriteRule ^view/course/(\\d{1,})$ plugin/school/view.php?session_id=$1 [L]\n".
-            "RewriteRule ^home/course/([^/]+)$ plugin/school/home.php?cDir=$1 [L]\n".
-            "RewriteRule ^reset/token/([^/]+)$ plugin/school/reset.php?token=$1 [L]\n".
-            "RewriteRule ^attendance$ plugin/school/attendance_today.php [L]\n".
-            "RewriteRule ^attendance/today$ plugin/school/attendance_today.php [L]\n".
-            "RewriteRule ^attendance/manual$ plugin/school/attendance_manual.php [L]\n".
-            "RewriteRule ^attendance/schedules$ plugin/school/attendance_schedules.php [L]\n".
-            "RewriteRule ^attendance/reports$ plugin/school/attendance_reports.php [L]\n".
-            "RewriteRule ^attendance/my$ plugin/school/attendance_my.php [L]\n".
-            "RewriteRule ^attendance/scan$ plugin/school/attendance_scan.php [L,QSA]\n".
-            "RewriteRule ^attendance/kiosk$ plugin/school/attendance_kiosk.php [L]\n".
+            "RewriteRule ^courses$ plugin/school/src/courses/courses.php [L]\n".
+            "RewriteRule ^previous$ plugin/school/src/courses/previous.php [L]\n".
+            "RewriteRule ^view/course/(\\d{1,})$ plugin/school/src/courses/view.php?session_id=$1 [L]\n".
+            "RewriteRule ^home/course/([^/]+)$ plugin/school/src/courses/home.php?cDir=$1 [L]\n".
+            "RewriteRule ^attendance$ plugin/school/src/attendance/today.php [L]\n".
+            "RewriteRule ^attendance/today$ plugin/school/src/attendance/today.php [L]\n".
+            "RewriteRule ^attendance/manual$ plugin/school/src/attendance/manual.php [L]\n".
+            "RewriteRule ^attendance/schedules$ plugin/school/src/attendance/schedules.php [L]\n".
+            "RewriteRule ^attendance/reports$ plugin/school/src/attendance/reports.php [L]\n".
+            "RewriteRule ^attendance/my$ plugin/school/src/attendance/my.php [L]\n".
+            "RewriteRule ^attendance/scan$ plugin/school/src/attendance/scan.php [L,QSA]\n".
+            "RewriteRule ^attendance/kiosk$ plugin/school/src/attendance/kiosk.php [L]\n".
+            "RewriteRule ^profile$ plugin/school/src/profile/profile.php [L]\n".
+            "RewriteRule ^avatar$ plugin/school/src/profile/avatar.php [L]\n".
+            "RewriteRule ^password$ plugin/school/src/profile/password.php [L]\n".
+            "RewriteRule ^extra-profile$ plugin/school/src/profile/extra_profile_data.php [L]\n".
+            "RewriteRule ^notifications$ plugin/school/src/notifications/notifications.php [L]\n".
+            "RewriteRule ^shopping$ plugin/school/src/shopping/shopping.php [L]\n".
+            "RewriteRule ^school-admin$ plugin/school/src/admin/admin.php [L]\n".
+            "RewriteRule ^reset/token/([^/]+)$ plugin/school/src/auth/reset.php?token=$1 [L]\n".
+            "RewriteRule ^certified$ plugin/school/src/misc/certificates.php [L]\n".
+            "RewriteRule ^documents$ plugin/school/src/misc/student_documents.php?%{QUERY_STRING} [L,QSA]\n".
+            "RewriteRule ^requests$ plugin/school/src/misc/requests.php [L]\n".
+            "RewriteRule ^help$ plugin/school/src/misc/help.php [L]\n".
             "# END School Plugin";
     }
 
@@ -3199,7 +3199,7 @@ class SchoolPlugin extends Plugin
         $this->assign('report_date', date('Y-m-d H:i:s'));
         $this->assign('institution', api_get_setting('Institution'));
 
-        $content = $this->fetch('school_attendance_pdf.tpl');
+        $content = $this->fetch('attendance/pdf.tpl');
 
         $filename = 'asistencia_' . date('Y-m-d_His');
 
