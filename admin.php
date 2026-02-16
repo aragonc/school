@@ -79,6 +79,28 @@ $form->addText(
 );
 
 $form->addCheckBox('remove_logo', '', $plugin->get_lang('RemoveLogo'));
+
+// Login customization section
+$form->addHtml('<h4>'.$plugin->get_lang('LoginSettings').'</h4>');
+$form->addText(
+    'login_bg_color',
+    [$plugin->get_lang('LoginBgColor'), $plugin->get_lang('LoginBgColorHelp')],
+    false,
+    ['placeholder' => '#4e73df', 'class' => 'form-control color-input']
+);
+$form->addFile(
+    'login_bg_image',
+    [$plugin->get_lang('LoginBgImage'), $plugin->get_lang('LoginBgImageHelp')],
+    ['accept' => '.jpg,.jpeg,.png,.webp']
+);
+$form->addCheckBox('remove_login_bg_image', '', $plugin->get_lang('RemoveLoginBgImage'));
+$form->addFile(
+    'login_card_image',
+    [$plugin->get_lang('LoginCardImage'), $plugin->get_lang('LoginCardImageHelp')],
+    ['accept' => '.jpg,.jpeg,.png,.webp']
+);
+$form->addCheckBox('remove_login_card_image', '', $plugin->get_lang('RemoveLoginCardImage'));
+
 $form->addButtonSave($plugin->get_lang('SaveChanges'));
 
 // Load current values
@@ -90,6 +112,7 @@ $defaults = [
     'sidebar_color' => $plugin->getSchoolSetting('sidebar_color') ?? '',
     'sidebar_item_active_text' => $plugin->getSchoolSetting('sidebar_item_active_text') ?? '',
     'sidebar_text_color' => $plugin->getSchoolSetting('sidebar_text_color') ?? '',
+    'login_bg_color' => $plugin->getSchoolSetting('login_bg_color') ?? '',
 ];
 $form->setDefaults($defaults);
 
@@ -179,6 +202,79 @@ if ($form->validate()) {
     $plugin->setSchoolSetting('sidebar_item_active_text', $values['sidebar_item_active_text'] ?? '');
     $plugin->setSchoolSetting('sidebar_text_color', $values['sidebar_text_color'] ?? '');
 
+    // Save login settings
+    $plugin->setSchoolSetting('login_bg_color', $values['login_bg_color'] ?? '');
+
+    // Handle login background image removal
+    if (!empty($values['remove_login_bg_image'])) {
+        $currentBg = $plugin->getSchoolSetting('login_bg_image');
+        if ($currentBg) {
+            $filePath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$currentBg;
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
+        $plugin->setSchoolSetting('login_bg_image', '');
+    }
+
+    // Handle login background image upload
+    if (!empty($_FILES['login_bg_image']['size'])) {
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH).'plugins/school/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, api_get_permissions_for_new_directories(), true);
+        }
+
+        $currentBg = $plugin->getSchoolSetting('login_bg_image');
+        if ($currentBg) {
+            $oldFile = $uploadDir.$currentBg;
+            if (file_exists($oldFile)) {
+                unlink($oldFile);
+            }
+        }
+
+        $extension = pathinfo($_FILES['login_bg_image']['name'], PATHINFO_EXTENSION);
+        $newFilename = 'login_bg_'.time().'.'.$extension;
+
+        if (move_uploaded_file($_FILES['login_bg_image']['tmp_name'], $uploadDir.$newFilename)) {
+            $plugin->setSchoolSetting('login_bg_image', $newFilename);
+        }
+    }
+
+    // Handle login card image removal
+    if (!empty($values['remove_login_card_image'])) {
+        $currentCard = $plugin->getSchoolSetting('login_card_image');
+        if ($currentCard) {
+            $filePath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$currentCard;
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
+        $plugin->setSchoolSetting('login_card_image', '');
+    }
+
+    // Handle login card image upload
+    if (!empty($_FILES['login_card_image']['size'])) {
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH).'plugins/school/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, api_get_permissions_for_new_directories(), true);
+        }
+
+        $currentCard = $plugin->getSchoolSetting('login_card_image');
+        if ($currentCard) {
+            $oldFile = $uploadDir.$currentCard;
+            if (file_exists($oldFile)) {
+                unlink($oldFile);
+            }
+        }
+
+        $extension = pathinfo($_FILES['login_card_image']['name'], PATHINFO_EXTENSION);
+        $newFilename = 'login_card_'.time().'.'.$extension;
+
+        if (move_uploaded_file($_FILES['login_card_image']['tmp_name'], $uploadDir.$newFilename)) {
+            $plugin->setSchoolSetting('login_card_image', $newFilename);
+        }
+    }
+
     Display::addFlash(
         Display::return_message($plugin->get_lang('SettingsSaved'), 'success')
     );
@@ -194,6 +290,18 @@ if ($sidebarIcon) {
     $plugin->assign('current_sidebar_icon', api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$sidebarIcon);
 } else {
     $plugin->assign('current_sidebar_icon', '');
+}
+$loginBgImage = $plugin->getSchoolSetting('login_bg_image');
+if ($loginBgImage) {
+    $plugin->assign('current_login_bg_image', api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$loginBgImage);
+} else {
+    $plugin->assign('current_login_bg_image', '');
+}
+$loginCardImage = $plugin->getSchoolSetting('login_card_image');
+if ($loginCardImage) {
+    $plugin->assign('current_login_card_image', api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$loginCardImage);
+} else {
+    $plugin->assign('current_login_card_image', '');
 }
 $plugin->assign('form', $form->returnForm());
 $content = $plugin->fetch('school_admin.tpl');

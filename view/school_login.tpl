@@ -1,10 +1,14 @@
-<div class="container">
-    <div class="row justify-content-center">
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="row justify-content-center w-100">
         <div class="col-xl-10 col-lg-12 col-md-9">
-            <div class="card o-hidden border-0 shadow-lg my-5">
+            <div class="card o-hidden border-0 shadow-lg">
                 <div class="card-body p-0">
                     <div class="row">
+                        {% if login_card_image %}
+                        <div class="col-lg-6 d-none d-lg-block" style="background: url('{{ login_card_image }}') no-repeat center center; background-size: cover;"></div>
+                        {% else %}
                         <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
+                        {% endif %}
                         <div class="col-lg-6">
                             <div class="p-5">
                                 <div class="text-center mb-4">

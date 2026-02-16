@@ -19,7 +19,13 @@
     {{ extra_headers }}
 </head>
 
-<body class="bg-gradient-primary">
+<body class="bg-gradient-primary"
+      {% if login_bg_image %}
+      style="background: url('{{ login_bg_image }}') no-repeat center center fixed; background-size: cover;"
+      {% elseif login_bg_color %}
+      style="background: {{ login_bg_color }}; background-image: none;"
+      {% endif %}
+>
 
     {{ content }}
 

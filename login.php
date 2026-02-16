@@ -98,7 +98,31 @@ if ($customLogo) {
     $logoUrl = api_get_path(WEB_CSS_PATH).$themeDir.'images/header-logo-vector.svg';
 }
 
+// Login background settings
+$loginBgColor = $plugin->getSchoolSetting('login_bg_color');
+$loginBgImage = $plugin->getSchoolSetting('login_bg_image');
+$loginBgImageUrl = '';
+if ($loginBgImage) {
+    $fullPath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$loginBgImage;
+    if (file_exists($fullPath)) {
+        $loginBgImageUrl = api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$loginBgImage;
+    }
+}
+
+// Login card image
+$loginCardImage = $plugin->getSchoolSetting('login_card_image');
+$loginCardImageUrl = '';
+if ($loginCardImage) {
+    $fullPath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$loginCardImage;
+    if (file_exists($fullPath)) {
+        $loginCardImageUrl = api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$loginCardImage;
+    }
+}
+
 $plugin->assign('logo_url', $logoUrl);
+$plugin->assign('login_bg_color', $loginBgColor ?: '');
+$plugin->assign('login_bg_image', $loginBgImageUrl);
+$plugin->assign('login_card_image', $loginCardImageUrl);
 $plugin->assign('error_message', $errorMessage);
 $plugin->assign('site_name', $siteName);
 $plugin->assign('institution', $institution);

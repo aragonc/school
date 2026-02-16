@@ -11,6 +11,26 @@
             </div>
         </div>
         {% endif %}
+        {% if current_login_bg_image or current_login_card_image %}
+        <div class="row mb-4">
+            {% if current_login_bg_image %}
+            <div class="col-md-6">
+                <label class="font-weight-bold">{{ 'CurrentLoginBgImage'|get_plugin_lang('SchoolPlugin') }}</label>
+                <div class="p-3 border rounded" style="background: #f8f9fc;">
+                    <img src="{{ current_login_bg_image }}" alt="Login Background" style="max-height: 120px; border-radius: 4px;">
+                </div>
+            </div>
+            {% endif %}
+            {% if current_login_card_image %}
+            <div class="col-md-6">
+                <label class="font-weight-bold">{{ 'CurrentLoginCardImage'|get_plugin_lang('SchoolPlugin') }}</label>
+                <div class="p-3 border rounded" style="background: #f8f9fc;">
+                    <img src="{{ current_login_card_image }}" alt="Login Card Image" style="max-height: 120px; border-radius: 4px;">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
         {{ form }}
     </div>
 </div>
