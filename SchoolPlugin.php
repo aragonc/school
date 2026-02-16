@@ -1,7 +1,5 @@
 <?php
 
-require_once 'src/PipedriveAPI.php';
-
 use Chamilo\CoreBundle\Entity\Session;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -41,7 +39,6 @@ class SchoolPlugin extends Plugin
             'Alex Aragon <alex.aragon@tunqui.pe>',
             $this->extendAttributes([
                 'tool_enable' => 'boolean',
-                'api_token_pipedrive' => 'text',
                 'activate_search' => 'boolean',
                 'activate_shopping' => 'boolean',
                 'email_help' => 'text',
@@ -216,41 +213,6 @@ class SchoolPlugin extends Plugin
      */
     private function extendAttributes(array $attributes): array
     {
-        // Verificar si el atributo 'api_token_pipedrive' tiene un valor
-        if (!empty($this->get('api_token_pipedrive'))) {
-            $boardsList = $phasesList = [];
-            $apiToken = $this->get('api_token_pipedrive');
-            $pipedriveAPI = new School\PipedriveAPI($apiToken);
-            $projectBoards = $pipedriveAPI->getProjectBoards();
-
-            if ($projectBoards !== null) {
-                $boardsList = array_combine(
-                    array_column($projectBoards, 'id'),
-                    array_column($projectBoards, 'name')
-                );
-            }
-            $idBoard = $this->get('board_pipedrive');
-
-            $projectPhases = $pipedriveAPI->getProjectPhases($idBoard);
-
-            if ($projectPhases !== null) {
-                $phasesList = array_combine(
-                    array_column($projectPhases, 'id'),
-                    array_column($projectPhases, 'name')
-                );
-            }
-
-            // Agregar atributos adicionales
-            $attributes['board_pipedrive'] = [
-                'type' => 'select',
-                'options' => $boardsList,
-            ];
-            $attributes['phase_pipedrive'] = [
-                'type' => 'select',
-                'options' => $phasesList,
-            ];
-        }
-
         return $attributes;
     }
 
