@@ -3,7 +3,14 @@
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ _p.web }}dashboard">
-        <div class="sidebar-brand-big">
+        <div class="sidebar-brand-small">
+            {% if sidebar_icon_url %}
+                <img src="{{ sidebar_icon_url }}" alt="Icon" class="img-fluid">
+            {% else %}
+                <i class="fas fa-school fa-2x"></i>
+            {% endif %}
+        </div>
+        <div class="sidebar-brand-large">
             {{ logo_svg }}
         </div>
     </a>

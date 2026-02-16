@@ -957,6 +957,16 @@ class SchoolPlugin extends Plugin
         $this->assign('logo', $logoPathImg);
         $this->assign('logo_svg', $customLogo ? $logoPathImg : self::display_logo());
         $this->assign('logo_icon', $customLogo ? $logoPathImg : self::display_logo_icon());
+
+        // Sidebar icon for collapsed state
+        $sidebarIcon = $this->getSchoolSetting('sidebar_icon');
+        if ($sidebarIcon) {
+            $sidebarIconUrl = api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$sidebarIcon;
+            $this->assign('sidebar_icon_url', $sidebarIconUrl);
+        } else {
+            $this->assign('sidebar_icon_url', '');
+        }
+
         $this->assign('enabled_search', $enabledSearch);
 
         $menus = self::getMenus($section);
@@ -981,7 +991,6 @@ class SchoolPlugin extends Plugin
         $this->assign('custom_primary_color', $this->getSchoolSetting('primary_color') ?? '');
         $this->assign('custom_sidebar_brand_color', $this->getSchoolSetting('sidebar_brand_color') ?? '');
         $this->assign('custom_sidebar_color', $this->getSchoolSetting('sidebar_color') ?? '');
-        $this->assign('custom_sidebar_item_color', $this->getSchoolSetting('sidebar_item_color') ?? '');
         $this->assign('custom_sidebar_item_active_text', $this->getSchoolSetting('sidebar_item_active_text') ?? '');
         $this->assign('custom_sidebar_text_color', $this->getSchoolSetting('sidebar_text_color') ?? '');
 

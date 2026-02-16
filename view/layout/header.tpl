@@ -62,18 +62,6 @@
         .sidebar-dark #sidebarToggle:hover {
             opacity: 0.8;
         }
-        .nav-mobile .nav-item.active {
-            background: {{ custom_primary_color }} !important;
-            color: #fff !important;
-        }
-        {% endif %}
-        {% if custom_sidebar_item_color %}
-        .sidebar .nav-item .nav-link {
-            background: {{ custom_sidebar_item_color }} !important;
-        }
-        .sidebar.toggled .nav-item .nav-link {
-            background: {{ custom_sidebar_item_color }} !important;
-        }
         {% endif %}
         {% if custom_sidebar_item_active_text %}
         .sidebar-dark .nav-item.active .nav-link {

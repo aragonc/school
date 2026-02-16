@@ -188,6 +188,9 @@ $strings['SidebarTextColor'] = 'Color del texto de los items';
 $strings['SidebarTextColorHelp'] = 'Color del texto e íconos de los items del menú. Ej: #333333';
 $strings['SettingsSaved'] = 'Configuración guardada correctamente';
 $strings['RemoveLogo'] = 'Eliminar logo personalizado';
+$strings['SidebarIcon'] = 'Icono del sidebar (comprimido)';
+$strings['SidebarIconHelp'] = 'Imagen pequeña que se muestra cuando el sidebar está comprimido. SVG, PNG o JPG. Tamaño recomendado: 40x40px';
+$strings['RemoveSidebarIcon'] = 'Eliminar icono del sidebar';
 $strings['SaveChanges'] = 'Guardar cambios';
 
 // Attendance

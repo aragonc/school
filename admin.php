@@ -37,6 +37,14 @@ $form->addText(
     ['placeholder' => '80']
 );
 
+// Sidebar icon (collapsed)
+$form->addFile(
+    'sidebar_icon',
+    [$plugin->get_lang('SidebarIcon'), $plugin->get_lang('SidebarIconHelp')],
+    ['accept' => '.svg,.png,.jpg,.jpeg']
+);
+$form->addCheckBox('remove_sidebar_icon', '', $plugin->get_lang('RemoveSidebarIcon'));
+
 // Colors section
 $form->addHtml('<h4>'.$plugin->get_lang('ColorSettings').'</h4>');
 $form->addText(
@@ -124,6 +132,42 @@ if ($form->validate()) {
         }
     }
 
+    // Handle sidebar icon removal
+    if (!empty($values['remove_sidebar_icon'])) {
+        $currentIcon = $plugin->getSchoolSetting('sidebar_icon');
+        if ($currentIcon) {
+            $filePath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$currentIcon;
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
+        $plugin->setSchoolSetting('sidebar_icon', '');
+    }
+
+    // Handle sidebar icon upload
+    if (!empty($_FILES['sidebar_icon']['size'])) {
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH).'plugins/school/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, api_get_permissions_for_new_directories(), true);
+        }
+
+        // Remove old icon
+        $currentIcon = $plugin->getSchoolSetting('sidebar_icon');
+        if ($currentIcon) {
+            $oldFile = $uploadDir.$currentIcon;
+            if (file_exists($oldFile)) {
+                unlink($oldFile);
+            }
+        }
+
+        $extension = pathinfo($_FILES['sidebar_icon']['name'], PATHINFO_EXTENSION);
+        $newFilename = 'sidebar_icon_'.time().'.'.$extension;
+
+        if (move_uploaded_file($_FILES['sidebar_icon']['tmp_name'], $uploadDir.$newFilename)) {
+            $plugin->setSchoolSetting('sidebar_icon', $newFilename);
+        }
+    }
+
     // Save logo dimensions
     $plugin->setSchoolSetting('logo_width', $values['logo_width'] ?? '');
     $plugin->setSchoolSetting('logo_height', $values['logo_height'] ?? '');
@@ -132,7 +176,6 @@ if ($form->validate()) {
     $plugin->setSchoolSetting('primary_color', $values['primary_color'] ?? '');
     $plugin->setSchoolSetting('sidebar_brand_color', $values['sidebar_brand_color'] ?? '');
     $plugin->setSchoolSetting('sidebar_color', $values['sidebar_color'] ?? '');
-    $plugin->setSchoolSetting('sidebar_item_color', $values['sidebar_item_color'] ?? '');
     $plugin->setSchoolSetting('sidebar_item_active_text', $values['sidebar_item_active_text'] ?? '');
     $plugin->setSchoolSetting('sidebar_text_color', $values['sidebar_text_color'] ?? '');
 
@@ -143,9 +186,15 @@ if ($form->validate()) {
     exit;
 }
 
-// Pass current logo to template
+// Pass current logo and sidebar icon to template
 $currentLogo = $plugin->getCustomLogo();
 $plugin->assign('current_logo', $currentLogo);
+$sidebarIcon = $plugin->getSchoolSetting('sidebar_icon');
+if ($sidebarIcon) {
+    $plugin->assign('current_sidebar_icon', api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$sidebarIcon);
+} else {
+    $plugin->assign('current_sidebar_icon', '');
+}
 $plugin->assign('form', $form->returnForm());
 $content = $plugin->fetch('school_admin.tpl');
 $plugin->assign('content', $content);

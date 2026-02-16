@@ -186,6 +186,9 @@ $strings['SidebarTextColor'] = 'Item text color';
 $strings['SidebarTextColorHelp'] = 'Text and icon color of menu items. E.g.: #333333';
 $strings['SettingsSaved'] = 'Settings saved successfully';
 $strings['RemoveLogo'] = 'Remove custom logo';
+$strings['SidebarIcon'] = 'Sidebar icon (collapsed)';
+$strings['SidebarIconHelp'] = 'Small image shown when the sidebar is collapsed. SVG, PNG or JPG. Recommended size: 40x40px';
+$strings['RemoveSidebarIcon'] = 'Remove sidebar icon';
 $strings['SaveChanges'] = 'Save changes';
 
 // Attendance
