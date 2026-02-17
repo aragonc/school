@@ -39,8 +39,12 @@
             </div>
         </div>
 
-        <!-- Enrollment -->
-        <h5><i class="fas fa-graduation-cap"></i> {{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</h5>
+        <!-- Admission & Enrollment -->
+        <h5><i class="fas fa-door-open"></i> {{ 'Admission'|get_plugin_lang('SchoolPlugin') }} & {{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</h5>
+        {% set admission = payment_data.admission %}
+        {% set adm_effective = admission.original_amount - admission.discount %}
+        {% set adm_paid = admission.amount|default(0) %}
+        {% set adm_balance = adm_effective - adm_paid %}
         {% set enroll = payment_data.enrollment %}
         {% set enroll_effective = enroll.original_amount - enroll.discount %}
         {% set enroll_paid = enroll.amount|default(0) %}
@@ -59,8 +63,51 @@
                 </tr>
             </thead>
             <tbody>
+                <!-- Admission Row -->
+                {% if adm_effective > 0 %}
                 <tr>
-                    <td>{{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</td>
+                    <td><i class="fas fa-door-open"></i> {{ 'Admission'|get_plugin_lang('SchoolPlugin') }}</td>
+                    <td>S/ {{ admission.original_amount|number_format(2, '.', ',') }}</td>
+                    <td>S/ {{ admission.discount|number_format(2, '.', ',') }}</td>
+                    <td>S/ {{ adm_effective|number_format(2, '.', ',') }}</td>
+                    <td class="text-success font-weight-bold">S/ {{ adm_paid|number_format(2, '.', ',') }}</td>
+                    <td class="{% if adm_balance > 0 %}text-danger font-weight-bold{% else %}text-success{% endif %}">
+                        S/ {{ adm_balance|number_format(2, '.', ',') }}
+                    </td>
+                    <td>
+                        {% if admission.status == 'paid' %}
+                            <span class="badge badge-success">{{ 'Paid'|get_plugin_lang('SchoolPlugin') }}</span>
+                        {% elseif admission.status == 'partial' %}
+                            <span class="badge badge-warning">{{ 'Partial'|get_plugin_lang('SchoolPlugin') }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">{{ 'Pending'|get_plugin_lang('SchoolPlugin') }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if admission.status != 'paid' %}
+                        <button class="btn btn-success btn-sm" onclick="openPaymentModal('admission', null, {{ adm_effective }}, {{ adm_paid }}, {{ adm_balance }})">
+                            <i class="fas fa-money-bill-wave"></i> {% if admission.status == 'partial' %}{{ 'CompletePayment'|get_plugin_lang('SchoolPlugin') }}{% else %}{{ 'RegisterPayment'|get_plugin_lang('SchoolPlugin') }}{% endif %}
+                        </button>
+                        {% endif %}
+                        {% if admission.id is defined and admission.id %}
+                        {% if admission.voucher is defined and admission.voucher %}
+                        <button class="btn btn-warning btn-sm" onclick="viewVoucher('{{ admission.voucher }}')" title="{{ 'ViewVoucher'|get_plugin_lang('SchoolPlugin') }}">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        {% endif %}
+                        <a href="{{ _p.web }}payments/receipt?id={{ admission.id }}" target="_blank" class="btn btn-info btn-sm" title="{{ 'PrintReceipt'|get_plugin_lang('SchoolPlugin') }}">
+                            <i class="fas fa-print"></i>
+                        </a>
+                        <button class="btn btn-danger btn-sm" onclick="deletePayment({{ admission.id }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                <!-- Enrollment Row -->
+                <tr>
+                    <td><i class="fas fa-graduation-cap"></i> {{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</td>
                     <td>S/ {{ enroll.original_amount|number_format(2, '.', ',') }}</td>
                     <td>S/ {{ enroll.discount|number_format(2, '.', ',') }}</td>
                     <td>S/ {{ enroll_effective|number_format(2, '.', ',') }}</td>

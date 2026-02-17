@@ -51,6 +51,8 @@
                         <td>
                             {% if discount.applies_to == 'all' %}
                                 {{ 'AllUsers'|get_plugin_lang('SchoolPlugin') }}
+                            {% elseif discount.applies_to == 'admission' %}
+                                {{ 'Admission'|get_plugin_lang('SchoolPlugin') }}
                             {% elseif discount.applies_to == 'enrollment' %}
                                 {{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}
                             {% else %}
@@ -113,7 +115,8 @@
                     <div class="form-group">
                         <label>{{ 'AppliesTo'|get_plugin_lang('SchoolPlugin') }}</label>
                         <select class="form-control" name="applies_to" id="discount_applies">
-                            <option value="all">{{ 'AllUsers'|get_plugin_lang('SchoolPlugin') }} ({{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }} + {{ 'Monthly'|get_plugin_lang('SchoolPlugin') }})</option>
+                            <option value="all">{{ 'AllUsers'|get_plugin_lang('SchoolPlugin') }} ({{ 'Admission'|get_plugin_lang('SchoolPlugin') }} + {{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }} + {{ 'Monthly'|get_plugin_lang('SchoolPlugin') }})</option>
+                            <option value="admission">{{ 'Admission'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="enrollment">{{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="monthly">{{ 'Monthly'|get_plugin_lang('SchoolPlugin') }}</option>
                         </select>

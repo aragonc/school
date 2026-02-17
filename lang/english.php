@@ -448,3 +448,7 @@ $strings['NoCategory'] = 'No category';
 $strings['Voucher'] = 'Voucher / Deposit proof';
 $strings['VoucherHint'] = 'Upload the deposit or transfer screenshot (JPG, PNG, WEBP)';
 $strings['ViewVoucher'] = 'View voucher';
+
+// Admission fee
+$strings['Admission'] = 'Admission Fee';
+$strings['AdmissionAmount'] = 'Admission Amount';

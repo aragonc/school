@@ -63,6 +63,8 @@ $monthNames = [
     12 => $plugin->get_lang('December'),
 ];
 
+$showAdmission = !empty($currentPeriod['admission_amount']) && (float) $currentPeriod['admission_amount'] > 0;
+
 $plugin->assign('period', $currentPeriod);
 $plugin->assign('period_id', $periodId);
 $plugin->assign('months', $months);
@@ -70,6 +72,7 @@ $plugin->assign('month_names', $monthNames);
 $plugin->assign('students', $students);
 $plugin->assign('summary', $summary);
 $plugin->assign('search', $search);
+$plugin->assign('show_admission', $showAdmission);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH).'school/ajax/ajax_payments.php');
 
 $plugin->setTitle($plugin->get_lang('PaymentControl') . ' - ' . $currentPeriod['name']);

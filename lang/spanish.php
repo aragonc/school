@@ -450,3 +450,7 @@ $strings['NoCategory'] = 'Sin categoría';
 $strings['Voucher'] = 'Voucher / Comprobante de depósito';
 $strings['VoucherHint'] = 'Suba la captura del depósito o transferencia (JPG, PNG, WEBP)';
 $strings['ViewVoucher'] = 'Ver voucher';
+
+// Cuota de Ingreso
+$strings['Admission'] = 'Cuota de Ingreso';
+$strings['AdmissionAmount'] = 'Cuota de Ingreso';

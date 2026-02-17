@@ -641,6 +641,7 @@ class SchoolPlugin extends Plugin
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             year SMALLINT NOT NULL,
+            admission_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
             enrollment_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
             monthly_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
             months VARCHAR(100) NOT NULL DEFAULT '',
@@ -649,11 +650,15 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sql7p);
 
+        // Add admission_amount column if not exists (migration)
+        $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+        @Database::query("ALTER TABLE $periodTable ADD COLUMN IF NOT EXISTS admission_amount DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER year");
+
         $sql8p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
             period_id INT unsigned NOT NULL,
             user_id INT NOT NULL,
-            type ENUM('enrollment','monthly') NOT NULL,
+            type ENUM('admission','enrollment','monthly') NOT NULL,
             month TINYINT NULL,
             amount DECIMAL(10,2) NOT NULL DEFAULT 0,
             discount DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -679,13 +684,16 @@ class SchoolPlugin extends Plugin
         $sql8v = "ALTER TABLE $payTable ADD COLUMN IF NOT EXISTS voucher VARCHAR(255) NULL AFTER receipt_number";
         @Database::query($sql8v);
 
+        // Add admission to type ENUM (migration)
+        @Database::query("ALTER TABLE $payTable MODIFY type ENUM('admission','enrollment','monthly') NOT NULL");
+
         $sql9p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT_DISCOUNT." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
             period_id INT unsigned NOT NULL,
             user_id INT NOT NULL,
             discount_type ENUM('percentage','fixed') NOT NULL DEFAULT 'fixed',
             discount_value DECIMAL(10,2) NOT NULL DEFAULT 0,
-            applies_to ENUM('enrollment','monthly','all') NOT NULL DEFAULT 'all',
+            applies_to ENUM('admission','enrollment','monthly','all') NOT NULL DEFAULT 'all',
             reason VARCHAR(255) NULL,
             created_by INT NOT NULL,
             created_at DATETIME NOT NULL
@@ -3480,6 +3488,7 @@ class SchoolPlugin extends Plugin
         $params = [
             'name' => Database::escape_string(trim($data['name'] ?? '')),
             'year' => (int) ($data['year'] ?? date('Y')),
+            'admission_amount' => (float) ($data['admission_amount'] ?? 0),
             'enrollment_amount' => (float) ($data['enrollment_amount'] ?? 0),
             'monthly_amount' => (float) ($data['monthly_amount'] ?? 0),
             'months' => Database::escape_string(trim($data['months'] ?? '')),
@@ -3605,7 +3614,9 @@ class SchoolPlugin extends Plugin
         $result = Database::query($sql);
         $existingPayments = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
-            if ($row['type'] === 'enrollment') {
+            if ($row['type'] === 'admission') {
+                $existingPayments['admission'] = $row;
+            } elseif ($row['type'] === 'enrollment') {
                 $existingPayments['enrollment'] = $row;
             } else {
                 $existingPayments['month_' . $row['month']] = $row;
@@ -3615,6 +3626,7 @@ class SchoolPlugin extends Plugin
         // Build complete payment info
         $paymentInfo = [
             'period' => $period,
+            'admission' => null,
             'enrollment' => null,
             'monthly' => [],
             'discounts' => $discounts,
@@ -3622,6 +3634,26 @@ class SchoolPlugin extends Plugin
             'total_pending' => 0,
             'total_discount' => 0,
         ];
+
+        // Admission
+        $admissionAmount = $this->getEffectiveAmount($periodId, $userId, 'admission');
+        if (isset($existingPayments['admission'])) {
+            $paymentInfo['admission'] = $existingPayments['admission'];
+            if ($existingPayments['admission']['status'] === 'paid') {
+                $paymentInfo['total_paid'] += (float) $existingPayments['admission']['amount'];
+            } else {
+                $paymentInfo['total_pending'] += $admissionAmount['final_amount'];
+            }
+            $paymentInfo['total_discount'] += (float) $existingPayments['admission']['discount'];
+        } else {
+            $paymentInfo['admission'] = [
+                'status' => 'pending',
+                'original_amount' => $admissionAmount['original_amount'],
+                'discount' => $admissionAmount['discount_amount'],
+                'amount' => $admissionAmount['final_amount'],
+            ];
+            $paymentInfo['total_pending'] += $admissionAmount['final_amount'];
+        }
 
         // Enrollment
         $enrollAmount = $this->getEffectiveAmount($periodId, $userId, 'enrollment');
@@ -3679,7 +3711,7 @@ class SchoolPlugin extends Plugin
 
         $periodId = (int) ($data['period_id'] ?? 0);
         $userId = (int) ($data['user_id'] ?? 0);
-        $type = in_array($data['type'] ?? '', ['enrollment', 'monthly']) ? $data['type'] : '';
+        $type = in_array($data['type'] ?? '', ['admission', 'enrollment', 'monthly']) ? $data['type'] : '';
         $month = $type === 'monthly' ? (int) ($data['month'] ?? 0) : null;
 
         if (!$periodId || !$userId || !$type) {
@@ -3887,9 +3919,13 @@ class SchoolPlugin extends Plugin
             return ['original_amount' => 0, 'discount_amount' => 0, 'final_amount' => 0];
         }
 
-        $originalAmount = $type === 'enrollment'
-            ? (float) $period['enrollment_amount']
-            : (float) $period['monthly_amount'];
+        if ($type === 'admission') {
+            $originalAmount = (float) $period['admission_amount'];
+        } elseif ($type === 'enrollment') {
+            $originalAmount = (float) $period['enrollment_amount'];
+        } else {
+            $originalAmount = (float) $period['monthly_amount'];
+        }
 
         // Get applicable discounts
         $discounts = $this->getDiscounts($periodId, $userId);

@@ -57,9 +57,13 @@ $paymentMethodLabels = [
     'plin' => 'Plin',
 ];
 
-$conceptLabel = $payment['type'] === 'enrollment'
-    ? $plugin->get_lang('Enrollment')
-    : $plugin->get_lang('Monthly') . ' - ' . ($monthNames[(int) $payment['month']] ?? '');
+if ($payment['type'] === 'admission') {
+    $conceptLabel = $plugin->get_lang('Admission');
+} elseif ($payment['type'] === 'enrollment') {
+    $conceptLabel = $plugin->get_lang('Enrollment');
+} else {
+    $conceptLabel = $plugin->get_lang('Monthly') . ' - ' . ($monthNames[(int) $payment['month']] ?? '');
+}
 
 $statusLabel = $payment['status'] === 'paid'
     ? $plugin->get_lang('Paid')

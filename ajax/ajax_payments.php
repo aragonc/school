@@ -30,6 +30,7 @@ switch ($action) {
             'id' => isset($_POST['id']) ? (int) $_POST['id'] : 0,
             'name' => $_POST['name'] ?? '',
             'year' => $_POST['year'] ?? date('Y'),
+            'admission_amount' => $_POST['admission_amount'] ?? 0,
             'enrollment_amount' => $_POST['enrollment_amount'] ?? 0,
             'monthly_amount' => $_POST['monthly_amount'] ?? 0,
             'months' => $_POST['months'] ?? '',

@@ -46,6 +46,31 @@
             </div>
         </div>
 
+        <!-- Admission -->
+        {% if payment_data.admission is defined and payment_data.admission.original_amount > 0 %}
+        <h5 class="mb-3"><i class="fas fa-door-open"></i> {{ 'Admission'|get_plugin_lang('SchoolPlugin') }}</h5>
+        <div class="card mb-4 {% if payment_data.admission.status == 'paid' %}border-success{% elseif payment_data.admission.status == 'partial' %}border-warning{% else %}border-danger{% endif %}">
+            <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ 'Admission'|get_plugin_lang('SchoolPlugin') }}</strong>
+                    {% if payment_data.admission.discount > 0 %}
+                        <br><small class="text-muted"><del>S/ {{ payment_data.admission.original_amount|number_format(2, '.', ',') }}</del> — {{ 'Discount'|get_plugin_lang('SchoolPlugin') }}: S/ {{ payment_data.admission.discount|number_format(2, '.', ',') }}</small>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    <div class="h5 mb-0">S/ {{ payment_data.admission.amount|number_format(2, '.', ',') }}</div>
+                    {% if payment_data.admission.status == 'paid' %}
+                        <span class="badge badge-success">{{ 'Paid'|get_plugin_lang('SchoolPlugin') }}</span>
+                    {% elseif payment_data.admission.status == 'partial' %}
+                        <span class="badge badge-warning">{{ 'Partial'|get_plugin_lang('SchoolPlugin') }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ 'Pending'|get_plugin_lang('SchoolPlugin') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Enrollment -->
         <h5 class="mb-3"><i class="fas fa-graduation-cap"></i> {{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</h5>
         <div class="card mb-4 {% if payment_data.enrollment.status == 'paid' %}border-success{% elseif payment_data.enrollment.status == 'partial' %}border-warning{% else %}border-danger{% endif %}">

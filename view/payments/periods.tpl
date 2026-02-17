@@ -15,6 +15,7 @@
                     <tr>
                         <th>{{ 'PeriodName'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Year'|get_plugin_lang('SchoolPlugin') }}</th>
+                        <th>{{ 'Admission'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'MonthlyAmount'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Months'|get_plugin_lang('SchoolPlugin') }}</th>
@@ -31,6 +32,7 @@
                             </a>
                         </td>
                         <td>{{ period.year }}</td>
+                        <td>S/ {{ period.admission_amount|number_format(2, '.', ',') }}</td>
                         <td>S/ {{ period.enrollment_amount|number_format(2, '.', ',') }}</td>
                         <td>S/ {{ period.monthly_amount|number_format(2, '.', ',') }}</td>
                         <td>
@@ -91,6 +93,10 @@
                         <input type="number" class="form-control" name="year" id="period_year" value="{{ 'now'|date('Y') }}" min="2020" max="2050" required>
                     </div>
                     <div class="form-group">
+                        <label>{{ 'AdmissionAmount'|get_plugin_lang('SchoolPlugin') }} (S/)</label>
+                        <input type="number" class="form-control" name="admission_amount" id="period_admission" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
                         <label>{{ 'EnrollmentAmount'|get_plugin_lang('SchoolPlugin') }} (S/)</label>
                         <input type="number" class="form-control" name="enrollment_amount" id="period_enrollment" step="0.01" min="0" value="0">
                     </div>
@@ -136,6 +142,7 @@ function resetPeriodForm() {
     document.getElementById('period_id').value = 0;
     document.getElementById('period_name').value = '';
     document.getElementById('period_year').value = new Date().getFullYear();
+    document.getElementById('period_admission').value = 0;
     document.getElementById('period_enrollment').value = 0;
     document.getElementById('period_monthly').value = 0;
     document.getElementById('period_active').checked = true;
@@ -147,6 +154,7 @@ function editPeriod(period) {
     document.getElementById('period_id').value = period.id;
     document.getElementById('period_name').value = period.name;
     document.getElementById('period_year').value = period.year;
+    document.getElementById('period_admission').value = period.admission_amount || 0;
     document.getElementById('period_enrollment').value = period.enrollment_amount;
     document.getElementById('period_monthly').value = period.monthly_amount;
     document.getElementById('period_active').checked = period.active == 1;
@@ -174,6 +182,7 @@ function savePeriod() {
     formData.append('id', document.getElementById('period_id').value);
     formData.append('name', document.getElementById('period_name').value);
     formData.append('year', document.getElementById('period_year').value);
+    formData.append('admission_amount', document.getElementById('period_admission').value);
     formData.append('enrollment_amount', document.getElementById('period_enrollment').value);
     formData.append('monthly_amount', document.getElementById('period_monthly').value);
     formData.append('months', months.join(','));

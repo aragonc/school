@@ -73,6 +73,9 @@
                 <thead class="thead-light">
                     <tr>
                         <th style="min-width:200px; position:sticky; left:0; background:#f8f9fa; z-index:1;">{{ 'FullName'|get_plugin_lang('SchoolPlugin') }}</th>
+                        {% if show_admission %}
+                        <th class="text-center" style="min-width:80px;">{{ 'Admission'|get_plugin_lang('SchoolPlugin') }}</th>
+                        {% endif %}
                         <th class="text-center" style="min-width:80px;">{{ 'Enrollment'|get_plugin_lang('SchoolPlugin') }}</th>
                         {% for m in months %}
                         <th class="text-center" style="min-width:70px;">{{ month_names[m]|slice(0,3) }}</th>
@@ -86,6 +89,22 @@
                         <td style="position:sticky; left:0; background:#fff; z-index:1;">
                             <strong>{{ student.lastname }}, {{ student.firstname }}</strong>
                         </td>
+                        <!-- Admission cell -->
+                        {% if show_admission %}
+                        <td class="text-center">
+                            {% if student.payments.admission is defined and student.payments.admission %}
+                                {% if student.payments.admission.status == 'paid' %}
+                                    <span class="badge badge-success" title="S/ {{ student.payments.admission.amount }}"><i class="fas fa-check"></i></span>
+                                {% elseif student.payments.admission.status == 'partial' %}
+                                    <span class="badge badge-warning" title="S/ {{ student.payments.admission.amount }}"><i class="fas fa-minus"></i></span>
+                                {% else %}
+                                    <span class="badge badge-danger"><i class="fas fa-times"></i></span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger"><i class="fas fa-times"></i></span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
                         <!-- Enrollment cell -->
                         <td class="text-center">
                             {% if student.payments.enrollment %}
