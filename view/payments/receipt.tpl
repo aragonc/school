@@ -43,18 +43,14 @@
             color: #c00;
             margin-top: 3px;
         }
-        .receipt-body {
-            margin: 10px 0;
-        }
+        .receipt-body { margin: 10px 0; }
         .receipt-row {
             display: flex;
             justify-content: space-between;
             padding: 4px 0;
             border-bottom: 1px dotted #ddd;
         }
-        .receipt-row:last-child {
-            border-bottom: none;
-        }
+        .receipt-row:last-child { border-bottom: none; }
         .receipt-label {
             font-weight: bold;
             color: #555;
@@ -110,9 +106,55 @@
             font-size: 10px;
             color: #888;
         }
-        .receipt-footer p {
-            margin: 2px 0;
+        .receipt-footer p { margin: 2px 0; }
+
+        /* Payment history table */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0;
+            font-size: 10px;
         }
+        .history-table th {
+            background: #e9ecef;
+            padding: 4px 3px;
+            text-align: left;
+            font-size: 9px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #999;
+        }
+        .history-table td {
+            padding: 3px;
+            border-bottom: 1px dotted #ddd;
+        }
+        .history-table .text-right { text-align: right; }
+        .history-table .total-row td {
+            border-top: 2px solid #333;
+            font-weight: bold;
+            padding-top: 5px;
+        }
+
+        /* Summary box */
+        .summary-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 11px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+        .summary-row.total {
+            border-top: 1px solid #999;
+            margin-top: 4px;
+            padding-top: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
         .no-print {
             text-align: center;
             margin: 15px auto;
@@ -148,11 +190,7 @@
         @media print {
             body { background: #fff; }
             .no-print { display: none !important; }
-            .receipt-container {
-                margin: 0;
-                border: none;
-                padding: 10px;
-            }
+            .receipt-container { margin: 0; border: none; padding: 10px; }
         }
     </style>
 </head>
@@ -217,15 +255,71 @@
             <span class="receipt-value">- S/ {{ payment.discount|number_format(2, '.', ',') }}</span>
         </div>
         {% endif %}
+        <div class="receipt-row">
+            <span class="receipt-label">{{ 'AmountToPay'|get_plugin_lang('SchoolPlugin') }}:</span>
+            <span class="receipt-value"><strong>S/ {{ effective_amount|number_format(2, '.', ',') }}</strong></span>
+        </div>
     </div>
 
-    <!-- Amount -->
+    {% if has_multiple_payments %}
+    <!-- Payment History (multiple partial payments) -->
+    <div class="receipt-section">{{ 'PaymentHistory'|get_plugin_lang('SchoolPlugin') }}</div>
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{{ 'Date'|get_plugin_lang('SchoolPlugin') }}</th>
+                <th>{{ 'PaymentMethod'|get_plugin_lang('SchoolPlugin') }}</th>
+                <th>{{ 'Reference'|get_plugin_lang('SchoolPlugin') }}</th>
+                <th class="text-right">{{ 'Amount'|get_plugin_lang('SchoolPlugin') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i, entry in payment_history %}
+            <tr>
+                <td>{{ i + 1 }}</td>
+                <td>{{ entry.date }}</td>
+                <td>{{ entry.method }}</td>
+                <td>{{ entry.reference|default('-') }}</td>
+                <td class="text-right">S/ {{ entry.amount }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="4">{{ 'TotalPaid'|get_plugin_lang('SchoolPlugin') }}</td>
+                <td class="text-right">S/ {{ total_paid|number_format(2, '.', ',') }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Summary Box -->
+    <div class="summary-box">
+        <div class="summary-row">
+            <span>{{ 'AmountToPay'|get_plugin_lang('SchoolPlugin') }}:</span>
+            <span>S/ {{ effective_amount|number_format(2, '.', ',') }}</span>
+        </div>
+        <div class="summary-row">
+            <span>{{ 'TotalPaid'|get_plugin_lang('SchoolPlugin') }}:</span>
+            <span style="color: #1a7e1a;">S/ {{ total_paid|number_format(2, '.', ',') }}</span>
+        </div>
+        {% if balance > 0 %}
+        <div class="summary-row">
+            <span>{{ 'Balance'|get_plugin_lang('SchoolPlugin') }}:</span>
+            <span style="color: #c00;">S/ {{ balance|number_format(2, '.', ',') }}</span>
+        </div>
+        {% endif %}
+        <div class="summary-row total">
+            <span>{{ 'Status'|get_plugin_lang('SchoolPlugin') }}:</span>
+            <span><span class="receipt-status status-{{ payment.status }}">{{ status_label }}</span></span>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Single payment (no history needed) -->
     <div class="receipt-amount">
         <div class="amount-label">{{ 'AmountPaid'|get_plugin_lang('SchoolPlugin') }}</div>
-        <div class="amount">S/ {{ payment.amount|number_format(2, '.', ',') }}</div>
+        <div class="amount">S/ {{ total_paid|number_format(2, '.', ',') }}</div>
     </div>
 
-    <!-- Payment Info -->
     <div class="receipt-body">
         <div class="receipt-row">
             <span class="receipt-label">{{ 'PaymentDate'|get_plugin_lang('SchoolPlugin') }}:</span>
@@ -248,6 +342,7 @@
             </span>
         </div>
     </div>
+    {% endif %}
 
     <!-- Footer -->
     <div class="receipt-footer">

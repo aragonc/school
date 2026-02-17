@@ -65,6 +65,22 @@ switch ($action) {
             'reference' => $_POST['reference'] ?? '',
             'notes' => $_POST['notes'] ?? '',
         ];
+
+        // Handle voucher upload
+        if (!empty($_FILES['voucher']) && $_FILES['voucher']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $fileType = $_FILES['voucher']['type'];
+            if (in_array($fileType, $allowed)) {
+                $ext = pathinfo($_FILES['voucher']['name'], PATHINFO_EXTENSION);
+                $studentId = (int) ($data['user_id'] ?? 0);
+                $fileName = $studentId . '_' . date('Y-m-d_His') . '.' . $ext;
+                $uploadDir = __DIR__ . '/../uploads/';
+                if (move_uploaded_file($_FILES['voucher']['tmp_name'], $uploadDir . $fileName)) {
+                    $data['voucher'] = $fileName;
+                }
+            }
+        }
+
         $paymentId = $plugin->savePayment($data);
         echo json_encode(['success' => $paymentId > 0, 'payment_id' => $paymentId]);
         break;

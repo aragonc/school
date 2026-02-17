@@ -84,6 +84,11 @@
                         </button>
                         {% endif %}
                         {% if enroll.id is defined and enroll.id %}
+                        {% if enroll.voucher is defined and enroll.voucher %}
+                        <button class="btn btn-warning btn-sm" onclick="viewVoucher('{{ enroll.voucher }}')" title="{{ 'ViewVoucher'|get_plugin_lang('SchoolPlugin') }}">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        {% endif %}
                         <a href="{{ _p.web }}payments/receipt?id={{ enroll.id }}" target="_blank" class="btn btn-info btn-sm" title="{{ 'PrintReceipt'|get_plugin_lang('SchoolPlugin') }}">
                             <i class="fas fa-print"></i>
                         </a>
@@ -146,6 +151,11 @@
                         </button>
                         {% endif %}
                         {% if payment.id is defined and payment.id %}
+                        {% if payment.voucher is defined and payment.voucher %}
+                        <button class="btn btn-warning btn-sm" onclick="viewVoucher('{{ payment.voucher }}')" title="{{ 'ViewVoucher'|get_plugin_lang('SchoolPlugin') }}">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        {% endif %}
                         <a href="{{ _p.web }}payments/receipt?id={{ payment.id }}" target="_blank" class="btn btn-info btn-sm" title="{{ 'PrintReceipt'|get_plugin_lang('SchoolPlugin') }}">
                             <i class="fas fa-print"></i>
                         </a>
@@ -227,6 +237,14 @@
                         <label>{{ 'Notes'|get_plugin_lang('SchoolPlugin') }}</label>
                         <textarea class="form-control" name="notes" id="pay_notes" rows="2"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-image"></i> {{ 'Voucher'|get_plugin_lang('SchoolPlugin') }}</label>
+                        <input type="file" class="form-control-file" name="voucher" id="pay_voucher" accept="image/*">
+                        <small class="form-text text-muted">{{ 'VoucherHint'|get_plugin_lang('SchoolPlugin') }}</small>
+                        <div id="voucher_preview" class="mt-2" style="display:none;">
+                            <img id="voucher_preview_img" src="" style="max-width:200px;max-height:200px;border:1px solid #ddd;border-radius:4px;" />
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -254,6 +272,8 @@ function openPaymentModal(type, month, totalAmount, paidAmount, balance) {
     document.getElementById('pay_date').value = new Date().toISOString().split('T')[0];
     document.getElementById('pay_reference').value = '';
     document.getElementById('pay_notes').value = '';
+    document.getElementById('pay_voucher').value = '';
+    document.getElementById('voucher_preview').style.display = 'none';
 
     currentBalance = balance;
 
@@ -308,6 +328,12 @@ function savePayment() {
     formData.append('reference', document.getElementById('pay_reference').value);
     formData.append('notes', document.getElementById('pay_notes').value);
 
+    // Append voucher file if selected
+    var voucherInput = document.getElementById('pay_voucher');
+    if (voucherInput.files.length > 0) {
+        formData.append('voucher', voucherInput.files[0]);
+    }
+
     fetch(ajaxUrl, { method: 'POST', body: formData })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -337,5 +363,26 @@ function deletePayment(id) {
                 location.reload();
             }
         });
+}
+
+// Voucher image preview on file select
+document.getElementById('pay_voucher').addEventListener('change', function() {
+    var preview = document.getElementById('voucher_preview');
+    var previewImg = document.getElementById('voucher_preview_img');
+    if (this.files && this.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(this.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+});
+
+function viewVoucher(fileName) {
+    var url = '{{ _p.web }}plugin/school/uploads/' + fileName;
+    window.open(url, '_blank', 'width=600,height=600');
 }
 </script>

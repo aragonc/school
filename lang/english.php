@@ -443,3 +443,8 @@ $strings['EditCategory'] = 'Edit Category';
 $strings['CategoryName'] = 'Category Name';
 $strings['NoCategories'] = 'No categories registered.';
 $strings['NoCategory'] = 'No category';
+
+// Voucher
+$strings['Voucher'] = 'Voucher / Deposit proof';
+$strings['VoucherHint'] = 'Upload the deposit or transfer screenshot (JPG, PNG, WEBP)';
+$strings['ViewVoucher'] = 'View voucher';

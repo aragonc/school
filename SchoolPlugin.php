@@ -662,6 +662,7 @@ class SchoolPlugin extends Plugin
             payment_method VARCHAR(50) NULL,
             reference VARCHAR(255) NULL,
             receipt_number VARCHAR(20) NULL,
+            voucher VARCHAR(255) NULL,
             notes TEXT NULL,
             status ENUM('paid','pending','partial') NOT NULL DEFAULT 'pending',
             registered_by INT NULL,
@@ -671,10 +672,12 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sql8p);
 
-        // Add receipt_number column if not exists (migration)
+        // Add receipt_number and voucher columns if not exists (migration)
         $payTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
         $sql8m = "ALTER TABLE $payTable ADD COLUMN IF NOT EXISTS receipt_number VARCHAR(20) NULL AFTER reference";
         @Database::query($sql8m);
+        $sql8v = "ALTER TABLE $payTable ADD COLUMN IF NOT EXISTS voucher VARCHAR(255) NULL AFTER receipt_number";
+        @Database::query($sql8v);
 
         $sql9p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT_DISCOUNT." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
@@ -3691,7 +3694,7 @@ class SchoolPlugin extends Plugin
 
         // Check if a previous payment exists
         $monthCondition = $month !== null ? " AND month = $month" : " AND month IS NULL";
-        $sql = "SELECT id, amount, notes, receipt_number FROM $table WHERE period_id = $periodId AND user_id = $userId AND type = '$type' $monthCondition LIMIT 1";
+        $sql = "SELECT id, amount, notes, receipt_number, voucher FROM $table WHERE period_id = $periodId AND user_id = $userId AND type = '$type' $monthCondition LIMIT 1";
         $result = Database::query($sql);
         $existing = Database::fetch_array($result, 'ASSOC');
 
@@ -3743,6 +3746,11 @@ class SchoolPlugin extends Plugin
             'status' => $status,
             'registered_by' => api_get_user_id(),
         ];
+
+        // Add voucher if provided
+        if (!empty($data['voucher'])) {
+            $params['voucher'] = Database::escape_string($data['voucher']);
+        }
 
         if ($existing) {
             $params['updated_at'] = api_get_utc_datetime();

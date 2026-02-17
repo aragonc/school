@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS plugin_school_payment (
     payment_method VARCHAR(50) NULL,
     reference VARCHAR(255) NULL,
     receipt_number VARCHAR(20) NULL,
+    voucher VARCHAR(255) NULL,
     notes TEXT NULL,
     status ENUM('paid','pending','partial') NOT NULL DEFAULT 'pending',
     registered_by INT NULL,

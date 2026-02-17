@@ -445,3 +445,8 @@ $strings['EditCategory'] = 'Editar Categoría';
 $strings['CategoryName'] = 'Nombre de la Categoría';
 $strings['NoCategories'] = 'No hay categorías registradas.';
 $strings['NoCategory'] = 'Sin categoría';
+
+// Voucher
+$strings['Voucher'] = 'Voucher / Comprobante de depósito';
+$strings['VoucherHint'] = 'Suba la captura del depósito o transferencia (JPG, PNG, WEBP)';
+$strings['ViewVoucher'] = 'Ver voucher';
