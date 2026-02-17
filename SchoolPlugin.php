@@ -30,6 +30,10 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_ATTENDANCE_QR = 'plugin_school_attendance_qr_token';
     const TABLE_SCHOOL_EXTRA_PROFILE = 'plugin_school_extra_profile';
 
+    const TABLE_SCHOOL_PAYMENT_PERIOD = 'plugin_school_payment_period';
+    const TABLE_SCHOOL_PAYMENT = 'plugin_school_payment';
+    const TABLE_SCHOOL_PAYMENT_DISCOUNT = 'plugin_school_payment_discount';
+
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
     protected function __construct()
@@ -628,6 +632,59 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sql6);
 
+        // Payment tables
+        $sql7p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT_PERIOD." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            year SMALLINT NOT NULL,
+            enrollment_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            monthly_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            months VARCHAR(100) NOT NULL DEFAULT '',
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sql7p);
+
+        $sql8p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            period_id INT unsigned NOT NULL,
+            user_id INT NOT NULL,
+            type ENUM('enrollment','monthly') NOT NULL,
+            month TINYINT NULL,
+            amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            original_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            payment_date DATE NULL,
+            payment_method VARCHAR(50) NULL,
+            reference VARCHAR(255) NULL,
+            receipt_number VARCHAR(20) NULL,
+            notes TEXT NULL,
+            status ENUM('paid','pending','partial') NOT NULL DEFAULT 'pending',
+            registered_by INT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            UNIQUE KEY unique_payment (period_id, user_id, type, month)
+        )";
+        Database::query($sql8p);
+
+        // Add receipt_number column if not exists (migration)
+        $payTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        $sql8m = "ALTER TABLE $payTable ADD COLUMN IF NOT EXISTS receipt_number VARCHAR(20) NULL AFTER reference";
+        @Database::query($sql8m);
+
+        $sql9p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT_DISCOUNT." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            period_id INT unsigned NOT NULL,
+            user_id INT NOT NULL,
+            discount_type ENUM('percentage','fixed') NOT NULL DEFAULT 'fixed',
+            discount_value DECIMAL(10,2) NOT NULL DEFAULT 0,
+            applies_to ENUM('enrollment','monthly','all') NOT NULL DEFAULT 'all',
+            reason VARCHAR(255) NULL,
+            created_by INT NOT NULL,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sql9p);
+
         // Migrate applies_to column from ENUM to VARCHAR if needed
         $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
         $sql7 = "ALTER TABLE $scheduleTable MODIFY applies_to VARCHAR(255) NOT NULL DEFAULT 'all'";
@@ -651,6 +708,9 @@ class SchoolPlugin extends Plugin
             self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE,
             self::TABLE_SCHOOL_ATTENDANCE_QR,
             self::TABLE_SCHOOL_EXTRA_PROFILE,
+            self::TABLE_SCHOOL_PAYMENT,
+            self::TABLE_SCHOOL_PAYMENT_DISCOUNT,
+            self::TABLE_SCHOOL_PAYMENT_PERIOD,
         ];
 
         foreach ($tablesToBeDeleted as $tableToBeDeleted) {
@@ -695,6 +755,13 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^documents$ plugin/school/src/misc/student_documents.php?%{QUERY_STRING} [L,QSA]\n".
             "RewriteRule ^requests$ plugin/school/src/misc/requests.php [L]\n".
             "RewriteRule ^help$ plugin/school/src/misc/help.php [L]\n".
+            "RewriteRule ^payments$ plugin/school/src/payments/payments.php [L]\n".
+            "RewriteRule ^payments/students$ plugin/school/src/payments/students.php [L,QSA]\n".
+            "RewriteRule ^payments/register$ plugin/school/src/payments/register.php [L,QSA]\n".
+            "RewriteRule ^payments/discounts$ plugin/school/src/payments/discounts.php [L,QSA]\n".
+            "RewriteRule ^payments/my$ plugin/school/src/payments/my_payments.php [L]\n".
+            "RewriteRule ^payments/reports$ plugin/school/src/payments/reports.php [L,QSA]\n".
+            "RewriteRule ^payments/receipt$ plugin/school/src/payments/receipt.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -1899,6 +1966,28 @@ class SchoolPlugin extends Plugin
             'class' => $currentSection === 'attendance' ? 'show' : '',
             'url' => '/attendance',
             'items' => $attendanceItems
+        ];
+
+        // Payments menu
+        $userInfo = api_get_user_info();
+        $isAdminOrSecretary = api_is_platform_admin() || ($userInfo && $userInfo['status'] == SCHOOL_SECRETARY);
+        $paymentItems = [];
+        if ($isAdminOrSecretary) {
+            $paymentItems = [
+                ['name' => 'payments-periods', 'label' => $this->get_lang('PaymentPeriods'), 'url' => '/payments'],
+                ['name' => 'payments-discounts', 'label' => $this->get_lang('Discounts'), 'url' => '/payments/discounts'],
+                ['name' => 'payments-reports', 'label' => $this->get_lang('PaymentReports'), 'url' => '/payments/reports'],
+            ];
+        }
+        $menus[] = [
+            'id' => 7,
+            'name' => 'payments',
+            'label' => $this->get_lang('Payments'),
+            'current' => $currentSection === 'payments',
+            'icon' => 'money-bill-wave',
+            'class' => $currentSection === 'payments' ? 'show' : '',
+            'url' => $isAdminOrSecretary ? '/payments' : '/payments/my',
+            'items' => $paymentItems
         ];
 
         if (api_is_platform_admin()) {
@@ -3281,5 +3370,799 @@ class SchoolPlugin extends Plugin
         }
 
         return true;
+    }
+
+    // ==================== PAYMENT METHODS ====================
+
+    /**
+     * Get payment periods.
+     */
+    public function getPaymentPeriods(bool $activeOnly = false): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+        $where = $activeOnly ? " WHERE active = 1" : "";
+        $sql = "SELECT * FROM $table $where ORDER BY year DESC, name ASC";
+        $result = Database::query($sql);
+        $periods = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $periods[] = $row;
+        }
+        return $periods;
+    }
+
+    /**
+     * Save a payment period (create or update).
+     */
+    public function savePeriod(array $data): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+
+        $params = [
+            'name' => Database::escape_string(trim($data['name'] ?? '')),
+            'year' => (int) ($data['year'] ?? date('Y')),
+            'enrollment_amount' => (float) ($data['enrollment_amount'] ?? 0),
+            'monthly_amount' => (float) ($data['monthly_amount'] ?? 0),
+            'months' => Database::escape_string(trim($data['months'] ?? '')),
+            'active' => isset($data['active']) ? (int) $data['active'] : 1,
+        ];
+
+        if (empty($params['name'])) {
+            return false;
+        }
+
+        $id = isset($data['id']) ? (int) $data['id'] : 0;
+
+        if ($id > 0) {
+            Database::update($table, $params, ['id = ?' => $id]);
+        } else {
+            $params['created_at'] = api_get_utc_datetime();
+            Database::insert($table, $params);
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete a payment period and its related payments/discounts.
+     */
+    public function deletePeriod(int $id): bool
+    {
+        $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+        $paymentTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        $discountTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_DISCOUNT);
+
+        Database::delete($discountTable, ['period_id = ?' => $id]);
+        Database::delete($paymentTable, ['period_id = ?' => $id]);
+        Database::delete($periodTable, ['id = ?' => $id]);
+
+        return true;
+    }
+
+    /**
+     * Get students with payment status for a given period.
+     */
+    public function getStudentsByPeriod(int $periodId, ?string $search = null): array
+    {
+        $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+        $paymentTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        // Get the period info
+        $sql = "SELECT * FROM $periodTable WHERE id = $periodId";
+        $result = Database::query($sql);
+        $period = Database::fetch_array($result, 'ASSOC');
+        if (!$period) {
+            return [];
+        }
+
+        $months = !empty($period['months']) ? explode(',', $period['months']) : [];
+
+        // Get all students (STUDENT status)
+        $searchFilter = '';
+        if (!empty($search)) {
+            $search = Database::escape_string($search);
+            $searchFilter = " AND (u.firstname LIKE '%$search%' OR u.lastname LIKE '%$search%' OR u.username LIKE '%$search%')";
+        }
+
+        $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username
+                FROM $userTable u
+                WHERE u.status = ".STUDENT."
+                AND u.active = 1
+                $searchFilter
+                ORDER BY u.lastname, u.firstname";
+        $result = Database::query($sql);
+
+        $students = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $userId = (int) $row['user_id'];
+
+            // Get payments for this student
+            $sqlPayments = "SELECT type, month, status, amount, discount
+                           FROM $paymentTable
+                           WHERE period_id = $periodId AND user_id = $userId";
+            $resPayments = Database::query($sqlPayments);
+
+            $payments = ['enrollment' => null, 'months' => []];
+            while ($p = Database::fetch_array($resPayments, 'ASSOC')) {
+                if ($p['type'] === 'enrollment') {
+                    $payments['enrollment'] = $p;
+                } else {
+                    $payments['months'][(int) $p['month']] = $p;
+                }
+            }
+
+            $row['payments'] = $payments;
+            $students[] = $row;
+        }
+
+        return $students;
+    }
+
+    /**
+     * Get all payments for a specific student in a period.
+     */
+    public function getStudentPayments(int $periodId, int $userId): array
+    {
+        $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+        $paymentTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        $discountTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_DISCOUNT);
+
+        // Get period
+        $sql = "SELECT * FROM $periodTable WHERE id = $periodId";
+        $result = Database::query($sql);
+        $period = Database::fetch_array($result, 'ASSOC');
+        if (!$period) {
+            return [];
+        }
+
+        $months = !empty($period['months']) ? explode(',', $period['months']) : [];
+
+        // Get discounts
+        $discounts = $this->getDiscounts($periodId, $userId);
+
+        // Get existing payments
+        $sql = "SELECT * FROM $paymentTable WHERE period_id = $periodId AND user_id = $userId ORDER BY type, month";
+        $result = Database::query($sql);
+        $existingPayments = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            if ($row['type'] === 'enrollment') {
+                $existingPayments['enrollment'] = $row;
+            } else {
+                $existingPayments['month_' . $row['month']] = $row;
+            }
+        }
+
+        // Build complete payment info
+        $paymentInfo = [
+            'period' => $period,
+            'enrollment' => null,
+            'monthly' => [],
+            'discounts' => $discounts,
+            'total_paid' => 0,
+            'total_pending' => 0,
+            'total_discount' => 0,
+        ];
+
+        // Enrollment
+        $enrollAmount = $this->getEffectiveAmount($periodId, $userId, 'enrollment');
+        if (isset($existingPayments['enrollment'])) {
+            $paymentInfo['enrollment'] = $existingPayments['enrollment'];
+            if ($existingPayments['enrollment']['status'] === 'paid') {
+                $paymentInfo['total_paid'] += (float) $existingPayments['enrollment']['amount'];
+            } else {
+                $paymentInfo['total_pending'] += $enrollAmount['final_amount'];
+            }
+            $paymentInfo['total_discount'] += (float) $existingPayments['enrollment']['discount'];
+        } else {
+            $paymentInfo['enrollment'] = [
+                'status' => 'pending',
+                'original_amount' => $enrollAmount['original_amount'],
+                'discount' => $enrollAmount['discount_amount'],
+                'amount' => $enrollAmount['final_amount'],
+            ];
+            $paymentInfo['total_pending'] += $enrollAmount['final_amount'];
+        }
+
+        // Monthly
+        foreach ($months as $m) {
+            $m = (int) $m;
+            $monthAmount = $this->getEffectiveAmount($periodId, $userId, 'monthly', $m);
+
+            if (isset($existingPayments['month_' . $m])) {
+                $paymentInfo['monthly'][$m] = $existingPayments['month_' . $m];
+                if ($existingPayments['month_' . $m]['status'] === 'paid') {
+                    $paymentInfo['total_paid'] += (float) $existingPayments['month_' . $m]['amount'];
+                } else {
+                    $paymentInfo['total_pending'] += $monthAmount['final_amount'];
+                }
+                $paymentInfo['total_discount'] += (float) $existingPayments['month_' . $m]['discount'];
+            } else {
+                $paymentInfo['monthly'][$m] = [
+                    'status' => 'pending',
+                    'original_amount' => $monthAmount['original_amount'],
+                    'discount' => $monthAmount['discount_amount'],
+                    'amount' => $monthAmount['final_amount'],
+                ];
+                $paymentInfo['total_pending'] += $monthAmount['final_amount'];
+            }
+        }
+
+        return $paymentInfo;
+    }
+
+    /**
+     * Save a payment record.
+     */
+    public function savePayment(array $data): int
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+
+        $periodId = (int) ($data['period_id'] ?? 0);
+        $userId = (int) ($data['user_id'] ?? 0);
+        $type = in_array($data['type'] ?? '', ['enrollment', 'monthly']) ? $data['type'] : '';
+        $month = $type === 'monthly' ? (int) ($data['month'] ?? 0) : null;
+
+        if (!$periodId || !$userId || !$type) {
+            return 0;
+        }
+
+        // Calculate effective amount (with discounts)
+        $amountInfo = $this->getEffectiveAmount($periodId, $userId, $type, $month);
+        $finalAmount = $amountInfo['final_amount'];
+
+        $newPayment = isset($data['amount']) ? (float) $data['amount'] : $finalAmount;
+
+        // Check if a previous payment exists
+        $monthCondition = $month !== null ? " AND month = $month" : " AND month IS NULL";
+        $sql = "SELECT id, amount, notes, receipt_number FROM $table WHERE period_id = $periodId AND user_id = $userId AND type = '$type' $monthCondition LIMIT 1";
+        $result = Database::query($sql);
+        $existing = Database::fetch_array($result, 'ASSOC');
+
+        // Accumulate: previous paid + new payment
+        $previousAmount = $existing ? (float) $existing['amount'] : 0;
+        $totalAmount = $previousAmount + $newPayment;
+
+        // Cap at the effective amount
+        if ($totalAmount > $finalAmount) {
+            $totalAmount = $finalAmount;
+        }
+
+        $status = $totalAmount >= $finalAmount ? 'paid' : ($totalAmount > 0 ? 'partial' : 'pending');
+
+        // Build notes with payment history
+        $paymentDate = !empty($data['payment_date']) ? Database::escape_string($data['payment_date']) : date('Y-m-d');
+        $paymentMethod = Database::escape_string($data['payment_method'] ?? 'cash');
+        $reference = Database::escape_string($data['reference'] ?? '');
+        $userNotes = Database::escape_string($data['notes'] ?? '');
+
+        // Append payment entry to notes history
+        $historyEntry = '[' . $paymentDate . '] S/' . number_format($newPayment, 2) . ' ' . $paymentMethod;
+        if (!empty($reference)) {
+            $historyEntry .= ' Ref:' . $reference;
+        }
+        if (!empty($userNotes)) {
+            $historyEntry .= ' - ' . $userNotes;
+        }
+
+        $previousNotes = $existing ? ($existing['notes'] ?? '') : '';
+        $allNotes = !empty($previousNotes) ? $previousNotes . "\n" . $historyEntry : $historyEntry;
+
+        // Generate receipt number
+        $receiptNumber = $this->generateReceiptNumber();
+
+        $params = [
+            'period_id' => $periodId,
+            'user_id' => $userId,
+            'type' => $type,
+            'month' => $month,
+            'amount' => $totalAmount,
+            'discount' => $amountInfo['discount_amount'],
+            'original_amount' => $amountInfo['original_amount'],
+            'payment_date' => $paymentDate,
+            'payment_method' => $paymentMethod,
+            'reference' => $reference,
+            'receipt_number' => $receiptNumber,
+            'notes' => $allNotes,
+            'status' => $status,
+            'registered_by' => api_get_user_id(),
+        ];
+
+        if ($existing) {
+            $params['updated_at'] = api_get_utc_datetime();
+            // Keep original receipt_number if exists
+            if (!empty($existing['receipt_number'])) {
+                unset($params['receipt_number']);
+            }
+            Database::update($table, $params, ['id = ?' => (int) $existing['id']]);
+            return (int) $existing['id'];
+        } else {
+            $params['created_at'] = api_get_utc_datetime();
+            $id = Database::insert($table, $params);
+            return (int) $id;
+        }
+    }
+
+    /**
+     * Delete a payment record.
+     */
+    public function deletePayment(int $id): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        Database::delete($table, ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Get payment summary/statistics for a period.
+     */
+    public function getPaymentSummary(int $periodId): array
+    {
+        $paymentTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+
+        $sql = "SELECT
+                    COUNT(DISTINCT user_id) as total_students,
+                    SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as total_collected,
+                    SUM(CASE WHEN status = 'pending' THEN original_amount - discount ELSE 0 END) as total_pending,
+                    SUM(discount) as total_discounts,
+                    COUNT(CASE WHEN type = 'enrollment' AND status = 'paid' THEN 1 END) as enrollments_paid,
+                    COUNT(CASE WHEN type = 'monthly' AND status = 'paid' THEN 1 END) as monthly_paid
+                FROM $paymentTable
+                WHERE period_id = $periodId";
+        $result = Database::query($sql);
+        $stats = Database::fetch_array($result, 'ASSOC');
+
+        return $stats ?: [
+            'total_students' => 0,
+            'total_collected' => 0,
+            'total_pending' => 0,
+            'total_discounts' => 0,
+            'enrollments_paid' => 0,
+            'monthly_paid' => 0,
+        ];
+    }
+
+    /**
+     * Get discounts for a period (optionally filtered by user).
+     */
+    public function getDiscounts(int $periodId, ?int $userId = null): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_DISCOUNT);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        $userFilter = $userId ? " AND d.user_id = $userId" : "";
+        $sql = "SELECT d.*, u.firstname, u.lastname, u.username
+                FROM $table d
+                INNER JOIN $userTable u ON d.user_id = u.user_id
+                WHERE d.period_id = $periodId $userFilter
+                ORDER BY u.lastname, u.firstname";
+        $result = Database::query($sql);
+        $discounts = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $discounts[] = $row;
+        }
+        return $discounts;
+    }
+
+    /**
+     * Save a discount.
+     */
+    public function saveDiscount(array $data): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_DISCOUNT);
+
+        $params = [
+            'period_id' => (int) ($data['period_id'] ?? 0),
+            'user_id' => (int) ($data['user_id'] ?? 0),
+            'discount_type' => in_array($data['discount_type'] ?? '', ['percentage', 'fixed']) ? $data['discount_type'] : 'fixed',
+            'discount_value' => (float) ($data['discount_value'] ?? 0),
+            'applies_to' => in_array($data['applies_to'] ?? '', ['enrollment', 'monthly', 'all']) ? $data['applies_to'] : 'all',
+            'reason' => Database::escape_string($data['reason'] ?? ''),
+            'created_by' => api_get_user_id(),
+            'created_at' => api_get_utc_datetime(),
+        ];
+
+        if (!$params['period_id'] || !$params['user_id'] || $params['discount_value'] <= 0) {
+            return false;
+        }
+
+        $id = isset($data['id']) ? (int) $data['id'] : 0;
+        if ($id > 0) {
+            unset($params['created_by'], $params['created_at']);
+            Database::update($table, $params, ['id = ?' => $id]);
+        } else {
+            Database::insert($table, $params);
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete a discount.
+     */
+    public function deleteDiscount(int $id): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_DISCOUNT);
+        Database::delete($table, ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Calculate the effective amount after discounts.
+     */
+    public function getEffectiveAmount(int $periodId, int $userId, string $type, ?int $month = null): array
+    {
+        $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+
+        // Get period
+        $sql = "SELECT * FROM $periodTable WHERE id = $periodId";
+        $result = Database::query($sql);
+        $period = Database::fetch_array($result, 'ASSOC');
+
+        if (!$period) {
+            return ['original_amount' => 0, 'discount_amount' => 0, 'final_amount' => 0];
+        }
+
+        $originalAmount = $type === 'enrollment'
+            ? (float) $period['enrollment_amount']
+            : (float) $period['monthly_amount'];
+
+        // Get applicable discounts
+        $discounts = $this->getDiscounts($periodId, $userId);
+
+        $totalDiscount = 0;
+        foreach ($discounts as $d) {
+            $appliesTo = $d['applies_to'];
+            if ($appliesTo === 'all' || $appliesTo === $type) {
+                if ($d['discount_type'] === 'percentage') {
+                    $totalDiscount += $originalAmount * ((float) $d['discount_value'] / 100);
+                } else {
+                    $totalDiscount += (float) $d['discount_value'];
+                }
+            }
+        }
+
+        $totalDiscount = min($totalDiscount, $originalAmount);
+        $finalAmount = $originalAmount - $totalDiscount;
+
+        return [
+            'original_amount' => $originalAmount,
+            'discount_amount' => $totalDiscount,
+            'final_amount' => $finalAmount,
+        ];
+    }
+
+    /**
+     * Get payment report data for a period, optionally filtered by month.
+     */
+    public function getPaymentReport(int $periodId, ?int $month = null): array
+    {
+        $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+        $paymentTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        // Get period
+        $sql = "SELECT * FROM $periodTable WHERE id = $periodId";
+        $result = Database::query($sql);
+        $period = Database::fetch_array($result, 'ASSOC');
+        if (!$period) {
+            return [];
+        }
+
+        $months = !empty($period['months']) ? explode(',', $period['months']) : [];
+
+        // Get all active students
+        $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username
+                FROM $userTable u
+                WHERE u.status = ".STUDENT." AND u.active = 1
+                ORDER BY u.lastname, u.firstname";
+        $result = Database::query($sql);
+
+        $students = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $students[$row['user_id']] = $row;
+        }
+
+        if (empty($students)) {
+            return ['period' => $period, 'months' => $months, 'paid' => [], 'debtors' => [], 'summary' => [], 'chart_data' => []];
+        }
+
+        $userIds = implode(',', array_keys($students));
+
+        // Build month filter
+        $monthFilter = '';
+        if ($month !== null) {
+            $monthFilter = " AND ((p.type = 'monthly' AND p.month = $month) OR p.type = 'enrollment')";
+        }
+
+        // Get all payments for the period
+        $sql = "SELECT p.user_id, p.type, p.month, p.status, p.amount, p.discount, p.original_amount,
+                       p.payment_date, p.payment_method, p.reference
+                FROM $paymentTable p
+                WHERE p.period_id = $periodId AND p.user_id IN ($userIds) $monthFilter";
+        $result = Database::query($sql);
+
+        $paymentsByUser = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $uid = (int) $row['user_id'];
+            if (!isset($paymentsByUser[$uid])) {
+                $paymentsByUser[$uid] = [];
+            }
+            $key = $row['type'] === 'enrollment' ? 'enrollment' : 'month_' . $row['month'];
+            $paymentsByUser[$uid][$key] = $row;
+        }
+
+        // Classify students
+        $paid = [];
+        $debtors = [];
+
+        // Per-month summary for chart
+        $monthSummary = [];
+        foreach ($months as $m) {
+            $m = (int) $m;
+            $monthSummary[$m] = ['paid_count' => 0, 'pending_count' => 0, 'paid_amount' => 0, 'pending_amount' => 0];
+        }
+
+        foreach ($students as $uid => $student) {
+            $userPayments = $paymentsByUser[$uid] ?? [];
+            $studentDebt = 0;
+            $studentPaid = 0;
+            $studentDetail = $student;
+            $studentDetail['items'] = [];
+
+            // Check enrollment
+            if (isset($userPayments['enrollment']) && $userPayments['enrollment']['status'] === 'paid') {
+                $studentPaid += (float) $userPayments['enrollment']['amount'];
+            } else {
+                $studentDebt += (float) $period['enrollment_amount'];
+            }
+
+            // Check monthly
+            $targetMonths = $month !== null ? [$month] : $months;
+            foreach ($targetMonths as $m) {
+                $m = (int) $m;
+                $key = 'month_' . $m;
+                if (isset($userPayments[$key]) && $userPayments[$key]['status'] === 'paid') {
+                    $studentPaid += (float) $userPayments[$key]['amount'];
+                    if (isset($monthSummary[$m])) {
+                        $monthSummary[$m]['paid_count']++;
+                        $monthSummary[$m]['paid_amount'] += (float) $userPayments[$key]['amount'];
+                    }
+                    $studentDetail['items'][] = [
+                        'month' => $m,
+                        'status' => 'paid',
+                        'amount' => (float) $userPayments[$key]['amount'],
+                        'payment_date' => $userPayments[$key]['payment_date'],
+                        'reference' => $userPayments[$key]['reference'],
+                        'payment_method' => $userPayments[$key]['payment_method'],
+                    ];
+                } else {
+                    $effectiveAmount = (float) $period['monthly_amount'];
+                    $partialAmount = 0;
+                    $status = 'pending';
+
+                    if (isset($userPayments[$key]) && $userPayments[$key]['status'] === 'partial') {
+                        $partialAmount = (float) $userPayments[$key]['amount'];
+                        $studentPaid += $partialAmount;
+                        $studentDebt += $effectiveAmount - $partialAmount;
+                        $status = 'partial';
+                        if (isset($monthSummary[$m])) {
+                            $monthSummary[$m]['paid_amount'] += $partialAmount;
+                            $monthSummary[$m]['pending_amount'] += $effectiveAmount - $partialAmount;
+                            $monthSummary[$m]['pending_count']++;
+                        }
+                    } else {
+                        $studentDebt += $effectiveAmount;
+                        if (isset($monthSummary[$m])) {
+                            $monthSummary[$m]['pending_count']++;
+                            $monthSummary[$m]['pending_amount'] += $effectiveAmount;
+                        }
+                    }
+
+                    $studentDetail['items'][] = [
+                        'month' => $m,
+                        'status' => $status,
+                        'amount' => $partialAmount,
+                        'pending' => $effectiveAmount - $partialAmount,
+                        'payment_date' => null,
+                        'reference' => null,
+                        'payment_method' => null,
+                    ];
+                }
+            }
+
+            $studentDetail['total_paid'] = $studentPaid;
+            $studentDetail['total_debt'] = $studentDebt;
+
+            if ($studentDebt > 0) {
+                $debtors[] = $studentDetail;
+            } else {
+                $paid[] = $studentDetail;
+            }
+        }
+
+        // Chart data
+        $chartLabels = [];
+        $chartPaid = [];
+        $chartPending = [];
+        $chartPaidCount = [];
+        $chartPendingCount = [];
+
+        $monthNames = [
+            1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr', 5 => 'May', 6 => 'Jun',
+            7 => 'Jul', 8 => 'Ago', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic'
+        ];
+
+        foreach ($months as $m) {
+            $m = (int) $m;
+            $chartLabels[] = $monthNames[$m] ?? $m;
+            $chartPaid[] = round($monthSummary[$m]['paid_amount'], 2);
+            $chartPending[] = round($monthSummary[$m]['pending_amount'], 2);
+            $chartPaidCount[] = $monthSummary[$m]['paid_count'];
+            $chartPendingCount[] = $monthSummary[$m]['pending_count'];
+        }
+
+        $totalStudents = count($students);
+        $totalPaidStudents = count($paid);
+        $totalDebtors = count($debtors);
+        $totalCollected = array_sum($chartPaid);
+        $totalPending = array_sum($chartPending);
+
+        return [
+            'period' => $period,
+            'months' => $months,
+            'paid' => $paid,
+            'debtors' => $debtors,
+            'summary' => [
+                'total_students' => $totalStudents,
+                'total_paid_students' => $totalPaidStudents,
+                'total_debtors' => $totalDebtors,
+                'total_collected' => $totalCollected,
+                'total_pending' => $totalPending,
+            ],
+            'chart_data' => [
+                'labels' => $chartLabels,
+                'paid' => $chartPaid,
+                'pending' => $chartPending,
+                'paid_count' => $chartPaidCount,
+                'pending_count' => $chartPendingCount,
+            ],
+        ];
+    }
+
+    /**
+     * Export payment report as CSV.
+     */
+    public function exportPaymentReportCSV(int $periodId, ?int $month = null, string $filter = 'all'): void
+    {
+        $report = $this->getPaymentReport($periodId, $month);
+        if (empty($report)) {
+            return;
+        }
+
+        $period = $report['period'];
+        $monthNames = [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+        ];
+
+        $filterLabel = $filter === 'debtors' ? 'deudores' : ($filter === 'paid' ? 'pagados' : 'todos');
+        $monthLabel = $month !== null ? '_' . ($monthNames[$month] ?? $month) : '';
+        $filename = 'reporte_pagos_' . $period['name'] . $monthLabel . '_' . $filterLabel . '_' . date('Y-m-d') . '.csv';
+        $filename = str_replace(' ', '_', $filename);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+
+        // Header
+        fputcsv($output, [
+            'Apellidos', 'Nombres', 'Usuario', 'Mes', 'Estado',
+            'Monto Pagado', 'Monto Pendiente', 'Fecha de Pago', 'Metodo', 'Referencia'
+        ], ';');
+
+        $students = [];
+        if ($filter === 'debtors') {
+            $students = $report['debtors'];
+        } elseif ($filter === 'paid') {
+            $students = $report['paid'];
+        } else {
+            $students = array_merge($report['paid'], $report['debtors']);
+        }
+
+        usort($students, function ($a, $b) {
+            return strcmp($a['lastname'], $b['lastname']);
+        });
+
+        foreach ($students as $student) {
+            foreach ($student['items'] as $item) {
+                $mName = $monthNames[$item['month']] ?? $item['month'];
+                $statusLabel = $item['status'] === 'paid' ? 'Pagado' : ($item['status'] === 'partial' ? 'Parcial' : 'Pendiente');
+                $pending = $item['pending'] ?? ($item['status'] === 'paid' ? 0 : (float) $period['monthly_amount'] - (float) $item['amount']);
+
+                fputcsv($output, [
+                    $student['lastname'],
+                    $student['firstname'],
+                    $student['username'],
+                    $mName,
+                    $statusLabel,
+                    number_format((float) $item['amount'], 2, '.', ''),
+                    number_format($pending, 2, '.', ''),
+                    $item['payment_date'] ?? '-',
+                    $item['payment_method'] ?? '-',
+                    $item['reference'] ?? '-',
+                ], ';');
+            }
+        }
+
+        // Summary row
+        fputcsv($output, [], ';');
+        fputcsv($output, ['RESUMEN'], ';');
+        fputcsv($output, ['Total Alumnos', $report['summary']['total_students']], ';');
+        fputcsv($output, ['Al dia', $report['summary']['total_paid_students']], ';');
+        fputcsv($output, ['Con deuda', $report['summary']['total_debtors']], ';');
+        fputcsv($output, ['Total Recaudado', 'S/ ' . number_format($report['summary']['total_collected'], 2, '.', '')], ';');
+        fputcsv($output, ['Total Pendiente', 'S/ ' . number_format($report['summary']['total_pending'], 2, '.', '')], ';');
+
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Generate a unique correlative receipt number.
+     * Format: YYYY-NNNNN (e.g., 2026-00001)
+     */
+    public function generateReceiptNumber(): string
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        $year = date('Y');
+        $prefix = $year . '-';
+
+        $sql = "SELECT receipt_number FROM $table
+                WHERE receipt_number LIKE '$prefix%'
+                ORDER BY receipt_number DESC LIMIT 1";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+
+        if ($row && !empty($row['receipt_number'])) {
+            $lastNumber = (int) substr($row['receipt_number'], strlen($prefix));
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        return $prefix . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Get a payment record by ID with full details.
+     */
+    public function getPaymentById(int $id): ?array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
+        $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        $sql = "SELECT p.*, pp.name as period_name, pp.year as period_year,
+                       u.firstname, u.lastname, u.username, u.email
+                FROM $table p
+                INNER JOIN $periodTable pp ON p.period_id = pp.id
+                INNER JOIN $userTable u ON p.user_id = u.user_id
+                WHERE p.id = $id";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+
+        if (!$row) {
+            return null;
+        }
+
+        // Get extra profile data (DNI)
+        $extraProfile = $this->getExtraProfileData((int) $row['user_id']);
+        $row['document_type'] = $extraProfile['document_type'] ?? '';
+        $row['document_number'] = $extraProfile['document_number'] ?? '';
+
+        return $row;
     }
 }
