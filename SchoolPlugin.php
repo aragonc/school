@@ -34,6 +34,9 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_PAYMENT = 'plugin_school_payment';
     const TABLE_SCHOOL_PAYMENT_DISCOUNT = 'plugin_school_payment_discount';
 
+    const TABLE_SCHOOL_PRODUCT = 'plugin_school_product';
+    const TABLE_SCHOOL_PRODUCT_SALE = 'plugin_school_product_sale';
+
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
     protected function __construct()
@@ -685,6 +688,36 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sql9p);
 
+        // Product tables
+        $sqlProd1 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PRODUCT." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            description TEXT NULL,
+            price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            category VARCHAR(100) NULL,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlProd1);
+
+        $sqlProd2 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PRODUCT_SALE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            product_id INT unsigned NOT NULL,
+            user_id INT NOT NULL,
+            quantity INT NOT NULL DEFAULT 1,
+            unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            payment_method VARCHAR(50) NULL,
+            reference VARCHAR(255) NULL,
+            receipt_number VARCHAR(20) NULL,
+            notes TEXT NULL,
+            status ENUM('paid','pending') NOT NULL DEFAULT 'paid',
+            registered_by INT NULL,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlProd2);
+
         // Migrate applies_to column from ENUM to VARCHAR if needed
         $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
         $sql7 = "ALTER TABLE $scheduleTable MODIFY applies_to VARCHAR(255) NOT NULL DEFAULT 'all'";
@@ -711,6 +744,8 @@ class SchoolPlugin extends Plugin
             self::TABLE_SCHOOL_PAYMENT,
             self::TABLE_SCHOOL_PAYMENT_DISCOUNT,
             self::TABLE_SCHOOL_PAYMENT_PERIOD,
+            self::TABLE_SCHOOL_PRODUCT_SALE,
+            self::TABLE_SCHOOL_PRODUCT,
         ];
 
         foreach ($tablesToBeDeleted as $tableToBeDeleted) {
@@ -762,6 +797,11 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^payments/my$ plugin/school/src/payments/my_payments.php [L]\n".
             "RewriteRule ^payments/reports$ plugin/school/src/payments/reports.php [L,QSA]\n".
             "RewriteRule ^payments/receipt$ plugin/school/src/payments/receipt.php [L,QSA]\n".
+            "RewriteRule ^products$ plugin/school/src/products/products.php [L]\n".
+            "RewriteRule ^products/sell$ plugin/school/src/products/sell.php [L,QSA]\n".
+            "RewriteRule ^products/sales$ plugin/school/src/products/sales.php [L,QSA]\n".
+            "RewriteRule ^products/my$ plugin/school/src/products/my_purchases.php [L]\n".
+            "RewriteRule ^products/receipt$ plugin/school/src/products/receipt.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -1988,6 +2028,26 @@ class SchoolPlugin extends Plugin
             'class' => $currentSection === 'payments' ? 'show' : '',
             'url' => $isAdminOrSecretary ? '/payments' : '/payments/my',
             'items' => $paymentItems
+        ];
+
+        // Products menu
+        $productItems = [];
+        if ($isAdminOrSecretary) {
+            $productItems = [
+                ['name' => 'products-catalog', 'label' => $this->get_lang('ProductCatalog'), 'url' => '/products'],
+                ['name' => 'products-sell', 'label' => $this->get_lang('SellProduct'), 'url' => '/products/sell'],
+                ['name' => 'products-sales', 'label' => $this->get_lang('SalesHistory'), 'url' => '/products/sales'],
+            ];
+        }
+        $menus[] = [
+            'id' => 8,
+            'name' => 'products',
+            'label' => $this->get_lang('Products'),
+            'current' => $currentSection === 'products',
+            'icon' => 'box-open',
+            'class' => $currentSection === 'products' ? 'show' : '',
+            'url' => $isAdminOrSecretary ? '/products' : '/products/my',
+            'items' => $productItems
         ];
 
         if (api_is_platform_admin()) {
@@ -4134,6 +4194,206 @@ class SchoolPlugin extends Plugin
         }
 
         return $prefix . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+    }
+
+    // ==================== PRODUCTS ====================
+
+    /**
+     * Get all products.
+     */
+    public function getProducts(bool $activeOnly = false): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+        $where = $activeOnly ? "WHERE active = 1" : "";
+        $sql = "SELECT * FROM $table $where ORDER BY name ASC";
+        $result = Database::query($sql);
+        $products = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $products[] = $row;
+        }
+        return $products;
+    }
+
+    /**
+     * Get a single product by ID.
+     */
+    public function getProduct(int $id): ?array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+        $sql = "SELECT * FROM $table WHERE id = $id";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        return $row ?: null;
+    }
+
+    /**
+     * Save (create or update) a product.
+     */
+    public function saveProduct(array $data): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+        $id = isset($data['id']) ? (int) $data['id'] : 0;
+
+        $params = [
+            'name' => Database::escape_string($data['name']),
+            'description' => Database::escape_string($data['description'] ?? ''),
+            'price' => (float) $data['price'],
+            'category' => Database::escape_string($data['category'] ?? ''),
+            'active' => isset($data['active']) ? (int) $data['active'] : 1,
+        ];
+
+        if ($id > 0) {
+            Database::update($table, $params, ['id = ?' => $id]);
+        } else {
+            $params['created_at'] = date('Y-m-d H:i:s');
+            Database::insert($table, $params);
+        }
+        return true;
+    }
+
+    /**
+     * Delete a product.
+     */
+    public function deleteProduct(int $id): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+        Database::delete($table, ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Get product sales with filters.
+     */
+    public function getProductSales(array $filters = []): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_SALE);
+        $productTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        $where = "1=1";
+        if (!empty($filters['product_id'])) {
+            $where .= " AND s.product_id = " . (int) $filters['product_id'];
+        }
+        if (!empty($filters['user_id'])) {
+            $where .= " AND s.user_id = " . (int) $filters['user_id'];
+        }
+        if (!empty($filters['date_from'])) {
+            $dateFrom = Database::escape_string($filters['date_from']);
+            $where .= " AND DATE(s.created_at) >= '$dateFrom'";
+        }
+        if (!empty($filters['date_to'])) {
+            $dateTo = Database::escape_string($filters['date_to']);
+            $where .= " AND DATE(s.created_at) <= '$dateTo'";
+        }
+
+        $sql = "SELECT s.*, p.name as product_name, p.category,
+                       u.firstname, u.lastname, u.username
+                FROM $table s
+                INNER JOIN $productTable p ON s.product_id = p.id
+                INNER JOIN $userTable u ON s.user_id = u.user_id
+                WHERE $where
+                ORDER BY s.created_at DESC";
+        $result = Database::query($sql);
+        $sales = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $sales[] = $row;
+        }
+        return $sales;
+    }
+
+    /**
+     * Save a product sale.
+     */
+    public function saveProductSale(array $data): int
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_SALE);
+
+        $unitPrice = (float) $data['unit_price'];
+        $quantity = max(1, (int) $data['quantity']);
+        $discount = (float) ($data['discount'] ?? 0);
+        $totalAmount = ($unitPrice * $quantity) - $discount;
+        if ($totalAmount < 0) {
+            $totalAmount = 0;
+        }
+
+        $params = [
+            'product_id' => (int) $data['product_id'],
+            'user_id' => (int) $data['user_id'],
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'discount' => $discount,
+            'total_amount' => $totalAmount,
+            'payment_method' => Database::escape_string($data['payment_method'] ?? 'cash'),
+            'reference' => Database::escape_string($data['reference'] ?? ''),
+            'receipt_number' => $this->generateReceiptNumber(),
+            'notes' => Database::escape_string($data['notes'] ?? ''),
+            'status' => 'paid',
+            'registered_by' => api_get_user_id(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $id = Database::insert($table, $params);
+        return (int) $id;
+    }
+
+    /**
+     * Delete a product sale.
+     */
+    public function deleteProductSale(int $id): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_SALE);
+        Database::delete($table, ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Get a product sale by ID with full details.
+     */
+    public function getProductSaleById(int $id): ?array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_SALE);
+        $productTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        $sql = "SELECT s.*, p.name as product_name, p.category,
+                       u.firstname, u.lastname, u.username, u.email
+                FROM $table s
+                INNER JOIN $productTable p ON s.product_id = p.id
+                INNER JOIN $userTable u ON s.user_id = u.user_id
+                WHERE s.id = $id";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+
+        if (!$row) {
+            return null;
+        }
+
+        $extraProfile = $this->getExtraProfileData((int) $row['user_id']);
+        $row['document_type'] = $extraProfile['document_type'] ?? '';
+        $row['document_number'] = $extraProfile['document_number'] ?? '';
+
+        return $row;
+    }
+
+    /**
+     * Get product sales for a student (for student view).
+     */
+    public function getMyProductSales(int $userId): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_SALE);
+        $productTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+
+        $sql = "SELECT s.*, p.name as product_name, p.category
+                FROM $table s
+                INNER JOIN $productTable p ON s.product_id = p.id
+                WHERE s.user_id = $userId
+                ORDER BY s.created_at DESC";
+        $result = Database::query($sql);
+        $sales = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $sales[] = $row;
+        }
+        return $sales;
     }
 
     /**
