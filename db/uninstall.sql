@@ -1,0 +1,19 @@
+-- =============================================
+-- School Plugin - Eliminar todas las tablas
+-- =============================================
+-- CUIDADO: Este script elimina TODAS las tablas
+-- del plugin y TODOS los datos almacenados.
+-- =============================================
+
+DROP TABLE IF EXISTS plugin_school_product_sale;
+DROP TABLE IF EXISTS plugin_school_product;
+DROP TABLE IF EXISTS plugin_school_product_category;
+DROP TABLE IF EXISTS plugin_school_payment_discount;
+DROP TABLE IF EXISTS plugin_school_payment;
+DROP TABLE IF EXISTS plugin_school_payment_period;
+DROP TABLE IF EXISTS plugin_school_extra_profile;
+DROP TABLE IF EXISTS plugin_school_attendance_qr_token;
+DROP TABLE IF EXISTS plugin_school_attendance_log;
+DROP TABLE IF EXISTS plugin_school_attendance_schedule;
+DROP TABLE IF EXISTS plugin_school_settings;
+DROP TABLE IF EXISTS plugin_school_request;

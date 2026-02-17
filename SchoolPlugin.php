@@ -36,6 +36,7 @@ class SchoolPlugin extends Plugin
 
     const TABLE_SCHOOL_PRODUCT = 'plugin_school_product';
     const TABLE_SCHOOL_PRODUCT_SALE = 'plugin_school_product_sale';
+    const TABLE_SCHOOL_PRODUCT_CATEGORY = 'plugin_school_product_category';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -689,16 +690,29 @@ class SchoolPlugin extends Plugin
         Database::query($sql9p);
 
         // Product tables
+        $sqlProdCat = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PRODUCT_CATEGORY." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlProdCat);
+
         $sqlProd1 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PRODUCT." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             description TEXT NULL,
             price DECIMAL(10,2) NOT NULL DEFAULT 0,
-            category VARCHAR(100) NULL,
+            category_id INT unsigned NULL,
             active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL
         )";
         Database::query($sqlProd1);
+
+        // Migration: rename category to category_id if needed
+        $prodTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
+        @Database::query("ALTER TABLE $prodTable DROP COLUMN IF EXISTS category");
+        @Database::query("ALTER TABLE $prodTable ADD COLUMN IF NOT EXISTS category_id INT unsigned NULL AFTER price");
 
         $sqlProd2 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PRODUCT_SALE." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
@@ -746,6 +760,7 @@ class SchoolPlugin extends Plugin
             self::TABLE_SCHOOL_PAYMENT_PERIOD,
             self::TABLE_SCHOOL_PRODUCT_SALE,
             self::TABLE_SCHOOL_PRODUCT,
+            self::TABLE_SCHOOL_PRODUCT_CATEGORY,
         ];
 
         foreach ($tablesToBeDeleted as $tableToBeDeleted) {
@@ -798,6 +813,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^payments/reports$ plugin/school/src/payments/reports.php [L,QSA]\n".
             "RewriteRule ^payments/receipt$ plugin/school/src/payments/receipt.php [L,QSA]\n".
             "RewriteRule ^products$ plugin/school/src/products/products.php [L]\n".
+            "RewriteRule ^products/categories$ plugin/school/src/products/categories.php [L]\n".
             "RewriteRule ^products/sell$ plugin/school/src/products/sell.php [L,QSA]\n".
             "RewriteRule ^products/sales$ plugin/school/src/products/sales.php [L,QSA]\n".
             "RewriteRule ^products/my$ plugin/school/src/products/my_purchases.php [L]\n".
@@ -2035,6 +2051,7 @@ class SchoolPlugin extends Plugin
         if ($isAdminOrSecretary) {
             $productItems = [
                 ['name' => 'products-catalog', 'label' => $this->get_lang('ProductCatalog'), 'url' => '/products'],
+                ['name' => 'products-categories', 'label' => $this->get_lang('Categories'), 'url' => '/products/categories'],
                 ['name' => 'products-sell', 'label' => $this->get_lang('SellProduct'), 'url' => '/products/sell'],
                 ['name' => 'products-sales', 'label' => $this->get_lang('SalesHistory'), 'url' => '/products/sales'],
             ];
@@ -4199,13 +4216,65 @@ class SchoolPlugin extends Plugin
     // ==================== PRODUCTS ====================
 
     /**
-     * Get all products.
+     * Get all product categories.
+     */
+    public function getProductCategories(bool $activeOnly = false): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_CATEGORY);
+        $where = $activeOnly ? "WHERE active = 1" : "";
+        $sql = "SELECT * FROM $table $where ORDER BY name ASC";
+        $result = Database::query($sql);
+        $categories = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $categories[] = $row;
+        }
+        return $categories;
+    }
+
+    /**
+     * Save (create or update) a product category.
+     */
+    public function saveProductCategory(array $data): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_CATEGORY);
+        $id = isset($data['id']) ? (int) $data['id'] : 0;
+
+        $params = [
+            'name' => Database::escape_string($data['name']),
+            'active' => isset($data['active']) ? (int) $data['active'] : 1,
+        ];
+
+        if ($id > 0) {
+            Database::update($table, $params, ['id = ?' => $id]);
+        } else {
+            $params['created_at'] = date('Y-m-d H:i:s');
+            Database::insert($table, $params);
+        }
+        return true;
+    }
+
+    /**
+     * Delete a product category.
+     */
+    public function deleteProductCategory(int $id): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_CATEGORY);
+        Database::delete($table, ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Get all products with category name.
      */
     public function getProducts(bool $activeOnly = false): array
     {
         $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
-        $where = $activeOnly ? "WHERE active = 1" : "";
-        $sql = "SELECT * FROM $table $where ORDER BY name ASC";
+        $catTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_CATEGORY);
+        $where = $activeOnly ? "WHERE p.active = 1" : "";
+        $sql = "SELECT p.*, c.name as category_name
+                FROM $table p
+                LEFT JOIN $catTable c ON p.category_id = c.id
+                $where ORDER BY p.name ASC";
         $result = Database::query($sql);
         $products = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
@@ -4238,7 +4307,7 @@ class SchoolPlugin extends Plugin
             'name' => Database::escape_string($data['name']),
             'description' => Database::escape_string($data['description'] ?? ''),
             'price' => (float) $data['price'],
-            'category' => Database::escape_string($data['category'] ?? ''),
+            'category_id' => !empty($data['category_id']) ? (int) $data['category_id'] : null,
             'active' => isset($data['active']) ? (int) $data['active'] : 1,
         ];
 
@@ -4286,10 +4355,12 @@ class SchoolPlugin extends Plugin
             $where .= " AND DATE(s.created_at) <= '$dateTo'";
         }
 
-        $sql = "SELECT s.*, p.name as product_name, p.category,
+        $catTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_CATEGORY);
+        $sql = "SELECT s.*, p.name as product_name, c.name as category_name,
                        u.firstname, u.lastname, u.username
                 FROM $table s
                 INNER JOIN $productTable p ON s.product_id = p.id
+                LEFT JOIN $catTable c ON p.category_id = c.id
                 INNER JOIN $userTable u ON s.user_id = u.user_id
                 WHERE $where
                 ORDER BY s.created_at DESC";
@@ -4383,9 +4454,11 @@ class SchoolPlugin extends Plugin
         $table = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_SALE);
         $productTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
 
-        $sql = "SELECT s.*, p.name as product_name, p.category
+        $catTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT_CATEGORY);
+        $sql = "SELECT s.*, p.name as product_name, c.name as category_name
                 FROM $table s
                 INNER JOIN $productTable p ON s.product_id = p.id
+                LEFT JOIN $catTable c ON p.category_id = c.id
                 WHERE s.user_id = $userId
                 ORDER BY s.created_at DESC";
         $result = Database::query($sql);
