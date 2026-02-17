@@ -173,3 +173,65 @@ CREATE TABLE IF NOT EXISTS plugin_school_product_sale (
     registered_by INT NULL,
     created_at DATETIME NOT NULL
 );
+
+-- =============================================
+-- ACADÉMICO
+-- =============================================
+
+-- 13. Años académicos
+CREATE TABLE IF NOT EXISTS plugin_school_academic_year (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    year SMALLINT NOT NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL
+);
+
+-- 14. Niveles educativos
+CREATE TABLE IF NOT EXISTS plugin_school_academic_level (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    order_index TINYINT NOT NULL DEFAULT 0,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL
+);
+
+-- 15. Grados
+CREATE TABLE IF NOT EXISTS plugin_school_academic_grade (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    level_id INT unsigned NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    order_index TINYINT NOT NULL DEFAULT 0,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL
+);
+
+-- 16. Secciones
+CREATE TABLE IF NOT EXISTS plugin_school_academic_section (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL
+);
+
+-- 17. Aulas (grado + sección + año)
+CREATE TABLE IF NOT EXISTS plugin_school_academic_classroom (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    academic_year_id INT unsigned NOT NULL,
+    grade_id INT unsigned NOT NULL,
+    section_id INT unsigned NOT NULL,
+    tutor_id INT NULL,
+    capacity INT NOT NULL DEFAULT 30,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL,
+    UNIQUE KEY unique_classroom (academic_year_id, grade_id, section_id)
+);
+
+-- 18. Alumnos en aulas
+CREATE TABLE IF NOT EXISTS plugin_school_academic_classroom_student (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    classroom_id INT unsigned NOT NULL,
+    user_id INT NOT NULL,
+    enrolled_at DATETIME NOT NULL,
+    UNIQUE KEY unique_student (classroom_id, user_id)
+);

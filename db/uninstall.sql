@@ -5,6 +5,12 @@
 -- del plugin y TODOS los datos almacenados.
 -- =============================================
 
+DROP TABLE IF EXISTS plugin_school_academic_classroom_student;
+DROP TABLE IF EXISTS plugin_school_academic_classroom;
+DROP TABLE IF EXISTS plugin_school_academic_grade;
+DROP TABLE IF EXISTS plugin_school_academic_section;
+DROP TABLE IF EXISTS plugin_school_academic_level;
+DROP TABLE IF EXISTS plugin_school_academic_year;
 DROP TABLE IF EXISTS plugin_school_product_sale;
 DROP TABLE IF EXISTS plugin_school_product;
 DROP TABLE IF EXISTS plugin_school_product_category;

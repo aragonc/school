@@ -38,6 +38,13 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_PRODUCT_SALE = 'plugin_school_product_sale';
     const TABLE_SCHOOL_PRODUCT_CATEGORY = 'plugin_school_product_category';
 
+    const TABLE_SCHOOL_ACADEMIC_YEAR = 'plugin_school_academic_year';
+    const TABLE_SCHOOL_ACADEMIC_LEVEL = 'plugin_school_academic_level';
+    const TABLE_SCHOOL_ACADEMIC_GRADE = 'plugin_school_academic_grade';
+    const TABLE_SCHOOL_ACADEMIC_SECTION = 'plugin_school_academic_section';
+    const TABLE_SCHOOL_ACADEMIC_CLASSROOM = 'plugin_school_academic_classroom';
+    const TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT = 'plugin_school_academic_classroom_student';
+
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
     protected function __construct()
@@ -754,6 +761,65 @@ class SchoolPlugin extends Plugin
         $sql9 = "UPDATE $scheduleTable SET applies_to = 'student' WHERE applies_to = 'students'";
         @Database::query($sql9);
 
+        // Academic tables
+        $sqlAcad1 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ACADEMIC_YEAR." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            year SMALLINT NOT NULL,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlAcad1);
+
+        $sqlAcad2 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ACADEMIC_LEVEL." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            order_index TINYINT NOT NULL DEFAULT 0,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlAcad2);
+
+        $sqlAcad3 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ACADEMIC_GRADE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            level_id INT unsigned NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            order_index TINYINT NOT NULL DEFAULT 0,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlAcad3);
+
+        $sqlAcad4 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ACADEMIC_SECTION." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            name VARCHAR(50) NOT NULL,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlAcad4);
+
+        $sqlAcad5 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ACADEMIC_CLASSROOM." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            academic_year_id INT unsigned NOT NULL,
+            grade_id INT unsigned NOT NULL,
+            section_id INT unsigned NOT NULL,
+            tutor_id INT NULL,
+            capacity INT NOT NULL DEFAULT 30,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL,
+            UNIQUE KEY unique_classroom (academic_year_id, grade_id, section_id)
+        )";
+        Database::query($sqlAcad5);
+
+        $sqlAcad6 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            classroom_id INT unsigned NOT NULL,
+            user_id INT NOT NULL,
+            enrolled_at DATETIME NOT NULL,
+            UNIQUE KEY unique_student (classroom_id, user_id)
+        )";
+        Database::query($sqlAcad6);
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -772,6 +838,12 @@ class SchoolPlugin extends Plugin
             self::TABLE_SCHOOL_PRODUCT_SALE,
             self::TABLE_SCHOOL_PRODUCT,
             self::TABLE_SCHOOL_PRODUCT_CATEGORY,
+            self::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT,
+            self::TABLE_SCHOOL_ACADEMIC_CLASSROOM,
+            self::TABLE_SCHOOL_ACADEMIC_GRADE,
+            self::TABLE_SCHOOL_ACADEMIC_SECTION,
+            self::TABLE_SCHOOL_ACADEMIC_LEVEL,
+            self::TABLE_SCHOOL_ACADEMIC_YEAR,
         ];
 
         foreach ($tablesToBeDeleted as $tableToBeDeleted) {
@@ -829,6 +901,9 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^products/sales$ plugin/school/src/products/sales.php [L,QSA]\n".
             "RewriteRule ^products/my$ plugin/school/src/products/my_purchases.php [L]\n".
             "RewriteRule ^products/receipt$ plugin/school/src/products/receipt.php [L,QSA]\n".
+            "RewriteRule ^academic$ plugin/school/src/academic/index.php [L]\n".
+            "RewriteRule ^academic/settings$ plugin/school/src/academic/settings.php [L]\n".
+            "RewriteRule ^academic/classroom$ plugin/school/src/academic/classroom.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -2077,6 +2152,26 @@ class SchoolPlugin extends Plugin
             'url' => $isAdminOrSecretary ? '/products' : '/products/my',
             'items' => $productItems
         ];
+
+        // Academic menu
+        if ($isAdminOrSecretary) {
+            $academicItems = [
+                ['name' => 'academic-classrooms', 'label' => $this->get_lang('Classrooms'), 'url' => '/academic'],
+            ];
+            if (api_is_platform_admin()) {
+                $academicItems[] = ['name' => 'academic-settings', 'label' => $this->get_lang('AcademicSettings'), 'url' => '/academic/settings'];
+            }
+            $menus[] = [
+                'id' => 9,
+                'name' => 'academic',
+                'label' => $this->get_lang('Academic'),
+                'current' => $currentSection === 'academic',
+                'icon' => 'school',
+                'class' => $currentSection === 'academic' ? 'show' : '',
+                'url' => '/academic',
+                'items' => $academicItems
+            ];
+        }
 
         if (api_is_platform_admin()) {
             $menus[] = [
