@@ -53,7 +53,7 @@
                             <a href="{{ _p.web }}payments/students?period_id={{ period.id }}" class="btn btn-info btn-sm" title="{{ 'View'|get_plugin_lang('SchoolPlugin') }}">
                                 <i class="fas fa-users"></i>
                             </a>
-                            <button class="btn btn-warning btn-sm" onclick="editPeriod({{ period|json_encode }})" title="{{ 'EditPeriod'|get_plugin_lang('SchoolPlugin') }}">
+                            <button class="btn btn-warning btn-sm" onclick="editPeriod({{ period|json_encode|e('html_attr') }})" title="{{ 'EditPeriod'|get_plugin_lang('SchoolPlugin') }}">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-danger btn-sm" onclick="deletePeriod({{ period.id }})" title="{{ 'DeletePeriod'|get_plugin_lang('SchoolPlugin') }}">

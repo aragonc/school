@@ -5,6 +5,11 @@
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link {{ active_tab == 'pricing' ? 'active' : '' }}" href="{{ _p.web }}payments/pricing">
+            <i class="fas fa-tags"></i> {{ 'Pricing'|get_plugin_lang('SchoolPlugin') }}
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link {{ active_tab == 'discounts' ? 'active' : '' }}" href="{{ _p.web }}payments/discounts">
             <i class="fas fa-percentage"></i> {{ 'Discounts'|get_plugin_lang('SchoolPlugin') }}
         </a>
