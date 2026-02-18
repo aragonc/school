@@ -44,6 +44,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_ACADEMIC_SECTION = 'plugin_school_academic_section';
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM = 'plugin_school_academic_classroom';
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT = 'plugin_school_academic_classroom_student';
+    const TABLE_SCHOOL_PAYMENT_PERIOD_PRICE = 'plugin_school_payment_period_price';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -820,6 +821,20 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sqlAcad6);
 
+        // Payment period pricing by level/grade
+        $sqlPrice = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT_PERIOD_PRICE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            period_id INT unsigned NOT NULL,
+            level_id INT unsigned NOT NULL,
+            grade_id INT unsigned NULL,
+            admission_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            enrollment_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            monthly_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            UNIQUE KEY unique_price (period_id, level_id, grade_id)
+        )";
+        Database::query($sqlPrice);
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -838,6 +853,7 @@ class SchoolPlugin extends Plugin
             self::TABLE_SCHOOL_PRODUCT_SALE,
             self::TABLE_SCHOOL_PRODUCT,
             self::TABLE_SCHOOL_PRODUCT_CATEGORY,
+            self::TABLE_SCHOOL_PAYMENT_PERIOD_PRICE,
             self::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT,
             self::TABLE_SCHOOL_ACADEMIC_CLASSROOM,
             self::TABLE_SCHOOL_ACADEMIC_GRADE,
@@ -895,6 +911,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^payments/my$ plugin/school/src/payments/my_payments.php [L]\n".
             "RewriteRule ^payments/reports$ plugin/school/src/payments/reports.php [L,QSA]\n".
             "RewriteRule ^payments/receipt$ plugin/school/src/payments/receipt.php [L,QSA]\n".
+            "RewriteRule ^payments/pricing$ plugin/school/src/payments/pricing.php [L,QSA]\n".
             "RewriteRule ^products$ plugin/school/src/products/products.php [L]\n".
             "RewriteRule ^products/categories$ plugin/school/src/products/categories.php [L]\n".
             "RewriteRule ^products/sell$ plugin/school/src/products/sell.php [L,QSA]\n".
@@ -2117,6 +2134,7 @@ class SchoolPlugin extends Plugin
         if ($isAdminOrSecretary) {
             $paymentItems = [
                 ['name' => 'payments-periods', 'label' => $this->get_lang('PaymentPeriods'), 'url' => '/payments'],
+                ['name' => 'payments-pricing', 'label' => $this->get_lang('Pricing'), 'url' => '/payments/pricing'],
                 ['name' => 'payments-discounts', 'label' => $this->get_lang('Discounts'), 'url' => '/payments/discounts'],
                 ['name' => 'payments-reports', 'label' => $this->get_lang('PaymentReports'), 'url' => '/payments/reports'],
             ];
@@ -4014,12 +4032,15 @@ class SchoolPlugin extends Plugin
             return ['original_amount' => 0, 'discount_amount' => 0, 'final_amount' => 0];
         }
 
+        // Try to resolve price by student's level/grade
+        $resolvedPrice = $this->resolveStudentPriceInternal($periodId, $userId, $period);
+
         if ($type === 'admission') {
-            $originalAmount = (float) $period['admission_amount'];
+            $originalAmount = (float) $resolvedPrice['admission_amount'];
         } elseif ($type === 'enrollment') {
-            $originalAmount = (float) $period['enrollment_amount'];
+            $originalAmount = (float) $resolvedPrice['enrollment_amount'];
         } else {
-            $originalAmount = (float) $period['monthly_amount'];
+            $originalAmount = (float) $resolvedPrice['monthly_amount'];
         }
 
         // Get applicable discounts
@@ -4045,6 +4066,75 @@ class SchoolPlugin extends Plugin
             'discount_amount' => $totalDiscount,
             'final_amount' => $finalAmount,
         ];
+    }
+
+    /**
+     * Resolve student price based on their classroom level/grade.
+     * Priority: 1) Grade override, 2) Level price, 3) Period defaults.
+     */
+    private function resolveStudentPriceInternal(int $periodId, int $userId, array $period): array
+    {
+        $defaults = [
+            'admission_amount' => (float) $period['admission_amount'],
+            'enrollment_amount' => (float) $period['enrollment_amount'],
+            'monthly_amount' => (float) $period['monthly_amount'],
+        ];
+
+        $priceTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD_PRICE);
+        $classroomTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $csTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $yearTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+        $gradeTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+
+        // Find student's classroom for this period's year
+        $sql = "SELECT c.grade_id, g.level_id
+                FROM $csTable cs
+                INNER JOIN $classroomTable c ON cs.classroom_id = c.id
+                INNER JOIN $yearTable y ON c.academic_year_id = y.id
+                INNER JOIN $gradeTable g ON c.grade_id = g.id
+                WHERE cs.user_id = " . (int) $userId . "
+                AND y.year = " . (int) $period['year'] . "
+                LIMIT 1";
+        $result = Database::query($sql);
+        $classroom = Database::fetch_array($result, 'ASSOC');
+
+        if (!$classroom) {
+            return $defaults;
+        }
+
+        $gradeId = (int) $classroom['grade_id'];
+        $levelId = (int) $classroom['level_id'];
+
+        // 1) Grade-specific price
+        $sql = "SELECT * FROM $priceTable
+                WHERE period_id = $periodId AND level_id = $levelId AND grade_id = $gradeId
+                LIMIT 1";
+        $result = Database::query($sql);
+        $gradePrice = Database::fetch_array($result, 'ASSOC');
+        if ($gradePrice) {
+            return [
+                'admission_amount' => (float) $gradePrice['admission_amount'],
+                'enrollment_amount' => (float) $gradePrice['enrollment_amount'],
+                'monthly_amount' => (float) $gradePrice['monthly_amount'],
+            ];
+        }
+
+        // 2) Level price
+        $sql = "SELECT * FROM $priceTable
+                WHERE period_id = $periodId AND level_id = $levelId AND grade_id IS NULL
+                LIMIT 1";
+        $result = Database::query($sql);
+        $levelPrice = Database::fetch_array($result, 'ASSOC');
+        if ($levelPrice) {
+            return [
+                'admission_amount' => (float) $levelPrice['admission_amount'],
+                'enrollment_amount' => (float) $levelPrice['enrollment_amount'],
+                'monthly_amount' => (float) $levelPrice['monthly_amount'],
+            ];
+        }
+
+        // 3) Period defaults
+        return $defaults;
     }
 
     /**

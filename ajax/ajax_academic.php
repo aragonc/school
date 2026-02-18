@@ -203,6 +203,50 @@ switch ($action) {
         echo json_encode(['success' => true, 'data' => $teachers]);
         break;
 
+    // =========================================================================
+    // PERIOD PRICING
+    // =========================================================================
+    case 'get_period_prices':
+        $periodId = (int) ($_GET['period_id'] ?? 0);
+        $prices = AcademicManager::getPeriodPriceList($periodId);
+        echo json_encode(['success' => true, 'data' => $prices]);
+        break;
+
+    case 'save_period_price':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            exit;
+        }
+        $data = [
+            'id' => isset($_POST['id']) ? (int) $_POST['id'] : 0,
+            'period_id' => $_POST['period_id'] ?? 0,
+            'level_id' => $_POST['level_id'] ?? 0,
+            'grade_id' => $_POST['grade_id'] ?? null,
+            'admission_amount' => $_POST['admission_amount'] ?? 0,
+            'enrollment_amount' => $_POST['enrollment_amount'] ?? 0,
+            'monthly_amount' => $_POST['monthly_amount'] ?? 0,
+        ];
+        $result = AcademicManager::savePeriodPrice($data);
+        echo json_encode(['success' => $result]);
+        break;
+
+    case 'delete_period_price':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            exit;
+        }
+        $id = (int) ($_POST['id'] ?? 0);
+        $result = AcademicManager::deletePeriodPrice($id);
+        echo json_encode(['success' => $result]);
+        break;
+
+    case 'resolve_student_price':
+        $periodId = (int) ($_GET['period_id'] ?? 0);
+        $userId = (int) ($_GET['user_id'] ?? 0);
+        $price = AcademicManager::resolveStudentPrice($periodId, $userId);
+        echo json_encode(['success' => true, 'data' => $price]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;

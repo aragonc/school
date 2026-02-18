@@ -61,7 +61,7 @@
                         </td>
                         <td>{{ discount.reason }}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm" onclick="editDiscount({{ discount|json_encode }})">
+                            <button class="btn btn-warning btn-sm" onclick="editDiscount({{ discount|json_encode|e('html_attr') }})">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-danger btn-sm" onclick="deleteDiscount({{ discount.id }})">

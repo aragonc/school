@@ -507,3 +507,18 @@ $strings['Add'] = 'Add';
 $strings['Edit'] = 'Edit';
 $strings['Delete'] = 'Delete';
 $strings['Name'] = 'Name';
+
+// Pricing by level/grade
+$strings['Pricing'] = 'Pricing';
+$strings['AddPrice'] = 'Add Price';
+$strings['EditPrice'] = 'Edit Price';
+$strings['DefaultPrices'] = 'Default period prices';
+$strings['DefaultPricesHint'] = 'These prices are used when a level/grade has no specific price configured.';
+$strings['PricesByLevel'] = 'Prices by Level / Grade';
+$strings['AllGrades'] = 'All grades';
+$strings['LevelPrice'] = 'Level price';
+$strings['GradeOverride'] = 'Override';
+$strings['GradeOverrideHint'] = 'Leave empty to apply to the entire level. Select a grade to create an override.';
+$strings['NoPricesConfigured'] = 'No level prices configured. Default period prices will be used.';
+$strings['SelectLevel'] = 'You must select a level.';
+$strings['PaymentPeriod'] = 'Payment Period';

@@ -74,7 +74,7 @@
                                 <a href="{{ _p.web }}academic/classroom?id={{ c.id }}" class="btn btn-info btn-sm" title="{{ 'ViewClassroom'|get_plugin_lang('SchoolPlugin') }}">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <button class="btn btn-warning btn-sm" onclick="editClassroom({{ c|json_encode }})" title="{{ 'Edit'|get_plugin_lang('SchoolPlugin') }}">
+                                <button class="btn btn-warning btn-sm" onclick="editClassroom({{ c|json_encode|e('html_attr') }})" title="{{ 'Edit'|get_plugin_lang('SchoolPlugin') }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteClassroom({{ c.id }})" title="{{ 'Delete'|get_plugin_lang('SchoolPlugin') }}">

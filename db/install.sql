@@ -235,3 +235,16 @@ CREATE TABLE IF NOT EXISTS plugin_school_academic_classroom_student (
     enrolled_at DATETIME NOT NULL,
     UNIQUE KEY unique_student (classroom_id, user_id)
 );
+
+-- 19. Precios por nivel/grado por periodo
+CREATE TABLE IF NOT EXISTS plugin_school_payment_period_price (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    period_id INT unsigned NOT NULL,
+    level_id INT unsigned NOT NULL,
+    grade_id INT unsigned NULL,
+    admission_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    enrollment_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    monthly_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    UNIQUE KEY unique_price (period_id, level_id, grade_id)
+);

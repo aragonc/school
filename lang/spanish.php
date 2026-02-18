@@ -509,3 +509,18 @@ $strings['Add'] = 'Agregar';
 $strings['Edit'] = 'Editar';
 $strings['Delete'] = 'Eliminar';
 $strings['Name'] = 'Nombre';
+
+// Precios por nivel/grado
+$strings['Pricing'] = 'Precios';
+$strings['AddPrice'] = 'Agregar Precio';
+$strings['EditPrice'] = 'Editar Precio';
+$strings['DefaultPrices'] = 'Precios por defecto del periodo';
+$strings['DefaultPricesHint'] = 'Estos precios se usan cuando un nivel/grado no tiene precio específico configurado.';
+$strings['PricesByLevel'] = 'Precios por Nivel / Grado';
+$strings['AllGrades'] = 'Todos los grados';
+$strings['LevelPrice'] = 'Precio de nivel';
+$strings['GradeOverride'] = 'Excepción';
+$strings['GradeOverrideHint'] = 'Deje vacío para aplicar a todo el nivel. Seleccione un grado para crear una excepción.';
+$strings['NoPricesConfigured'] = 'No hay precios por nivel configurados. Se usarán los precios por defecto del periodo.';
+$strings['SelectLevel'] = 'Debe seleccionar un nivel.';
+$strings['PaymentPeriod'] = 'Periodo de Pago';

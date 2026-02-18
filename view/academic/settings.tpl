@@ -60,7 +60,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button class="btn btn-warning btn-sm" onclick="editYear({{ y|json_encode }})">
+                                <button class="btn btn-warning btn-sm" onclick="editYear({{ y|json_encode|e('html_attr') }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteYear({{ y.id }})">
@@ -113,7 +113,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button class="btn btn-warning btn-sm" onclick="editLevel({{ l|json_encode }})">
+                                <button class="btn btn-warning btn-sm" onclick="editLevel({{ l|json_encode|e('html_attr') }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteLevel({{ l.id }})">
@@ -168,7 +168,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button class="btn btn-warning btn-sm" onclick="editGrade({{ g|json_encode }})">
+                                <button class="btn btn-warning btn-sm" onclick="editGrade({{ g|json_encode|e('html_attr') }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteGrade({{ g.id }})">
@@ -219,7 +219,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button class="btn btn-warning btn-sm" onclick="editSection({{ s|json_encode }})">
+                                <button class="btn btn-warning btn-sm" onclick="editSection({{ s|json_encode|e('html_attr') }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteSection({{ s.id }})">
