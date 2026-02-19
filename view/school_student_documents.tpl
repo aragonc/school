@@ -46,7 +46,7 @@
                 <tr>
                     <th width="50">{{ 'Type'|get_lang }}</th>
                     <th>{{ 'Name'|get_lang }}</th>
-                    <th width="120">{{ 'Size'|get_lang }}</th>
+                    <th width="120" class="d-none d-md-table-cell">{{ 'Size'|get_lang }}</th>
                     <th width="100" class="text-center">{{ 'Actions'|get_lang }}</th>
                 </tr>
                 </thead>
@@ -129,7 +129,7 @@
                     </td>
 
                     {# Tamaño #}
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {% if doc.is_folder %}
                         <span class="folder-size"
                               data-id="{{ doc.id }}"
