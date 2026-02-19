@@ -106,6 +106,18 @@ $form->addFile(
 );
 $form->addCheckBox('remove_login_card_image', '', $plugin->get_lang('RemoveLoginCardImage'));
 
+// Vegas slideshow section
+$form->addHtml('<h4 class="title-form">'.$plugin->get_lang('VegasSettings').'</h4>');
+$form->addHtml('<p class="text-muted small">'.$plugin->get_lang('VegasSettingsHelp').'</p>');
+for ($i = 1; $i <= 4; $i++) {
+    $form->addFile(
+        'vegas_image_'.$i,
+        [$plugin->get_lang('VegasImage').' '.$i, $plugin->get_lang('VegasImageHelp')],
+        ['accept' => '.jpg,.jpeg,.png,.webp']
+    );
+    $form->addCheckBox('remove_vegas_image_'.$i, '', $plugin->get_lang('RemoveVegasImage').' '.$i);
+}
+
 $form->addButtonSave($plugin->get_lang('SaveChanges'));
 
 // Load current values
@@ -277,6 +289,36 @@ if ($form->validate()) {
 
         if (move_uploaded_file($_FILES['login_card_image']['tmp_name'], $uploadDir.$newFilename)) {
             $plugin->setSchoolSetting('login_card_image', $newFilename);
+        }
+    }
+
+    // Handle Vegas slideshow images
+    $uploadDir = api_get_path(SYS_UPLOAD_PATH).'plugins/school/';
+    for ($i = 1; $i <= 4; $i++) {
+        $key = 'vegas_image_'.$i;
+        if (!empty($values['remove_'.$key])) {
+            $current = $plugin->getSchoolSetting($key);
+            if ($current) {
+                $filePath = $uploadDir.$current;
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+            }
+            $plugin->setSchoolSetting($key, '');
+        }
+        if (!empty($_FILES[$key]['size'])) {
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, api_get_permissions_for_new_directories(), true);
+            }
+            $current = $plugin->getSchoolSetting($key);
+            if ($current && file_exists($uploadDir.$current)) {
+                unlink($uploadDir.$current);
+            }
+            $extension = pathinfo($_FILES[$key]['name'], PATHINFO_EXTENSION);
+            $newFilename = 'vegas_'.$i.'_'.time().'.'.$extension;
+            if (move_uploaded_file($_FILES[$key]['tmp_name'], $uploadDir.$newFilename)) {
+                $plugin->setSchoolSetting($key, $newFilename);
+            }
         }
     }
 

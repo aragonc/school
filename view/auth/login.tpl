@@ -4,7 +4,9 @@
             <div class="card o-hidden border-0 shadow-lg">
                 <div class="card-body p-0">
                     <div class="row">
-                        {% if login_card_image %}
+                        {% if vegas_images|length > 0 %}
+                        <div class="col-lg-6 d-none d-lg-block p-0" id="vegas-container" style="min-height: 450px; position: relative;"></div>
+                        {% elseif login_card_image %}
                         <div class="col-lg-6 d-none d-lg-block" style="background: url('{{ login_card_image }}') no-repeat center center; background-size: cover;"></div>
                         {% else %}
                         <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
@@ -55,11 +57,13 @@
                                     </a>
                                 </div>
                                 <hr>
+                                {% if allow_lost_password %}
                                 <div class="text-center">
                                     <a class="small" href="{{ lost_password_url }}">
                                         {{ 'LostPassword'|get_lang }}
                                     </a>
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -68,3 +72,25 @@
         </div>
     </div>
 </div>
+
+{% if vegas_images|length > 0 %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vegas@2/dist/vegas.min.css">
+<script src="https://cdn.jsdelivr.net/npm/vegas@2/dist/vegas.min.js"></script>
+<script>
+$(document).ready(function () {
+    $('#vegas-container').vegas({
+        slides: [
+            {% for img in vegas_images %}
+            { src: '{{ img }}' }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ],
+        transition: 'fade',
+        transitionDuration: 1000,
+        delay: 5000,
+        animation: 'kenburns',
+        animationDuration: 6000,
+        overlay: true
+    });
+});
+</script>
+{% endif %}
