@@ -46,6 +46,11 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT = 'plugin_school_academic_classroom_student';
     const TABLE_SCHOOL_PAYMENT_PERIOD_PRICE = 'plugin_school_payment_period_price';
 
+    const TABLE_SCHOOL_MATRICULA           = 'plugin_school_matricula';
+    const TABLE_SCHOOL_MATRICULA_PADRE     = 'plugin_school_matricula_padre';
+    const TABLE_SCHOOL_MATRICULA_CONTACTO  = 'plugin_school_matricula_contacto';
+    const TABLE_SCHOOL_MATRICULA_INFO      = 'plugin_school_matricula_info';
+
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
     protected function __construct()
@@ -858,6 +863,107 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sqlPrice);
 
+        // Matricula tables
+        $sqlMat1 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            user_id INT NULL,
+            academic_year_id INT unsigned NULL,
+            estado ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
+            tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO',
+            apellido_paterno VARCHAR(100) NULL,
+            apellido_materno VARCHAR(100) NULL,
+            nombres VARCHAR(100) NOT NULL DEFAULT '',
+            grade_id INT unsigned NULL,
+            sexo ENUM('F','M') NULL,
+            dni CHAR(8) NULL,
+            tipo_sangre VARCHAR(5) NULL,
+            fecha_nacimiento DATE NULL,
+            nacionalidad VARCHAR(50) NULL DEFAULT 'Peruana',
+            peso DECIMAL(5,2) NULL,
+            estatura DECIMAL(4,2) NULL,
+            domicilio VARCHAR(255) NULL,
+            region VARCHAR(10) NULL,
+            provincia VARCHAR(10) NULL,
+            distrito VARCHAR(10) NULL,
+            tiene_alergias TINYINT(1) NOT NULL DEFAULT 0,
+            alergias_detalle VARCHAR(255) NULL,
+            usa_lentes TINYINT(1) NOT NULL DEFAULT 0,
+            tiene_discapacidad TINYINT(1) NOT NULL DEFAULT 0,
+            discapacidad_detalle VARCHAR(255) NULL,
+            ie_procedencia VARCHAR(150) NULL,
+            motivo_traslado TEXT NULL,
+            created_by INT NOT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL
+        )";
+        Database::query($sqlMat1);
+
+        // Migrations for plugin_school_matricula
+        $matTable = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+
+        // Rename old nombres_apellidos → nombres
+        $colOld = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'nombres_apellidos'");
+        if (Database::num_rows($colOld) > 0) {
+            Database::query("ALTER TABLE $matTable CHANGE nombres_apellidos nombres VARCHAR(100) NOT NULL DEFAULT ''");
+        }
+
+        // Add missing columns
+        foreach ([
+            'apellido_paterno'  => "VARCHAR(100) NULL AFTER tipo_ingreso",
+            'apellido_materno'  => "VARCHAR(100) NULL AFTER apellido_paterno",
+            'region'            => "VARCHAR(10) NULL AFTER domicilio",
+            'provincia'         => "VARCHAR(10) NULL AFTER region",
+            'distrito'          => "VARCHAR(10) NULL AFTER provincia",
+            'academic_year_id'  => "INT unsigned NULL AFTER user_id",
+            'estado'            => "ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO' AFTER academic_year_id",
+        ] as $col => $def) {
+            $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = '$col'");
+            if (Database::num_rows($chk) === 0) {
+                Database::query("ALTER TABLE $matTable ADD COLUMN $col $def");
+            }
+        }
+
+        // Extend tipo_ingreso ENUM to include CONTINUACION
+        $chkEnum = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'tipo_ingreso' AND COLUMN_TYPE LIKE '%CONTINUACION%'");
+        if (Database::num_rows($chkEnum) === 0) {
+            Database::query("ALTER TABLE $matTable MODIFY tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO'");
+        }
+
+        $sqlMat2 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA_PADRE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            matricula_id INT unsigned NOT NULL,
+            parentesco ENUM('MADRE','PADRE') NOT NULL,
+            apellidos VARCHAR(100) NULL,
+            nombres VARCHAR(100) NULL,
+            celular VARCHAR(15) NULL,
+            ocupacion VARCHAR(100) NULL,
+            dni CHAR(8) NULL,
+            edad TINYINT unsigned NULL,
+            religion VARCHAR(50) NULL,
+            tipo_parto ENUM('CESAREA','NORMAL') NULL,
+            vive_con_menor TINYINT(1) NULL
+        )";
+        Database::query($sqlMat2);
+
+        $sqlMat3 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA_CONTACTO." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            matricula_id INT unsigned NOT NULL,
+            nombre_contacto VARCHAR(150) NULL,
+            telefono VARCHAR(15) NULL,
+            direccion VARCHAR(255) NULL
+        )";
+        Database::query($sqlMat3);
+
+        $sqlMat4 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA_INFO." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            matricula_id INT unsigned NOT NULL,
+            encargados_cuidado VARCHAR(255) NULL,
+            familiar_en_institucion VARCHAR(150) NULL,
+            observaciones TEXT NULL,
+            UNIQUE KEY unique_mat_info (matricula_id)
+        )";
+        Database::query($sqlMat4);
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -865,6 +971,10 @@ class SchoolPlugin extends Plugin
     public function uninstall()
     {
         $tablesToBeDeleted = [
+            self::TABLE_SCHOOL_MATRICULA_INFO,
+            self::TABLE_SCHOOL_MATRICULA_CONTACTO,
+            self::TABLE_SCHOOL_MATRICULA_PADRE,
+            self::TABLE_SCHOOL_MATRICULA,
             self::TABLE_SCHOOL_SETTINGS,
             self::TABLE_SCHOOL_ATTENDANCE_LOG,
             self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE,
@@ -944,6 +1054,11 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^academic$ plugin/school/src/academic/index.php [L]\n".
             "RewriteRule ^academic/settings$ plugin/school/src/academic/settings.php [L]\n".
             "RewriteRule ^academic/classroom$ plugin/school/src/academic/classroom.php [L,QSA]\n".
+            "RewriteRule ^payments/pricing$ plugin/school/src/payments/pricing.php [L,QSA]\n".
+            "RewriteRule ^matricula$ plugin/school/src/matricula/list.php [L]\n".
+            "RewriteRule ^matricula/nueva$ plugin/school/src/matricula/form.php [L]\n".
+            "RewriteRule ^matricula/editar$ plugin/school/src/matricula/form.php [L,QSA]\n".
+            "RewriteRule ^matricula/ver$ plugin/school/src/matricula/view.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -2195,6 +2310,23 @@ class SchoolPlugin extends Plugin
                 'class' => $currentSection === 'products' ? 'show' : '',
                 'url' => $isAdminOrSecretary ? '/products' : '/products/my',
                 'items' => $productItems
+            ];
+        }
+
+        // Matricula menu (admin and secretary only)
+        if ($isAdminOrSecretary) {
+            $menus[] = [
+                'id' => 11,
+                'name' => 'matricula',
+                'label' => $this->get_lang('Enrollment'),
+                'current' => $currentSection === 'matricula',
+                'icon' => 'user-plus',
+                'class' => $currentSection === 'matricula' ? 'show' : '',
+                'url' => '/matricula',
+                'items' => [
+                    ['name' => 'matricula-list',  'label' => $this->get_lang('EnrollmentList'),  'url' => '/matricula'],
+                    ['name' => 'matricula-nueva', 'label' => $this->get_lang('NewEnrollment'),   'url' => '/matricula/nueva'],
+                ]
             ];
         }
 
