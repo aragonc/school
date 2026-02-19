@@ -525,3 +525,5 @@ $strings['GradeOverrideHint'] = 'Deje vacío para aplicar a todo el nivel. Selec
 $strings['NoPricesConfigured'] = 'No hay precios por nivel configurados. Se usarán los precios por defecto del periodo.';
 $strings['SelectLevel'] = 'Debe seleccionar un nivel.';
 $strings['PaymentPeriod'] = 'Periodo de Pago';
+$strings['google_client_id'] = 'Google Client ID';
+$strings['google_client_secret'] = 'Google Client Secret';

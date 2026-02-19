@@ -7,7 +7,7 @@ $plugin = SchoolPlugin::create();
 // Si ya está logueado, redirigir al dashboard
 if (api_get_user_id()) {
     $plugin->handleLoginRedirect();
-    $redirectUrl = api_get_path(WEB_PLUGIN_PATH) . 'dashboard';
+    $redirectUrl = api_get_path(WEB_PATH) . 'dashboard';
     header('Location: ' . $redirectUrl);
     exit;
 }
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'], $_POST['pass
                 $plugin->handleLoginRedirect();
 
                 // Por defecto ir al dashboard del plugin
-                $redirectUrl = api_get_path(WEB_PLUGIN_PATH) . 'dashboard';
+                $redirectUrl = api_get_path(WEB_PATH) . 'dashboard';
                 header('Location: ' . $redirectUrl);
                 exit;
             } else {
