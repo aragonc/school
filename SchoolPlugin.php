@@ -68,7 +68,9 @@ class SchoolPlugin extends Plugin
                         self::TEMPLATE_ZERO => 'Plantilla por defecto',
                         self::INTERFACE_ONE => 'Plantilla Sence',
                     ],
-                ]
+                ],
+                'google_client_id' => 'text',
+                'google_client_secret' => 'text',
             ])
         );
 

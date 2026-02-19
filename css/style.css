@@ -9772,4 +9772,9 @@ ul.nav-tabs li a[aria-selected="false"]:hover {
   .card-catalog .container-fluid, .card-catalog .container-sm, .card-catalog .container-md, .card-catalog .container-lg, .card-catalog .container-xl {
     padding: 0 !important; } }
 
+.title-form {
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: #5a5c69; }
+
 /*# sourceMappingURL=style.css.map */

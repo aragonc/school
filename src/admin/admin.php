@@ -21,6 +21,9 @@ $form = new FormValidator(
     FormValidator::LAYOUT_NEW
 );
 
+// Colors section
+$form->addHtml('<h4 class="title-form">'.$plugin->get_lang('ColorSettings').'</h4>');
+
 // Logo section
 $form->addFile(
     'custom_logo',
@@ -48,8 +51,7 @@ $form->addFile(
 );
 $form->addCheckBox('remove_sidebar_icon', '', $plugin->get_lang('RemoveSidebarIcon'));
 
-// Colors section
-$form->addHtml('<h4>'.$plugin->get_lang('ColorSettings').'</h4>');
+
 $form->addText(
     'primary_color',
     [$plugin->get_lang('PrimaryColor'), $plugin->get_lang('PrimaryColorHelp')],
@@ -84,7 +86,7 @@ $form->addText(
 $form->addCheckBox('remove_logo', '', $plugin->get_lang('RemoveLogo'));
 
 // Login customization section
-$form->addHtml('<h4>'.$plugin->get_lang('LoginSettings').'</h4>');
+$form->addHtml('<h4 class="title-form">'.$plugin->get_lang('LoginSettings').'</h4>');
 $form->addText(
     'login_bg_color',
     [$plugin->get_lang('LoginBgColor'), $plugin->get_lang('LoginBgColorHelp')],

@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../../config.php';
 // ============================================
 // CONFIGURACIÓN
 // ============================================
+$plugin = SchoolPlugin::create();
 $GOOGLE_CLIENT_ID = $plugin->get('google_client_id');
 $GOOGLE_CLIENT_SECRET = $plugin->get('google_client_secret');
 $GOOGLE_REDIRECT_URI = api_get_path(WEB_PATH).'plugin/school/src/auth/external_login/login_google.php';
