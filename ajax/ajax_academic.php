@@ -217,17 +217,31 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Access denied']);
             exit;
         }
-        $data = [
-            'id' => isset($_POST['id']) ? (int) $_POST['id'] : 0,
-            'period_id' => $_POST['period_id'] ?? 0,
-            'level_id' => $_POST['level_id'] ?? 0,
-            'grade_id' => $_POST['grade_id'] ?? null,
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+        $base = [
+            'period_id'        => $_POST['period_id'] ?? 0,
+            'level_id'         => $_POST['level_id'] ?? 0,
             'admission_amount' => $_POST['admission_amount'] ?? 0,
-            'enrollment_amount' => $_POST['enrollment_amount'] ?? 0,
-            'monthly_amount' => $_POST['monthly_amount'] ?? 0,
+            'enrollment_amount'=> $_POST['enrollment_amount'] ?? 0,
+            'monthly_amount'   => $_POST['monthly_amount'] ?? 0,
         ];
-        $result = AcademicManager::savePeriodPrice($data);
-        echo json_encode(['success' => $result]);
+
+        if ($id > 0) {
+            // Edit existing: single record
+            $base['id']       = $id;
+            $base['grade_id'] = $_POST['grade_id'] ?? null;
+            AcademicManager::savePeriodPrice($base);
+        } else {
+            // New: one record per selected grade (or one level-wide if none selected)
+            $gradeIds = isset($_POST['grade_ids']) ? (array) $_POST['grade_ids'] : [''];
+            foreach ($gradeIds as $gid) {
+                $entry = $base;
+                $entry['id']       = 0;
+                $entry['grade_id'] = ($gid !== '' && $gid !== null) ? $gid : null;
+                AcademicManager::savePeriodPrice($entry);
+            }
+        }
+        echo json_encode(['success' => true]);
         break;
 
     case 'delete_period_price':

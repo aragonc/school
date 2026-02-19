@@ -532,3 +532,4 @@ $strings['VegasSettingsHelp'] = 'Sube hasta 4 imágenes para el slideshow animad
 $strings['VegasImage'] = 'Imagen slideshow';
 $strings['VegasImageHelp'] = 'JPG, PNG o WEBP recomendado en 800×600 px o mayor.';
 $strings['RemoveVegasImage'] = 'Eliminar imagen slideshow';
+$strings['GradeMultiHint'] = 'Selecciona uno o más grados. Deja sin marcar para aplicar a todos los grados del nivel.';
