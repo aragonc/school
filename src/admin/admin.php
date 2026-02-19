@@ -15,7 +15,10 @@ $plugin->setTitle($plugin->get_lang('PluginAdministration'));
 $form = new FormValidator(
     'school_admin',
     'post',
-    api_get_self()
+    api_get_self(),
+    '',
+    [],
+    FormValidator::LAYOUT_NEW
 );
 
 // Logo section

@@ -130,6 +130,9 @@ $plugin->assign('plugin_path', $pluginPath);
 $plugin->assign('web_path', $webPath);
 $plugin->assign('lost_password_url', $lostPasswordUrl);
 
+$googleLoginUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/src/auth/external_login/login_google.php';
+$plugin->assign('google_login_url', $googleLoginUrl);
+
 $content = $plugin->fetch('auth/login.tpl');
 $plugin->assign('content', $content);
 $plugin->display_login_template();

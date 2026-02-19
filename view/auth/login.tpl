@@ -49,6 +49,12 @@
                                     </button>
                                 </form>
                                 <hr>
+                                <div class="text-center mb-3">
+                                    <a href="{{ google_login_url }}" class="btn btn-outline-danger btn-user btn-block">
+                                        <i class="fab fa-google fa-fw"></i> Iniciar sesión con Google
+                                    </a>
+                                </div>
+                                <hr>
                                 <div class="text-center">
                                     <a class="small" href="{{ lost_password_url }}">
                                         {{ 'LostPassword'|get_lang }}

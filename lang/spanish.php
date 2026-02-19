@@ -310,6 +310,7 @@ $strings['LoginCardImage'] = 'Imagen lateral del login';
 $strings['LoginCardImageHelp'] = 'Imagen que se muestra al lado izquierdo del formulario de login. JPG, PNG o WebP. Tamaño recomendado: 600x800px';
 $strings['RemoveLoginCardImage'] = 'Eliminar imagen lateral del login';
 $strings['CurrentLoginCardImage'] = 'Imagen lateral actual';
+$strings['LoginIcon'] = 'Icono actual';
 
 // Payments
 $strings['Payments'] = 'Pagos';
