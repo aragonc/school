@@ -662,7 +662,10 @@ class SchoolPlugin extends Plugin
 
         // Add admission_amount column if not exists (migration)
         $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
-        @Database::query("ALTER TABLE $periodTable ADD COLUMN IF NOT EXISTS admission_amount DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER year");
+        $colCheck = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$periodTable' AND COLUMN_NAME = 'admission_amount'");
+        if (Database::num_rows($colCheck) === 0) {
+            Database::query("ALTER TABLE $periodTable ADD COLUMN admission_amount DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER year");
+        }
 
         $sql8p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
@@ -689,10 +692,14 @@ class SchoolPlugin extends Plugin
 
         // Add receipt_number and voucher columns if not exists (migration)
         $payTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
-        $sql8m = "ALTER TABLE $payTable ADD COLUMN IF NOT EXISTS receipt_number VARCHAR(20) NULL AFTER reference";
-        @Database::query($sql8m);
-        $sql8v = "ALTER TABLE $payTable ADD COLUMN IF NOT EXISTS voucher VARCHAR(255) NULL AFTER receipt_number";
-        @Database::query($sql8v);
+        $col8m = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$payTable' AND COLUMN_NAME = 'receipt_number'");
+        if (Database::num_rows($col8m) === 0) {
+            Database::query("ALTER TABLE $payTable ADD COLUMN receipt_number VARCHAR(20) NULL AFTER reference");
+        }
+        $col8v = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$payTable' AND COLUMN_NAME = 'voucher'");
+        if (Database::num_rows($col8v) === 0) {
+            Database::query("ALTER TABLE $payTable ADD COLUMN voucher VARCHAR(255) NULL AFTER receipt_number");
+        }
 
         // Add admission to type ENUM (migration)
         @Database::query("ALTER TABLE $payTable MODIFY type ENUM('admission','enrollment','monthly') NOT NULL");
@@ -732,8 +739,14 @@ class SchoolPlugin extends Plugin
 
         // Migration: rename category to category_id if needed
         $prodTable = Database::get_main_table(self::TABLE_SCHOOL_PRODUCT);
-        @Database::query("ALTER TABLE $prodTable DROP COLUMN IF EXISTS category");
-        @Database::query("ALTER TABLE $prodTable ADD COLUMN IF NOT EXISTS category_id INT unsigned NULL AFTER price");
+        $colCat = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$prodTable' AND COLUMN_NAME = 'category'");
+        if (Database::num_rows($colCat) > 0) {
+            Database::query("ALTER TABLE $prodTable DROP COLUMN category");
+        }
+        $colCatId = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$prodTable' AND COLUMN_NAME = 'category_id'");
+        if (Database::num_rows($colCatId) === 0) {
+            Database::query("ALTER TABLE $prodTable ADD COLUMN category_id INT unsigned NULL AFTER price");
+        }
 
         $sqlProd2 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PRODUCT_SALE." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
