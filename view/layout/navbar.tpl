@@ -92,6 +92,18 @@
                     </div>
                 </div>
                 <div class="dropdown-divider"></div>
+                {% if _u.is_admin %}
+                <a class="dropdown-item" href="{{ _p.web }}main/admin/index.php">
+                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-800"></i>
+                    {{ 'Administration'|get_lang }}
+                </a>
+                {% endif %}
+                {% if _u.status == 1 and not _u.is_admin %}
+                <a class="dropdown-item" href="{{ _p.web }}user_portal.php">
+                    <i class="fas fa-chalkboard-teacher fa-sm fa-fw mr-2 text-gray-800"></i>
+                    {{ 'MyCourses'|get_lang }}
+                </a>
+                {% endif %}
                 <a class="dropdown-item" href="{{ _p.web }}profile">
                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-800"></i>
                     {{ 'EditProfile'|get_plugin_lang('SchoolPlugin') }}

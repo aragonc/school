@@ -10,6 +10,14 @@ if (!$enable) {
     api_not_allowed(true);
 }
 
+$_userInfo = api_get_user_info();
+$_isAdmin = api_is_platform_admin();
+$_isSecretary = $_userInfo && $_userInfo['status'] == SCHOOL_SECRETARY;
+$_isStudent = $_userInfo && (int) $_userInfo['status'] === STUDENT;
+if (!$_isAdmin && !$_isSecretary && !$_isStudent) {
+    api_not_allowed(true);
+}
+
 $plugin->setCurrentSection('payments');
 $plugin->setSidebar('payments');
 

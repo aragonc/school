@@ -27,6 +27,7 @@
                         <th>{{ 'DiscountValue'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'AppliesTo'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Reason'|get_plugin_lang('SchoolPlugin') }}</th>
+                        <th>{{ 'ExcludedMonths'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Actions'|get_plugin_lang('SchoolPlugin') }}</th>
                     </tr>
                 </thead>
@@ -60,6 +61,15 @@
                             {% endif %}
                         </td>
                         <td>{{ discount.reason }}</td>
+                        <td>
+                            {% if discount.excluded_months %}
+                                {% for m in discount.excluded_months|split(',') %}
+                                    <span class="badge badge-secondary">{{ month_names[m|trim] }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <button class="btn btn-warning btn-sm" onclick="editDiscount({{ discount|json_encode|e('html_attr') }})">
                                 <i class="fas fa-edit"></i>
@@ -125,6 +135,23 @@
                         <label>{{ 'Reason'|get_plugin_lang('SchoolPlugin') }}</label>
                         <input type="text" class="form-control" name="reason" id="discount_reason" placeholder="Motivo del descuento">
                     </div>
+                    <div class="form-group" id="excluded-months-group">
+                        <label><strong>{{ 'ExcludedMonths'|get_plugin_lang('SchoolPlugin') }}</strong></label>
+                        <div class="border rounded p-2">
+                            <div class="row">
+                                {% set monthLabels = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'} %}
+                                {% for num, label in monthLabels %}
+                                <div class="col-4">
+                                    <div class="custom-control custom-checkbox mb-1">
+                                        <input type="checkbox" class="custom-control-input month-check" id="month_{{ num }}" value="{{ num }}">
+                                        <label class="custom-control-label" for="month_{{ num }}">{{ label }}</label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ 'ExcludedMonthsHint'|get_plugin_lang('SchoolPlugin') }}</small>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -147,20 +174,33 @@ function resetDiscountForm() {
     document.getElementById('discount_value').value = '';
     document.getElementById('discount_applies').value = 'all';
     document.getElementById('discount_reason').value = '';
+    document.querySelectorAll('.month-check').forEach(function(cb) { cb.checked = false; });
 }
 
 function editDiscount(discount) {
-    document.getElementById('discountModalTitle').textContent = '{{ 'EditPeriod'|get_plugin_lang('SchoolPlugin') }}';
+    document.getElementById('discountModalTitle').textContent = '{{ 'EditDiscount'|get_plugin_lang('SchoolPlugin') }}';
     document.getElementById('discount_id').value = discount.id;
     document.getElementById('discount_user').value = discount.user_id;
     document.getElementById('discount_type').value = discount.discount_type;
     document.getElementById('discount_value').value = discount.discount_value;
     document.getElementById('discount_applies').value = discount.applies_to;
     document.getElementById('discount_reason').value = discount.reason || '';
+
+    // Restore excluded months
+    var excluded = discount.excluded_months ? discount.excluded_months.split(',') : [];
+    document.querySelectorAll('.month-check').forEach(function(cb) {
+        cb.checked = excluded.indexOf(cb.value) !== -1;
+    });
+
     $('#discountModal').modal('show');
 }
 
 function saveDiscount() {
+    var checkedMonths = [];
+    document.querySelectorAll('.month-check:checked').forEach(function(cb) {
+        checkedMonths.push(cb.value);
+    });
+
     var formData = new FormData();
     formData.append('action', 'save_discount');
     formData.append('id', document.getElementById('discount_id').value);
@@ -170,6 +210,7 @@ function saveDiscount() {
     formData.append('discount_value', document.getElementById('discount_value').value);
     formData.append('applies_to', document.getElementById('discount_applies').value);
     formData.append('reason', document.getElementById('discount_reason').value);
+    formData.append('excluded_months', checkedMonths.join(','));
 
     fetch(ajaxUrl, { method: 'POST', body: formData })
         .then(function(r) { return r.json(); })

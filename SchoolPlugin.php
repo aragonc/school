@@ -712,10 +712,18 @@ class SchoolPlugin extends Plugin
             discount_value DECIMAL(10,2) NOT NULL DEFAULT 0,
             applies_to ENUM('admission','enrollment','monthly','all') NOT NULL DEFAULT 'all',
             reason VARCHAR(255) NULL,
+            excluded_months VARCHAR(100) NULL,
             created_by INT NOT NULL,
             created_at DATETIME NOT NULL
         )";
         Database::query($sql9p);
+
+        // Migration: add excluded_months column to existing discount tables
+        $discountTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_DISCOUNT);
+        $colExcluded = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$discountTable' AND COLUMN_NAME = 'excluded_months'");
+        if (Database::num_rows($colExcluded) === 0) {
+            Database::query("ALTER TABLE $discountTable ADD COLUMN excluded_months VARCHAR(100) NULL AFTER reason");
+        }
 
         // Product tables
         $sqlProdCat = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PRODUCT_CATEGORY." (
@@ -2142,49 +2150,53 @@ class SchoolPlugin extends Plugin
             'items' => $attendanceItems
         ];
 
-        // Payments menu
+        // Payments & Products: only admin, secretary and student
         $userInfo = api_get_user_info();
         $isAdminOrSecretary = api_is_platform_admin() || ($userInfo && $userInfo['status'] == SCHOOL_SECRETARY);
-        $paymentItems = [];
-        if ($isAdminOrSecretary) {
-            $paymentItems = [
-                ['name' => 'payments-periods', 'label' => $this->get_lang('PaymentPeriods'), 'url' => '/payments'],
-                ['name' => 'payments-pricing', 'label' => $this->get_lang('Pricing'), 'url' => '/payments/pricing'],
-                ['name' => 'payments-discounts', 'label' => $this->get_lang('Discounts'), 'url' => '/payments/discounts'],
-                ['name' => 'payments-reports', 'label' => $this->get_lang('PaymentReports'), 'url' => '/payments/reports'],
-            ];
-        }
-        $menus[] = [
-            'id' => 7,
-            'name' => 'payments',
-            'label' => $this->get_lang('Payments'),
-            'current' => $currentSection === 'payments',
-            'icon' => 'money-bill-wave',
-            'class' => $currentSection === 'payments' ? 'show' : '',
-            'url' => $isAdminOrSecretary ? '/payments' : '/payments/my',
-            'items' => $paymentItems
-        ];
+        $isStudent = $userInfo && (int) $userInfo['status'] === STUDENT;
+        $canAccessPayments = $isAdminOrSecretary || $isStudent;
 
-        // Products menu
-        $productItems = [];
-        if ($isAdminOrSecretary) {
-            $productItems = [
-                ['name' => 'products-catalog', 'label' => $this->get_lang('ProductCatalog'), 'url' => '/products'],
-                ['name' => 'products-categories', 'label' => $this->get_lang('Categories'), 'url' => '/products/categories'],
-                ['name' => 'products-sell', 'label' => $this->get_lang('SellProduct'), 'url' => '/products/sell'],
-                ['name' => 'products-sales', 'label' => $this->get_lang('SalesHistory'), 'url' => '/products/sales'],
+        if ($canAccessPayments) {
+            $paymentItems = [];
+            if ($isAdminOrSecretary) {
+                $paymentItems = [
+                    ['name' => 'payments-periods', 'label' => $this->get_lang('PaymentPeriods'), 'url' => '/payments'],
+                    ['name' => 'payments-pricing', 'label' => $this->get_lang('Pricing'), 'url' => '/payments/pricing'],
+                    ['name' => 'payments-discounts', 'label' => $this->get_lang('Discounts'), 'url' => '/payments/discounts'],
+                    ['name' => 'payments-reports', 'label' => $this->get_lang('PaymentReports'), 'url' => '/payments/reports'],
+                ];
+            }
+            $menus[] = [
+                'id' => 7,
+                'name' => 'payments',
+                'label' => $this->get_lang('Payments'),
+                'current' => $currentSection === 'payments',
+                'icon' => 'money-bill-wave',
+                'class' => $currentSection === 'payments' ? 'show' : '',
+                'url' => $isAdminOrSecretary ? '/payments' : '/payments/my',
+                'items' => $paymentItems
+            ];
+
+            $productItems = [];
+            if ($isAdminOrSecretary) {
+                $productItems = [
+                    ['name' => 'products-catalog', 'label' => $this->get_lang('ProductCatalog'), 'url' => '/products'],
+                    ['name' => 'products-categories', 'label' => $this->get_lang('Categories'), 'url' => '/products/categories'],
+                    ['name' => 'products-sell', 'label' => $this->get_lang('SellProduct'), 'url' => '/products/sell'],
+                    ['name' => 'products-sales', 'label' => $this->get_lang('SalesHistory'), 'url' => '/products/sales'],
+                ];
+            }
+            $menus[] = [
+                'id' => 8,
+                'name' => 'products',
+                'label' => $this->get_lang('Products'),
+                'current' => $currentSection === 'products',
+                'icon' => 'box-open',
+                'class' => $currentSection === 'products' ? 'show' : '',
+                'url' => $isAdminOrSecretary ? '/products' : '/products/my',
+                'items' => $productItems
             ];
         }
-        $menus[] = [
-            'id' => 8,
-            'name' => 'products',
-            'label' => $this->get_lang('Products'),
-            'current' => $currentSection === 'products',
-            'icon' => 'box-open',
-            'class' => $currentSection === 'products' ? 'show' : '',
-            'url' => $isAdminOrSecretary ? '/products' : '/products/my',
-            'items' => $productItems
-        ];
 
         // Academic menu
         if ($isAdminOrSecretary) {
@@ -3995,6 +4007,16 @@ class SchoolPlugin extends Plugin
     {
         $table = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_DISCOUNT);
 
+        // Sanitize excluded_months: keep only comma-separated integers 1-12
+        $excludedMonthsRaw = $data['excluded_months'] ?? '';
+        $excludedMonths = '';
+        if (!empty($excludedMonthsRaw)) {
+            $parts = array_filter(array_map('intval', explode(',', $excludedMonthsRaw)), function ($m) {
+                return $m >= 1 && $m <= 12;
+            });
+            $excludedMonths = implode(',', array_unique($parts));
+        }
+
         $params = [
             'period_id' => (int) ($data['period_id'] ?? 0),
             'user_id' => (int) ($data['user_id'] ?? 0),
@@ -4002,6 +4024,7 @@ class SchoolPlugin extends Plugin
             'discount_value' => (float) ($data['discount_value'] ?? 0),
             'applies_to' => in_array($data['applies_to'] ?? '', ['enrollment', 'monthly', 'all']) ? $data['applies_to'] : 'all',
             'reason' => Database::escape_string($data['reason'] ?? ''),
+            'excluded_months' => $excludedMonths,
             'created_by' => api_get_user_id(),
             'created_at' => api_get_utc_datetime(),
         ];
@@ -4065,6 +4088,13 @@ class SchoolPlugin extends Plugin
         foreach ($discounts as $d) {
             $appliesTo = $d['applies_to'];
             if ($appliesTo === 'all' || $appliesTo === $type) {
+                // Skip if this month is excluded for monthly discounts
+                if ($type === 'monthly' && $month !== null && !empty($d['excluded_months'])) {
+                    $excludedList = array_map('intval', explode(',', $d['excluded_months']));
+                    if (in_array($month, $excludedList)) {
+                        continue;
+                    }
+                }
                 if ($d['discount_type'] === 'percentage') {
                     $totalDiscount += $originalAmount * ((float) $d['discount_value'] / 100);
                 } else {

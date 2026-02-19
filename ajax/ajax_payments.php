@@ -109,6 +109,7 @@ switch ($action) {
             'discount_value' => $_POST['discount_value'] ?? 0,
             'applies_to' => $_POST['applies_to'] ?? 'all',
             'reason' => $_POST['reason'] ?? '',
+            'excluded_months' => $_POST['excluded_months'] ?? '',
         ];
         $result = $plugin->saveDiscount($data);
         echo json_encode(['success' => $result]);

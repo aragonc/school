@@ -533,3 +533,6 @@ $strings['VegasImage'] = 'Imagen slideshow';
 $strings['VegasImageHelp'] = 'JPG, PNG o WEBP recomendado en 800×600 px o mayor.';
 $strings['RemoveVegasImage'] = 'Eliminar imagen slideshow';
 $strings['GradeMultiHint'] = 'Selecciona uno o más grados. Deja sin marcar para aplicar a todos los grados del nivel.';
+$strings['ExcludedMonths'] = 'Meses excluidos';
+$strings['ExcludedMonthsHint'] = 'Marca los meses en los que NO se aplicará este descuento (solo aplica a mensualidades).';
+$strings['EditDiscount'] = 'Editar Descuento';

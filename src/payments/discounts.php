@@ -49,10 +49,17 @@ while ($row = Database::fetch_array($result, 'ASSOC')) {
     $studentsList[] = $row;
 }
 
+$monthNames = [
+    1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr',
+    5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago',
+    9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic',
+];
+
 $plugin->assign('periods', $periods);
 $plugin->assign('period_id', $periodId);
 $plugin->assign('discounts', $discounts);
 $plugin->assign('students_list', $studentsList);
+$plugin->assign('month_names', $monthNames);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH).'school/ajax/ajax_payments.php');
 
 $plugin->setTitle($plugin->get_lang('Discounts'));
