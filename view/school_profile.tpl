@@ -125,35 +125,36 @@
 
 
         $("#form_profile").submit(function(e){
-            //console.log(RUT.val());
             RutValue = Rut.val();
-            validateRUT(RutValue);
             DniValue = Dni.val();
             let countrySelect;
             let formGroupRUT = $("#form_extra_rol_unico_tributario_group");
             let formGroupDNI = $("#form_extra_identificador_group");
-            //alert($("input[type=radio]:checked").val());
+
+            // Limpiar errores previos en cada intento
+            formGroupRUT.removeClass('flat-error flat-has-error');
+            formGroupRUT.find('.help-info-form').remove();
+            formGroupDNI.removeClass('flat-error flat-has-error');
+            formGroupDNI.find('.help-info-form').remove();
+            contentAdd = false;
+
             $( "#form_profile_country option:selected" ).each(function() {
                 countrySelect = $( this ).val();
             });
 
             if(checkRut){
                 if(countrySelect==='CL') {
-                    if (!(RutValue.match('^[0-9]{7,9}[-|‐]{1}[0-9kK]{1}$'))) {
-                        if (!contentAdd) {
-                            formGroupRUT.addClass('flat-error flat-has-error');
-                            formGroupRUT.append('<div class="help-info-form">'+messageError+'</div>');
-                            contentAdd = true;
-                        }
+                    if (!validateRUT(RutValue)) {
+                        formGroupRUT.addClass('flat-error flat-has-error');
+                        formGroupRUT.append('<div class="help-info-form">'+messageError+'</div>');
+                        contentAdd = true;
                         e.preventDefault();
                     }
                 } else {
                     if(DniValue.trim() === ""){
-                        if (!contentAdd) {
-                            formGroupDNI.addClass('flat-error flat-has-error');
-                            formGroupDNI.append('<div class="help-info-form">Debe de ingresar un Nº Documento o Cédula de Identidad válido</div>');
-                            contentAdd = true;
-                        }
+                        formGroupDNI.addClass('flat-error flat-has-error');
+                        formGroupDNI.append('<div class="help-info-form">Debe de ingresar un Nº Documento o Cédula de Identidad válido</div>');
+                        contentAdd = true;
                         e.preventDefault();
                     }
                 }
