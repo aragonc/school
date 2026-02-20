@@ -5,6 +5,26 @@ use ChamiloSession as Session;
 
 require_once __DIR__ . '/config.php';
 $plugin = SchoolPlugin::create();
+
+function isValidChileanRut(string $rut): bool
+{
+    $rut = preg_replace('/[^0-9kK]/', '', strtoupper($rut));
+    if (strlen($rut) < 8 || strlen($rut) > 9) {
+        return false;
+    }
+    $body = substr($rut, 0, -1);
+    $dv   = substr($rut, -1);
+    $suma = 0;
+    $multiplo = 2;
+    for ($i = strlen($body) - 1; $i >= 0; $i--) {
+        $suma += intval($body[$i]) * $multiplo;
+        $multiplo = $multiplo < 7 ? $multiplo + 1 : 2;
+    }
+    $dvEsperado = 11 - ($suma % 11);
+    $dvCalculado = $dvEsperado === 11 ? '0' : ($dvEsperado === 10 ? 'K' : (string) $dvEsperado);
+
+    return $dv === $dvCalculado;
+}
 // Simplemente llama la función
 $plugin->requireLogin();
 $enable = $plugin->get('tool_enable') == 'true';
@@ -117,6 +137,15 @@ if ($enable) {
     if ($form->validate()) {
         $user_data = $form->getSubmitValues(1);
 
+        // Validación server-side del dígito verificador del RUT chileno
+        $postedCountry = $user_data['country'] ?? '';
+        $postedRut     = $user_data['extra_rol_unico_tributario'] ?? '';
+        if ($postedCountry === 'CL' && !empty($postedRut) && !isValidChileanRut($postedRut)) {
+            Display::addFlash(
+                Display::return_message($plugin->get_lang('errorRUT'), 'error', false)
+            );
+        } else {
+
         /** @var User $user */
         $user = UserManager::getRepository()->find(api_get_user_id());
 
@@ -186,6 +215,7 @@ if ($enable) {
         $url = api_get_path(WEB_PATH) . 'profile';
         header("Location: $url");
         exit;
+        } // end else (RUT válido)
     }
 
     $plugin->setTitle($plugin->get_lang('EditProfile'));

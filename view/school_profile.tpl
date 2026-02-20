@@ -77,7 +77,7 @@
 
         // Formatear RUT automáticamente (solo para Chile) - SIN PUNTOS
         $(Rut).on('input', function () {
-            rutValidated = false; // 👈 Resetear bandera cuando cambia el RUT
+            rutValidated = false;
             let value = $(this).val().toUpperCase().replace(/[^0-9K]/g, '');
 
             if (value.length > 1) {
@@ -86,6 +86,27 @@
                 $(this).val(body + '-' + dv);
             } else if (value.length === 1) {
                 $(this).val(value);
+            }
+
+            // Limpiar error previo mientras el usuario sigue escribiendo
+            let formGroupRUT = $("#form_extra_rol_unico_tributario_group");
+            formGroupRUT.removeClass('flat-error flat-has-error');
+            Rut.removeClass('is-invalid');
+            $('#rut-error-blur').remove();
+        });
+
+        // Validar RUT chileno cuando pierde el foco
+        $(Rut).on('blur', function () {
+            let rutValue = $(this).val();
+            let formGroupRUT = $("#form_extra_rol_unico_tributario_group");
+            let currentCountry = $("#form_profile_country").val();
+            formGroupRUT.removeClass('flat-error flat-has-error');
+            $(this).removeClass('is-invalid');
+            $('#rut-error-blur').remove();
+            if (rutValue && currentCountry === 'CL' && !validateRUT(rutValue)) {
+                formGroupRUT.addClass('flat-error flat-has-error');
+                $(this).addClass('is-invalid');
+                $(this).after('<div id="rut-error-blur" class="help-info-form d-block">' + messageError + '</div>');
             }
         });
 
