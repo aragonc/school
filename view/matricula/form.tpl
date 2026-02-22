@@ -1,3 +1,60 @@
+{% if missing_academic_params is not empty and matricula_id == 0 %}
+{# ============================================================ #}
+{# MODAL: Parámetros académicos requeridos no configurados       #}
+{# ============================================================ #}
+<div class="modal fade" id="modalMissingAcademic" tabindex="-1" role="dialog"
+     data-backdrop="static" data-keyboard="false" aria-labelledby="modalMissingAcademicLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalMissingAcademicLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    {{ 'ModalMissingParamsTitle'|get_plugin_lang('SchoolPlugin') }}
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'ModalMissingParamsBody'|get_plugin_lang('SchoolPlugin') }}</p>
+                <ul class="list-group list-group-flush">
+                    {% if 'year' in missing_academic_params %}
+                    <li class="list-group-item text-danger">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        {{ 'ModalMissingParamYear'|get_plugin_lang('SchoolPlugin') }}
+                    </li>
+                    {% endif %}
+                    {% if 'level' in missing_academic_params %}
+                    <li class="list-group-item text-danger">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        {{ 'ModalMissingParamLevel'|get_plugin_lang('SchoolPlugin') }}
+                    </li>
+                    {% endif %}
+                    {% if 'grade' in missing_academic_params %}
+                    <li class="list-group-item text-danger">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        {{ 'ModalMissingParamGrade'|get_plugin_lang('SchoolPlugin') }}
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <a href="{{ _p.web }}matricula" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    {{ 'ModalMissingParamsBack'|get_plugin_lang('SchoolPlugin') }}
+                </a>
+                <a href="{{ _p.web }}academic/settings" class="btn btn-warning text-dark">
+                    <i class="fas fa-cog mr-1"></i>
+                    {{ 'ModalMissingParamsAction'|get_plugin_lang('SchoolPlugin') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+$(document).ready(function() {
+    $('#modalMissingAcademic').modal('show');
+});
+</script>
+{% endif %}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="{{ _p.web }}matricula" class="btn btn-secondary btn-sm">
         <i class="fas fa-arrow-left"></i> {{ 'BackToList'|get_plugin_lang('SchoolPlugin') }}
@@ -9,8 +66,50 @@
     {% endif %}
 </div>
 
-<form method="POST" action="">
+<form method="POST" action="" enctype="multipart/form-data">
     <input type="hidden" name="matricula_id" value="{{ matricula_id }}">
+    <input type="hidden" name="user_id" id="matricula-user-id" value="{{ matricula.user_id ?? '' }}">
+
+    {# ============================================================ #}
+    {# VÍNCULO CON USUARIO DE CHAMILO                               #}
+    {# ============================================================ #}
+    <div class="card mb-4 border-info">
+        <div class="card-header bg-info text-white py-2">
+            <i class="fas fa-link"></i> Vincular a cuenta de usuario
+        </div>
+        <div class="card-body py-3">
+            {% if matricula.user_id %}
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <i class="fas fa-user-check text-success mr-2"></i>
+                    <strong>Usuario vinculado:</strong>
+                    <span id="linked-user-label" class="ml-1">{{ linked_user_name }}</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="btn-desvincular">
+                    <i class="fas fa-unlink"></i> Desvincular
+                </button>
+            </div>
+            {% else %}
+            <p class="text-muted mb-2" style="font-size:13px;">
+                Al vincular esta matrícula a un usuario, el alumno podrá ver su ficha en su perfil.
+            </p>
+            {% endif %}
+            <div id="user-search-area" {% if matricula.user_id %}style="display:none;"{% endif %}>
+                <div class="input-group" style="flex-wrap:nowrap; max-width:400px;">
+                    <input type="text" id="user-search-input" class="form-control form-control-sm"
+                           placeholder="Buscar por usuario o nombre..."
+                           autocomplete="off">
+                    <div class="input-group-append">
+                        <button type="button" id="btn-buscar-usuario" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="user-search-results" class="list-group mt-1"
+                     style="position:absolute; z-index:200; max-width:400px; display:none;"></div>
+            </div>
+        </div>
+    </div>
 
     {# ============================================================ #}
     {# SECCIÓN 1: DATOS DEL ESTUDIANTE                              #}
@@ -61,7 +160,7 @@
             </div>
 
             <div class="form-row">
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                     <label class="font-weight-bold">{{ 'Level'|get_plugin_lang('SchoolPlugin') }} / {{ 'Grade'|get_plugin_lang('SchoolPlugin') }}</label>
                     <select name="grade_id" class="form-control" id="grade_id">
                         <option value="">— {{ 'SelectOption'|get_plugin_lang('SchoolPlugin') }} —</option>
@@ -82,18 +181,64 @@
                         <option value="M" {{ (matricula.sexo ?? '') == 'M' ? 'selected' : '' }}>Masculino</option>
                     </select>
                 </div>
-                <div class="form-group col-md-3">
-                    <label class="font-weight-bold">{{ 'Dni'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="dni" class="form-control" value="{{ matricula.dni ?? '' }}" maxlength="8" placeholder="00000000">
+                <div class="form-group col-md-2">
+                    <label class="font-weight-bold">{{ 'Nacionalidad'|get_plugin_lang('SchoolPlugin') }}</label>
+                    <select name="nacionalidad" id="field-nacionalidad" class="form-control">
+                        <option value="Peruana"    {{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana'    ? 'selected' : '' }}>{{ 'Peruana'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="Extranjera" {{ (matricula.nacionalidad ?? '') == 'Extranjera' ? 'selected' : '' }}>{{ 'Extranjera'|get_plugin_lang('SchoolPlugin') }}</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label class="font-weight-bold">{{ 'TipoDocumento'|get_plugin_lang('SchoolPlugin') }}</label>
+                    <select name="tipo_documento" id="field-tipo-doc" class="form-control">
+                        {% set nacActual = matricula.nacionalidad ?? 'Peruana' %}
+                        {% set docActual = matricula.tipo_documento ?? 'DNI' %}
+                        <option value="DNI" {{ docActual == 'DNI' ? 'selected' : '' }}>DNI</option>
+                        {% if nacActual == 'Extranjera' %}
+                        <option value="CARNET_EXTRANJERIA" {{ docActual == 'CARNET_EXTRANJERIA' ? 'selected' : '' }}>{{ 'CarnetExtranjeria'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="PASAPORTE"          {{ docActual == 'PASAPORTE'          ? 'selected' : '' }}>{{ 'Pasaporte'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="RUC"                {{ docActual == 'RUC'                ? 'selected' : '' }}>RUC</option>
+                        <option value="OTRO"               {{ docActual == 'OTRO'               ? 'selected' : '' }}>{{ 'Otro'|get_plugin_lang('SchoolPlugin') }}</option>
+                        {% endif %}
+                    </select>
                 </div>
                 <div class="form-group col-md-3">
-                    <label class="font-weight-bold">{{ 'TipoSangre'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <select name="tipo_sangre" class="form-control">
-                        <option value="">—</option>
-                        {% for ts in tipos_sangre %}
-                        <option value="{{ ts }}" {{ (matricula.tipo_sangre ?? '') == ts ? 'selected' : '' }}>{{ ts }}</option>
-                        {% endfor %}
-                    </select>
+                    <label class="font-weight-bold">{{ 'NroDocumento'|get_plugin_lang('SchoolPlugin') }}</label>
+                    <div class="input-group" style="flex-wrap:nowrap;">
+                        <input type="text" name="dni" id="field-doc-nro" class="form-control" style="margin:0;"
+                               value="{{ matricula.dni ?? '' }}"
+                               maxlength="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '8' : '20' }}"
+                               placeholder="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '00000000' : '' }}">
+                        <div class="input-group-append">
+                            <button type="button" id="btn-consultar-reniec" class="btn btn-outline-info"
+                                    title="Consultar apellidos y nombres en RENIEC" style="display:none; font-size:12px; width:100px;">
+                                <i class="fas fa-search"></i> RENIEC
+                            </button>
+                        </div>
+                    </div>
+                    <small id="reniec-msg" class="form-text text-muted"></small>
+                </div>
+            </div>
+
+            {# Foto del alumno #}
+            <div class="form-row align-items-center mb-3">
+                <div class="form-group col-md-3">
+                    <label class="font-weight-bold d-block">Foto del alumno</label>
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3">
+                            <img id="foto-preview"
+                                 src="{{ foto_url ?: '' }}"
+                                 alt="Foto"
+                                 style="width:100px; height:120px; object-fit:cover; border:1px solid #ccc; border-radius:4px; background:#f0f0f0; display:{{ foto_url ? 'block' : 'none' }};">
+                            <div id="foto-placeholder" style="width:100px; height:120px; border:1px dashed #ccc; border-radius:4px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:12px; text-align:center; {{ foto_url ? 'display:none;' : '' }}">
+                                <span><i class="fas fa-user" style="font-size:2rem; display:block; margin-bottom:4px;"></i>Sin foto</span>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="file" name="foto" id="input-foto" accept="image/*" class="form-control-file" style="font-size:12px;">
+                            <small class="text-muted d-block mt-1">JPG, PNG o GIF. Máx. 2 MB.</small>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -103,8 +248,13 @@
                     <input type="date" name="fecha_nacimiento" class="form-control" value="{{ matricula.fecha_nacimiento ?? '' }}">
                 </div>
                 <div class="form-group col-md-3">
-                    <label class="font-weight-bold">{{ 'Nacionalidad'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="nacionalidad" class="form-control" value="{{ matricula.nacionalidad ?? 'Peruana' }}">
+                    <label class="font-weight-bold">{{ 'TipoSangre'|get_plugin_lang('SchoolPlugin') }}</label>
+                    <select name="tipo_sangre" class="form-control">
+                        <option value="">—</option>
+                        {% for ts in tipos_sangre %}
+                        <option value="{{ ts }}" {{ (matricula.tipo_sangre ?? '') == ts ? 'selected' : '' }}>{{ ts }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="form-group col-md-3">
                     <label class="font-weight-bold">{{ 'Peso'|get_plugin_lang('SchoolPlugin') }} (kg)</label>
@@ -454,5 +604,154 @@ $(function() {
             }
         });
     }
+});
+
+// Actualiza opciones de tipo_documento y atributos de N° documento según nacionalidad
+function updateTipoDoc() {
+    var nac    = document.getElementById('field-nacionalidad').value;
+    var esPe   = (nac === 'Peruana');
+    var select = document.getElementById('field-tipo-doc');
+    var input  = document.getElementById('field-doc-nro');
+    var current = select.value;
+
+    // Reconstruir opciones
+    select.innerHTML = '<option value="DNI">DNI</option>';
+    if (!esPe) {
+        select.innerHTML +=
+            '<option value="CARNET_EXTRANJERIA">{{ 'CarnetExtranjeria'|get_plugin_lang('SchoolPlugin') }}</option>' +
+            '<option value="PASAPORTE">{{ 'Pasaporte'|get_plugin_lang('SchoolPlugin') }}</option>' +
+            '<option value="RUC">RUC</option>' +
+            '<option value="OTRO">{{ 'Otro'|get_plugin_lang('SchoolPlugin') }}</option>';
+    }
+
+    // Restaurar selección si sigue disponible
+    if (current && select.querySelector('option[value="' + current + '"]')) {
+        select.value = current;
+    } else {
+        select.value = 'DNI';
+    }
+
+    // Ajustar maxlength y placeholder del N° documento
+    input.maxLength  = esPe ? 8 : 20;
+    input.placeholder = esPe ? '00000000' : '';
+}
+document.getElementById('field-nacionalidad').addEventListener('change', updateTipoDoc);
+
+// --- Integración RENIEC ---
+function toggleReniecBtn() {
+    var tipo = document.getElementById('field-tipo-doc').value;
+    var nac  = document.getElementById('field-nacionalidad').value;
+    var show = (tipo === 'DNI' && nac === 'Peruana');
+    document.getElementById('btn-consultar-reniec').style.display = show ? '' : 'none';
+    if (!show) {
+        var msg = document.getElementById('reniec-msg');
+        msg.textContent = '';
+        msg.className = 'form-text text-muted';
+    }
+}
+document.getElementById('field-tipo-doc').addEventListener('change', toggleReniecBtn);
+document.getElementById('field-nacionalidad').addEventListener('change', toggleReniecBtn);
+toggleReniecBtn();
+
+document.getElementById('btn-consultar-reniec').addEventListener('click', function() {
+    var dni = document.getElementById('field-doc-nro').value.trim();
+    var msg = document.getElementById('reniec-msg');
+    if (!/^\d{8}$/.test(dni)) {
+        msg.textContent = 'Ingrese un DNI válido de 8 dígitos.';
+        msg.className = 'form-text text-danger';
+        return;
+    }
+    var btn = this;
+    btn.disabled = true;
+    msg.textContent = 'Consultando RENIEC...';
+    msg.className = 'form-text text-muted';
+
+    $.post('{{ ajax_matricula_url }}', { action: 'consultar_reniec', dni: dni })
+     .done(function(resp) {
+        if (resp.success) {
+            $('input[name="apellido_paterno"]').val(resp.apellido_paterno);
+            $('input[name="apellido_materno"]').val(resp.apellido_materno);
+            $('input[name="nombres"]').val(resp.nombres);
+            msg.textContent = 'Datos obtenidos de RENIEC correctamente.';
+            msg.className = 'form-text text-success';
+        } else {
+            msg.textContent = resp.message || 'No se encontró el DNI en RENIEC.';
+            msg.className = 'form-text text-danger';
+        }
+     })
+     .fail(function() {
+        msg.textContent = 'Error de conexión al consultar RENIEC.';
+        msg.className = 'form-text text-danger';
+     })
+     .always(function() { btn.disabled = false; });
+});
+
+// Vincular usuario de Chamilo
+(function() {
+    var input    = document.getElementById('user-search-input');
+    var results  = document.getElementById('user-search-results');
+    var hiddenId = document.getElementById('matricula-user-id');
+    var btnBuscar    = document.getElementById('btn-buscar-usuario');
+    var btnDesvincular = document.getElementById('btn-desvincular');
+
+    function buscar() {
+        var term = input ? input.value.trim() : '';
+        if (term.length < 2) { results.style.display = 'none'; return; }
+        $.post('{{ ajax_matricula_url }}', { action: 'buscar_usuario', term: term })
+         .done(function(resp) {
+            results.innerHTML = '';
+            if (resp.success && resp.users.length) {
+                resp.users.forEach(function(u) {
+                    var a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'list-group-item list-group-item-action py-1';
+                    a.style.fontSize = '13px';
+                    a.textContent = u.label;
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        hiddenId.value = u.id;
+                        input.value = u.label;
+                        results.style.display = 'none';
+                    });
+                    results.appendChild(a);
+                });
+                results.style.display = 'block';
+            } else {
+                results.style.display = 'none';
+            }
+         });
+    }
+
+    if (btnBuscar) btnBuscar.addEventListener('click', buscar);
+    if (input) input.addEventListener('keyup', function(e) { if (e.key === 'Enter') buscar(); });
+
+    document.addEventListener('click', function(e) {
+        if (results && !results.contains(e.target) && e.target !== input) {
+            results.style.display = 'none';
+        }
+    });
+
+    if (btnDesvincular) {
+        btnDesvincular.addEventListener('click', function() {
+            hiddenId.value = '';
+            document.getElementById('user-search-area').style.display = '';
+            this.closest('.d-flex').style.display = 'none';
+        });
+    }
+})();
+
+// Preview de foto del alumno
+document.getElementById('input-foto').addEventListener('change', function() {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var preview = document.getElementById('foto-preview');
+        var placeholder = document.getElementById('foto-placeholder');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
 });
 </script>

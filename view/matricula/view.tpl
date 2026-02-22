@@ -4,6 +4,18 @@
         <i class="fas fa-arrow-left"></i> {{ 'BackToList'|get_plugin_lang('SchoolPlugin') }}
     </a>
     <div>
+        {% if (is_admin or is_secretary) and not matricula.user_id %}
+        <button type="button" id="btn-crear-usuario" class="btn btn-success btn-sm mr-1"
+                data-id="{{ matricula.id }}"
+                title="Crear cuenta de alumno inactiva en Chamilo">
+            <i class="fas fa-user-plus"></i> Crear usuario Chamilo
+        </button>
+        {% endif %}
+        {% if (is_admin or is_secretary) and matricula.user_id %}
+        <span class="badge badge-success mr-2 align-middle">
+            <i class="fas fa-user-check"></i> {{ linked_user_name }}
+        </span>
+        {% endif %}
         <a href="{{ _p.web }}matricula/editar?id={{ matricula.id }}" class="btn btn-warning btn-sm mr-1">
             <i class="fas fa-edit"></i> {{ 'Edit'|get_plugin_lang('SchoolPlugin') }}
         </a>
@@ -12,6 +24,9 @@
         </button>
     </div>
 </div>
+
+{# Alerta resultado crear usuario #}
+<div id="crear-usuario-result" class="no-print" style="display:none;"></div>
 
 <!-- FICHA DE MATRÍCULA -->
 <div class="card" id="ficha-matricula">
@@ -30,7 +45,7 @@
         {# ===== DATOS DEL ESTUDIANTE ===== #}
         <h6 class="title-form border-bottom pb-2 mb-3"><i class="fas fa-user-graduate mr-1"></i> {{ 'StudentData'|get_plugin_lang('SchoolPlugin') }}</h6>
         <div class="row mb-3">
-            <div class="col-md-6">
+            <div class="col-md-5">
                 <table class="table table-sm table-borderless mb-0">
                     <tr>
                         <td class="font-weight-bold" width="45%">{{ 'ApellidoPaterno'|get_plugin_lang('SchoolPlugin') }}:</td>
@@ -53,8 +68,24 @@
                         <td>{% if matricula.sexo == 'F' %}Femenino{% elseif matricula.sexo == 'M' %}Masculino{% else %}—{% endif %}</td>
                     </tr>
                     <tr>
-                        <td class="font-weight-bold">{{ 'Dni'|get_plugin_lang('SchoolPlugin') }}:</td>
-                        <td>{{ matricula.dni ?: '—' }}</td>
+                        <td class="font-weight-bold">
+                            {% if matricula.nacionalidad == 'Extranjera' %}
+                                {{ 'TipoDocumento'|get_plugin_lang('SchoolPlugin') }}:
+                            {% else %}
+                                {{ 'Dni'|get_plugin_lang('SchoolPlugin') }}:
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if matricula.nacionalidad == 'Extranjera' and matricula.tipo_documento %}
+                                {% if matricula.tipo_documento == 'CARNET_EXTRANJERIA' %}{{ 'CarnetExtranjeria'|get_plugin_lang('SchoolPlugin') }}
+                                {% elseif matricula.tipo_documento == 'PASAPORTE' %}{{ 'Pasaporte'|get_plugin_lang('SchoolPlugin') }}
+                                {% elseif matricula.tipo_documento == 'OTRO' %}{{ 'Otro'|get_plugin_lang('SchoolPlugin') }}
+                                {% else %}{{ matricula.tipo_documento }}{% endif %}
+                                {% if matricula.dni %} — {{ matricula.dni }}{% endif %}
+                            {% else %}
+                                {{ matricula.dni ?: '—' }}
+                            {% endif %}
+                        </td>
                     </tr>
                     <tr>
                         <td class="font-weight-bold">{{ 'TipoSangre'|get_plugin_lang('SchoolPlugin') }}:</td>
@@ -62,7 +93,7 @@
                     </tr>
                 </table>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-5">
                 <table class="table table-sm table-borderless mb-0">
                     <tr>
                         <td class="font-weight-bold" width="45%">{{ 'FechaNacimiento'|get_plugin_lang('SchoolPlugin') }}:</td>
@@ -97,6 +128,17 @@
                         <td>{{ matricula.distrito_name ?: (matricula.distrito ?: '—') }}</td>
                     </tr>
                 </table>
+            </div>
+            <div class="col-md-2 text-center">
+                {% if foto_url %}
+                <img src="{{ foto_url }}" alt="Foto del alumno"
+                     style="width:110px; height:135px; object-fit:cover; border:2px solid #dee2e6; border-radius:4px;">
+                {% else %}
+                <div style="width:110px; height:135px; border:2px dashed #dee2e6; border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#adb5bd; margin:0 auto;">
+                    <i class="fas fa-user" style="font-size:2.5rem;"></i>
+                    <small style="font-size:11px; margin-top:4px;">Sin foto</small>
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -229,3 +271,47 @@
     .card-header { background: none !important; color: #000 !important; }
 }
 </style>
+
+<script>
+(function() {
+    var btn = document.getElementById('btn-crear-usuario');
+    if (!btn) return;
+
+    btn.addEventListener('click', function() {
+        if (!confirm('¿Crear cuenta de usuario Chamilo para este alumno?\n\nEl usuario quedará INACTIVO hasta que la secretaría lo active.')) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+
+        $.post('{{ ajax_url }}', {
+            action: 'crear_usuario_chamilo',
+            matricula_id: btn.dataset.id
+        })
+        .done(function(resp) {
+            var area = document.getElementById('crear-usuario-result');
+            if (resp.success) {
+                area.innerHTML =
+                    '<div class="alert alert-success">' +
+                    '<i class="fas fa-check-circle mr-2"></i>' +
+                    '<strong>Usuario creado correctamente.</strong> ' +
+                    'Usuario: <strong>' + resp.username + '</strong> — ' +
+                    'Contraseña inicial: <strong>' + resp.password + '</strong> ' +
+                    '<small class="text-muted">(el alumno deberá cambiarla al primer ingreso)</small>' +
+                    '</div>';
+                area.style.display = '';
+                btn.style.display = 'none';
+            } else {
+                area.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times-circle mr-2"></i>' + (resp.message || 'Error al crear el usuario.') + '</div>';
+                area.style.display = '';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Crear usuario Chamilo';
+            }
+        })
+        .fail(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-plus"></i> Crear usuario Chamilo';
+            alert('Error de conexión al crear el usuario.');
+        });
+    });
+})();
+</script>

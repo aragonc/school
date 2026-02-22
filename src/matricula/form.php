@@ -45,8 +45,40 @@ if ($matriculaId > 0) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postId = isset($_POST['matricula_id']) ? (int) $_POST['matricula_id'] : 0;
 
+    // Handle photo upload
+    $uploadDir = realpath(__DIR__ . '/../../uploads') . '/matricula/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    if (!empty($_FILES['foto']['tmp_name']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+        $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->file($_FILES['foto']['tmp_name']);
+        if (in_array($mime, $allowedMime, true)) {
+            $ext      = strtolower(preg_replace('/[^a-z]/', '', pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION)));
+            $filename = 'foto_' . ($postId ?: 'new') . '_' . time() . '.' . $ext;
+            if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadDir . $filename)) {
+                $_POST['foto'] = $filename;
+            }
+        }
+    }
+
     // Save main record
     $savedId = MatriculaManager::saveMatricula(array_merge($_POST, ['id' => $postId]));
+
+    // Rename temp foto file if this was a new record (id was unknown at upload time)
+    if ($postId === 0 && !empty($_POST['foto']) && strpos($_POST['foto'], '_new_') !== false) {
+        $oldPath = $uploadDir . $_POST['foto'];
+        $newName = str_replace('_new_', '_' . $savedId . '_', $_POST['foto']);
+        if (file_exists($oldPath)) {
+            rename($oldPath, $uploadDir . $newName);
+            Database::update(
+                Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA),
+                ['foto' => $newName],
+                ['id = ?' => $savedId]
+            );
+        }
+    }
 
     // Save madre
     if (!empty($_POST['madre'])) {
@@ -99,6 +131,20 @@ $tiposSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 $activeYear = MatriculaManager::getActiveYear();
 $allYears   = MatriculaManager::getAllYears();
 
+// Detect missing academic parameters (only relevant for new enrollment)
+$missingAcademicParams = [];
+if ($matriculaId === 0) {
+    if (empty($allYears)) {
+        $missingAcademicParams[] = 'year';
+    }
+    if (empty($levels)) {
+        $missingAcademicParams[] = 'level';
+    }
+    if (empty($allGrades)) {
+        $missingAcademicParams[] = 'grade';
+    }
+}
+
 // Load regions for ubigeo
 $regionsJson = file_get_contents(__DIR__ . '/../../ajax/ubigeo/ubigeo_peru_2016_region.json');
 $regions = json_decode($regionsJson, true) ?: [];
@@ -121,6 +167,23 @@ $plugin->assign('saved_district', $matricula['distrito'] ?? '');
 $plugin->assign('all_years', $allYears);
 $plugin->assign('active_year', $activeYear);
 $plugin->assign('default_year_id', $matricula['academic_year_id'] ?? ($activeYear['id'] ?? 0));
+$plugin->assign('missing_academic_params', $missingAcademicParams);
+$plugin->assign('ajax_matricula_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
+$fotoUrl = '';
+if (!empty($matricula['foto'])) {
+    $fotoUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/matricula/' . $matricula['foto'];
+}
+$plugin->assign('foto_url', $fotoUrl);
+
+// Linked user name (for display in the form)
+$linkedUserName = '';
+if (!empty($matricula['user_id'])) {
+    $linkedUser = api_get_user_info($matricula['user_id']);
+    if ($linkedUser) {
+        $linkedUserName = $linkedUser['lastname'] . ' ' . $linkedUser['firstname'] . ' (' . $linkedUser['username'] . ')';
+    }
+}
+$plugin->assign('linked_user_name', $linkedUserName);
 
 $title = $matriculaId > 0 ? $plugin->get_lang('EditEnrollment') : $plugin->get_lang('NewEnrollment');
 $plugin->setTitle($title);

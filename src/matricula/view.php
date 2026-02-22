@@ -77,12 +77,29 @@ if (!empty($matricula['distrito'])) {
     }
 }
 
+$fotoUrl = '';
+if (!empty($matricula['foto'])) {
+    $fotoUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/matricula/' . $matricula['foto'];
+}
+
+// Linked user name for display in toolbar
+$linkedUserName = '';
+if (!empty($matricula['user_id'])) {
+    $linkedUser = api_get_user_info($matricula['user_id']);
+    if ($linkedUser) {
+        $linkedUserName = $linkedUser['lastname'] . ' ' . $linkedUser['firstname'] . ' (' . $linkedUser['username'] . ')';
+    }
+}
+
 $plugin->assign('matricula', $matricula);
 $plugin->assign('madre', $madre);
 $plugin->assign('padre', $padre);
 $plugin->assign('contactos', $contactos);
 $plugin->assign('info', $info);
 $plugin->assign('edad', $edad);
+$plugin->assign('foto_url', $fotoUrl);
+$plugin->assign('linked_user_name', $linkedUserName);
+$plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('is_secretary', $isSecretary);
 

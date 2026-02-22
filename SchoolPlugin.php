@@ -66,6 +66,8 @@ class SchoolPlugin extends Plugin
                 'enable_complete_profile' => 'boolean',
                 'show_base_courses' => 'boolean',
                 'show_certificates' => 'boolean',
+                'show_notifications' => 'boolean',
+                'show_help' => 'boolean',
                 'show_previous_tab' => 'boolean',
                 'template_certificate' => [
                     'type' => 'select',
@@ -200,6 +202,7 @@ class SchoolPlugin extends Plugin
         $css[] = api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH) . 'assets/jquery-ui/themes/smoothness/jquery-ui.min.css');
         $css[] = api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH) . 'assets/jquery-ui/themes/smoothness/theme.css');
         $css[] = api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH) . 'assets/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css');
+        $css[] = api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH) . 'assets/select2/dist/css/select2.min.css');
         $css[] = api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH) . 'school/css/style.css');
 
         $css_file_to_string = null;
@@ -921,6 +924,12 @@ class SchoolPlugin extends Plugin
             if (Database::num_rows($chk) === 0) {
                 Database::query("ALTER TABLE $matTable ADD COLUMN $col $def");
             }
+        }
+
+        // Add foto column for student photo
+        $chkFoto = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'foto'");
+        if (Database::num_rows($chkFoto) === 0) {
+            Database::query("ALTER TABLE $matTable ADD COLUMN foto VARCHAR(255) NULL AFTER dni");
         }
 
         // Extend tipo_ingreso ENUM to include CONTINUACION
@@ -2185,7 +2194,10 @@ class SchoolPlugin extends Plugin
                 'url' => '/courses',
                 'items' => []
             ],
-            [
+        ];
+
+        if ($this->get('show_notifications') !== 'false') {
+            $menus[] = [
                 'id' => 2,
                 'name' => 'notifications',
                 'label' => $this->get_lang('MyNotifications'),
@@ -2194,8 +2206,8 @@ class SchoolPlugin extends Plugin
                 'class' => $currentSection === 'notifications' ? 'active':'',
                 'url' => '/notifications',
                 'items' => []
-            ],
-        ];
+            ];
+        }
 
         if ($this->get('show_certificates') == 'true') {
             $menus[] = [
@@ -2210,8 +2222,8 @@ class SchoolPlugin extends Plugin
             ];
         }
 
-        $menus = array_merge($menus, [
-            [
+        if ($this->get('show_help') !== 'false') {
+            $menus[] = [
                 'id' => 4,
                 'name' => 'help',
                 'label' => $this->get_lang('Help'),
@@ -2220,18 +2232,19 @@ class SchoolPlugin extends Plugin
                 'url' => '/help',
                 'class' => $currentSection === 'help' ? 'active':'',
                 'items' => []
-            ],
-            [
-                'id' => 5,
-                'name' => 'shopping',
-                'label' => $this->get_lang('BuyCourses'),
-                'current' => false,
-                'icon' => 'shopping-cart',
-                'url' => '/shopping',
-                'class' => $currentSection === 'shopping' ? 'active':'',
-                'items' => []
-            ]
-        ]);
+            ];
+        }
+
+        $menus[] = [
+            'id' => 5,
+            'name' => 'shopping',
+            'label' => $this->get_lang('BuyCourses'),
+            'current' => false,
+            'icon' => 'shopping-cart',
+            'url' => '/shopping',
+            'class' => $currentSection === 'shopping' ? 'active':'',
+            'items' => []
+        ];
 
         if ($this->get('activate_shopping') == 'false') {
             $menus = array_filter($menus, function ($menu) {

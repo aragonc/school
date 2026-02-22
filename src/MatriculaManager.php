@@ -105,6 +105,33 @@ class MatriculaManager
         return $rows;
     }
 
+    public static function getMatriculaByUserId(int $userId): ?array
+    {
+        if ($userId <= 0) return null;
+
+        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $grade = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $level = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        $sql = "SELECT m.*,
+                       g.name AS grade_name,
+                       lv.name AS level_name,
+                       g.level_id
+                FROM $table m
+                LEFT JOIN $grade g ON m.grade_id = g.id
+                LEFT JOIN $level lv ON g.level_id = lv.id
+                WHERE m.user_id = $userId
+                ORDER BY m.academic_year_id DESC, m.id DESC
+                LIMIT 1";
+
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        if ($row) {
+            $row['full_name'] = self::getFullName($row);
+        }
+        return $row ?: null;
+    }
+
     public static function getMatriculaById(int $id): ?array
     {
         if ($id <= 0) return null;
@@ -163,9 +190,10 @@ class MatriculaManager
             'grade_id'             => isset($data['grade_id']) && $data['grade_id'] ? (int) $data['grade_id'] : null,
             'sexo'                 => in_array($data['sexo'] ?? '', ['F', 'M']) ? $data['sexo'] : null,
             'dni'                  => !empty($data['dni']) ? Database::escape_string(trim($data['dni'])) : null,
+            'tipo_documento'       => !empty($data['tipo_documento']) ? Database::escape_string(trim($data['tipo_documento'])) : null,
             'tipo_sangre'          => !empty($data['tipo_sangre']) ? Database::escape_string(trim($data['tipo_sangre'])) : null,
             'fecha_nacimiento'     => !empty($data['fecha_nacimiento']) ? Database::escape_string($data['fecha_nacimiento']) : null,
-            'nacionalidad'         => Database::escape_string(trim($data['nacionalidad'] ?? 'Peruana')),
+            'nacionalidad'         => in_array($data['nacionalidad'] ?? '', ['Peruana', 'Extranjera']) ? $data['nacionalidad'] : 'Peruana',
             'peso'                 => isset($data['peso']) && $data['peso'] !== '' ? (float) $data['peso'] : null,
             'estatura'             => isset($data['estatura']) && $data['estatura'] !== '' ? (float) $data['estatura'] : null,
             'domicilio'            => !empty($data['domicilio']) ? Database::escape_string(trim($data['domicilio'])) : null,
@@ -180,6 +208,11 @@ class MatriculaManager
             'ie_procedencia'       => !empty($data['ie_procedencia']) ? Database::escape_string(trim($data['ie_procedencia'])) : null,
             'motivo_traslado'      => !empty($data['motivo_traslado']) ? Database::escape_string(trim($data['motivo_traslado'])) : null,
         ];
+
+        // Only update foto if a new one was provided (avoid overwriting with null on regular saves)
+        if (!empty($data['foto'])) {
+            $params['foto'] = Database::escape_string(trim($data['foto']));
+        }
 
         if ($id > 0) {
             $params['updated_at'] = api_get_utc_datetime();

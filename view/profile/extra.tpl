@@ -6,7 +6,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link active" href="/extra-profile">
-            {{ 'ExtraProfileData'|get_plugin_lang('SchoolPlugin') }}
+            Ficha de Matrícula
         </a>
     </li>
     <li class="nav-item">
@@ -21,130 +21,219 @@
     </li>
 </ul>
 
-<div class="card">
+{% if matricula %}
+
+<div class="card" id="ficha-matricula">
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+        <div>
+            <h5 class="mb-0 font-weight-bold">FICHA DE MATRÍCULA</h5>
+            <small class="text-muted">
+                {% if matricula.tipo_ingreso == 'NUEVO_INGRESO' %}
+                    <span class="badge badge-success">NUEVO INGRESO</span>
+                {% elseif matricula.tipo_ingreso == 'REINGRESO' %}
+                    <span class="badge badge-info">REINGRESO</span>
+                {% else %}
+                    <span class="badge badge-secondary">CONTINUACIÓN</span>
+                {% endif %}
+                {% if matricula.estado == 'RETIRADO' %}
+                    <span class="badge badge-danger ml-1">RETIRADO</span>
+                {% endif %}
+            </small>
+        </div>
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm no-print">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
     <div class="card-body">
-        <div class="p-0 p-md-5">
-            <div class="row">
-                <div class="col-12 col-lg-8">
-                    <h5 class="mb-4">
-                        <i class="fas fa-id-card"></i> {{ 'ExtraProfileData'|get_plugin_lang('SchoolPlugin') }}
-                    </h5>
-                    {{ form }}
+
+        {# ===== DATOS DEL ESTUDIANTE ===== #}
+        <h6 class="title-form border-bottom pb-2 mb-3">
+            <i class="fas fa-user-graduate mr-1"></i> {{ 'StudentData'|get_plugin_lang('SchoolPlugin') }}
+        </h6>
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="font-weight-bold" width="45%">{{ 'ApellidoPaterno'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.apellido_paterno ?: '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'ApellidoMaterno'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.apellido_materno ?: '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Nombres'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.nombres ?: '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Grade'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{% if matricula.level_name %}{{ matricula.level_name }} — {% endif %}{{ matricula.grade_name ?: '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Sexo'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{% if matricula.sexo == 'F' %}Femenino{% elseif matricula.sexo == 'M' %}Masculino{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">
+                            {% if matricula.nacionalidad == 'Extranjera' %}{{ 'TipoDocumento'|get_plugin_lang('SchoolPlugin') }}
+                            {% else %}{{ 'Dni'|get_plugin_lang('SchoolPlugin') }}{% endif %}:
+                        </td>
+                        <td>
+                            {% if matricula.nacionalidad == 'Extranjera' and matricula.tipo_documento %}
+                                {% if matricula.tipo_documento == 'CARNET_EXTRANJERIA' %}{{ 'CarnetExtranjeria'|get_plugin_lang('SchoolPlugin') }}
+                                {% elseif matricula.tipo_documento == 'PASAPORTE' %}{{ 'Pasaporte'|get_plugin_lang('SchoolPlugin') }}
+                                {% elseif matricula.tipo_documento == 'OTRO' %}{{ 'Otro'|get_plugin_lang('SchoolPlugin') }}
+                                {% else %}{{ matricula.tipo_documento }}{% endif %}
+                                {% if matricula.dni %} — {{ matricula.dni }}{% endif %}
+                            {% else %}
+                                {{ matricula.dni ?: '—' }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'TipoSangre'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.tipo_sangre ?: '—' }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-5">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="font-weight-bold" width="45%">{{ 'FechaNacimiento'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{% if matricula.fecha_nacimiento %}{{ matricula.fecha_nacimiento|date('d/m/Y') }} <small class="text-muted">({{ edad }})</small>{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Nacionalidad'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.nacionalidad ?: '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Peso'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{% if matricula.peso %}{{ matricula.peso }} kg{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Estatura'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{% if matricula.estatura %}{{ matricula.estatura }} m{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Domicilio'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.domicilio ?: '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Region'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.region_name ?: (matricula.region ?: '—') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'Province'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.provincia_name ?: (matricula.provincia ?: '—') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">{{ 'District'|get_plugin_lang('SchoolPlugin') }}:</td>
+                        <td>{{ matricula.distrito_name ?: (matricula.distrito ?: '—') }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-2 text-center">
+                {% if foto_url %}
+                <img src="{{ foto_url }}" alt="Foto del alumno"
+                     style="width:110px; height:135px; object-fit:cover; border:2px solid #dee2e6; border-radius:4px;">
+                {% else %}
+                <div style="width:110px; height:135px; border:2px dashed #dee2e6; border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#adb5bd; margin:0 auto;">
+                    <i class="fas fa-user" style="font-size:2.5rem;"></i>
+                    <small style="font-size:11px; margin-top:4px;">Sin foto</small>
                 </div>
-                <div class="col-12 col-lg-4">
-                    <div class="d-none d-md-block">
-                        <div class="bd-callout bd-callout-info">
-                            <p><i class="fas fa-info-circle"></i> {{ 'ExtraProfileHelp'|get_plugin_lang('SchoolPlugin') }}</p>
-                        </div>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
+
+        {# Salud #}
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <span class="font-weight-bold">{{ 'TieneAlergias'|get_plugin_lang('SchoolPlugin') }}:</span>
+                {% if matricula.tiene_alergias %}
+                    <span class="badge badge-warning">Sí</span>
+                    {% if matricula.alergias_detalle %} — {{ matricula.alergias_detalle }}{% endif %}
+                {% else %}<span class="badge badge-secondary">No</span>{% endif %}
+            </div>
+            <div class="col-md-4">
+                <span class="font-weight-bold">{{ 'UsaLentes'|get_plugin_lang('SchoolPlugin') }}:</span>
+                {% if matricula.usa_lentes %}<span class="badge badge-warning">Sí</span>{% else %}<span class="badge badge-secondary">No</span>{% endif %}
+            </div>
+            <div class="col-md-4">
+                <span class="font-weight-bold">{{ 'TieneDiscapacidad'|get_plugin_lang('SchoolPlugin') }}:</span>
+                {% if matricula.tiene_discapacidad %}
+                    <span class="badge badge-warning">Sí</span>
+                    {% if matricula.discapacidad_detalle %} — {{ matricula.discapacidad_detalle }}{% endif %}
+                {% else %}<span class="badge badge-secondary">No</span>{% endif %}
+            </div>
+        </div>
+
+        {# ===== PADRES ===== #}
+        {% if madre or padre %}
+        <h6 class="title-form border-bottom pb-2 mb-3 mt-4">
+            <i class="fas fa-users mr-1"></i> {{ 'ParentsData'|get_plugin_lang('SchoolPlugin') }}
+        </h6>
+        <div class="row mb-3">
+            {% if madre %}
+            <div class="col-md-6">
+                <strong class="d-block mb-2">{{ 'MadreData'|get_plugin_lang('SchoolPlugin') }}</strong>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr><td width="45%" class="font-weight-bold">Apellidos y Nombres:</td><td>{{ madre.apellidos }} {{ madre.nombres }}</td></tr>
+                    <tr><td class="font-weight-bold">{{ 'Dni'|get_plugin_lang('SchoolPlugin') }}:</td><td>{{ madre.dni ?: '—' }}</td></tr>
+                    <tr><td class="font-weight-bold">{{ 'Celular'|get_plugin_lang('SchoolPlugin') }}:</td><td>{{ madre.celular ?: '—' }}</td></tr>
+                    <tr><td class="font-weight-bold">{{ 'Ocupacion'|get_plugin_lang('SchoolPlugin') }}:</td><td>{{ madre.ocupacion ?: '—' }}</td></tr>
+                </table>
+            </div>
+            {% endif %}
+            {% if padre %}
+            <div class="col-md-6">
+                <strong class="d-block mb-2">{{ 'PadreData'|get_plugin_lang('SchoolPlugin') }}</strong>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr><td width="45%" class="font-weight-bold">Apellidos y Nombres:</td><td>{{ padre.apellidos }} {{ padre.nombres }}</td></tr>
+                    <tr><td class="font-weight-bold">{{ 'Dni'|get_plugin_lang('SchoolPlugin') }}:</td><td>{{ padre.dni ?: '—' }}</td></tr>
+                    <tr><td class="font-weight-bold">{{ 'Celular'|get_plugin_lang('SchoolPlugin') }}:</td><td>{{ padre.celular ?: '—' }}</td></tr>
+                    <tr><td class="font-weight-bold">{{ 'Ocupacion'|get_plugin_lang('SchoolPlugin') }}:</td><td>{{ padre.ocupacion ?: '—' }}</td></tr>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {# ===== CONTACTO DE EMERGENCIA ===== #}
+        {% if contactos|length > 0 %}
+        <h6 class="title-form border-bottom pb-2 mb-3 mt-4">
+            <i class="fas fa-phone-alt mr-1"></i> {{ 'EmergencyContact'|get_plugin_lang('SchoolPlugin') }}
+        </h6>
+        <div class="row mb-3">
+            {% for c in contactos %}
+            <div class="col-md-4"><span class="font-weight-bold">{{ 'NombreContacto'|get_plugin_lang('SchoolPlugin') }}:</span> {{ c.nombre_contacto ?: '—' }}</div>
+            <div class="col-md-4"><span class="font-weight-bold">{{ 'Telefono'|get_plugin_lang('SchoolPlugin') }}:</span> {{ c.telefono ?: '—' }}</div>
+            <div class="col-md-4"><span class="font-weight-bold">{{ 'Direccion'|get_plugin_lang('SchoolPlugin') }}:</span> {{ c.direccion ?: '—' }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+    <div class="card-footer text-muted text-right">
+        <small>Registrado: {{ matricula.created_at|date('d/m/Y') }}</small>
     </div>
 </div>
 
-<script>
-$(function() {
-    var provinciasData = null;
-    var distritosData = null;
-    var selectOptionText = "{{ select_option_text }}";
-    var ubigeoPath = "{{ ubigeo_path }}";
+{% else %}
 
-    $("#region").on("change", function() {
-        var regionId = $(this).val();
-        var $province = $("#province");
-        var $district = $("#district");
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No tienes una ficha de matrícula registrada</h5>
+        <p class="text-muted">Contacta a la secretaría para que vincule tu matrícula a tu cuenta.</p>
+    </div>
+</div>
 
-        $province.html('<option value="">' + selectOptionText + '</option>').attr("disabled", "disabled");
-        $district.html('<option value="">' + selectOptionText + '</option>').attr("disabled", "disabled");
+{% endif %}
 
-        if (!regionId) {
-            return;
-        }
-
-        if (provinciasData) {
-            fillProvincias(regionId);
-        } else {
-            $.getJSON(ubigeoPath + "ubigeo_peru_2016_provincias.json", function(data) {
-                provinciasData = data;
-                fillProvincias(regionId);
-            });
-        }
-    });
-
-    $("#province").on("change", function() {
-        var provinceId = $(this).val();
-        var $district = $("#district");
-
-        $district.html('<option value="">' + selectOptionText + '</option>').attr("disabled", "disabled");
-
-        if (!provinceId) {
-            return;
-        }
-
-        if (distritosData) {
-            fillDistritos(provinceId);
-        } else {
-            $.getJSON(ubigeoPath + "ubigeo_peru_2016_distritos.json", function(data) {
-                distritosData = data;
-                fillDistritos(provinceId);
-            });
-        }
-    });
-
-    function fillProvincias(regionId) {
-        var $province = $("#province");
-        $province.html('<option value="">' + selectOptionText + '</option>');
-
-        $.each(provinciasData, function(i, item) {
-            if (item.department_id === regionId) {
-                $province.append('<option value="' + item.id + '">' + item.name + '</option>');
-            }
-        });
-
-        $province.removeAttr("disabled");
-    }
-
-    function fillDistritos(provinceId) {
-        var $district = $("#district");
-        $district.html('<option value="">' + selectOptionText + '</option>');
-
-        $.each(distritosData, function(i, item) {
-            if (item.province_id === provinceId) {
-                $district.append('<option value="' + item.id + '">' + item.name + '</option>');
-            }
-        });
-
-        $district.removeAttr("disabled");
-    }
-
-    $("form[name='extra_profile_form']").on("submit", function() {
-        $("#province, #district").removeAttr("disabled");
-    });
-
-    // Load saved values on page init
-    var savedRegion = "{{ saved_region }}";
-    var savedProvince = "{{ saved_province }}";
-    var savedDistrict = "{{ saved_district }}";
-
-    if (savedRegion) {
-        $("#region").val(savedRegion);
-        $.getJSON(ubigeoPath + "ubigeo_peru_2016_provincias.json", function(data) {
-            provinciasData = data;
-            fillProvincias(savedRegion);
-
-            if (savedProvince) {
-                $("#province").val(savedProvince);
-                $.getJSON(ubigeoPath + "ubigeo_peru_2016_distritos.json", function(data) {
-                    distritosData = data;
-                    fillDistritos(savedProvince);
-
-                    if (savedDistrict) {
-                        $("#district").val(savedDistrict);
-                    }
-                });
-            }
-        });
-    }
-});
-</script>
+<style>
+@media print {
+    .no-print, .sidebar, nav, .topbar, footer, ul.nav-tabs { display: none !important; }
+    #ficha-matricula { border: none !important; box-shadow: none !important; }
+    .card-header { background: none !important; color: #000 !important; }
+}
+</style>

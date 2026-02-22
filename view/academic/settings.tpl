@@ -374,6 +374,23 @@
 <script>
 var ajaxUrl = '{{ ajax_url }}';
 
+// Recarga la página preservando la pestaña activa via hash
+function reloadWithTab(tabPanelId) {
+    location.hash = tabPanelId;
+    location.reload();
+}
+
+// Al cargar la página, activa la pestaña indicada en el hash
+$(document).ready(function() {
+    var hash = window.location.hash;
+    if (hash) {
+        var tabLink = $('#settingsTabs a[href="' + hash + '"]');
+        if (tabLink.length) {
+            tabLink.tab('show');
+        }
+    }
+});
+
 // =========================================================================
 // YEARS
 // =========================================================================
@@ -399,12 +416,12 @@ function saveYear() {
     fd.append('name', document.getElementById('year_name').value);
     fd.append('year', document.getElementById('year_value').value);
     fd.append('active', document.getElementById('year_active').checked ? 1 : 0);
-    fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('years-panel');else alert(d.message||'Error');});
 }
 function deleteYear(id) {
     if (!confirm('{{ 'ConfirmDelete'|get_plugin_lang('SchoolPlugin') }}')) return;
     var fd = new FormData(); fd.append('action','delete_year'); fd.append('id',id);
-    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('years-panel');else alert(d.message||'Error');});
 }
 
 // =========================================================================
@@ -432,12 +449,12 @@ function saveLevel() {
     fd.append('name', document.getElementById('level_name').value);
     fd.append('order_index', document.getElementById('level_order').value);
     fd.append('active', document.getElementById('level_active').checked ? 1 : 0);
-    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('levels-panel');else alert(d.message||'Error');});
 }
 function deleteLevel(id) {
     if (!confirm('{{ 'ConfirmDelete'|get_plugin_lang('SchoolPlugin') }}')) return;
     var fd = new FormData(); fd.append('action','delete_level'); fd.append('id',id);
-    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('levels-panel');else alert(d.message||'Error');});
 }
 
 // =========================================================================
@@ -468,12 +485,12 @@ function saveGrade() {
     fd.append('name', document.getElementById('grade_name').value);
     fd.append('order_index', document.getElementById('grade_order').value);
     fd.append('active', document.getElementById('grade_active').checked ? 1 : 0);
-    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('grades-panel');else alert(d.message||'Error');});
 }
 function deleteGrade(id) {
     if (!confirm('{{ 'ConfirmDelete'|get_plugin_lang('SchoolPlugin') }}')) return;
     var fd = new FormData(); fd.append('action','delete_grade'); fd.append('id',id);
-    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('grades-panel');else alert(d.message||'Error');});
 }
 
 // =========================================================================
@@ -498,11 +515,11 @@ function saveSection() {
     fd.append('id', document.getElementById('section_id').value);
     fd.append('name', document.getElementById('section_name').value);
     fd.append('active', document.getElementById('section_active').checked ? 1 : 0);
-    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('sections-panel');else alert(d.message||'Error');});
 }
 function deleteSection(id) {
     if (!confirm('{{ 'ConfirmDelete'|get_plugin_lang('SchoolPlugin') }}')) return;
     var fd = new FormData(); fd.append('action','delete_section'); fd.append('id',id);
-    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message||'Error');});
+    fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('sections-panel');else alert(d.message||'Error');});
 }
 </script>

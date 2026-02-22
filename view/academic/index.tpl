@@ -122,7 +122,7 @@
                     </div>
                     <div class="form-group">
                         <label>{{ 'Tutor'|get_plugin_lang('SchoolPlugin') }}</label>
-                        <select class="form-control" id="classroom_tutor">
+                        <select id="classroom_tutor" style="width:100%">
                             <option value="">{{ 'NoTutor'|get_plugin_lang('SchoolPlugin') }}</option>
                             {% for t in teachers %}
                             <option value="{{ t.user_id }}">{{ t.lastname }}, {{ t.firstname }}</option>
@@ -147,12 +147,24 @@
 var ajaxUrl = '{{ ajax_url }}';
 var yearId = {{ year_id }};
 
+// Inicializa Select2 en el tutor al abrir el modal (solo una vez)
+$('#classroomModal').on('shown.bs.modal', function() {
+    if (!$('#classroom_tutor').hasClass('select2-hidden-accessible')) {
+        $('#classroom_tutor').select2({
+            dropdownParent: $('#classroomModal'),
+            allowClear: true,
+            placeholder: '{{ 'NoTutor'|get_plugin_lang('SchoolPlugin') }}',
+            width: '100%'
+        });
+    }
+});
+
 function resetClassroomForm() {
     document.getElementById('classroomModalTitle').textContent = '{{ 'AddClassroom'|get_plugin_lang('SchoolPlugin') }}';
     document.getElementById('classroom_id').value = 0;
     document.getElementById('classroom_grade').value = '';
     document.getElementById('classroom_section').value = '';
-    document.getElementById('classroom_tutor').value = '';
+    $('#classroom_tutor').val(null).trigger('change');
     document.getElementById('classroom_capacity').value = 30;
 }
 
@@ -161,8 +173,11 @@ function editClassroom(c) {
     document.getElementById('classroom_id').value = c.id;
     document.getElementById('classroom_grade').value = c.grade_id;
     document.getElementById('classroom_section').value = c.section_id;
-    document.getElementById('classroom_tutor').value = c.tutor_id || '';
     document.getElementById('classroom_capacity').value = c.capacity;
+    // Asigna el valor de tutor después de que Select2 esté inicializado
+    $('#classroomModal').one('shown.bs.modal', function() {
+        $('#classroom_tutor').val(c.tutor_id || null).trigger('change');
+    });
     $('#classroomModal').modal('show');
 }
 

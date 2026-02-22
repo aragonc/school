@@ -248,3 +248,77 @@ CREATE TABLE IF NOT EXISTS plugin_school_payment_period_price (
     created_at DATETIME NOT NULL,
     UNIQUE KEY unique_price (period_id, level_id, grade_id)
 );
+
+-- =============================================
+-- MATRÍCULAS
+-- =============================================
+
+-- 20. Matrícula principal del alumno
+CREATE TABLE IF NOT EXISTS plugin_school_matricula (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    user_id INT NULL,
+    academic_year_id INT unsigned NULL,
+    estado ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
+    tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO',
+    apellido_paterno VARCHAR(100) NULL,
+    apellido_materno VARCHAR(100) NULL,
+    nombres VARCHAR(100) NOT NULL DEFAULT '',
+    grade_id INT unsigned NULL,
+    sexo ENUM('F','M') NULL,
+    dni VARCHAR(20) NULL,
+    tipo_documento VARCHAR(30) NULL,
+    tipo_sangre VARCHAR(5) NULL,
+    fecha_nacimiento DATE NULL,
+    nacionalidad ENUM('Peruana','Extranjera') NOT NULL DEFAULT 'Peruana',
+    peso DECIMAL(5,2) NULL,
+    estatura DECIMAL(4,2) NULL,
+    domicilio VARCHAR(255) NULL,
+    region VARCHAR(10) NULL,
+    provincia VARCHAR(10) NULL,
+    distrito VARCHAR(10) NULL,
+    tiene_alergias TINYINT(1) NOT NULL DEFAULT 0,
+    alergias_detalle VARCHAR(255) NULL,
+    usa_lentes TINYINT(1) NOT NULL DEFAULT 0,
+    tiene_discapacidad TINYINT(1) NOT NULL DEFAULT 0,
+    discapacidad_detalle VARCHAR(255) NULL,
+    ie_procedencia VARCHAR(150) NULL,
+    motivo_traslado TEXT NULL,
+    created_by INT NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NULL
+);
+
+-- 21. Datos de padres/tutores de la matrícula
+CREATE TABLE IF NOT EXISTS plugin_school_matricula_padre (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    matricula_id INT unsigned NOT NULL,
+    parentesco ENUM('MADRE','PADRE') NOT NULL,
+    apellidos VARCHAR(100) NULL,
+    nombres VARCHAR(100) NULL,
+    celular VARCHAR(15) NULL,
+    ocupacion VARCHAR(100) NULL,
+    dni CHAR(8) NULL,
+    edad TINYINT unsigned NULL,
+    religion VARCHAR(50) NULL,
+    tipo_parto ENUM('CESAREA','NORMAL') NULL,
+    vive_con_menor TINYINT(1) NULL
+);
+
+-- 22. Contactos de emergencia de la matrícula
+CREATE TABLE IF NOT EXISTS plugin_school_matricula_contacto (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    matricula_id INT unsigned NOT NULL,
+    nombre_contacto VARCHAR(150) NULL,
+    telefono VARCHAR(15) NULL,
+    direccion VARCHAR(255) NULL
+);
+
+-- 23. Información adicional de la matrícula
+CREATE TABLE IF NOT EXISTS plugin_school_matricula_info (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    matricula_id INT unsigned NOT NULL,
+    encargados_cuidado VARCHAR(255) NULL,
+    familiar_en_institucion VARCHAR(150) NULL,
+    observaciones TEXT NULL,
+    UNIQUE KEY unique_mat_info (matricula_id)
+);

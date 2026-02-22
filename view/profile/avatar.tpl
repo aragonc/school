@@ -7,7 +7,7 @@
 
     <li class="nav-item">
         <a class="nav-link" href="/extra-profile">
-            {{ 'ExtraProfileData'|get_plugin_lang('SchoolPlugin') }}
+            Ficha de Matrícula
         </a>
     </li>
     <li class="nav-item">
