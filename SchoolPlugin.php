@@ -422,17 +422,27 @@ class SchoolPlugin extends Plugin
             $extraHeaders .= $courseLogoutCode;
             $this->assign('extra_headers', $extraHeaders);
             $this->assign('favicon', self::get_favicon('favicon'));
+            $this->assign('favicon_type', self::get_favicon_type());
         }
     }
 
     public function get_favicon($iconName): string
     {
-        $iconPathWeb = '';
+        $uploadedPng = __DIR__ . '/uploads/favicon.png';
+        if (file_exists($uploadedPng)) {
+            return api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/favicon.png';
+        }
         $icon_path = __DIR__ . '/img/icons/' . $iconName . '.svg';
         if (file_exists($icon_path)) {
-            $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'school/img/icons/' . $iconName . '.svg';
+            return api_get_path(WEB_PLUGIN_PATH) . 'school/img/icons/' . $iconName . '.svg';
         }
-        return $iconPathWeb;
+        return '';
+    }
+
+    public function get_favicon_type(): string
+    {
+        $uploadedPng = __DIR__ . '/uploads/favicon.png';
+        return file_exists($uploadedPng) ? 'image/png' : 'image/svg+xml';
     }
     public function get_svg_icon($iconName, $altText = '', $size = 64, $responsive = false, $type = 'svg'): string
     {

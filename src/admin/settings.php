@@ -12,6 +12,40 @@ $action = $_REQUEST['action'] ?? '';
 
 $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
 
+$faviconUploadDir = __DIR__ . '/../../uploads/';
+$faviconPath = $faviconUploadDir . 'favicon.png';
+$faviconWebUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/favicon.png';
+
+$faviconMsg = '';
+
+// Handle favicon upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['favicon_png'])) {
+    $file = $_FILES['favicon_png'];
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file['tmp_name']);
+        if ($mime === 'image/png') {
+            if (!is_dir($faviconUploadDir)) {
+                mkdir($faviconUploadDir, api_get_permissions_for_new_directories(), true);
+            }
+            move_uploaded_file($file['tmp_name'], $faviconPath);
+            $faviconMsg = 'success';
+        } else {
+            $faviconMsg = 'invalid';
+        }
+    } elseif ($file['error'] !== UPLOAD_ERR_NO_FILE) {
+        $faviconMsg = 'error';
+    }
+}
+
+// Handle favicon delete
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_favicon'])) {
+    if (file_exists($faviconPath)) {
+        unlink($faviconPath);
+    }
+    $faviconMsg = 'deleted';
+}
+
 if ($enable) {
     $form = new FormValidator(
         'settings',
@@ -24,6 +58,12 @@ if ($enable) {
     $form->addText('emailAdministrator',[$plugin->get_lang('emailAdministratorTitle'), $plugin->get_lang('emailAdministratorComment')]);
     $plugin->setTitle($plugin->get_lang('BasicSystemConfiguration'));
     $plugin->assign('form', $form->returnForm());
+
+    $plugin->assign('favicon_exists', file_exists($faviconPath));
+    $plugin->assign('favicon_web_url', $faviconWebUrl);
+    $plugin->assign('favicon_msg', $faviconMsg);
+    $plugin->assign('settings_url', api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq());
+
     $content = $plugin->fetch('admin/settings.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();

@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <title> {{_s.institution }} - {{_s.site_name }}</title>
-    <link rel="icon" type="image/svg+xml" href="{{ favicon }}">
+    <link rel="icon" type="{{ favicon_type }}" href="{{ favicon }}">
     <!-- Custom fonts for this template-->
     <link href="{{ assets }}/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"

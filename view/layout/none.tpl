@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <title> {{_s.institution }} - {{_s.site_name }}</title>
-    <link rel="icon" type="image/svg+xml" href="{{ favicon }}">
+    <link rel="icon" type="{{ favicon_type }}" href="{{ favicon }}">
 
     {{ css_files }}
 
