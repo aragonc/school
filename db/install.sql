@@ -265,6 +265,7 @@ CREATE TABLE IF NOT EXISTS plugin_school_matricula (
     nombres VARCHAR(100) NOT NULL DEFAULT '',
     grade_id INT unsigned NULL,
     sexo ENUM('F','M') NULL,
+    foto VARCHAR(255) NULL,
     dni VARCHAR(20) NULL,
     tipo_documento VARCHAR(30) NULL,
     tipo_sangre VARCHAR(5) NULL,
