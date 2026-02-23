@@ -194,6 +194,17 @@ if ($enable) {
     $plugin->assign('error_rut', $plugin->get_lang('errorRUT'));
     $plugin->assign('qr_image', SchoolPlugin::generateQRImage($user_data['username']));
     $plugin->assign('username_qr', $user_data['username']);
+    $plugin->assign('current_user_id', $userId);
+    $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
+    $customLogo = $plugin->getCustomLogo();
+    if (!$customLogo) {
+        $theme    = api_get_visual_theme();
+        $themeDir = Template::getThemeDir($theme);
+        $customLogo = api_get_path(WEB_CSS_PATH) . $themeDir . 'images/header-logo-vector.svg';
+    }
+    $plugin->assign('logo_url', $customLogo);
+    $plugin->assign('institution_name', api_get_setting('Institution'));
+    $plugin->assign('qrcode_js', api_get_path(WEB_PLUGIN_PATH) . 'school/js/qrcode.min.js');
     $content = $plugin->fetch('profile/profile.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();

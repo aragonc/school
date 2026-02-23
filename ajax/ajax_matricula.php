@@ -195,12 +195,19 @@ switch ($action) {
         break;
 
     case 'get_tarjeta_data':
-        if (!api_is_platform_admin() && !($userInfo && $userInfo['status'] == SCHOOL_SECRETARY)) {
+        $matriculaId   = (int) ($_GET['matricula_id'] ?? 0);
+        $tarjetaUserId = (int) ($_GET['user_id'] ?? 0);
+        $currentUserId = api_get_user_id();
+        $isSelf        = ($tarjetaUserId > 0 && $tarjetaUserId === $currentUserId);
+        // Also allow if the matricula belongs to the current user
+        if (!$isSelf && $matriculaId > 0) {
+            $tempMat = MatriculaManager::getMatriculaById($matriculaId);
+            $isSelf  = ($tempMat && (int) ($tempMat['user_id'] ?? 0) === $currentUserId);
+        }
+        if (!$isAdmin && !$isSecretary && !$isSelf) {
             echo json_encode(['success' => false, 'error' => 'Sin permisos']);
             break;
         }
-        $matriculaId  = (int) ($_GET['matricula_id'] ?? 0);
-        $tarjetaUserId = (int) ($_GET['user_id'] ?? 0);
         $gradeName = ''; $levelName = ''; $sectionName = '';
 
         if ($matriculaId > 0) {
