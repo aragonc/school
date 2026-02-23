@@ -5,9 +5,11 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link active" href="/extra-profile">
-            Ficha de Matrícula
-        </a>
+        {% if is_student %}
+        <a class="nav-link active" href="/extra-profile">Ficha de Matrícula</a>
+        {% else %}
+        <a class="nav-link active" href="/datos-adicionales">Datos Adicionales</a>
+        {% endif %}
     </li>
     <li class="nav-item">
         <a class="nav-link" href="/password">

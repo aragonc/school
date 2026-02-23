@@ -665,6 +665,22 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sql6);
 
+        // Migration: add new columns to extra_profile (v2)
+        $extraTable = Database::get_main_table(self::TABLE_SCHOOL_EXTRA_PROFILE);
+        foreach ([
+            'sexo'         => "ENUM('F','M') NULL AFTER region",
+            'nacionalidad' => "VARCHAR(50) NULL DEFAULT 'Peruana' AFTER sexo",
+            'tipo_sangre'  => "VARCHAR(5) NULL AFTER nacionalidad",
+            'peso'         => "DECIMAL(5,2) NULL AFTER tipo_sangre",
+            'estatura'     => "DECIMAL(4,2) NULL AFTER peso",
+        ] as $col => $def) {
+            $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$extraTable' AND COLUMN_NAME = '$col'");
+            if (Database::num_rows($chk) === 0) {
+                Database::query("ALTER TABLE $extraTable ADD COLUMN $col $def");
+            }
+        }
+
         // Payment tables
         $sql7p = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_PAYMENT_PERIOD." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
@@ -3845,16 +3861,21 @@ class SchoolPlugin extends Plugin
 
         if (!$row) {
             return [
-                'user_id' => $userId,
-                'document_type' => '',
+                'user_id'         => $userId,
+                'document_type'   => '',
                 'document_number' => '',
-                'birthdate' => '',
-                'address' => '',
+                'birthdate'       => '',
+                'address'         => '',
                 'address_reference' => '',
-                'phone' => '',
-                'district' => '',
-                'province' => '',
-                'region' => '',
+                'phone'           => '',
+                'district'        => '',
+                'province'        => '',
+                'region'          => '',
+                'sexo'            => '',
+                'nacionalidad'    => '',
+                'tipo_sangre'     => '',
+                'peso'            => '',
+                'estatura'        => '',
             ];
         }
         return $row;
@@ -3871,17 +3892,31 @@ class SchoolPlugin extends Plugin
         $validDocTypes = ['DNI', 'CE', 'PASAPORTE', 'OTRO'];
         $docType = in_array($data['document_type'], $validDocTypes) ? $data['document_type'] : 'DNI';
 
+        $validSexo = ['F', 'M', ''];
+        $sexo = in_array($data['sexo'] ?? '', $validSexo) ? ($data['sexo'] ?? '') : '';
+
+        $validSangre = ['A+','A-','B+','B-','AB+','AB-','O+','O-',''];
+        $tipoSangre = in_array($data['tipo_sangre'] ?? '', $validSangre) ? ($data['tipo_sangre'] ?? '') : '';
+
+        $peso     = !empty($data['peso'])     ? (float) $data['peso']     : null;
+        $estatura = !empty($data['estatura']) ? (float) $data['estatura'] : null;
+
         $params = [
-            'document_type' => $docType,
-            'document_number' => Database::escape_string(trim($data['document_number'] ?? '')),
-            'birthdate' => !empty($data['birthdate']) ? Database::escape_string($data['birthdate']) : null,
-            'address' => Database::escape_string(trim($data['address'] ?? '')),
-            'address_reference' => Database::escape_string(trim($data['address_reference'] ?? '')),
-            'phone' => Database::escape_string(trim($data['phone'] ?? '')),
-            'district' => Database::escape_string(trim($data['district'] ?? '')),
-            'province' => Database::escape_string(trim($data['province'] ?? '')),
-            'region' => Database::escape_string(trim($data['region'] ?? '')),
-            'updated_at' => $now,
+            'document_type'    => $docType,
+            'document_number'  => Database::escape_string(trim($data['document_number'] ?? '')),
+            'birthdate'        => !empty($data['birthdate']) ? Database::escape_string($data['birthdate']) : null,
+            'address'          => Database::escape_string(trim($data['address'] ?? '')),
+            'address_reference'=> Database::escape_string(trim($data['address_reference'] ?? '')),
+            'phone'            => Database::escape_string(trim($data['phone'] ?? '')),
+            'district'         => Database::escape_string(trim($data['district'] ?? '')),
+            'province'         => Database::escape_string(trim($data['province'] ?? '')),
+            'region'           => Database::escape_string(trim($data['region'] ?? '')),
+            'sexo'             => $sexo ?: null,
+            'nacionalidad'     => Database::escape_string(trim($data['nacionalidad'] ?? '')),
+            'tipo_sangre'      => $tipoSangre ?: null,
+            'peso'             => $peso,
+            'estatura'         => $estatura,
+            'updated_at'       => $now,
         ];
 
         // Check if record exists

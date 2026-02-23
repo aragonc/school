@@ -41,11 +41,17 @@ $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email,
           $searchCond
         ORDER BY u.lastname, u.firstname";
 
+$extraTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_EXTRA_PROFILE);
+
 $result = Database::query($sql);
 $users = [];
 while ($row = Database::fetch_array($result, 'ASSOC')) {
     $uInfo = api_get_user_info($row['user_id']);
     $row['avatar'] = $uInfo['avatar_small'] ?? '';
+    // Check if extra profile (ficha) exists
+    $uid = (int) $row['user_id'];
+    $epRes = Database::query("SELECT id FROM $extraTable WHERE user_id = $uid LIMIT 1");
+    $row['has_ficha'] = Database::num_rows($epRes) > 0;
     $users[] = $row;
 }
 
@@ -58,6 +64,7 @@ if (!$customLogo) {
 }
 
 $plugin->assign('users', $users);
+$plugin->assign('ficha_url', api_get_path(WEB_PATH) . 'admin/ficha');
 $plugin->assign('search', $search);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
 $plugin->assign('ajax_admin_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_admin.php');

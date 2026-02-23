@@ -70,8 +70,21 @@
                             </button>
                         </td>
                         <td class="text-center align-middle">
+                            {% if u.has_ficha %}
+                            <a href="{{ ficha_url }}?user_id={{ u.user_id }}"
+                               class="btn btn-sm btn-info mb-1"
+                               title="Ver / Editar ficha de datos adicionales">
+                                <i class="fas fa-file-alt"></i> Ver ficha
+                            </a>
+                            {% else %}
+                            <a href="{{ ficha_url }}?user_id={{ u.user_id }}"
+                               class="btn btn-sm btn-success mb-1"
+                               title="Crear ficha de datos adicionales">
+                                <i class="fas fa-file-medical"></i> Crear ficha
+                            </a>
+                            {% endif %}
                             <button type="button"
-                                    class="btn btn-sm btn-outline-secondary btn-tarjeta-staff"
+                                    class="btn btn-sm btn-outline-secondary btn-tarjeta-staff mb-1"
                                     data-user-id="{{ u.user_id }}"
                                     title="Ver tarjeta de personal">
                                 <i class="fas fa-id-badge"></i> Tarjeta
@@ -188,7 +201,8 @@ $(document).ready(function () {
             language: { url: '//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json' },
             order: [[1, 'asc']],
             pageLength: 25,
-            columnDefs: [{ orderable: false, targets: [0, 5, 6] }]
+            columnDefs: [{ orderable: false, targets: [0, 5, 6] }],
+            autoWidth: false
         });
     }
 

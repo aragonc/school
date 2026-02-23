@@ -69,6 +69,7 @@ if ($matricula) {
 }
 
 $plugin->setTitle('Ficha de Matrícula');
+$plugin->assign('is_student', (int) api_get_user_status() === STUDENT);
 $plugin->assign('matricula', $matricula);
 $plugin->assign('madre', $madre);
 $plugin->assign('padre', $padre);

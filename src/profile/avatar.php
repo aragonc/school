@@ -132,6 +132,7 @@ if ($enable) {
 
     $plugin->setTitle($plugin->get_lang('EditProfile'));
     $plugin->assign('form', $form->returnForm());
+    $plugin->assign('is_student', (int) api_get_user_status() === STUDENT);
     $content = $plugin->fetch('profile/avatar.tpl');
     $plugin->assign('content', $content);
     $plugin->display_blank_template();

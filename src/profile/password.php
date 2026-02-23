@@ -225,8 +225,7 @@ if ($enable) {
     }
 
     $plugin->assign('form', $form->returnForm());
-
-
+    $plugin->assign('is_student', (int) api_get_user_status() === STUDENT);
     $plugin->assign('img_section', $imgSection);
     $content = $plugin->fetch('profile/password.tpl');
     $plugin->assign('content', $content);
