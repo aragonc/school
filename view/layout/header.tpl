@@ -97,4 +97,4 @@
                 {% include 'layout/navbar.tpl' %}
 
             <!-- Begin Page Content -->
-            <div class="container page-container">
+            <div class="container-fluid">

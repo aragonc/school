@@ -2,7 +2,7 @@
 
 {{ flash_messages }}
 
-<div class="card">
+<div class="card shadow">
     <div class="card-body">
         {% block content %}
         {{ content }}
