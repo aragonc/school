@@ -1,0 +1,45 @@
+{
+  "name": "vegas",
+  "version": "3.0.0",
+  "description": "Vegas - Fullscreen Backgrounds and Slideshows.",
+  "homepage": "http://vegas.jaysalvat.com",
+  "author": "Jay Salvat",
+  "license": "MIT",
+  "main": "dist/vegas.js",
+  "type": "module",
+  "exports": {
+    ".": "./dist/vegas.js",
+    "./jquery": "./src/jquery.vegas.js",
+    "./dist/*": "./dist/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jaysalvat/vegas.git"
+  },
+  "scripts": {
+    "dev": "rollup -c --watch",
+    "build": "node scripts/build.js",
+    "release:patch": "node scripts/release.js --type patch",
+    "release:minor": "node scripts/release.js --type minor",
+    "release:major": "node scripts/release.js --type major"
+  },
+  "keywords": [
+    "background",
+    "slideshow",
+    "fullscreen",
+    "vegas",
+    "jquery-plugin",
+    "jquery",
+    "zepto"
+  ],
+  "devDependencies": {
+    "@jaysalvat/eslint-config": "^2.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "archiver": "^7.0.1",
+    "autoprefixer": "^10.4.24",
+    "cssnano": "^7.1.2",
+    "eslint": "^10.0.0",
+    "postcss": "^8.5.6",
+    "rollup": "^4.57.1"
+  }
+}

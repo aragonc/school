@@ -2256,7 +2256,7 @@ class SchoolPlugin extends Plugin
             'items' => []
         ];
 
-        if ($this->get('activate_shopping') == 'false') {
+        if ($this->get('activate_shopping') == 'false' || api_get_user_status() == STUDENT) {
             $menus = array_filter($menus, function ($menu) {
                 return $menu['name'] !== 'shopping';
             });
@@ -2315,25 +2315,23 @@ class SchoolPlugin extends Plugin
                 'items' => $paymentItems
             ];
 
-            $productItems = [];
             if ($isAdminOrSecretary) {
-                $productItems = [
-                    ['name' => 'products-catalog', 'label' => $this->get_lang('ProductCatalog'), 'url' => '/products'],
-                    ['name' => 'products-categories', 'label' => $this->get_lang('Categories'), 'url' => '/products/categories'],
-                    ['name' => 'products-sell', 'label' => $this->get_lang('SellProduct'), 'url' => '/products/sell'],
-                    ['name' => 'products-sales', 'label' => $this->get_lang('SalesHistory'), 'url' => '/products/sales'],
+                $menus[] = [
+                    'id' => 8,
+                    'name' => 'products',
+                    'label' => $this->get_lang('Products'),
+                    'current' => $currentSection === 'products',
+                    'icon' => 'box-open',
+                    'class' => $currentSection === 'products' ? 'show' : '',
+                    'url' => '/products',
+                    'items' => [
+                        ['name' => 'products-catalog', 'label' => $this->get_lang('ProductCatalog'), 'url' => '/products'],
+                        ['name' => 'products-categories', 'label' => $this->get_lang('Categories'), 'url' => '/products/categories'],
+                        ['name' => 'products-sell', 'label' => $this->get_lang('SellProduct'), 'url' => '/products/sell'],
+                        ['name' => 'products-sales', 'label' => $this->get_lang('SalesHistory'), 'url' => '/products/sales'],
+                    ]
                 ];
             }
-            $menus[] = [
-                'id' => 8,
-                'name' => 'products',
-                'label' => $this->get_lang('Products'),
-                'current' => $currentSection === 'products',
-                'icon' => 'box-open',
-                'class' => $currentSection === 'products' ? 'show' : '',
-                'url' => $isAdminOrSecretary ? '/products' : '/products/my',
-                'items' => $productItems
-            ];
         }
 
         // Matricula menu (admin and secretary only)
