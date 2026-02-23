@@ -6,16 +6,12 @@
                     <div class="row">
                         {% if vegas_images|length > 0 %}
                         <div class="col-lg-6 d-none d-lg-block p-0" id="vegas-container" style="min-height: 450px; position: relative;"></div>
-                        {% elseif login_card_image %}
-                        <div class="col-lg-6 d-none d-lg-block" style="background: url('{{ login_card_image }}') no-repeat center center; background-size: cover;"></div>
-                        {% else %}
-                        <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
                         {% endif %}
                         <div class="col-lg-6">
                             <div class="p-5">
                                 <div class="text-center mb-4">
-                                    <img src="{{ logo_url }}" alt="{{ site_name }}" class="img-fluid mb-3" style="max-height: 80px;">
-                                    <p class="text-gray-600">Bienvenidos al aula virtual</p>
+                                    <img src="{{ logo_url }}" alt="{{ site_name }}"  class="img-fluid" style="width: 200px; max-height: 110px;">
+                                    <p class="text-gray-600  mt-3">Bienvenidos al aula virtual</p>
                                 </div>
 
                                 {% if error_message is not empty %}
@@ -74,11 +70,12 @@
 </div>
 
 {% if vegas_images|length > 0 %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vegas@2/dist/vegas.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vegas@2/dist/vegas.min.js"></script>
-<script>
-$(document).ready(function () {
-    $('#vegas-container').vegas({
+<link rel="stylesheet" href="{{ plugin_path }}js/vegas-3/src/vegas.css">
+<script type="module">
+import vegas from '{{ plugin_path }}js/vegas-3/src/vegas.js';
+const el = document.getElementById('vegas-container');
+if (el) {
+    vegas(el, {
         slides: [
             {% for img in vegas_images %}
             { src: '{{ img }}' }{% if not loop.last %},{% endif %}
@@ -91,6 +88,6 @@ $(document).ready(function () {
         animationDuration: 6000,
         overlay: true
     });
-});
+}
 </script>
 {% endif %}

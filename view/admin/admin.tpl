@@ -26,24 +26,29 @@
                     </div>
                     {% endif %}
 
-                    {% if current_login_bg_image or current_login_card_image %}
-                    <div class="row mb-4">
-                        {% if current_login_bg_image %}
-                        <div class="col-md-6">
-                            <label class="font-weight-bold">{{ 'CurrentLoginBgImage'|get_plugin_lang('SchoolPlugin') }}</label>
-                            <div class="p-3 border rounded" style="background: #f8f9fc;">
-                                <img src="{{ current_login_bg_image }}" alt="Login Background" style="max-height: 120px; border-radius: 4px;">
-                            </div>
+                    {% if current_login_bg_image %}
+                    <div class="mb-4">
+                        <label class="font-weight-bold">{{ 'CurrentLoginBgImage'|get_plugin_lang('SchoolPlugin') }}</label>
+                        <div class="p-3 border rounded" style="background: #f8f9fc;">
+                            <img src="{{ current_login_bg_image }}" alt="Login Background" style="max-height: 120px; border-radius: 4px;">
                         </div>
-                        {% endif %}
-                        {% if current_login_card_image %}
-                        <div class="col-md-6">
-                            <label class="font-weight-bold">{{ 'CurrentLoginCardImage'|get_plugin_lang('SchoolPlugin') }}</label>
-                            <div class="p-3 border rounded" style="background: #f8f9fc;">
-                                <img src="{{ current_login_card_image }}" alt="Login Card Image" style="max-height: 120px; border-radius: 4px;">
+                    </div>
+                    {% endif %}
+
+                    {% if vegas_preview|length > 0 %}
+                    <div class="mb-4">
+                        <label class="font-weight-bold">Slideshow de fondo (Vegas.js)</label>
+                        <div class="row">
+                            {% for i, url in vegas_preview %}
+                            <div class="col-6 mb-2">
+                                <div class="p-1 border rounded" style="background:#f8f9fc;">
+                                    <img src="{{ url }}" alt="Vegas {{ i }}"
+                                         style="width:100%;height:90px;object-fit:cover;border-radius:4px;">
+                                    <div class="text-center text-muted" style="font-size:11px;">Imagen {{ i }}</div>
+                                </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endif %}
                     </div>
                     {% endif %}
 

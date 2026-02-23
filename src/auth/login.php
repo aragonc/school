@@ -109,16 +109,6 @@ if ($loginBgImage) {
     }
 }
 
-// Login card image
-$loginCardImage = $plugin->getSchoolSetting('login_card_image');
-$loginCardImageUrl = '';
-if ($loginCardImage) {
-    $fullPath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$loginCardImage;
-    if (file_exists($fullPath)) {
-        $loginCardImageUrl = api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$loginCardImage;
-    }
-}
-
 // Vegas slideshow images
 $vegasImages = [];
 for ($i = 1; $i <= 4; $i++) {
@@ -136,7 +126,6 @@ $allowLostPassword = api_get_setting('allow_lostpassword') !== 'false';
 $plugin->assign('logo_url', $logoUrl);
 $plugin->assign('login_bg_color', $loginBgColor ?: '');
 $plugin->assign('login_bg_image', $loginBgImageUrl);
-$plugin->assign('login_card_image', $loginCardImageUrl);
 $plugin->assign('vegas_images', $vegasImages);
 $plugin->assign('allow_lost_password', $allowLostPassword);
 $plugin->assign('error_message', $errorMessage);

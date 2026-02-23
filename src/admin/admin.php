@@ -99,12 +99,6 @@ $form->addFile(
     ['accept' => '.jpg,.jpeg,.png,.webp']
 );
 $form->addCheckBox('remove_login_bg_image', '', $plugin->get_lang('RemoveLoginBgImage'));
-$form->addFile(
-    'login_card_image',
-    [$plugin->get_lang('LoginCardImage'), $plugin->get_lang('LoginCardImageHelp')],
-    ['accept' => '.jpg,.jpeg,.png,.webp']
-);
-$form->addCheckBox('remove_login_card_image', '', $plugin->get_lang('RemoveLoginCardImage'));
 
 // Vegas slideshow section
 $form->addHtml('<h4 class="title-form">'.$plugin->get_lang('VegasSettings').'</h4>');
@@ -258,40 +252,6 @@ if ($form->validate()) {
     }
 
     // Handle login card image removal
-    if (!empty($values['remove_login_card_image'])) {
-        $currentCard = $plugin->getSchoolSetting('login_card_image');
-        if ($currentCard) {
-            $filePath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$currentCard;
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
-        }
-        $plugin->setSchoolSetting('login_card_image', '');
-    }
-
-    // Handle login card image upload
-    if (!empty($_FILES['login_card_image']['size'])) {
-        $uploadDir = api_get_path(SYS_UPLOAD_PATH).'plugins/school/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, api_get_permissions_for_new_directories(), true);
-        }
-
-        $currentCard = $plugin->getSchoolSetting('login_card_image');
-        if ($currentCard) {
-            $oldFile = $uploadDir.$currentCard;
-            if (file_exists($oldFile)) {
-                unlink($oldFile);
-            }
-        }
-
-        $extension = pathinfo($_FILES['login_card_image']['name'], PATHINFO_EXTENSION);
-        $newFilename = 'login_card_'.time().'.'.$extension;
-
-        if (move_uploaded_file($_FILES['login_card_image']['tmp_name'], $uploadDir.$newFilename)) {
-            $plugin->setSchoolSetting('login_card_image', $newFilename);
-        }
-    }
-
     // Handle Vegas slideshow images
     $uploadDir = api_get_path(SYS_UPLOAD_PATH).'plugins/school/';
     for ($i = 1; $i <= 4; $i++) {
@@ -344,12 +304,18 @@ if ($loginBgImage) {
 } else {
     $plugin->assign('current_login_bg_image', '');
 }
-$loginCardImage = $plugin->getSchoolSetting('login_card_image');
-if ($loginCardImage) {
-    $plugin->assign('current_login_card_image', api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$loginCardImage);
-} else {
-    $plugin->assign('current_login_card_image', '');
+$vegasPreview = [];
+for ($i = 1; $i <= 4; $i++) {
+    $vegasFile = $plugin->getSchoolSetting('vegas_image_'.$i);
+    if ($vegasFile) {
+        $fullPath = api_get_path(SYS_UPLOAD_PATH).'plugins/school/'.$vegasFile;
+        if (file_exists($fullPath)) {
+            $vegasPreview[$i] = api_get_path(WEB_UPLOAD_PATH).'plugins/school/'.$vegasFile;
+        }
+    }
 }
+$plugin->assign('vegas_preview', $vegasPreview);
+
 $plugin->assign('form', $form->returnForm());
 $content = $plugin->fetch('admin/admin.tpl');
 $plugin->assign('content', $content);
