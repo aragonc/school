@@ -1713,6 +1713,7 @@ class SchoolPlugin extends Plugin
 
             $ribbon = ($count % 2 == 0) ? 'even' : 'odd';
 
+            $coursePicSys = api_get_path(SYS_COURSE_PATH) . $courseCode . '/course-pic.png';
             $courses[] = [
                 'id' => $courseId,
                 'code' => $courseCode,
@@ -1721,6 +1722,9 @@ class SchoolPlugin extends Plugin
                 'icon_mobile' => self::get_svg_icon('course', $courseTitle, 22, true),
                 'url' => api_get_path(WEB_PATH).'home/course/'.$courseCode,
                 'ribbon' => $ribbon,
+                'image_url' => file_exists($coursePicSys)
+                    ? api_get_path(WEB_COURSE_PATH) . $courseCode . '/course-pic.png'
+                    : '',
             ];
         }
 
@@ -1803,6 +1807,10 @@ class SchoolPlugin extends Plugin
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
+                $coursePicSys = api_get_path(SYS_COURSE_PATH) . $result_row['course_code'] . '/course-pic.png';
+                $result_row['image_url'] = file_exists($coursePicSys)
+                    ? api_get_path(WEB_COURSE_PATH) . $result_row['course_code'] . '/course-pic.png'
+                    : '';
                 $result_row['position_number'] = $count-1;
                 if ($count % 2 == 0) {
                     $result_row['ribbon'] = 'even';
