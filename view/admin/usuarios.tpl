@@ -2,8 +2,11 @@
     <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-primary">
             <i class="fas fa-users mr-1"></i> Usuarios
+            <span class="badge badge-primary badge-pill ml-1">{{ users|length }}</span>
         </h6>
-        <span class="badge badge-primary badge-pill">{{ users|length }}</span>
+        <a href="{{ _p.web }}admin/tarjetas-print" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-print mr-1"></i> Imprimir tarjetas
+        </a>
     </div>
     <div class="card-body">
 
@@ -114,13 +117,13 @@
                         border: 1px solid #e2e8f0;
                         box-shadow: 0 2px 12px rgba(0,0,0,0.08);
                     ">
-                        {# Cabecera: franja gris claro con logo + institución #}
-                        <div style="display:flex; align-items:center; padding:14px 18px 12px; background:#f7f8fa; border-bottom:2px solid #e2e8f0;">
+                        {# Cabecera: franja azul oscuro con logo + institución #}
+                        <div style="display:flex; align-items:center; padding:14px 18px 12px; background:#1a3558; border-bottom:3px solid #0f2040;">
                             <img id="sc-logo" src="{{ logo_url }}" alt="Logo"
-                                 style="height:42px; max-width:76px; object-fit:contain; background:#fff; border-radius:6px; padding:3px; margin-right:12px; flex-shrink:0; border:1px solid #e2e8f0;">
+                                 style="height:42px; max-width:76px; object-fit:contain; background:#fff; border-radius:6px; padding:3px; margin-right:12px; flex-shrink:0;">
                             <div>
-                                <div style="font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#718096; line-height:1.3;">{{ institution_name }}</div>
-                                <div style="font-size:11px; font-weight:800; letter-spacing:1px; color:#2d3748; line-height:1.4;">CARNET DE PERSONAL</div>
+                                <div style="font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#a8c4e0; line-height:1.3;">{{ institution_name }}</div>
+                                <div style="font-size:11px; font-weight:800; letter-spacing:1px; color:#ffffff; line-height:1.4;">CARNET DE PERSONAL</div>
                             </div>
                         </div>
 
@@ -160,7 +163,7 @@
                         </div>
 
                         {# Pie #}
-                        <div style="background:#f0f4f8; border-top:1px solid #e2e8f0; text-align:center; padding:7px; font-size:8px; letter-spacing:1.2px; color:#718096;">
+                        <div style="background:#1a3558; border-top:3px solid #0f2040; text-align:center; padding:9px; font-size:8px; letter-spacing:1.5px; color:#ffffff; font-weight:700;">
                             DOCUMENTO DE IDENTIFICACIÓN — PERSONAL
                         </div>
                     </div>

@@ -3,7 +3,13 @@
         <h6 class="m-0 font-weight-bold text-primary">
             <i class="fas fa-user-graduate mr-1"></i> Alumnos
         </h6>
-        <span class="badge badge-primary badge-pill">{{ students|length }}</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge badge-primary badge-pill">{{ students|length }}</span>
+            <a href="{{ _p.web }}matricula/tarjetas-print" target="_blank"
+               class="btn btn-sm btn-outline-primary ml-2">
+                <i class="fas fa-id-card mr-1"></i> Imprimir tarjetas
+            </a>
+        </div>
     </div>
     <div class="card-body">
 
