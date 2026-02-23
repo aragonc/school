@@ -2377,12 +2377,15 @@ class SchoolPlugin extends Plugin
             $menus[] = [
                 'id' => 10,
                 'name' => 'admin',
-                'label' => $this->get_lang('PluginAdmin'),
-                'current' => false,
+                'label' => 'Administración',
+                'current' => $currentSection === 'admin',
                 'icon' => 'cog',
                 'url' => '/school-admin',
-                'class' => $currentSection === 'admin' ? 'active' : '',
-                'items' => []
+                'class' => $currentSection === 'admin' ? 'show' : '',
+                'items' => [
+                    ['name' => 'admin-personalizacion', 'label' => 'Personalización', 'url' => '/school-admin'],
+                    ['name' => 'admin-usuarios', 'label' => 'Usuarios', 'url' => '/admin/usuarios'],
+                ]
             ];
         }
 
