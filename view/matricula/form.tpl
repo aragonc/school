@@ -68,7 +68,7 @@ $(document).ready(function() {
 
 <form method="POST" action="" enctype="multipart/form-data">
     <input type="hidden" name="matricula_id" value="{{ matricula_id }}">
-    <input type="hidden" name="user_id" id="matricula-user-id" value="{{ matricula.user_id ?? '' }}">
+    <input type="hidden" name="user_id" id="matricula-user-id" value="{{ prelinked_user_id ?: (matricula.user_id ?? '') }}">
 
     {# ============================================================ #}
     {# VÍNCULO CON USUARIO DE CHAMILO                               #}
@@ -78,7 +78,7 @@ $(document).ready(function() {
             <i class="fas fa-link"></i> Vincular a cuenta de usuario
         </div>
         <div class="card-body py-3">
-            {% if matricula.user_id %}
+            {% if prelinked_user_id or matricula.user_id %}
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <i class="fas fa-user-check text-success mr-2"></i>
@@ -94,7 +94,7 @@ $(document).ready(function() {
                 Al vincular esta matrícula a un usuario, el alumno podrá ver su ficha en su perfil.
             </p>
             {% endif %}
-            <div id="user-search-area" {% if matricula.user_id %}style="display:none;"{% endif %}>
+            <div id="user-search-area" {% if prelinked_user_id or matricula.user_id %}style="display:none;"{% endif %}>
                 <div class="input-group" style="flex-wrap:nowrap; max-width:400px;">
                     <input type="text" id="user-search-input" class="form-control form-control-sm"
                            placeholder="Buscar por usuario o nombre..."
@@ -130,32 +130,34 @@ $(document).ready(function() {
                 </div>
                 <div class="form-group col-md-2">
                     <label class="font-weight-bold">{{ 'EstadoMatricula'|get_plugin_lang('SchoolPlugin') }}</label>
+                    {% set estadoVal = matricula.estado ?? preload.estado ?? 'ACTIVO' %}
                     <select name="estado" class="form-control">
-                        <option value="ACTIVO" {{ (matricula.estado ?? 'ACTIVO') == 'ACTIVO' ? 'selected' : '' }}>{{ 'Activo'|get_plugin_lang('SchoolPlugin') }}</option>
-                        <option value="RETIRADO" {{ (matricula.estado ?? '') == 'RETIRADO' ? 'selected' : '' }}>{{ 'Retirado'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="ACTIVO"    {{ estadoVal == 'ACTIVO'    ? 'selected' : '' }}>{{ 'Activo'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="RETIRADO"  {{ estadoVal == 'RETIRADO'  ? 'selected' : '' }}>{{ 'Retirado'|get_plugin_lang('SchoolPlugin') }}</option>
                     </select>
                 </div>
                 <div class="form-group col-md-3">
                     <label class="font-weight-bold">{{ 'TipoIngreso'|get_plugin_lang('SchoolPlugin') }} *</label>
+                    {% set tipoIngresoVal = matricula.tipo_ingreso ?? preload.tipo_ingreso ?? 'NUEVO_INGRESO' %}
                     <select name="tipo_ingreso" class="form-control" required>
-                        <option value="NUEVO_INGRESO" {{ (matricula.tipo_ingreso ?? 'NUEVO_INGRESO') == 'NUEVO_INGRESO' ? 'selected' : '' }}>{{ 'NewEnrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
-                        <option value="REINGRESO" {{ (matricula.tipo_ingreso ?? '') == 'REINGRESO' ? 'selected' : '' }}>{{ 'ReenrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
-                        <option value="CONTINUACION" {{ (matricula.tipo_ingreso ?? '') == 'CONTINUACION' ? 'selected' : '' }}>{{ 'ContinuacionType'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="NUEVO_INGRESO" {{ tipoIngresoVal == 'NUEVO_INGRESO' ? 'selected' : '' }}>{{ 'NewEnrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="REINGRESO"     {{ tipoIngresoVal == 'REINGRESO'     ? 'selected' : '' }}>{{ 'ReenrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="CONTINUACION"  {{ tipoIngresoVal == 'CONTINUACION'  ? 'selected' : '' }}>{{ 'ContinuacionType'|get_plugin_lang('SchoolPlugin') }}</option>
                     </select>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label class="font-weight-bold">{{ 'ApellidoPaterno'|get_plugin_lang('SchoolPlugin') }} *</label>
-                    <input type="text" name="apellido_paterno" class="form-control text-uppercase" value="{{ matricula.apellido_paterno ?? '' }}" required placeholder="Apellido paterno">
+                    <input type="text" name="apellido_paterno" class="form-control text-uppercase" value="{{ matricula.apellido_paterno ?? preload.apellido_paterno ?? '' }}" required placeholder="Apellido paterno">
                 </div>
                 <div class="form-group col-md-4">
                     <label class="font-weight-bold">{{ 'ApellidoMaterno'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="apellido_materno" class="form-control text-uppercase" value="{{ matricula.apellido_materno ?? '' }}" placeholder="Apellido materno">
+                    <input type="text" name="apellido_materno" class="form-control text-uppercase" value="{{ matricula.apellido_materno ?? preload.apellido_materno ?? '' }}" placeholder="Apellido materno">
                 </div>
                 <div class="form-group col-md-4">
                     <label class="font-weight-bold">{{ 'Nombres'|get_plugin_lang('SchoolPlugin') }} *</label>
-                    <input type="text" name="nombres" class="form-control text-uppercase" value="{{ matricula.nombres ?? '' }}" required placeholder="Nombres">
+                    <input type="text" name="nombres" class="form-control text-uppercase" value="{{ matricula.nombres ?? preload.nombres ?? '' }}" required placeholder="Nombres">
                 </div>
             </div>
 
@@ -192,7 +194,7 @@ $(document).ready(function() {
                     <label class="font-weight-bold">{{ 'TipoDocumento'|get_plugin_lang('SchoolPlugin') }}</label>
                     <select name="tipo_documento" id="field-tipo-doc" class="form-control">
                         {% set nacActual = matricula.nacionalidad ?? 'Peruana' %}
-                        {% set docActual = matricula.tipo_documento ?? 'DNI' %}
+                        {% set docActual = matricula.tipo_documento ?? preload.tipo_documento ?? 'DNI' %}
                         <option value="DNI" {{ docActual == 'DNI' ? 'selected' : '' }}>DNI</option>
                         {% if nacActual == 'Extranjera' %}
                         <option value="CARNET_EXTRANJERIA" {{ docActual == 'CARNET_EXTRANJERIA' ? 'selected' : '' }}>{{ 'CarnetExtranjeria'|get_plugin_lang('SchoolPlugin') }}</option>
@@ -206,7 +208,7 @@ $(document).ready(function() {
                     <label class="font-weight-bold">{{ 'NroDocumento'|get_plugin_lang('SchoolPlugin') }}</label>
                     <div class="input-group" style="flex-wrap:nowrap;">
                         <input type="text" name="dni" id="field-doc-nro" class="form-control" style="margin:0;"
-                               value="{{ matricula.dni ?? '' }}"
+                               value="{{ matricula.dni ?? preload.dni ?? '' }}"
                                maxlength="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '8' : '20' }}"
                                placeholder="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '00000000' : '' }}">
                         <div class="input-group-append">

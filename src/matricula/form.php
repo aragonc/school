@@ -175,15 +175,49 @@ if (!empty($matricula['foto'])) {
 }
 $plugin->assign('foto_url', $fotoUrl);
 
-// Linked user name (for display in the form)
+// Linked user: from existing matricula or pre-filled via GET ?user_id=
+$linkedUserId   = 0;
 $linkedUserName = '';
+$preload        = [];
+
 if (!empty($matricula['user_id'])) {
-    $linkedUser = api_get_user_info($matricula['user_id']);
+    $linkedUserId = (int) $matricula['user_id'];
+} elseif (isset($_GET['user_id']) && (int) $_GET['user_id'] > 0) {
+    $linkedUserId = (int) $_GET['user_id'];
+}
+
+if ($linkedUserId > 0) {
+    $linkedUser = api_get_user_info($linkedUserId);
     if ($linkedUser) {
         $linkedUserName = $linkedUser['lastname'] . ' ' . $linkedUser['firstname'] . ' (' . $linkedUser['username'] . ')';
+
+        // Pre-fill form for new matricula from Chamilo user
+        if ($matriculaId === 0) {
+            // Split lastname: first word = apellido_paterno, rest = apellido_materno
+            $lastnameParts    = explode(' ', trim($linkedUser['lastname']), 2);
+            $apellidoPaterno  = $lastnameParts[0] ?? '';
+            $apellidoMaterno  = $lastnameParts[1] ?? '';
+
+            // DNI = first 8 chars of email (before @)
+            $emailLocal = explode('@', $linkedUser['email'])[0] ?? '';
+            $dniPreload = substr($emailLocal, 0, 8);
+
+            $preload = [
+                'apellido_paterno' => $apellidoPaterno,
+                'apellido_materno' => $apellidoMaterno,
+                'nombres'          => trim($linkedUser['firstname']),
+                'tipo_documento'   => 'DNI',
+                'dni'              => $dniPreload,
+                'tipo_ingreso'     => 'CONTINUACION',
+                'estado'           => 'ACTIVO',
+            ];
+        }
     }
 }
+
+$plugin->assign('prelinked_user_id', $linkedUserId);
 $plugin->assign('linked_user_name', $linkedUserName);
+$plugin->assign('preload', $preload);
 
 $title = $matriculaId > 0 ? $plugin->get_lang('EditEnrollment') : $plugin->get_lang('NewEnrollment');
 $plugin->setTitle($title);

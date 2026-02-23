@@ -194,6 +194,103 @@ switch ($action) {
         }
         break;
 
+    case 'get_tarjeta_data':
+        if (!api_is_platform_admin() && !($userInfo && $userInfo['status'] == SCHOOL_SECRETARY)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            break;
+        }
+        $matriculaId  = (int) ($_GET['matricula_id'] ?? 0);
+        $tarjetaUserId = (int) ($_GET['user_id'] ?? 0);
+        $gradeName = ''; $levelName = ''; $sectionName = '';
+
+        if ($matriculaId > 0) {
+            // Alumno con ficha de matrícula
+            $mat = MatriculaManager::getMatriculaById($matriculaId);
+            if (!$mat) {
+                echo json_encode(['success' => false, 'error' => 'Matrícula no encontrada']);
+                break;
+            }
+            $gradeTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+            $levelTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+            $gradeId = (int) ($mat['grade_id'] ?? 0);
+            if ($gradeId > 0) {
+                $gRes = Database::query("SELECT g.name AS grade_name, g.section, l.name AS level_name
+                    FROM $gradeTable g LEFT JOIN $levelTable l ON g.level_id = l.id
+                    WHERE g.id = $gradeId LIMIT 1");
+                if ($gRow = Database::fetch_array($gRes, 'ASSOC')) {
+                    $gradeName   = $gRow['grade_name'];
+                    $sectionName = $gRow['section'] ?? '';
+                    $levelName   = $gRow['level_name'];
+                }
+            }
+            $fotoUrl = '';
+            if (!empty($mat['foto'])) {
+                $fotoUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/matricula/' . $mat['foto'];
+            } elseif (!empty($mat['user_id'])) {
+                $uInfoCard = api_get_user_info((int) $mat['user_id']);
+                $fotoUrl   = $uInfoCard['avatar'] ?? '';
+            }
+            $email = '';
+            if (!empty($mat['user_id'])) {
+                $uInfoCard = api_get_user_info((int) $mat['user_id']);
+                $email     = $uInfoCard['email'] ?? '';
+            }
+            echo json_encode([
+                'success'   => true,
+                'nombres'   => trim($mat['nombres'] ?? ''),
+                'apellidos' => trim(($mat['apellido_paterno'] ?? '') . ' ' . ($mat['apellido_materno'] ?? '')),
+                'dni'       => $mat['dni'] ?? '',
+                'grade'     => $gradeName,
+                'section'   => $sectionName,
+                'level'     => $levelName,
+                'foto_url'  => $fotoUrl,
+                'email'     => $email,
+            ]);
+        } elseif ($tarjetaUserId > 0) {
+            // Alumno solo con cuenta Chamilo (sin ficha de matrícula)
+            $uInfoCard = api_get_user_info($tarjetaUserId);
+            if (!$uInfoCard) {
+                echo json_encode(['success' => false, 'error' => 'Usuario no encontrado']);
+                break;
+            }
+            $apellidos = trim($uInfoCard['lastname'] ?? '');
+            $nombres   = trim($uInfoCard['firstname'] ?? '');
+            echo json_encode([
+                'success'   => true,
+                'nombres'   => $nombres,
+                'apellidos' => $apellidos,
+                'dni'       => '',
+                'grade'     => '',
+                'section'   => '',
+                'level'     => '',
+                'foto_url'  => $uInfoCard['avatar'] ?? '',
+                'email'     => $uInfoCard['email'] ?? '',
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'ID inválido']);
+        }
+        break;
+
+    case 'toggle_user_active':
+        if (!api_is_platform_admin() && !($userInfo && $userInfo['status'] == SCHOOL_SECRETARY)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            break;
+        }
+        $toggleUserId = (int) ($_POST['user_id'] ?? 0);
+        $newActive    = (int) ($_POST['active'] ?? 0);
+        $newActive    = $newActive ? 1 : 0;
+        if ($toggleUserId <= 0) {
+            echo json_encode(['success' => false, 'error' => 'ID inválido']);
+            break;
+        }
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        Database::update($userTable, ['active' => $newActive], ['user_id = ?' => $toggleUserId]);
+        echo json_encode([
+            'success' => true,
+            'message' => $newActive ? 'Usuario activado.' : 'Usuario desactivado.',
+        ]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Acción no reconocida']);
         break;

@@ -8842,8 +8842,6 @@ body.sidebar-toggled footer.sticky-footer {
   border: none; }
   .card .card-header {
     margin-bottom: .3rem !important;
-    border-bottom: none;
-    padding: 0;
     background-color: #f2f2f2; }
     .card .card-header .btn-link {
       color: #5a5c69;

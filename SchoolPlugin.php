@@ -1078,6 +1078,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^matricula/nueva$ plugin/school/src/matricula/form.php [L]\n".
             "RewriteRule ^matricula/editar$ plugin/school/src/matricula/form.php [L,QSA]\n".
             "RewriteRule ^matricula/ver$ plugin/school/src/matricula/view.php [L,QSA]\n".
+            "RewriteRule ^matricula/alumnos$ plugin/school/src/matricula/alumnos.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -2345,8 +2346,9 @@ class SchoolPlugin extends Plugin
                 'class' => $currentSection === 'matricula' ? 'show' : '',
                 'url' => '/matricula',
                 'items' => [
-                    ['name' => 'matricula-list',  'label' => $this->get_lang('EnrollmentList'),  'url' => '/matricula'],
-                    ['name' => 'matricula-nueva', 'label' => $this->get_lang('NewEnrollment'),   'url' => '/matricula/nueva'],
+                    ['name' => 'matricula-list',      'label' => $this->get_lang('EnrollmentList'),          'url' => '/matricula'],
+                    ['name' => 'matricula-nueva',     'label' => $this->get_lang('NewEnrollment'),            'url' => '/matricula/nueva'],
+                    ['name' => 'matricula-alumnos',   'label' => $this->get_lang('Students'),       'url' => '/matricula/alumnos'],
                 ]
             ];
         }
