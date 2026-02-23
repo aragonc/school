@@ -21,8 +21,8 @@ if (!$isAdmin && !$isSecretary) {
 $plugin->setCurrentSection('matricula');
 $plugin->setSidebar('matricula');
 
-$userTable      = Database::get_main_table(TABLE_MAIN_USER);
-$matriculaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+$userTable  = Database::get_main_table(TABLE_MAIN_USER);
+$fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
 
 $search = trim($_GET['search'] ?? '');
 $searchCond = '';
@@ -36,7 +36,7 @@ $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email, u.regist
         WHERE u.status = " . STUDENT . "
           AND u.active = 1
           AND NOT EXISTS (
-              SELECT 1 FROM $matriculaTable m WHERE m.user_id = u.user_id
+              SELECT 1 FROM $fichaTable f WHERE f.user_id = u.user_id
           )
           $searchCond
         ORDER BY u.lastname, u.firstname";

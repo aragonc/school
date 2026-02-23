@@ -6,7 +6,7 @@
     <div>
         {% if (is_admin or is_secretary) and not matricula.user_id %}
         <button type="button" id="btn-crear-usuario" class="btn btn-success btn-sm mr-1"
-                data-id="{{ matricula.id }}"
+                data-ficha-id="{{ ficha_id }}"
                 title="Crear cuenta de alumno inactiva en Chamilo">
             <i class="fas fa-user-plus"></i> Crear usuario Chamilo
         </button>
@@ -16,7 +16,11 @@
             <i class="fas fa-user-check"></i> {{ linked_user_name }}
         </span>
         {% endif %}
-        <a href="{{ _p.web }}matricula/editar?id={{ matricula.id }}" class="btn btn-warning btn-sm mr-1">
+        <button type="button" class="btn btn-primary btn-sm mr-1"
+                data-toggle="modal" data-target="#modalAsignarMatricula">
+            <i class="fas fa-graduation-cap"></i> Asignar Matrícula
+        </button>
+        <a href="{{ _p.web }}matricula/editar?ficha_id={{ ficha_id }}" class="btn btn-warning btn-sm mr-1">
             <i class="fas fa-edit"></i> {{ 'Edit'|get_plugin_lang('SchoolPlugin') }}
         </a>
         <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
@@ -32,13 +36,16 @@
 <div class="card" id="ficha-matricula">
     <div class="card-header text-center py-3">
         <h5 class="mb-0 font-weight-bold">FICHA DE MATRÍCULA</h5>
+        {% if historial|length > 0 %}
         <small class="text-muted">
-            {% if matricula.tipo_ingreso == 'NUEVO_INGRESO' %}
-                <span class="badge badge-success">NUEVO INGRESO</span>
-            {% else %}
-                <span class="badge badge-info">REINGRESO</span>
-            {% endif %}
+            {% set lastMat = historial[0] %}
+            {% if lastMat.academic_year_name %}<span class="badge badge-secondary">{{ lastMat.academic_year_name }}</span> {% endif %}
+            {% if lastMat.tipo_ingreso == 'NUEVO_INGRESO' %}<span class="badge badge-success">NUEVO INGRESO</span>
+            {% elseif lastMat.tipo_ingreso == 'REINGRESO' %}<span class="badge badge-warning">REINGRESO</span>
+            {% else %}<span class="badge badge-info">CONTINUACIÓN</span>{% endif %}
+            {% if lastMat.estado == 'RETIRADO' %}<span class="badge badge-danger ml-1">RETIRADO</span>{% endif %}
         </small>
+        {% endif %}
     </div>
     <div class="card-body">
 
@@ -264,6 +271,140 @@
     </div>
 </div>
 
+{# ============================================================ #}
+{# HISTORIAL DE MATRÍCULAS                                      #}
+{# ============================================================ #}
+<div class="card mt-4 no-print">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <span><i class="fas fa-history mr-1"></i> Historial de Matrículas</span>
+        <button type="button" class="btn btn-success btn-sm"
+                data-toggle="modal" data-target="#modalAsignarMatricula"
+                id="btn-nueva-matricula">
+            <i class="fas fa-plus"></i> Asignar Matrícula
+        </button>
+    </div>
+    <div class="card-body p-0">
+        {% if historial is empty %}
+        <p class="text-muted text-center my-3">Sin matrículas asignadas aún.</p>
+        {% else %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th>Año</th>
+                    <th>Nivel / Grado</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Registrado</th>
+                    <th class="text-center" style="width:90px;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in historial %}
+                <tr>
+                    <td>{{ m.academic_year_name ?: '—' }}</td>
+                    <td>{% if m.level_name %}{{ m.level_name }} — {% endif %}{{ m.grade_name ?: '—' }}</td>
+                    <td>
+                        {% if m.tipo_ingreso == 'NUEVO_INGRESO' %}<span class="badge badge-success">Nuevo</span>
+                        {% elseif m.tipo_ingreso == 'REINGRESO' %}<span class="badge badge-warning">Reingreso</span>
+                        {% else %}<span class="badge badge-info">Continuación</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if m.estado == 'ACTIVO' %}<span class="badge badge-success">Activo</span>
+                        {% else %}<span class="badge badge-danger">Retirado</span>{% endif %}
+                    </td>
+                    <td>{{ m.created_at|date('d/m/Y') }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-xs btn-outline-warning btn-editar-mat"
+                                data-id="{{ m.id }}"
+                                data-year="{{ m.academic_year_id }}"
+                                data-grade="{{ m.grade_id }}"
+                                data-tipo="{{ m.tipo_ingreso }}"
+                                data-estado="{{ m.estado }}"
+                                title="Editar matrícula">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-xs btn-outline-danger btn-delete-mat ml-1"
+                                data-id="{{ m.id }}"
+                                title="Eliminar matrícula">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+{# ============================================================ #}
+{# MODAL: Asignar / Editar Matrícula Anual                      #}
+{# ============================================================ #}
+<div class="modal fade" id="modalAsignarMatricula" tabindex="-1" role="dialog"
+     aria-labelledby="modalAsignarMatriculaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAsignarMatriculaLabel">
+                    <i class="fas fa-graduation-cap mr-1"></i> Asignar Matrícula
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal-mat-id" value="0">
+                <div class="form-group">
+                    <label class="font-weight-bold">Año Académico</label>
+                    <select class="form-control" id="modal-year">
+                        <option value="">— Seleccione —</option>
+                        {% for y in all_years %}
+                        <option value="{{ y.id }}" {{ active_year_id == y.id ? 'selected' : '' }}>
+                            {{ y.name }}{% if y.active %} ★{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Nivel / Grado</label>
+                    <select class="form-control" id="modal-grade">
+                        <option value="">— Seleccione —</option>
+                        {% for level in levels %}
+                        <optgroup label="{{ level.name }}">
+                            {% for grade in level.grades %}
+                            <option value="{{ grade.id }}">{{ grade.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Tipo de Ingreso</label>
+                    <select class="form-control" id="modal-tipo-ingreso">
+                        <option value="NUEVO_INGRESO">Nuevo Ingreso</option>
+                        <option value="REINGRESO">Reingreso</option>
+                        <option value="CONTINUACION" selected>Continuación</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Estado</label>
+                    <select class="form-control" id="modal-estado">
+                        <option value="ACTIVO" selected>Activo</option>
+                        <option value="RETIRADO">Retirado</option>
+                    </select>
+                </div>
+                <div id="modal-error" class="alert alert-danger" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-guardar-matricula">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 @media print {
     .no-print, .sidebar, nav, .topbar, footer { display: none !important; }
@@ -273,6 +414,7 @@
 </style>
 
 <script>
+// --- Crear usuario Chamilo ---
 (function() {
     var btn = document.getElementById('btn-crear-usuario');
     if (!btn) return;
@@ -285,7 +427,7 @@
 
         $.post('{{ ajax_url }}', {
             action: 'crear_usuario_chamilo',
-            matricula_id: btn.dataset.id
+            ficha_id: btn.dataset.fichaId
         })
         .done(function(resp) {
             var area = document.getElementById('crear-usuario-result');
@@ -311,6 +453,90 @@
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-user-plus"></i> Crear usuario Chamilo';
             alert('Error de conexión al crear el usuario.');
+        });
+    });
+})();
+
+// --- Modal Asignar Matrícula ---
+(function() {
+    var ajaxUrl = '{{ ajax_url }}';
+    var fichaId = {{ ficha_id }};
+
+    // Abrir modal en modo "nuevo"
+    document.getElementById('btn-nueva-matricula').addEventListener('click', function() {
+        document.getElementById('modal-mat-id').value = 0;
+        document.getElementById('modalAsignarMatriculaLabel').innerHTML =
+            '<i class="fas fa-graduation-cap mr-1"></i> Asignar Matrícula';
+        document.getElementById('modal-tipo-ingreso').value = 'CONTINUACION';
+        document.getElementById('modal-estado').value = 'ACTIVO';
+        document.getElementById('modal-error').style.display = 'none';
+    });
+
+    // Abrir modal en modo "editar" desde botones de la tabla
+    document.querySelectorAll('.btn-editar-mat').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var matId = btn.dataset.id;
+            document.getElementById('modal-mat-id').value = matId;
+            document.getElementById('modalAsignarMatriculaLabel').innerHTML =
+                '<i class="fas fa-graduation-cap mr-1"></i> Editar Matrícula';
+            document.getElementById('modal-year').value        = btn.dataset.year || '';
+            document.getElementById('modal-grade').value       = btn.dataset.grade || '';
+            document.getElementById('modal-tipo-ingreso').value = btn.dataset.tipo || 'CONTINUACION';
+            document.getElementById('modal-estado').value      = btn.dataset.estado || 'ACTIVO';
+            document.getElementById('modal-error').style.display = 'none';
+            $('#modalAsignarMatricula').modal('show');
+        });
+    });
+
+    // Guardar matrícula
+    document.getElementById('btn-guardar-matricula').addEventListener('click', function() {
+        var btn     = this;
+        var matId   = document.getElementById('modal-mat-id').value;
+        var errDiv  = document.getElementById('modal-error');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        errDiv.style.display = 'none';
+
+        $.post(ajaxUrl, {
+            action:           'save_matricula_anual',
+            ficha_id:         fichaId,
+            mat_id:           matId,
+            academic_year_id: document.getElementById('modal-year').value,
+            grade_id:         document.getElementById('modal-grade').value,
+            tipo_ingreso:     document.getElementById('modal-tipo-ingreso').value,
+            estado:           document.getElementById('modal-estado').value
+        })
+        .done(function(resp) {
+            if (resp.success) {
+                location.reload();
+            } else {
+                errDiv.textContent = resp.message || 'Error al guardar la matrícula.';
+                errDiv.style.display = '';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+            }
+        })
+        .fail(function() {
+            errDiv.textContent = 'Error de conexión.';
+            errDiv.style.display = '';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+        });
+    });
+
+    // Eliminar matrícula
+    document.querySelectorAll('.btn-delete-mat').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (!confirm('¿Eliminar este registro de matrícula?\n\nLa ficha del alumno no se eliminará.')) return;
+            $.post(ajaxUrl, { action: 'delete_matricula', id: btn.dataset.id })
+             .done(function(resp) {
+                if (resp.success) {
+                    location.reload();
+                } else {
+                    alert(resp.message || 'Error al eliminar.');
+                }
+             });
         });
     });
 })();

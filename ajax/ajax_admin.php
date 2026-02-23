@@ -6,11 +6,8 @@ $plugin->requireLogin();
 
 header('Content-Type: application/json');
 
-$isAdmin = api_is_platform_admin();
-if (!$isAdmin) {
-    echo json_encode(['success' => false, 'error' => 'Sin permisos']);
-    exit;
-}
+$isAdmin      = api_is_platform_admin();
+$currentUserId = api_get_user_id();
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
@@ -20,6 +17,11 @@ switch ($action) {
         $staffUserId = (int) ($_GET['user_id'] ?? 0);
         if ($staffUserId <= 0) {
             echo json_encode(['success' => false, 'error' => 'ID inválido']);
+            break;
+        }
+        // Allow admin OR the user requesting their own card
+        if (!$isAdmin && $staffUserId !== $currentUserId) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
             break;
         }
 

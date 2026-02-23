@@ -3,7 +3,11 @@
 
 /**
  * MatriculaManager - School Plugin
- * Manages student enrollment records (fichas de matrícula).
+ * Manages student enrollment records.
+ *
+ * Data is split into two tables:
+ *  - plugin_school_ficha      : permanent personal data (one per student)
+ *  - plugin_school_matricula  : annual enrollment (one per student per year)
  *
  * @package chamilo.plugin.school
  */
@@ -29,9 +33,6 @@ class MatriculaManager
     // AÑO ACADÉMICO
     // =========================================================================
 
-    /**
-     * Returns the currently active academic year, or null if none is set.
-     */
     public static function getActiveYear(): ?array
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_YEAR);
@@ -40,9 +41,6 @@ class MatriculaManager
         return $row ?: null;
     }
 
-    /**
-     * Returns all academic years ordered by year DESC.
-     */
     public static function getAllYears(): array
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_YEAR);
@@ -55,139 +53,19 @@ class MatriculaManager
     }
 
     // =========================================================================
-    // MATRÍCULA PRINCIPAL
+    // FICHA (datos personales permanentes)
     // =========================================================================
 
-    public static function getMatriculas(array $filters = []): array
+    public static function saveFicha(array $data): int
     {
-        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
-        $grade = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
-        $level = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
-
-        $where = ['1=1'];
-
-        if (!empty($filters['academic_year_id'])) {
-            $where[] = "m.academic_year_id = " . (int) $filters['academic_year_id'];
-        }
-        if (!empty($filters['tipo_ingreso'])) {
-            $ti = Database::escape_string($filters['tipo_ingreso']);
-            $where[] = "m.tipo_ingreso = '$ti'";
-        }
-        if (!empty($filters['estado'])) {
-            $est = Database::escape_string($filters['estado']);
-            $where[] = "m.estado = '$est'";
-        }
-        if (!empty($filters['grade_id'])) {
-            $where[] = "m.grade_id = " . (int) $filters['grade_id'];
-        }
-        if (!empty($filters['search'])) {
-            $s = Database::escape_string($filters['search']);
-            $where[] = "(m.apellido_paterno LIKE '%$s%' OR m.apellido_materno LIKE '%$s%' OR m.nombres LIKE '%$s%' OR m.dni LIKE '%$s%')";
-        }
-
-        $whereStr = implode(' AND ', $where);
-
-        $sql = "SELECT m.*,
-                       g.name AS grade_name,
-                       lv.name AS level_name
-                FROM $table m
-                LEFT JOIN $grade g ON m.grade_id = g.id
-                LEFT JOIN $level lv ON g.level_id = lv.id
-                WHERE $whereStr
-                ORDER BY m.apellido_paterno, m.apellido_materno, m.nombres ASC";
-
-        $result = Database::query($sql);
-        $rows = [];
-        while ($row = Database::fetch_array($result, 'ASSOC')) {
-            $row['full_name'] = self::getFullName($row);
-            $rows[] = $row;
-        }
-        return $rows;
-    }
-
-    public static function getMatriculaByUserId(int $userId): ?array
-    {
-        if ($userId <= 0) return null;
-
-        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
-        $grade = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
-        $level = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
-
-        $sql = "SELECT m.*,
-                       g.name AS grade_name,
-                       lv.name AS level_name,
-                       g.level_id
-                FROM $table m
-                LEFT JOIN $grade g ON m.grade_id = g.id
-                LEFT JOIN $level lv ON g.level_id = lv.id
-                WHERE m.user_id = $userId
-                ORDER BY m.academic_year_id DESC, m.id DESC
-                LIMIT 1";
-
-        $result = Database::query($sql);
-        $row = Database::fetch_array($result, 'ASSOC');
-        if ($row) {
-            $row['full_name'] = self::getFullName($row);
-        }
-        return $row ?: null;
-    }
-
-    public static function getMatriculaById(int $id): ?array
-    {
-        if ($id <= 0) return null;
-
-        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
-        $grade = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
-        $level = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
-
-        $sql = "SELECT m.*,
-                       g.name AS grade_name,
-                       lv.name AS level_name,
-                       g.level_id
-                FROM $table m
-                LEFT JOIN $grade g ON m.grade_id = g.id
-                LEFT JOIN $level lv ON g.level_id = lv.id
-                WHERE m.id = $id";
-
-        $result = Database::query($sql);
-        $row = Database::fetch_array($result, 'ASSOC');
-        if ($row) {
-            $row['full_name'] = self::getFullName($row);
-        }
-        return $row ?: null;
-    }
-
-    public static function getMatriculaCompleta(int $id): ?array
-    {
-        $mat = self::getMatriculaById($id);
-        if (!$mat) return null;
-
-        $mat['padres']    = self::getPadresByMatricula($id);
-        $mat['contactos'] = self::getContactosByMatricula($id);
-        $mat['info']      = self::getInfoByMatricula($id);
-
-        return $mat;
-    }
-
-    public static function saveMatricula(array $data): int
-    {
-        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
         $id    = isset($data['id']) ? (int) $data['id'] : 0;
-
-        $tipoIngreso = $data['tipo_ingreso'] ?? '';
-        if (!in_array($tipoIngreso, ['NUEVO_INGRESO', 'REINGRESO', 'CONTINUACION'])) {
-            $tipoIngreso = 'NUEVO_INGRESO';
-        }
 
         $params = [
             'user_id'              => isset($data['user_id']) && $data['user_id'] ? (int) $data['user_id'] : null,
-            'academic_year_id'     => isset($data['academic_year_id']) && $data['academic_year_id'] ? (int) $data['academic_year_id'] : null,
-            'estado'               => in_array($data['estado'] ?? '', ['ACTIVO', 'RETIRADO']) ? $data['estado'] : 'ACTIVO',
-            'tipo_ingreso'         => $tipoIngreso,
             'apellido_paterno'     => !empty($data['apellido_paterno']) ? Database::escape_string(mb_strtoupper(trim($data['apellido_paterno']))) : null,
             'apellido_materno'     => !empty($data['apellido_materno']) ? Database::escape_string(mb_strtoupper(trim($data['apellido_materno']))) : null,
             'nombres'              => Database::escape_string(mb_strtoupper(trim($data['nombres'] ?? ''))),
-            'grade_id'             => isset($data['grade_id']) && $data['grade_id'] ? (int) $data['grade_id'] : null,
             'sexo'                 => in_array($data['sexo'] ?? '', ['F', 'M']) ? $data['sexo'] : null,
             'dni'                  => !empty($data['dni']) ? Database::escape_string(trim($data['dni'])) : null,
             'tipo_documento'       => !empty($data['tipo_documento']) ? Database::escape_string(trim($data['tipo_documento'])) : null,
@@ -209,7 +87,6 @@ class MatriculaManager
             'motivo_traslado'      => !empty($data['motivo_traslado']) ? Database::escape_string(trim($data['motivo_traslado'])) : null,
         ];
 
-        // Only update foto if a new one was provided (avoid overwriting with null on regular saves)
         if (!empty($data['foto'])) {
             $params['foto'] = Database::escape_string(trim($data['foto']));
         }
@@ -225,24 +102,224 @@ class MatriculaManager
         }
     }
 
+    public static function getFichaById(int $fichaId): ?array
+    {
+        if ($fichaId <= 0) return null;
+        $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $result = Database::query("SELECT * FROM $table WHERE id = $fichaId LIMIT 1");
+        $row    = Database::fetch_array($result, 'ASSOC');
+        return $row ?: null;
+    }
+
+    public static function getFichaByUserId(int $userId): ?array
+    {
+        if ($userId <= 0) return null;
+        $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $result = Database::query("SELECT * FROM $table WHERE user_id = $userId LIMIT 1");
+        $row    = Database::fetch_array($result, 'ASSOC');
+        return $row ?: null;
+    }
+
+    /**
+     * Returns ficha data together with padres, contactos and info.
+     */
+    public static function getFichaCompleta(int $fichaId): ?array
+    {
+        $ficha = self::getFichaById($fichaId);
+        if (!$ficha) return null;
+
+        $ficha['padres']    = self::getPadresByFicha($fichaId);
+        $ficha['contactos'] = self::getContactosByFicha($fichaId);
+        $ficha['info']      = self::getInfoByFicha($fichaId);
+
+        return $ficha;
+    }
+
+    // =========================================================================
+    // MATRÍCULA (datos anuales)
+    // =========================================================================
+
+    public static function getMatriculas(array $filters = []): array
+    {
+        $matTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $grade      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $level      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        $where = ['1=1'];
+
+        if (!empty($filters['academic_year_id'])) {
+            $where[] = "m.academic_year_id = " . (int) $filters['academic_year_id'];
+        }
+        if (!empty($filters['tipo_ingreso'])) {
+            $ti = Database::escape_string($filters['tipo_ingreso']);
+            $where[] = "m.tipo_ingreso = '$ti'";
+        }
+        if (!empty($filters['estado'])) {
+            $est = Database::escape_string($filters['estado']);
+            $where[] = "m.estado = '$est'";
+        }
+        if (!empty($filters['grade_id'])) {
+            $where[] = "m.grade_id = " . (int) $filters['grade_id'];
+        }
+        if (!empty($filters['search'])) {
+            $s = Database::escape_string($filters['search']);
+            $where[] = "(f.apellido_paterno LIKE '%$s%' OR f.apellido_materno LIKE '%$s%' OR f.nombres LIKE '%$s%' OR f.dni LIKE '%$s%')";
+        }
+
+        $whereStr = implode(' AND ', $where);
+
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+                       m.created_by, m.created_at, m.updated_at,
+                       f.user_id, f.apellido_paterno, f.apellido_materno, f.nombres,
+                       f.sexo, f.dni, f.tipo_documento, f.tipo_sangre, f.fecha_nacimiento,
+                       f.nacionalidad, f.peso, f.estatura, f.domicilio, f.region, f.provincia, f.distrito,
+                       f.tiene_alergias, f.alergias_detalle, f.usa_lentes,
+                       f.tiene_discapacidad, f.discapacidad_detalle,
+                       f.ie_procedencia, f.motivo_traslado, f.foto,
+                       g.name AS grade_name,
+                       lv.name AS level_name
+                FROM $matTable m
+                JOIN $fichaTable f ON f.id = m.ficha_id
+                LEFT JOIN $grade g ON m.grade_id = g.id
+                LEFT JOIN $level lv ON g.level_id = lv.id
+                WHERE $whereStr
+                ORDER BY f.apellido_paterno, f.apellido_materno, f.nombres ASC";
+
+        $result = Database::query($sql);
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $row['full_name'] = self::getFullName($row);
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    public static function getMatriculaByUserId(int $userId): ?array
+    {
+        if ($userId <= 0) return null;
+
+        $matTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $grade      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $level      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+                       m.created_by, m.created_at, m.updated_at,
+                       f.user_id, f.apellido_paterno, f.apellido_materno, f.nombres,
+                       f.sexo, f.dni, f.tipo_documento, f.tipo_sangre, f.fecha_nacimiento,
+                       f.nacionalidad, f.peso, f.estatura, f.domicilio, f.region, f.provincia, f.distrito,
+                       f.tiene_alergias, f.alergias_detalle, f.usa_lentes,
+                       f.tiene_discapacidad, f.discapacidad_detalle,
+                       f.ie_procedencia, f.motivo_traslado, f.foto,
+                       g.name AS grade_name,
+                       lv.name AS level_name,
+                       g.level_id
+                FROM $fichaTable f
+                JOIN $matTable m ON m.ficha_id = f.id
+                LEFT JOIN $grade g ON m.grade_id = g.id
+                LEFT JOIN $level lv ON g.level_id = lv.id
+                WHERE f.user_id = $userId
+                ORDER BY m.academic_year_id DESC, m.id DESC
+                LIMIT 1";
+
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        if ($row) {
+            $row['full_name'] = self::getFullName($row);
+        }
+        return $row ?: null;
+    }
+
+    public static function getMatriculaById(int $id): ?array
+    {
+        if ($id <= 0) return null;
+
+        $matTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $grade      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $level      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+                       m.created_by, m.created_at, m.updated_at,
+                       f.user_id, f.apellido_paterno, f.apellido_materno, f.nombres,
+                       f.sexo, f.dni, f.tipo_documento, f.tipo_sangre, f.fecha_nacimiento,
+                       f.nacionalidad, f.peso, f.estatura, f.domicilio, f.region, f.provincia, f.distrito,
+                       f.tiene_alergias, f.alergias_detalle, f.usa_lentes,
+                       f.tiene_discapacidad, f.discapacidad_detalle,
+                       f.ie_procedencia, f.motivo_traslado, f.foto,
+                       g.name AS grade_name,
+                       lv.name AS level_name,
+                       g.level_id
+                FROM $matTable m
+                JOIN $fichaTable f ON f.id = m.ficha_id
+                LEFT JOIN $grade g ON m.grade_id = g.id
+                LEFT JOIN $level lv ON g.level_id = lv.id
+                WHERE m.id = $id";
+
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        if ($row) {
+            $row['full_name'] = self::getFullName($row);
+        }
+        return $row ?: null;
+    }
+
+    public static function getMatriculaCompleta(int $id): ?array
+    {
+        $mat = self::getMatriculaById($id);
+        if (!$mat) return null;
+
+        $fichaId = (int) $mat['ficha_id'];
+        $mat['padres']    = self::getPadresByFicha($fichaId);
+        $mat['contactos'] = self::getContactosByFicha($fichaId);
+        $mat['info']      = self::getInfoByFicha($fichaId);
+
+        return $mat;
+    }
+
+    /**
+     * Saves annual enrollment record. Requires ficha_id in $data.
+     */
+    public static function saveMatricula(array $data): int
+    {
+        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $id    = isset($data['id']) ? (int) $data['id'] : 0;
+
+        $tipoIngreso = $data['tipo_ingreso'] ?? '';
+        if (!in_array($tipoIngreso, ['NUEVO_INGRESO', 'REINGRESO', 'CONTINUACION'])) {
+            $tipoIngreso = 'NUEVO_INGRESO';
+        }
+
+        $params = [
+            'ficha_id'         => (int) ($data['ficha_id'] ?? 0),
+            'academic_year_id' => isset($data['academic_year_id']) && $data['academic_year_id'] ? (int) $data['academic_year_id'] : null,
+            'grade_id'         => isset($data['grade_id']) && $data['grade_id'] ? (int) $data['grade_id'] : null,
+            'estado'           => in_array($data['estado'] ?? '', ['ACTIVO', 'RETIRADO']) ? $data['estado'] : 'ACTIVO',
+            'tipo_ingreso'     => $tipoIngreso,
+        ];
+
+        if ($id > 0) {
+            $params['updated_at'] = api_get_utc_datetime();
+            Database::update($table, $params, ['id = ?' => $id]);
+            return $id;
+        } else {
+            $params['created_by'] = api_get_user_id();
+            $params['created_at'] = api_get_utc_datetime();
+            return (int) Database::insert($table, $params);
+        }
+    }
+
+    /**
+     * Deletes only the annual enrollment record. Ficha and related data are preserved.
+     */
     public static function deleteMatricula(int $id): bool
     {
         if ($id <= 0) return false;
-
-        foreach ([
-            SchoolPlugin::TABLE_SCHOOL_MATRICULA_INFO,
-            SchoolPlugin::TABLE_SCHOOL_MATRICULA_CONTACTO,
-            SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE,
-        ] as $t) {
-            Database::delete(Database::get_main_table($t), ['matricula_id = ?' => $id]);
-        }
         Database::delete(Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA), ['id = ?' => $id]);
         return true;
     }
 
-    /**
-     * Marks a student as RETIRADO.
-     */
     public static function retireMatricula(int $id): bool
     {
         if ($id <= 0) return false;
@@ -256,7 +333,7 @@ class MatriculaManager
 
     /**
      * Promotes all ACTIVO students from one academic year to another as CONTINUACION.
-     * Copies base student data and related records (padres, contactos, info).
+     * Only creates new matricula rows (ficha data is reused as-is).
      *
      * @return int Number of students promoted.
      */
@@ -269,37 +346,28 @@ class MatriculaManager
         $students = self::getMatriculas(['academic_year_id' => $fromYearId, 'estado' => 'ACTIVO']);
         $count    = 0;
 
+        $matTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+
         foreach ($students as $m) {
-            $oldId = (int) $m['id'];
+            $fichaId = (int) $m['ficha_id'];
 
-            $newData = $m;
-            // Remove fields that should not be copied directly
-            foreach (['id', 'full_name', 'grade_name', 'level_name', 'level_id', 'created_at', 'created_by', 'updated_at'] as $k) {
-                unset($newData[$k]);
+            // Skip if already enrolled in target year
+            $existing = Database::query(
+                "SELECT id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $toYearId LIMIT 1"
+            );
+            if (Database::num_rows($existing) > 0) {
+                continue;
             }
-            $newData['academic_year_id'] = $toYearId;
-            $newData['tipo_ingreso']     = 'CONTINUACION';
-            $newData['estado']           = 'ACTIVO';
 
-            $newId = self::saveMatricula($newData);
+            $newId = self::saveMatricula([
+                'ficha_id'         => $fichaId,
+                'academic_year_id' => $toYearId,
+                'grade_id'         => $m['grade_id'],
+                'tipo_ingreso'     => 'CONTINUACION',
+                'estado'           => 'ACTIVO',
+            ]);
 
             if ($newId > 0) {
-                // Copy padres
-                foreach (self::getPadresByMatricula($oldId) as $parentesco => $padre) {
-                    unset($padre['id']);
-                    self::savePadre($newId, $parentesco, $padre);
-                }
-                // Copy contactos
-                foreach (self::getContactosByMatricula($oldId) as $c) {
-                    unset($c['id']);
-                    self::saveContacto($newId, $c);
-                }
-                // Copy info adicional
-                $info = self::getInfoByMatricula($oldId);
-                if ($info) {
-                    unset($info['id']);
-                    self::saveInfo($newId, $info);
-                }
                 $count++;
             }
         }
@@ -308,13 +376,13 @@ class MatriculaManager
     }
 
     // =========================================================================
-    // PADRES
+    // PADRES (linked to ficha)
     // =========================================================================
 
-    public static function getPadresByMatricula(int $matriculaId): array
+    public static function getPadresByFicha(int $fichaId): array
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
-        $result = Database::query("SELECT * FROM $table WHERE matricula_id = $matriculaId ORDER BY parentesco ASC");
+        $result = Database::query("SELECT * FROM $table WHERE ficha_id = $fichaId ORDER BY parentesco ASC");
         $rows   = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             $rows[$row['parentesco']] = $row;
@@ -322,13 +390,21 @@ class MatriculaManager
         return $rows;
     }
 
-    public static function savePadre(int $matriculaId, string $parentesco, array $data): bool
+    /** @deprecated Use getPadresByFicha() */
+    public static function getPadresByMatricula(int $matriculaId): array
+    {
+        $mat = self::getMatriculaById($matriculaId);
+        if (!$mat) return [];
+        return self::getPadresByFicha((int) $mat['ficha_id']);
+    }
+
+    public static function savePadre(int $fichaId, string $parentesco, array $data): bool
     {
         $table      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
         $parentesco = in_array($parentesco, ['MADRE', 'PADRE']) ? $parentesco : 'PADRE';
 
         $params = [
-            'matricula_id'   => $matriculaId,
+            'ficha_id'       => $fichaId,
             'parentesco'     => $parentesco,
             'apellidos'      => !empty($data['apellidos']) ? Database::escape_string(mb_strtoupper(trim($data['apellidos']))) : null,
             'nombres'        => !empty($data['nombres']) ? Database::escape_string(mb_strtoupper(trim($data['nombres']))) : null,
@@ -341,7 +417,7 @@ class MatriculaManager
             'vive_con_menor' => ($parentesco === 'PADRE' && isset($data['vive_con_menor'])) ? (int) (bool) $data['vive_con_menor'] : null,
         ];
 
-        $sql    = "SELECT id FROM $table WHERE matricula_id = $matriculaId AND parentesco = '$parentesco'";
+        $sql    = "SELECT id FROM $table WHERE ficha_id = $fichaId AND parentesco = '$parentesco'";
         $result = Database::query($sql);
         $row    = Database::fetch_array($result, 'ASSOC');
 
@@ -354,13 +430,13 @@ class MatriculaManager
     }
 
     // =========================================================================
-    // CONTACTO DE EMERGENCIA
+    // CONTACTO DE EMERGENCIA (linked to ficha)
     // =========================================================================
 
-    public static function getContactosByMatricula(int $matriculaId): array
+    public static function getContactosByFicha(int $fichaId): array
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_CONTACTO);
-        $result = Database::query("SELECT * FROM $table WHERE matricula_id = $matriculaId");
+        $result = Database::query("SELECT * FROM $table WHERE ficha_id = $fichaId");
         $rows   = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             $rows[] = $row;
@@ -368,13 +444,21 @@ class MatriculaManager
         return $rows;
     }
 
-    public static function saveContacto(int $matriculaId, array $data): int
+    /** @deprecated Use getContactosByFicha() */
+    public static function getContactosByMatricula(int $matriculaId): array
+    {
+        $mat = self::getMatriculaById($matriculaId);
+        if (!$mat) return [];
+        return self::getContactosByFicha((int) $mat['ficha_id']);
+    }
+
+    public static function saveContacto(int $fichaId, array $data): int
     {
         $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_CONTACTO);
         $id    = isset($data['id']) ? (int) $data['id'] : 0;
 
         $params = [
-            'matricula_id'    => $matriculaId,
+            'ficha_id'        => $fichaId,
             'nombre_contacto' => !empty($data['nombre_contacto']) ? Database::escape_string(trim($data['nombre_contacto'])) : null,
             'telefono'        => !empty($data['telefono']) ? Database::escape_string(trim($data['telefono'])) : null,
             'direccion'       => !empty($data['direccion']) ? Database::escape_string(trim($data['direccion'])) : null,
@@ -394,43 +478,80 @@ class MatriculaManager
     }
 
     // =========================================================================
-    // INFORMACIÓN ADICIONAL
+    // INFORMACIÓN ADICIONAL (linked to ficha)
     // =========================================================================
 
-    public static function getInfoByMatricula(int $matriculaId): array
+    public static function getInfoByFicha(int $fichaId): array
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_INFO);
-        $result = Database::query("SELECT * FROM $table WHERE matricula_id = $matriculaId LIMIT 1");
+        $result = Database::query("SELECT * FROM $table WHERE ficha_id = $fichaId LIMIT 1");
         $row    = Database::fetch_array($result, 'ASSOC');
         return $row ?: [];
     }
 
-    public static function saveInfo(int $matriculaId, array $data): bool
+    /** @deprecated Use getInfoByFicha() */
+    public static function getInfoByMatricula(int $matriculaId): array
+    {
+        $mat = self::getMatriculaById($matriculaId);
+        if (!$mat) return [];
+        return self::getInfoByFicha((int) $mat['ficha_id']);
+    }
+
+    public static function saveInfo(int $fichaId, array $data): bool
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_INFO);
         $params = [
-            'matricula_id'            => $matriculaId,
+            'ficha_id'                => $fichaId,
             'encargados_cuidado'      => !empty($data['encargados_cuidado']) ? Database::escape_string(trim($data['encargados_cuidado'])) : null,
             'familiar_en_institucion' => !empty($data['familiar_en_institucion']) ? Database::escape_string(trim($data['familiar_en_institucion'])) : null,
             'observaciones'           => !empty($data['observaciones']) ? Database::escape_string(trim($data['observaciones'])) : null,
         ];
 
-        if (self::getInfoByMatricula($matriculaId)) {
-            Database::update($table, $params, ['matricula_id = ?' => $matriculaId]);
+        if (self::getInfoByFicha($fichaId)) {
+            Database::update($table, $params, ['ficha_id = ?' => $fichaId]);
         } else {
             Database::insert($table, $params);
         }
         return true;
     }
 
+    /**
+     * Returns all annual enrollment rows for a ficha, newest first.
+     * Each row includes academic year name, grade name and level name.
+     */
+    public static function getMatriculasByFichaId(int $fichaId): array
+    {
+        if ($fichaId <= 0) return [];
+
+        $matTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $yearTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_YEAR);
+        $grade     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $level     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+                       m.created_at, m.updated_at,
+                       ay.name AS academic_year_name, ay.year AS academic_year,
+                       g.name AS grade_name,
+                       lv.name AS level_name
+                FROM $matTable m
+                LEFT JOIN $yearTable ay ON ay.id = m.academic_year_id
+                LEFT JOIN $grade g     ON g.id  = m.grade_id
+                LEFT JOIN $level lv    ON lv.id = g.level_id
+                WHERE m.ficha_id = $fichaId
+                ORDER BY ay.year DESC, m.id DESC";
+
+        $result = Database::query($sql);
+        $rows   = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
     // =========================================================================
     // HELPERS
     // =========================================================================
 
-    /**
-     * Counts enrollments by tipo_ingreso.
-     * If $yearId is provided, filters by academic_year_id; otherwise falls back to current calendar year.
-     */
     public static function countByTipoIngreso(?int $yearId = null): array
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);

@@ -253,24 +253,19 @@ CREATE TABLE IF NOT EXISTS plugin_school_payment_period_price (
 -- MATRÍCULAS
 -- =============================================
 
--- 20. Matrícula principal del alumno
-CREATE TABLE IF NOT EXISTS plugin_school_matricula (
+-- 20. Ficha del alumno (datos personales permanentes — 1 por alumno)
+CREATE TABLE IF NOT EXISTS plugin_school_ficha (
     id INT unsigned NOT NULL auto_increment PRIMARY KEY,
     user_id INT NULL,
-    academic_year_id INT unsigned NULL,
-    estado ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
-    tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO',
     apellido_paterno VARCHAR(100) NULL,
     apellido_materno VARCHAR(100) NULL,
     nombres VARCHAR(100) NOT NULL DEFAULT '',
-    grade_id INT unsigned NULL,
     sexo ENUM('F','M') NULL,
-    foto VARCHAR(255) NULL,
-    dni VARCHAR(20) NULL,
-    tipo_documento VARCHAR(30) NULL,
+    dni CHAR(8) NULL,
+    tipo_documento VARCHAR(20) NULL,
     tipo_sangre VARCHAR(5) NULL,
     fecha_nacimiento DATE NULL,
-    nacionalidad ENUM('Peruana','Extranjera') NOT NULL DEFAULT 'Peruana',
+    nacionalidad VARCHAR(50) NULL DEFAULT 'Peruana',
     peso DECIMAL(5,2) NULL,
     estatura DECIMAL(4,2) NULL,
     domicilio VARCHAR(255) NULL,
@@ -284,15 +279,32 @@ CREATE TABLE IF NOT EXISTS plugin_school_matricula (
     discapacidad_detalle VARCHAR(255) NULL,
     ie_procedencia VARCHAR(150) NULL,
     motivo_traslado TEXT NULL,
-    created_by INT NOT NULL,
+    foto VARCHAR(255) NULL,
+    created_by INT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL,
-    updated_at DATETIME NULL
+    updated_at DATETIME NULL,
+    UNIQUE KEY unique_ficha_user (user_id)
 );
 
--- 21. Datos de padres/tutores de la matrícula
+-- 21. Matrícula anual (datos variables por año — 1 por alumno por año)
+CREATE TABLE IF NOT EXISTS plugin_school_matricula (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    ficha_id INT unsigned NOT NULL,
+    academic_year_id INT unsigned NULL,
+    grade_id INT unsigned NULL,
+    estado ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
+    tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO',
+    created_by INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NULL,
+    UNIQUE KEY unique_ficha_year (ficha_id, academic_year_id)
+);
+
+-- 22. Datos de padres/tutores (vinculados a la ficha, no a la matrícula anual)
 CREATE TABLE IF NOT EXISTS plugin_school_matricula_padre (
     id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-    matricula_id INT unsigned NOT NULL,
+    ficha_id INT unsigned NOT NULL,
+    matricula_id INT unsigned NULL,
     parentesco ENUM('MADRE','PADRE') NOT NULL,
     apellidos VARCHAR(100) NULL,
     nombres VARCHAR(100) NULL,
@@ -305,21 +317,23 @@ CREATE TABLE IF NOT EXISTS plugin_school_matricula_padre (
     vive_con_menor TINYINT(1) NULL
 );
 
--- 22. Contactos de emergencia de la matrícula
+-- 23. Contactos de emergencia (vinculados a la ficha)
 CREATE TABLE IF NOT EXISTS plugin_school_matricula_contacto (
     id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-    matricula_id INT unsigned NOT NULL,
+    ficha_id INT unsigned NOT NULL,
+    matricula_id INT unsigned NULL,
     nombre_contacto VARCHAR(150) NULL,
     telefono VARCHAR(15) NULL,
     direccion VARCHAR(255) NULL
 );
 
--- 23. Información adicional de la matrícula
+-- 24. Información adicional (vinculada a la ficha)
 CREATE TABLE IF NOT EXISTS plugin_school_matricula_info (
     id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-    matricula_id INT unsigned NOT NULL,
+    ficha_id INT unsigned NOT NULL,
+    matricula_id INT unsigned NULL,
     encargados_cuidado VARCHAR(255) NULL,
     familiar_en_institucion VARCHAR(150) NULL,
     observaciones TEXT NULL,
-    UNIQUE KEY unique_mat_info (matricula_id)
+    UNIQUE KEY unique_mat_info (ficha_id)
 );

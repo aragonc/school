@@ -46,6 +46,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT = 'plugin_school_academic_classroom_student';
     const TABLE_SCHOOL_PAYMENT_PERIOD_PRICE = 'plugin_school_payment_period_price';
 
+    const TABLE_SCHOOL_FICHA               = 'plugin_school_ficha';
     const TABLE_SCHOOL_MATRICULA           = 'plugin_school_matricula';
     const TABLE_SCHOOL_MATRICULA_PADRE     = 'plugin_school_matricula_padre';
     const TABLE_SCHOOL_MATRICULA_CONTACTO  = 'plugin_school_matricula_contacto';
@@ -876,19 +877,18 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sqlPrice);
 
-        // Matricula tables
-        $sqlMat1 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA." (
+        // =====================================================================
+        // FICHA (datos personales permanentes del alumno)
+        // =====================================================================
+        $sqlFicha = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_FICHA." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
             user_id INT NULL,
-            academic_year_id INT unsigned NULL,
-            estado ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
-            tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO',
             apellido_paterno VARCHAR(100) NULL,
             apellido_materno VARCHAR(100) NULL,
             nombres VARCHAR(100) NOT NULL DEFAULT '',
-            grade_id INT unsigned NULL,
             sexo ENUM('F','M') NULL,
             dni CHAR(8) NULL,
+            tipo_documento VARCHAR(20) NULL,
             tipo_sangre VARCHAR(5) NULL,
             fecha_nacimiento DATE NULL,
             nacionalidad VARCHAR(50) NULL DEFAULT 'Peruana',
@@ -905,52 +905,182 @@ class SchoolPlugin extends Plugin
             discapacidad_detalle VARCHAR(255) NULL,
             ie_procedencia VARCHAR(150) NULL,
             motivo_traslado TEXT NULL,
-            created_by INT NOT NULL,
+            foto VARCHAR(255) NULL,
+            created_by INT NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL,
-            updated_at DATETIME NULL
+            updated_at DATETIME NULL,
+            UNIQUE KEY unique_ficha_user (user_id)
+        )";
+        Database::query($sqlFicha);
+
+        // =====================================================================
+        // MATRÍCULA (datos anuales variables)
+        // =====================================================================
+        $sqlMat1 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            ficha_id INT unsigned NOT NULL,
+            academic_year_id INT unsigned NULL,
+            grade_id INT unsigned NULL,
+            estado ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
+            tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO',
+            created_by INT NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            UNIQUE KEY unique_ficha_year (ficha_id, academic_year_id)
         )";
         Database::query($sqlMat1);
 
-        // Migrations for plugin_school_matricula
-        $matTable = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        // =====================================================================
+        // MIGRATION: plugin_school_matricula → plugin_school_ficha + new matricula
+        // =====================================================================
+        $fichaTable = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable   = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
 
-        // Rename old nombres_apellidos → nombres
-        $colOld = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'nombres_apellidos'");
-        if (Database::num_rows($colOld) > 0) {
-            Database::query("ALTER TABLE $matTable CHANGE nombres_apellidos nombres VARCHAR(100) NOT NULL DEFAULT ''");
-        }
+        // Detect if this is a legacy install needing migration
+        // (legacy has personal columns like 'nombres' in plugin_school_matricula)
+        $chkNombres = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'nombres'");
+        $isLegacy = Database::num_rows($chkNombres) > 0;
 
-        // Add missing columns
-        foreach ([
-            'apellido_paterno'  => "VARCHAR(100) NULL AFTER tipo_ingreso",
-            'apellido_materno'  => "VARCHAR(100) NULL AFTER apellido_paterno",
-            'region'            => "VARCHAR(10) NULL AFTER domicilio",
-            'provincia'         => "VARCHAR(10) NULL AFTER region",
-            'distrito'          => "VARCHAR(10) NULL AFTER provincia",
-            'academic_year_id'  => "INT unsigned NULL AFTER user_id",
-            'estado'            => "ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO' AFTER academic_year_id",
-        ] as $col => $def) {
-            $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = '$col'");
-            if (Database::num_rows($chk) === 0) {
-                Database::query("ALTER TABLE $matTable ADD COLUMN $col $def");
+        if ($isLegacy) {
+            // --- Legacy schema migrations still needed on old matricula table ---
+            // Rename old nombres_apellidos → nombres
+            $colOld = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'nombres_apellidos'");
+            if (Database::num_rows($colOld) > 0) {
+                Database::query("ALTER TABLE $matTable CHANGE nombres_apellidos nombres VARCHAR(100) NOT NULL DEFAULT ''");
             }
-        }
+            // Ensure all personal columns exist before migration
+            foreach ([
+                'apellido_paterno' => "VARCHAR(100) NULL AFTER tipo_ingreso",
+                'apellido_materno' => "VARCHAR(100) NULL AFTER apellido_paterno",
+                'region'           => "VARCHAR(10) NULL AFTER domicilio",
+                'provincia'        => "VARCHAR(10) NULL AFTER region",
+                'distrito'         => "VARCHAR(10) NULL AFTER provincia",
+                'academic_year_id' => "INT unsigned NULL AFTER user_id",
+                'estado'           => "ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO' AFTER academic_year_id",
+                'foto'             => "VARCHAR(255) NULL AFTER dni",
+                'tipo_documento'   => "VARCHAR(20) NULL AFTER dni",
+            ] as $col => $def) {
+                $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = '$col'");
+                if (Database::num_rows($chk) === 0) {
+                    Database::query("ALTER TABLE $matTable ADD COLUMN $col $def");
+                }
+            }
+            // Extend tipo_ingreso ENUM
+            $chkEnum = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'tipo_ingreso' AND COLUMN_TYPE LIKE '%CONTINUACION%'");
+            if (Database::num_rows($chkEnum) === 0) {
+                Database::query("ALTER TABLE $matTable MODIFY tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO'");
+            }
 
-        // Add foto column for student photo
-        $chkFoto = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'foto'");
-        if (Database::num_rows($chkFoto) === 0) {
-            Database::query("ALTER TABLE $matTable ADD COLUMN foto VARCHAR(255) NULL AFTER dni");
-        }
+            // Check if ficha_id already added to matricula (migration already ran partially)
+            $chkFichaId = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'ficha_id'");
+            if (Database::num_rows($chkFichaId) === 0) {
+                // Add ficha_id column to matricula
+                Database::query("ALTER TABLE $matTable ADD COLUMN ficha_id INT unsigned NULL AFTER id");
 
-        // Extend tipo_ingreso ENUM to include CONTINUACION
-        $chkEnum = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$matTable' AND COLUMN_NAME = 'tipo_ingreso' AND COLUMN_TYPE LIKE '%CONTINUACION%'");
-        if (Database::num_rows($chkEnum) === 0) {
-            Database::query("ALTER TABLE $matTable MODIFY tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO'");
+                // Build fichas from existing matricula rows
+                $userFichaMap = [];
+                $allMat = Database::query("SELECT * FROM $matTable ORDER BY id ASC");
+                while ($row = Database::fetch_array($allMat, 'ASSOC')) {
+                    $uid = isset($row['user_id']) && $row['user_id'] ? (int) $row['user_id'] : null;
+                    if ($uid !== null && isset($userFichaMap[$uid])) {
+                        $fichaId = $userFichaMap[$uid];
+                    } else {
+                        $fichaParams = [
+                            'user_id'              => $uid,
+                            'apellido_paterno'     => $row['apellido_paterno'] ?? null,
+                            'apellido_materno'     => $row['apellido_materno'] ?? null,
+                            'nombres'              => $row['nombres'] ?? '',
+                            'sexo'                 => $row['sexo'] ?? null,
+                            'dni'                  => $row['dni'] ?? null,
+                            'tipo_documento'       => $row['tipo_documento'] ?? null,
+                            'tipo_sangre'          => $row['tipo_sangre'] ?? null,
+                            'fecha_nacimiento'     => $row['fecha_nacimiento'] ?? null,
+                            'nacionalidad'         => $row['nacionalidad'] ?? 'Peruana',
+                            'peso'                 => isset($row['peso']) && $row['peso'] !== '' ? (float) $row['peso'] : null,
+                            'estatura'             => isset($row['estatura']) && $row['estatura'] !== '' ? (float) $row['estatura'] : null,
+                            'domicilio'            => $row['domicilio'] ?? null,
+                            'region'               => $row['region'] ?? null,
+                            'provincia'            => $row['provincia'] ?? null,
+                            'distrito'             => $row['distrito'] ?? null,
+                            'tiene_alergias'       => (int) ($row['tiene_alergias'] ?? 0),
+                            'alergias_detalle'     => $row['alergias_detalle'] ?? null,
+                            'usa_lentes'           => (int) ($row['usa_lentes'] ?? 0),
+                            'tiene_discapacidad'   => (int) ($row['tiene_discapacidad'] ?? 0),
+                            'discapacidad_detalle' => $row['discapacidad_detalle'] ?? null,
+                            'ie_procedencia'       => $row['ie_procedencia'] ?? null,
+                            'motivo_traslado'      => $row['motivo_traslado'] ?? null,
+                            'foto'                 => $row['foto'] ?? null,
+                            'created_by'           => (int) ($row['created_by'] ?? 0),
+                            'created_at'           => $row['created_at'],
+                            'updated_at'           => $row['updated_at'] ?? null,
+                        ];
+                        $fichaId = (int) Database::insert($fichaTable, $fichaParams);
+                        if ($uid !== null && $fichaId > 0) {
+                            $userFichaMap[$uid] = $fichaId;
+                        }
+                    }
+                    if ($fichaId > 0) {
+                        Database::query("UPDATE $matTable SET ficha_id = $fichaId WHERE id = " . (int) $row['id']);
+                    }
+                }
+
+                // Migrate padre table: add ficha_id, populate, deduplicate
+                $padreTable = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA_PADRE);
+                $chkPF = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$padreTable' AND COLUMN_NAME = 'ficha_id'");
+                if (Database::num_rows($chkPF) === 0) {
+                    Database::query("ALTER TABLE $padreTable ADD COLUMN ficha_id INT unsigned NULL AFTER id");
+                    Database::query("UPDATE $padreTable p JOIN $matTable m ON m.id = p.matricula_id SET p.ficha_id = m.ficha_id WHERE m.ficha_id IS NOT NULL");
+                    Database::query("DELETE p1 FROM $padreTable p1
+                        JOIN $padreTable p2 ON p2.ficha_id = p1.ficha_id AND p2.parentesco = p1.parentesco AND p2.id > p1.id
+                        WHERE p1.ficha_id IS NOT NULL");
+                }
+
+                // Migrate contacto table
+                $contactoTable = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA_CONTACTO);
+                $chkCF = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$contactoTable' AND COLUMN_NAME = 'ficha_id'");
+                if (Database::num_rows($chkCF) === 0) {
+                    Database::query("ALTER TABLE $contactoTable ADD COLUMN ficha_id INT unsigned NULL AFTER id");
+                    Database::query("UPDATE $contactoTable c JOIN $matTable m ON m.id = c.matricula_id SET c.ficha_id = m.ficha_id WHERE m.ficha_id IS NOT NULL");
+                    Database::query("DELETE c1 FROM $contactoTable c1
+                        JOIN $contactoTable c2 ON c2.ficha_id = c1.ficha_id AND c2.id > c1.id
+                        WHERE c1.ficha_id IS NOT NULL");
+                }
+
+                // Migrate info table
+                $infoTable = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA_INFO);
+                $chkIF = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$infoTable' AND COLUMN_NAME = 'ficha_id'");
+                if (Database::num_rows($chkIF) === 0) {
+                    Database::query("ALTER TABLE $infoTable ADD COLUMN ficha_id INT unsigned NULL AFTER id");
+                    Database::query("UPDATE $infoTable i JOIN $matTable m ON m.id = i.matricula_id SET i.ficha_id = m.ficha_id WHERE m.ficha_id IS NOT NULL");
+                    Database::query("DELETE i1 FROM $infoTable i1
+                        JOIN $infoTable i2 ON i2.ficha_id = i1.ficha_id AND i2.id > i1.id
+                        WHERE i1.ficha_id IS NOT NULL");
+                }
+
+                // Add ficha_id column to padre/contacto/info for new-install path
+                foreach ([
+                    self::TABLE_SCHOOL_MATRICULA_PADRE    => $padreTable,
+                    self::TABLE_SCHOOL_MATRICULA_CONTACTO => $contactoTable,
+                    self::TABLE_SCHOOL_MATRICULA_INFO     => $infoTable,
+                ] as $constName => $tbl) {
+                    $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$tbl' AND COLUMN_NAME = 'ficha_id'");
+                    if (Database::num_rows($chk) === 0) {
+                        Database::query("ALTER TABLE $tbl ADD COLUMN ficha_id INT unsigned NULL AFTER id");
+                    }
+                }
+            }
         }
 
         $sqlMat2 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA_PADRE." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-            matricula_id INT unsigned NOT NULL,
+            ficha_id INT unsigned NOT NULL,
+            matricula_id INT unsigned NULL,
             parentesco ENUM('MADRE','PADRE') NOT NULL,
             apellidos VARCHAR(100) NULL,
             nombres VARCHAR(100) NULL,
@@ -966,7 +1096,8 @@ class SchoolPlugin extends Plugin
 
         $sqlMat3 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA_CONTACTO." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-            matricula_id INT unsigned NOT NULL,
+            ficha_id INT unsigned NOT NULL,
+            matricula_id INT unsigned NULL,
             nombre_contacto VARCHAR(150) NULL,
             telefono VARCHAR(15) NULL,
             direccion VARCHAR(255) NULL
@@ -975,11 +1106,12 @@ class SchoolPlugin extends Plugin
 
         $sqlMat4 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA_INFO." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-            matricula_id INT unsigned NOT NULL,
+            ficha_id INT unsigned NOT NULL,
+            matricula_id INT unsigned NULL,
             encargados_cuidado VARCHAR(255) NULL,
             familiar_en_institucion VARCHAR(150) NULL,
             observaciones TEXT NULL,
-            UNIQUE KEY unique_mat_info (matricula_id)
+            UNIQUE KEY unique_mat_info (ficha_id)
         )";
         Database::query($sqlMat4);
 
@@ -994,6 +1126,7 @@ class SchoolPlugin extends Plugin
             self::TABLE_SCHOOL_MATRICULA_CONTACTO,
             self::TABLE_SCHOOL_MATRICULA_PADRE,
             self::TABLE_SCHOOL_MATRICULA,
+            self::TABLE_SCHOOL_FICHA,
             self::TABLE_SCHOOL_SETTINGS,
             self::TABLE_SCHOOL_ATTENDANCE_LOG,
             self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE,

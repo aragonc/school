@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS plugin_school_matricula_info;
 DROP TABLE IF EXISTS plugin_school_matricula_contacto;
 DROP TABLE IF EXISTS plugin_school_matricula_padre;
 DROP TABLE IF EXISTS plugin_school_matricula;
+DROP TABLE IF EXISTS plugin_school_ficha;
 DROP TABLE IF EXISTS plugin_school_payment_period_price;
 DROP TABLE IF EXISTS plugin_school_academic_classroom_student;
 DROP TABLE IF EXISTS plugin_school_academic_classroom;

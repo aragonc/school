@@ -61,23 +61,56 @@ switch ($action) {
         echo json_encode(['success' => true, 'count' => $count]);
         break;
 
-    case 'crear_usuario_chamilo':
-        $matriculaId = (int) ($_POST['matricula_id'] ?? 0);
-        if (!$matriculaId) {
-            echo json_encode(['success' => false, 'message' => 'ID de matrícula requerido']);
-            break;
-        }
-        $mat = MatriculaManager::getMatriculaById($matriculaId);
-        if (!$mat) {
-            echo json_encode(['success' => false, 'message' => 'Matrícula no encontrada']);
-            break;
-        }
-        if (!empty($mat['user_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Esta matrícula ya tiene un usuario vinculado']);
+    case 'save_matricula_anual':
+        $fichaId     = (int) ($_POST['ficha_id'] ?? 0);
+        $matId       = (int) ($_POST['mat_id'] ?? 0);
+        $yearId      = (int) ($_POST['academic_year_id'] ?? 0);
+        $gradeId     = (int) ($_POST['grade_id'] ?? 0);
+        $tipoIngreso = $_POST['tipo_ingreso'] ?? 'NUEVO_INGRESO';
+        $estado      = $_POST['estado'] ?? 'ACTIVO';
+
+        if (!$fichaId) {
+            echo json_encode(['success' => false, 'message' => 'ficha_id requerido']);
             break;
         }
 
-        // Build user fields from matricula data
+        $savedId = MatriculaManager::saveMatricula([
+            'id'               => $matId,
+            'ficha_id'         => $fichaId,
+            'academic_year_id' => $yearId ?: null,
+            'grade_id'         => $gradeId ?: null,
+            'tipo_ingreso'     => $tipoIngreso,
+            'estado'           => $estado,
+        ]);
+
+        echo json_encode(['success' => $savedId > 0, 'id' => $savedId]);
+        break;
+
+    case 'crear_usuario_chamilo':
+        // Accept ficha_id directly (new) or fall back to matricula_id (legacy)
+        $fichaId     = (int) ($_POST['ficha_id'] ?? 0);
+        $matriculaId = (int) ($_POST['matricula_id'] ?? 0);
+
+        if ($fichaId > 0) {
+            $mat = MatriculaManager::getFichaById($fichaId);
+        } elseif ($matriculaId > 0) {
+            $matRow  = MatriculaManager::getMatriculaById($matriculaId);
+            $fichaId = $matRow ? (int) $matRow['ficha_id'] : 0;
+            $mat     = $fichaId > 0 ? MatriculaManager::getFichaById($fichaId) : null;
+        } else {
+            $mat = null;
+        }
+
+        if (!$mat) {
+            echo json_encode(['success' => false, 'message' => 'Ficha no encontrada']);
+            break;
+        }
+        if (!empty($mat['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Esta ficha ya tiene un usuario vinculado']);
+            break;
+        }
+
+        // Build user fields from ficha data
         $firstName = ucwords(mb_strtolower(trim($mat['nombres'] ?? '')));
         $lastName  = trim(($mat['apellido_paterno'] ?? '') . ' ' . ($mat['apellido_materno'] ?? ''));
         $lastName  = ucwords(mb_strtolower($lastName));
@@ -100,23 +133,23 @@ switch ($action) {
         // Generate initial password (same as DNI or random)
         $password = !empty($mat['dni']) ? $mat['dni'] : api_generate_password(8);
 
-        // Email: generate a placeholder if DNI available, otherwise empty
+        // Email: generate a placeholder if DNI available
         $email = !empty($mat['dni']) ? $mat['dni'] . '@alumno.local' : '';
 
         $newUserId = UserManager::create_user(
             $firstName,
             $lastName,
-            STUDENT,          // status = 5
+            STUDENT,
             $email,
             $username,
             $password,
-            (string) $mat['id'], // official_code = matricula id
-            '',               // language (default)
-            '',               // phone
-            '',               // picture_uri
+            (string) $fichaId,   // official_code = ficha id
+            '',
+            '',
+            '',
             PLATFORM_AUTH_SOURCE,
-            null,             // expiration date
-            0                 // active = 0 (inactive)
+            null,
+            0   // inactive
         );
 
         if (!$newUserId || $newUserId < 0) {
@@ -124,11 +157,11 @@ switch ($action) {
             break;
         }
 
-        // Link the new user to the matricula
+        // Link the new user to the ficha
         Database::update(
-            Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA),
+            Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA),
             ['user_id' => $newUserId],
-            ['id = ?' => $matriculaId]
+            ['id = ?' => $fichaId]
         );
 
         echo json_encode([

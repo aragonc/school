@@ -196,6 +196,8 @@ if ($enable) {
     $plugin->assign('username_qr', $user_data['username']);
     $plugin->assign('current_user_id', $userId);
     $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
+    $plugin->assign('ajax_admin_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_admin.php');
+    $plugin->assign('is_student', (int) api_get_user_status() === STUDENT);
     $customLogo = $plugin->getCustomLogo();
     if (!$customLogo) {
         $theme    = api_get_visual_theme();

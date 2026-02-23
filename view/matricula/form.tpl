@@ -1,73 +1,16 @@
-{% if missing_academic_params is not empty and matricula_id == 0 %}
-{# ============================================================ #}
-{# MODAL: Parámetros académicos requeridos no configurados       #}
-{# ============================================================ #}
-<div class="modal fade" id="modalMissingAcademic" tabindex="-1" role="dialog"
-     data-backdrop="static" data-keyboard="false" aria-labelledby="modalMissingAcademicLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-warning">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="modalMissingAcademicLabel">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    {{ 'ModalMissingParamsTitle'|get_plugin_lang('SchoolPlugin') }}
-                </h5>
-            </div>
-            <div class="modal-body">
-                <p>{{ 'ModalMissingParamsBody'|get_plugin_lang('SchoolPlugin') }}</p>
-                <ul class="list-group list-group-flush">
-                    {% if 'year' in missing_academic_params %}
-                    <li class="list-group-item text-danger">
-                        <i class="fas fa-times-circle mr-2"></i>
-                        {{ 'ModalMissingParamYear'|get_plugin_lang('SchoolPlugin') }}
-                    </li>
-                    {% endif %}
-                    {% if 'level' in missing_academic_params %}
-                    <li class="list-group-item text-danger">
-                        <i class="fas fa-times-circle mr-2"></i>
-                        {{ 'ModalMissingParamLevel'|get_plugin_lang('SchoolPlugin') }}
-                    </li>
-                    {% endif %}
-                    {% if 'grade' in missing_academic_params %}
-                    <li class="list-group-item text-danger">
-                        <i class="fas fa-times-circle mr-2"></i>
-                        {{ 'ModalMissingParamGrade'|get_plugin_lang('SchoolPlugin') }}
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <a href="{{ _p.web }}matricula" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i>
-                    {{ 'ModalMissingParamsBack'|get_plugin_lang('SchoolPlugin') }}
-                </a>
-                <a href="{{ _p.web }}academic/settings" class="btn btn-warning text-dark">
-                    <i class="fas fa-cog mr-1"></i>
-                    {{ 'ModalMissingParamsAction'|get_plugin_lang('SchoolPlugin') }}
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-<script>
-$(document).ready(function() {
-    $('#modalMissingAcademic').modal('show');
-});
-</script>
-{% endif %}
-
 <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="{{ _p.web }}matricula" class="btn btn-secondary btn-sm">
         <i class="fas fa-arrow-left"></i> {{ 'BackToList'|get_plugin_lang('SchoolPlugin') }}
     </a>
-    {% if matricula_id > 0 %}
-    <a href="{{ _p.web }}matricula/ver?id={{ matricula_id }}" class="btn btn-info btn-sm">
+    {% if ficha_id > 0 %}
+    <a href="{{ _p.web }}matricula/ver?ficha_id={{ ficha_id }}" class="btn btn-info btn-sm">
         <i class="fas fa-eye"></i> {{ 'ViewEnrollment'|get_plugin_lang('SchoolPlugin') }}
     </a>
     {% endif %}
 </div>
 
 <form method="POST" action="" enctype="multipart/form-data">
-    <input type="hidden" name="matricula_id" value="{{ matricula_id }}">
+    <input type="hidden" name="ficha_id" value="{{ ficha_id }}">
     <input type="hidden" name="user_id" id="matricula-user-id" value="{{ prelinked_user_id ?: (matricula.user_id ?? '') }}">
 
     {# ============================================================ #}
@@ -119,34 +62,6 @@ $(document).ready(function() {
         <div class="card-body">
 
             <div class="form-row">
-                <div class="form-group col-md-3">
-                    <label class="font-weight-bold">{{ 'AcademicYear'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <select name="academic_year_id" class="form-control">
-                        <option value="">— {{ 'SelectOption'|get_plugin_lang('SchoolPlugin') }} —</option>
-                        {% for y in all_years %}
-                        <option value="{{ y.id }}" {{ default_year_id == y.id ? 'selected' : '' }}>{{ y.name }}{% if y.active %} ★{% endif %}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group col-md-2">
-                    <label class="font-weight-bold">{{ 'EstadoMatricula'|get_plugin_lang('SchoolPlugin') }}</label>
-                    {% set estadoVal = matricula.estado ?? preload.estado ?? 'ACTIVO' %}
-                    <select name="estado" class="form-control">
-                        <option value="ACTIVO"    {{ estadoVal == 'ACTIVO'    ? 'selected' : '' }}>{{ 'Activo'|get_plugin_lang('SchoolPlugin') }}</option>
-                        <option value="RETIRADO"  {{ estadoVal == 'RETIRADO'  ? 'selected' : '' }}>{{ 'Retirado'|get_plugin_lang('SchoolPlugin') }}</option>
-                    </select>
-                </div>
-                <div class="form-group col-md-3">
-                    <label class="font-weight-bold">{{ 'TipoIngreso'|get_plugin_lang('SchoolPlugin') }} *</label>
-                    {% set tipoIngresoVal = matricula.tipo_ingreso ?? preload.tipo_ingreso ?? 'NUEVO_INGRESO' %}
-                    <select name="tipo_ingreso" class="form-control" required>
-                        <option value="NUEVO_INGRESO" {{ tipoIngresoVal == 'NUEVO_INGRESO' ? 'selected' : '' }}>{{ 'NewEnrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
-                        <option value="REINGRESO"     {{ tipoIngresoVal == 'REINGRESO'     ? 'selected' : '' }}>{{ 'ReenrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
-                        <option value="CONTINUACION"  {{ tipoIngresoVal == 'CONTINUACION'  ? 'selected' : '' }}>{{ 'ContinuacionType'|get_plugin_lang('SchoolPlugin') }}</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-row">
                 <div class="form-group col-md-4">
                     <label class="font-weight-bold">{{ 'ApellidoPaterno'|get_plugin_lang('SchoolPlugin') }} *</label>
                     <input type="text" name="apellido_paterno" class="form-control text-uppercase" value="{{ matricula.apellido_paterno ?? preload.apellido_paterno ?? '' }}" required placeholder="Apellido paterno">
@@ -162,19 +77,6 @@ $(document).ready(function() {
             </div>
 
             <div class="form-row">
-                <div class="form-group col-md-3">
-                    <label class="font-weight-bold">{{ 'Level'|get_plugin_lang('SchoolPlugin') }} / {{ 'Grade'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <select name="grade_id" class="form-control" id="grade_id">
-                        <option value="">— {{ 'SelectOption'|get_plugin_lang('SchoolPlugin') }} —</option>
-                        {% for level in levels %}
-                            <optgroup label="{{ level.name }}">
-                                {% for grade in level.grades %}
-                                <option value="{{ grade.id }}" {{ (matricula.grade_id ?? 0) == grade.id ? 'selected' : '' }}>{{ grade.name }}</option>
-                                {% endfor %}
-                            </optgroup>
-                        {% endfor %}
-                    </select>
-                </div>
                 <div class="form-group col-md-2">
                     <label class="font-weight-bold">{{ 'Sexo'|get_plugin_lang('SchoolPlugin') }}</label>
                     <select name="sexo" class="form-control">

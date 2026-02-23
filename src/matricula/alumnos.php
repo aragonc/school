@@ -22,6 +22,7 @@ $plugin->setCurrentSection('matricula');
 $plugin->setSidebar('matricula');
 
 $userTable      = Database::get_main_table(TABLE_MAIN_USER);
+$fichaTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
 $matriculaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
 
 $search = trim($_GET['search'] ?? '');
@@ -33,9 +34,10 @@ if ($search !== '') {
 
 $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email,
                u.active, u.picture_uri, u.registration_date,
-               m.id AS matricula_id
+               f.id AS ficha_id,
+               (SELECT m.id FROM $matriculaTable m WHERE m.ficha_id = f.id ORDER BY m.id DESC LIMIT 1) AS matricula_id
         FROM $userTable u
-        LEFT JOIN $matriculaTable m ON m.user_id = u.user_id
+        LEFT JOIN $fichaTable f ON f.user_id = u.user_id
         WHERE u.status = " . STUDENT . "
           $searchCond
         ORDER BY u.lastname, u.firstname";

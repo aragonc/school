@@ -63,8 +63,8 @@
                             </button>
                         </td>
                         <td class="text-center align-middle">
-                            {% if s.matricula_id %}
-                            <a href="{{ view_url }}?id={{ s.matricula_id }}"
+                            {% if s.ficha_id %}
+                            <a href="{{ view_url }}?ficha_id={{ s.ficha_id }}"
                                class="btn btn-sm btn-info mb-1">
                                 <i class="fas fa-eye"></i> Ver ficha
                             </a>

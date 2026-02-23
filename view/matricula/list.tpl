@@ -160,10 +160,10 @@
                         </td>
                         <td><small>{{ m.created_at|date('d/m/Y') }}</small></td>
                         <td>
-                            <a href="{{ _p.web }}matricula/ver?id={{ m.id }}" class="btn btn-info btn-sm" title="{{ 'View'|get_plugin_lang('SchoolPlugin') }}">
+                            <a href="{{ _p.web }}matricula/ver?ficha_id={{ m.ficha_id }}" class="btn btn-info btn-sm" title="{{ 'View'|get_plugin_lang('SchoolPlugin') }}">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ _p.web }}matricula/editar?id={{ m.id }}" class="btn btn-warning btn-sm" title="{{ 'Edit'|get_plugin_lang('SchoolPlugin') }}">
+                            <a href="{{ _p.web }}matricula/editar?ficha_id={{ m.ficha_id }}" class="btn btn-warning btn-sm" title="{{ 'Edit'|get_plugin_lang('SchoolPlugin') }}">
                                 <i class="fas fa-edit"></i>
                             </a>
                             {% if m.estado == 'ACTIVO' %}
