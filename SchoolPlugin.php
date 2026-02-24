@@ -51,7 +51,8 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_MATRICULA           = 'plugin_school_matricula';
     const TABLE_SCHOOL_MATRICULA_PADRE     = 'plugin_school_matricula_padre';
     const TABLE_SCHOOL_MATRICULA_CONTACTO  = 'plugin_school_matricula_contacto';
-    const TABLE_SCHOOL_MATRICULA_INFO      = 'plugin_school_matricula_info';
+    const TABLE_SCHOOL_MATRICULA_INFO           = 'plugin_school_matricula_info';
+    const TABLE_SCHOOL_MATRICULA_OBSERVACION    = 'plugin_school_matricula_observacion';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -1140,6 +1141,15 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sqlMat5);
 
+        $sqlObs = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_MATRICULA_OBSERVACION." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            ficha_id INT unsigned NOT NULL,
+            titulo VARCHAR(255) NULL,
+            observacion TEXT NULL,
+            created_at DATETIME NOT NULL
+        )";
+        Database::query($sqlObs);
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -1147,6 +1157,7 @@ class SchoolPlugin extends Plugin
     public function uninstall()
     {
         $tablesToBeDeleted = [
+            self::TABLE_SCHOOL_MATRICULA_OBSERVACION,
             self::TABLE_SCHOOL_MATRICULA_INFO,
             self::TABLE_SCHOOL_MATRICULA_CONTACTO,
             self::TABLE_SCHOOL_MATRICULA_PADRE,

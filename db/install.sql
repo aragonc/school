@@ -337,10 +337,16 @@ CREATE TABLE IF NOT EXISTS plugin_school_matricula_info (
     id INT unsigned NOT NULL auto_increment PRIMARY KEY,
     ficha_id INT unsigned NOT NULL,
     matricula_id INT unsigned NULL,
-    encargados_cuidado VARCHAR(255) NULL,
-    familiar_en_institucion VARCHAR(150) NULL,
-    observaciones TEXT NULL,
     UNIQUE KEY unique_mat_info (ficha_id)
+);
+
+-- 26. Observaciones (múltiples por ficha)
+CREATE TABLE IF NOT EXISTS plugin_school_matricula_observacion (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    ficha_id INT unsigned NOT NULL,
+    titulo VARCHAR(255) NULL,
+    observacion TEXT NULL,
+    created_at DATETIME NOT NULL
 );
 
 -- 25. Hermanos (relación entre fichas de alumnos vía usuario Chamilo)

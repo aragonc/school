@@ -128,10 +128,11 @@ class MatriculaManager
         $ficha = self::getFichaById($fichaId);
         if (!$ficha) return null;
 
-        $ficha['padres']    = self::getPadresByFicha($fichaId);
-        $ficha['contactos'] = self::getContactosByFicha($fichaId);
-        $ficha['info']      = self::getInfoByFicha($fichaId);
-        $ficha['hermanos']  = self::getHermanosByFicha($fichaId);
+        $ficha['padres']        = self::getPadresByFicha($fichaId);
+        $ficha['contactos']     = self::getContactosByFicha($fichaId);
+        $ficha['info']          = self::getInfoByFicha($fichaId);
+        $ficha['hermanos']      = self::getHermanosByFicha($fichaId);
+        $ficha['observaciones'] = self::getObservacionesByFicha($fichaId);
 
         return $ficha;
     }
@@ -538,6 +539,33 @@ class MatriculaManager
             Database::insert($table, $params);
         }
         return true;
+    }
+
+    // =========================================================================
+    // OBSERVACIONES (linked to ficha)
+    // =========================================================================
+
+    public static function getObservacionesByFicha(int $fichaId): array
+    {
+        $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_OBSERVACION);
+        $result = Database::query("SELECT * FROM $table WHERE ficha_id = $fichaId ORDER BY id ASC");
+        $rows   = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    public static function saveObservacion(int $fichaId, array $data): int
+    {
+        $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_OBSERVACION);
+        $params = [
+            'ficha_id'   => $fichaId,
+            'titulo'     => !empty($data['titulo']) ? Database::escape_string(trim($data['titulo'])) : null,
+            'observacion'=> !empty($data['observacion']) ? Database::escape_string(trim($data['observacion'])) : null,
+            'created_at' => api_get_utc_datetime(),
+        ];
+        return (int) Database::insert($table, $params);
     }
 
     /**

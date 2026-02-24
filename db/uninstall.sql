@@ -5,6 +5,7 @@
 -- del plugin y TODOS los datos almacenados.
 -- =============================================
 
+DROP TABLE IF EXISTS plugin_school_matricula_observacion;
 DROP TABLE IF EXISTS plugin_school_matricula_info;
 DROP TABLE IF EXISTS plugin_school_matricula_contacto;
 DROP TABLE IF EXISTS plugin_school_matricula_padre;

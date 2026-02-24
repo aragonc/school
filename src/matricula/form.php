@@ -35,13 +35,14 @@ if ($fichaId === 0 && empty($_GET['user_id']) && $_SERVER['REQUEST_METHOD'] !== 
     header('Location: ' . api_get_path(WEB_PATH) . 'matricula/alumnos');
     exit;
 }
-$matricula   = null;
-$madre       = [];
-$padre       = [];
-$contactos   = [];
-$info        = [];
-$allPadres   = [];
-$allHermanos = [];
+$matricula       = null;
+$madre           = [];
+$padre           = [];
+$contactos       = [];
+$info            = [];
+$allPadres       = [];
+$allHermanos     = [];
+$allObservaciones = [];
 
 if ($fichaId > 0) {
     $full = MatriculaManager::getFichaCompleta($fichaId);
@@ -59,7 +60,8 @@ if ($fichaId > 0) {
             $allPadres[] = array_merge(['tipo' => $tipo], $pData);
         }
     }
-    $allHermanos = $full['hermanos'] ?? [];
+    $allHermanos      = $full['hermanos'] ?? [];
+    $allObservaciones = $full['observaciones'] ?? [];
 }
 
 // POST handling
@@ -162,9 +164,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Save info adicional
-    if (isset($_POST['info'])) {
-        MatriculaManager::saveInfo($fichaId, $_POST['info']);
+    // Save observaciones from modal JSON
+    if (isset($_POST['observaciones_data'])) {
+        $obsData = json_decode($_POST['observaciones_data'], true);
+        if (is_array($obsData)) {
+            $obsTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_OBSERVACION);
+            Database::query("DELETE FROM $obsTable WHERE ficha_id = " . (int) $fichaId);
+            foreach ($obsData as $obs) {
+                if (!empty($obs['titulo']) || !empty($obs['observacion'])) {
+                    MatriculaManager::saveObservacion($fichaId, $obs);
+                }
+            }
+        }
     }
 
     Display::addFlash(Display::return_message($plugin->get_lang('EnrollmentSaved'), 'success'));
@@ -185,6 +196,7 @@ $plugin->assign('all_padres_json', json_encode($allPadres));
 $plugin->assign('contactos', $contactos);
 $plugin->assign('all_contactos_json', json_encode($contactos));
 $plugin->assign('all_hermanos_json', json_encode($allHermanos));
+$plugin->assign('all_observaciones_json', json_encode($allObservaciones));
 $plugin->assign('info', $info);
 $plugin->assign('tipos_sangre', $tiposSangre);
 $plugin->assign('ficha_id', $fichaId);

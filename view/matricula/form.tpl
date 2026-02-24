@@ -347,24 +347,28 @@
     </div>
 
     {# ============================================================ #}
-    {# SECCIÓN 5: INFORMACIÓN ADICIONAL                             #}
+    {# SECCIÓN 5: OBSERVACIONES                                    #}
     {# ============================================================ #}
     <div class="card mb-4">
-        <div class="card-header"><i class="fas fa-info-circle"></i> {{ 'AdditionalInfo'|get_plugin_lang('SchoolPlugin') }}</div>
-        <div class="card-body">
-            <div class="form-group">
-                <label>{{ 'EncargadosCuidado'|get_plugin_lang('SchoolPlugin') }}</label>
-                <input type="text" name="info[encargados_cuidado]" class="form-control" value="{{ info.encargados_cuidado ?? '' }}" placeholder="Persona(s) que cuidan al menor en casa">
-            </div>
-            <div class="form-group">
-                <label>{{ 'FamiliarEnInstitucion'|get_plugin_lang('SchoolPlugin') }}</label>
-                <input type="text" name="info[familiar_en_institucion]" class="form-control" value="{{ info.familiar_en_institucion ?? '' }}" placeholder="Nombre del familiar que estudia en la institución">
-            </div>
-            <div class="form-group">
-                <label>{{ 'Observaciones'|get_plugin_lang('SchoolPlugin') }}</label>
-                <textarea name="info[observaciones]" class="form-control" rows="3" placeholder="Observaciones generales...">{{ info.observaciones ?? '' }}</textarea>
-            </div>
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span><i class="fas fa-sticky-note mr-1"></i> Observaciones</span>
+            <button type="button" class="btn btn-sm btn-success" id="btn-agregar-obs">
+                <i class="fas fa-plus"></i> Agregar
+            </button>
         </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0" id="tabla-obs">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width:200px;">Título</th>
+                        <th>Observación</th>
+                        <th style="width:80px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-obs"></tbody>
+            </table>
+        </div>
+        <input type="hidden" name="observaciones_data" id="obs-data-input" value="[]">
     </div>
 
     <div class="d-flex justify-content-between mb-4">
@@ -533,6 +537,39 @@
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary btn-sm" id="btn-confirmar-hermano" disabled>
                     <i class="fas fa-plus mr-1"></i> Agregar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ============================================================ #}
+{# MODAL: Observación                                          #}
+{# ============================================================ #}
+<div class="modal fade" id="modalObservacion" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-weight-bold">
+                    <i class="fas fa-sticky-note mr-1"></i> Agregar Observación
+                </h6>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="obs-index" value="-1">
+                <div class="form-group">
+                    <label class="font-weight-bold">Título <span class="text-danger">*</span></label>
+                    <input type="text" id="obs-titulo" class="form-control form-control-sm" placeholder="Título de la observación">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold">Observación</label>
+                    <textarea id="obs-observacion" class="form-control form-control-sm" rows="4" placeholder="Detalle de la observación..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-obs">
+                    <i class="fas fa-save mr-1"></i> Guardar
                 </button>
             </div>
         </div>
@@ -1012,6 +1049,68 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
     });
 
     renderContactos();
+})();
+
+// =========================================================
+// Observaciones modal management
+// =========================================================
+(function () {
+    var obsArr = {{ all_observaciones_json|default('[]') }};
+
+    function renderObs() {
+        var tbody = document.getElementById('tbody-obs');
+        if (obsArr.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3" style="font-size:13px;">Sin registros. Haga clic en "Agregar" para añadir.</td></tr>';
+        } else {
+            tbody.innerHTML = '';
+            obsArr.forEach(function (o, idx) {
+                var obsShort = (o.observacion || '').length > 80
+                    ? (o.observacion || '').substring(0, 80) + '…'
+                    : (o.observacion || '');
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td><strong>' + (o.titulo || '') + '</strong></td>' +
+                    '<td style="font-size:12px;">' + obsShort + '</td>' +
+                    '<td class="text-right">' +
+                        '<button type="button" class="btn btn-xs btn-outline-info mr-1" onclick="editarObs(' + idx + ')"><i class="fas fa-edit"></i></button>' +
+                        '<button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarObs(' + idx + ')"><i class="fas fa-trash"></i></button>' +
+                    '</td></tr>';
+            });
+        }
+        document.getElementById('obs-data-input').value = JSON.stringify(obsArr);
+    }
+
+    function abrirModalObs(idx) {
+        var o = idx >= 0 ? obsArr[idx] : {};
+        document.getElementById('obs-index').value      = idx;
+        document.getElementById('obs-titulo').value     = o.titulo      || '';
+        document.getElementById('obs-observacion').value = o.observacion || '';
+        $('#modalObservacion').modal('show');
+    }
+
+    window.editarObs   = function (idx) { abrirModalObs(idx); };
+    window.eliminarObs = function (idx) {
+        if (!confirm('¿Eliminar esta observación?')) return;
+        obsArr.splice(idx, 1);
+        renderObs();
+    };
+
+    document.getElementById('btn-agregar-obs').addEventListener('click', function () { abrirModalObs(-1); });
+
+    document.getElementById('btn-guardar-obs').addEventListener('click', function () {
+        var titulo = document.getElementById('obs-titulo').value.trim();
+        if (!titulo) { alert('El título de la observación es obligatorio.'); return; }
+        var entry = {
+            titulo:      titulo,
+            observacion: document.getElementById('obs-observacion').value.trim()
+        };
+        var idx = parseInt(document.getElementById('obs-index').value);
+        if (idx >= 0) { obsArr[idx] = entry; } else { obsArr.push(entry); }
+        renderObs();
+        $('#modalObservacion').modal('hide');
+    });
+
+    renderObs();
 })();
 
 // Preview de foto del alumno
