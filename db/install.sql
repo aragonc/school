@@ -76,6 +76,11 @@ CREATE TABLE IF NOT EXISTS plugin_school_extra_profile (
     district VARCHAR(100) NULL,
     province VARCHAR(100) NULL,
     region VARCHAR(100) NULL,
+    sexo ENUM('F','M') NULL,
+    nacionalidad VARCHAR(50) NULL DEFAULT 'Peruana',
+    tipo_sangre VARCHAR(5) NULL,
+    peso DECIMAL(5,2) NULL,
+    estatura DECIMAL(4,2) NULL,
     updated_at DATETIME NULL,
     UNIQUE KEY unique_user (user_id)
 );
@@ -305,7 +310,7 @@ CREATE TABLE IF NOT EXISTS plugin_school_matricula_padre (
     id INT unsigned NOT NULL auto_increment PRIMARY KEY,
     ficha_id INT unsigned NOT NULL,
     matricula_id INT unsigned NULL,
-    parentesco ENUM('MADRE','PADRE') NOT NULL,
+    parentesco ENUM('MADRE','PADRE','APODERADO') NOT NULL,
     apellidos VARCHAR(100) NULL,
     nombres VARCHAR(100) NULL,
     celular VARCHAR(15) NULL,
@@ -336,4 +341,12 @@ CREATE TABLE IF NOT EXISTS plugin_school_matricula_info (
     familiar_en_institucion VARCHAR(150) NULL,
     observaciones TEXT NULL,
     UNIQUE KEY unique_mat_info (ficha_id)
+);
+
+-- 25. Hermanos (relación entre fichas de alumnos vía usuario Chamilo)
+CREATE TABLE IF NOT EXISTS plugin_school_ficha_hermano (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    ficha_id INT unsigned NOT NULL,
+    hermano_user_id INT unsigned NOT NULL,
+    UNIQUE KEY uk_ficha_hermano (ficha_id, hermano_user_id)
 );

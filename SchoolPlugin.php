@@ -47,6 +47,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_PAYMENT_PERIOD_PRICE = 'plugin_school_payment_period_price';
 
     const TABLE_SCHOOL_FICHA               = 'plugin_school_ficha';
+    const TABLE_SCHOOL_FICHA_HERMANO       = 'plugin_school_ficha_hermano';
     const TABLE_SCHOOL_MATRICULA           = 'plugin_school_matricula';
     const TABLE_SCHOOL_MATRICULA_PADRE     = 'plugin_school_matricula_padre';
     const TABLE_SCHOOL_MATRICULA_CONTACTO  = 'plugin_school_matricula_contacto';
@@ -1131,6 +1132,14 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sqlMat4);
 
+        $sqlMat5 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_FICHA_HERMANO." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            ficha_id INT unsigned NOT NULL,
+            hermano_user_id INT unsigned NOT NULL,
+            UNIQUE KEY uk_ficha_hermano (ficha_id, hermano_user_id)
+        )";
+        Database::query($sqlMat5);
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -1141,6 +1150,7 @@ class SchoolPlugin extends Plugin
             self::TABLE_SCHOOL_MATRICULA_INFO,
             self::TABLE_SCHOOL_MATRICULA_CONTACTO,
             self::TABLE_SCHOOL_MATRICULA_PADRE,
+            self::TABLE_SCHOOL_FICHA_HERMANO,
             self::TABLE_SCHOOL_MATRICULA,
             self::TABLE_SCHOOL_FICHA,
             self::TABLE_SCHOOL_SETTINGS,

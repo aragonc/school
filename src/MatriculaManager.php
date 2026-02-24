@@ -131,6 +131,7 @@ class MatriculaManager
         $ficha['padres']    = self::getPadresByFicha($fichaId);
         $ficha['contactos'] = self::getContactosByFicha($fichaId);
         $ficha['info']      = self::getInfoByFicha($fichaId);
+        $ficha['hermanos']  = self::getHermanosByFicha($fichaId);
 
         return $ficha;
     }
@@ -376,6 +377,30 @@ class MatriculaManager
     }
 
     // =========================================================================
+    // HERMANOS (linked to ficha via user)
+    // =========================================================================
+
+    public static function getHermanosByFicha(int $fichaId): array
+    {
+        $table     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA_HERMANO);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $result    = Database::query(
+            "SELECT h.hermano_user_id AS user_id, u.firstname, u.lastname, u.username
+             FROM $table h
+             JOIN $userTable u ON u.user_id = h.hermano_user_id
+             WHERE h.ficha_id = $fichaId
+             ORDER BY u.lastname, u.firstname"
+        );
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = [
+                'user_id' => (int) $row['user_id'],
+                'label'   => $row['lastname'] . ' ' . $row['firstname'] . ' (' . $row['username'] . ')',
+            ];
+        }
+        return $rows;
+    }
+
     // PADRES (linked to ficha)
     // =========================================================================
 
@@ -401,20 +426,20 @@ class MatriculaManager
     public static function savePadre(int $fichaId, string $parentesco, array $data): bool
     {
         $table      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
-        $parentesco = in_array($parentesco, ['MADRE', 'PADRE']) ? $parentesco : 'PADRE';
+        $parentesco = in_array($parentesco, ['MADRE', 'PADRE', 'APODERADO']) ? $parentesco : 'PADRE';
 
         $params = [
             'ficha_id'       => $fichaId,
             'parentesco'     => $parentesco,
-            'apellidos'      => !empty($data['apellidos']) ? Database::escape_string(mb_strtoupper(trim($data['apellidos']))) : null,
-            'nombres'        => !empty($data['nombres']) ? Database::escape_string(mb_strtoupper(trim($data['nombres']))) : null,
+            'apellidos'      => !empty($data['apellidos']) ? Database::escape_string(mb_convert_case(trim($data['apellidos']), MB_CASE_TITLE, 'UTF-8')) : null,
+            'nombres'        => !empty($data['nombres']) ? Database::escape_string(mb_convert_case(trim($data['nombres']), MB_CASE_TITLE, 'UTF-8')) : null,
             'celular'        => !empty($data['celular']) ? Database::escape_string(trim($data['celular'])) : null,
             'ocupacion'      => !empty($data['ocupacion']) ? Database::escape_string(trim($data['ocupacion'])) : null,
             'dni'            => !empty($data['dni']) ? Database::escape_string(trim($data['dni'])) : null,
             'edad'           => isset($data['edad']) && $data['edad'] !== '' ? (int) $data['edad'] : null,
             'religion'       => !empty($data['religion']) ? Database::escape_string(trim($data['religion'])) : null,
             'tipo_parto'     => ($parentesco === 'MADRE' && in_array($data['tipo_parto'] ?? '', ['CESAREA', 'NORMAL'])) ? $data['tipo_parto'] : null,
-            'vive_con_menor' => ($parentesco === 'PADRE' && isset($data['vive_con_menor'])) ? (int) (bool) $data['vive_con_menor'] : null,
+            'vive_con_menor' => isset($data['vive_con_menor']) ? (int) (bool) $data['vive_con_menor'] : null,
         ];
 
         $sql    = "SELECT id FROM $table WHERE ficha_id = $fichaId AND parentesco = '$parentesco'";

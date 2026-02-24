@@ -271,125 +271,79 @@
     </div>
 
     {# ============================================================ #}
-    {# SECCIÓN 2: DATOS DE LA MADRE                                 #}
+    {# SECCIÓN 2: PADRES / APODERADOS                              #}
     {# ============================================================ #}
     <div class="card mb-4">
-        <div class="card-header"><i class="fas fa-female"></i> {{ 'MadreData'|get_plugin_lang('SchoolPlugin') }}</div>
-        <div class="card-body">
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label>{{ 'Apellidos'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="madre[apellidos]" class="form-control text-uppercase" value="{{ madre.apellidos ?? '' }}">
-                </div>
-                <div class="form-group col-md-4">
-                    <label>{{ 'Nombres'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="madre[nombres]" class="form-control text-uppercase" value="{{ madre.nombres ?? '' }}">
-                </div>
-                <div class="form-group col-md-2">
-                    <label>{{ 'Edad'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="number" name="madre[edad]" class="form-control" value="{{ madre.edad ?? '' }}" min="18" max="99">
-                </div>
-                <div class="form-group col-md-2">
-                    <label>{{ 'Dni'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="madre[dni]" class="form-control" value="{{ madre.dni ?? '' }}" maxlength="8">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-3">
-                    <label>{{ 'Celular'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="madre[celular]" class="form-control" value="{{ madre.celular ?? '' }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <label>{{ 'Ocupacion'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="madre[ocupacion]" class="form-control" value="{{ madre.ocupacion ?? '' }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <label>{{ 'Religion'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="madre[religion]" class="form-control" value="{{ madre.religion ?? '' }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <label>{{ 'TipoParto'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <select name="madre[tipo_parto]" class="form-control">
-                        <option value="">—</option>
-                        <option value="NORMAL" {{ (madre.tipo_parto ?? '') == 'NORMAL' ? 'selected' : '' }}>Normal</option>
-                        <option value="CESAREA" {{ (madre.tipo_parto ?? '') == 'CESAREA' ? 'selected' : '' }}>Cesárea</option>
-                    </select>
-                </div>
-            </div>
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span><i class="fas fa-users mr-1"></i> Padres / Apoderados</span>
+            <button type="button" class="btn btn-sm btn-success" id="btn-agregar-padre">
+                <i class="fas fa-plus"></i> Agregar
+            </button>
         </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0" id="tabla-padres">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width:100px;">Tipo</th>
+                        <th>Apellidos y Nombres</th>
+                        <th style="width:130px;">Celular</th>
+                        <th style="width:80px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-padres"></tbody>
+            </table>
+        </div>
+        <input type="hidden" name="padres_data" id="padres-data-input" value="[]">
     </div>
 
     {# ============================================================ #}
-    {# SECCIÓN 3: DATOS DEL PADRE                                   #}
+    {# SECCIÓN 2b: HERMANOS                                        #}
     {# ============================================================ #}
     <div class="card mb-4">
-        <div class="card-header"><i class="fas fa-male"></i> {{ 'PadreData'|get_plugin_lang('SchoolPlugin') }}</div>
-        <div class="card-body">
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label>{{ 'Apellidos'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="padre[apellidos]" class="form-control text-uppercase" value="{{ padre.apellidos ?? '' }}">
-                </div>
-                <div class="form-group col-md-4">
-                    <label>{{ 'Nombres'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="padre[nombres]" class="form-control text-uppercase" value="{{ padre.nombres ?? '' }}">
-                </div>
-                <div class="form-group col-md-2">
-                    <label>{{ 'Edad'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="number" name="padre[edad]" class="form-control" value="{{ padre.edad ?? '' }}" min="18" max="99">
-                </div>
-                <div class="form-group col-md-2">
-                    <label>{{ 'Dni'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="padre[dni]" class="form-control" value="{{ padre.dni ?? '' }}" maxlength="8">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-3">
-                    <label>{{ 'Celular'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="padre[celular]" class="form-control" value="{{ padre.celular ?? '' }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <label>{{ 'Ocupacion'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="padre[ocupacion]" class="form-control" value="{{ padre.ocupacion ?? '' }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <label>{{ 'Religion'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="padre[religion]" class="form-control" value="{{ padre.religion ?? '' }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <div class="custom-control custom-switch mt-4">
-                        <input type="hidden" name="padre[vive_con_menor]" value="0">
-                        <input type="checkbox" class="custom-control-input" id="padre_vive" name="padre[vive_con_menor]" value="1"
-                            {{ (padre.vive_con_menor ?? 0) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="padre_vive">{{ 'ViveConMenor'|get_plugin_lang('SchoolPlugin') }}</label>
-                    </div>
-                </div>
-            </div>
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span><i class="fas fa-child mr-1"></i> Hermanos</span>
+            <button type="button" class="btn btn-sm btn-success" id="btn-agregar-hermano">
+                <i class="fas fa-plus"></i> Agregar
+            </button>
         </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0" id="tabla-hermanos">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th style="width:60px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-hermanos"></tbody>
+            </table>
+        </div>
+        <input type="hidden" name="hermanos_data" id="hermanos-data-input" value="[]">
     </div>
 
     {# ============================================================ #}
-    {# SECCIÓN 4: CONTACTO DE EMERGENCIA                            #}
+    {# SECCIÓN 3: CONTACTOS DE EMERGENCIA                          #}
     {# ============================================================ #}
     <div class="card mb-4">
-        <div class="card-header"><i class="fas fa-phone-alt"></i> {{ 'EmergencyContact'|get_plugin_lang('SchoolPlugin') }}</div>
-        <div class="card-body">
-            <input type="hidden" name="contacto_id" value="{{ contactos[0].id ?? 0 }}">
-            <div class="form-row">
-                <div class="form-group col-md-5">
-                    <label>{{ 'NombreContacto'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="contacto[nombre_contacto]" class="form-control" value="{{ contactos[0].nombre_contacto ?? '' }}">
-                </div>
-                <div class="form-group col-md-3">
-                    <label>{{ 'Telefono'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="contacto[telefono]" class="form-control" value="{{ contactos[0].telefono ?? '' }}">
-                </div>
-                <div class="form-group col-md-4">
-                    <label>{{ 'Direccion'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" name="contacto[direccion]" class="form-control" value="{{ contactos[0].direccion ?? '' }}">
-                </div>
-            </div>
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span><i class="fas fa-phone-alt mr-1"></i> Contactos de Emergencia</span>
+            <button type="button" class="btn btn-sm btn-success" id="btn-agregar-contacto">
+                <i class="fas fa-plus"></i> Agregar
+            </button>
         </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0" id="tabla-contactos">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th style="width:130px;">Teléfono</th>
+                        <th>Dirección</th>
+                        <th style="width:80px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-contactos"></tbody>
+            </table>
+        </div>
+        <input type="hidden" name="contactos_data" id="contactos-data-input" value="[]">
     </div>
 
     {# ============================================================ #}
@@ -422,6 +376,168 @@
         </button>
     </div>
 </form>
+
+{# ============================================================ #}
+{# MODAL: Padre / Madre / Apoderado                             #}
+{# ============================================================ #}
+<div class="modal fade" id="modalPadre" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-weight-bold">
+                    <i class="fas fa-user-friends mr-1"></i> Datos del Padre / Madre / Apoderado
+                </h6>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="mp-index" value="-1">
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Tipo <span class="text-danger">*</span></label>
+                        <select id="mp-tipo" class="form-control form-control-sm">
+                            <option value="PADRE">Padre</option>
+                            <option value="MADRE">Madre</option>
+                            <option value="APODERADO">Apoderado</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Apellidos</label>
+                        <input type="text" id="mp-apellidos" class="form-control form-control-sm" placeholder="Apellidos">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Nombres</label>
+                        <input type="text" id="mp-nombres" class="form-control form-control-sm" placeholder="Nombres">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-2">
+                        <label class="font-weight-bold">Edad</label>
+                        <input type="number" id="mp-edad" class="form-control form-control-sm" min="18" max="99" placeholder="Edad">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">DNI</label>
+                        <input type="text" id="mp-dni" class="form-control form-control-sm" maxlength="12" placeholder="DNI">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="font-weight-bold">Celular</label>
+                        <input type="text" id="mp-celular" class="form-control form-control-sm" maxlength="15" placeholder="Celular">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Ocupación</label>
+                        <input type="text" id="mp-ocupacion" class="form-control form-control-sm" placeholder="Ocupación">
+                    </div>
+                </div>
+                <div class="form-row align-items-end">
+                    <div class="form-group col-md-4">
+                        <label class="font-weight-bold">Religión</label>
+                        <input type="text" id="mp-religion" class="form-control form-control-sm" placeholder="Religión">
+                    </div>
+                    <div id="mp-tipo-parto-group" class="form-group col-md-4" style="display:none;">
+                        <label class="font-weight-bold">Tipo de parto</label>
+                        <select id="mp-tipo-parto" class="form-control form-control-sm">
+                            <option value="">—</option>
+                            <option value="NORMAL">Normal</option>
+                            <option value="CESAREA">Cesárea</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <div class="custom-control custom-switch mb-1">
+                            <input type="checkbox" class="custom-control-input" id="mp-vive-con-menor">
+                            <label class="custom-control-label" for="mp-vive-con-menor">Vive con el menor</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-padre">
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ============================================================ #}
+{# MODAL: Contacto de Emergencia                               #}
+{# ============================================================ #}
+<div class="modal fade" id="modalContacto" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-weight-bold">
+                    <i class="fas fa-phone-alt mr-1"></i> Contacto de Emergencia
+                </h6>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="mc-index" value="-1">
+                <div class="form-group">
+                    <label class="font-weight-bold">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" id="mc-nombre" class="form-control form-control-sm" placeholder="Nombre del contacto">
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-5">
+                        <label class="font-weight-bold">Teléfono</label>
+                        <input type="text" id="mc-telefono" class="form-control form-control-sm" maxlength="15" placeholder="Teléfono">
+                    </div>
+                    <div class="form-group col-md-7">
+                        <label class="font-weight-bold">Dirección</label>
+                        <input type="text" id="mc-direccion" class="form-control form-control-sm" placeholder="Dirección">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-contacto">
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ============================================================ #}
+{# MODAL: Hermano                                              #}
+{# ============================================================ #}
+<div class="modal fade" id="modalHermano" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-weight-bold">
+                    <i class="fas fa-child mr-1"></i> Agregar Hermano
+                </h6>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-2">
+                    <label class="font-weight-bold">Buscar usuario en el sistema</label>
+                    <div class="input-group">
+                        <input type="text" id="hermano-search" class="form-control form-control-sm"
+                               placeholder="Buscar por nombre, apellido o usuario..." autocomplete="off">
+                        <div class="input-group-append">
+                            <button type="button" id="btn-buscar-hermano" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="hermano-search-results" class="list-group mt-1"
+                         style="position:relative; z-index:200; display:none;"></div>
+                </div>
+                <div id="hermano-selected-box" class="alert alert-success d-none py-2 mb-0" style="font-size:13px;">
+                    <i class="fas fa-user-check mr-1"></i> <span id="hermano-selected-label"></span>
+                </div>
+                <input type="hidden" id="hermano-selected-id" value="">
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-confirmar-hermano" disabled>
+                    <i class="fas fa-plus mr-1"></i> Agregar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 function toggleDetail(groupId, show) {
@@ -655,6 +771,247 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
             this.closest('.d-flex').style.display = 'none';
         });
     }
+})();
+
+// =========================================================
+// Padres / Apoderados modal management
+// =========================================================
+(function () {
+    var padresArr  = {{ all_padres_json|default('[]') }};
+    var tipoLabel  = { PADRE: 'Padre', MADRE: 'Madre', APODERADO: 'Apoderado' };
+    var tipoBadge  = { PADRE: 'badge-primary', MADRE: 'badge-danger', APODERADO: 'badge-warning' };
+
+    function renderPadres() {
+        var tbody = document.getElementById('tbody-padres');
+        if (padresArr.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3" style="font-size:13px;">Sin registros. Haga clic en "Agregar" para añadir.</td></tr>';
+        } else {
+            tbody.innerHTML = '';
+            padresArr.forEach(function (p, idx) {
+                var label  = tipoLabel[p.tipo]  || p.tipo;
+                var badge  = tipoBadge[p.tipo]  || 'badge-secondary';
+                var nombre = (p.apellidos || '') + (p.apellidos && p.nombres ? ', ' : '') + (p.nombres || '');
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td><span class="badge ' + badge + '">' + label + '</span></td>' +
+                    '<td>' + nombre + '</td>' +
+                    '<td>' + (p.celular || '') + '</td>' +
+                    '<td class="text-right">' +
+                        '<button type="button" class="btn btn-xs btn-outline-info mr-1" onclick="editarPadre(' + idx + ')"><i class="fas fa-edit"></i></button>' +
+                        '<button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarPadre(' + idx + ')"><i class="fas fa-trash"></i></button>' +
+                    '</td></tr>';
+            });
+        }
+        document.getElementById('padres-data-input').value = JSON.stringify(padresArr);
+    }
+
+    function abrirModal(idx) {
+        var p = idx >= 0 ? padresArr[idx] : {};
+        document.getElementById('mp-index').value         = idx;
+        document.getElementById('mp-tipo').value          = p.tipo       || 'PADRE';
+        document.getElementById('mp-apellidos').value     = p.apellidos  || '';
+        document.getElementById('mp-nombres').value       = p.nombres    || '';
+        document.getElementById('mp-edad').value          = p.edad       || '';
+        document.getElementById('mp-dni').value           = p.dni        || '';
+        document.getElementById('mp-celular').value       = p.celular    || '';
+        document.getElementById('mp-ocupacion').value     = p.ocupacion  || '';
+        document.getElementById('mp-religion').value      = p.religion   || '';
+        document.getElementById('mp-tipo-parto').value    = p.tipo_parto || '';
+        document.getElementById('mp-vive-con-menor').checked = !!p.vive_con_menor;
+        document.getElementById('mp-tipo-parto-group').style.display =
+            (document.getElementById('mp-tipo').value === 'MADRE') ? '' : 'none';
+        $('#modalPadre').modal('show');
+    }
+
+    window.editarPadre   = function (idx) { abrirModal(idx); };
+    window.eliminarPadre = function (idx) {
+        if (!confirm('¿Eliminar este registro?')) return;
+        padresArr.splice(idx, 1);
+        renderPadres();
+    };
+
+    document.getElementById('btn-agregar-padre').addEventListener('click', function () { abrirModal(-1); });
+
+    document.getElementById('mp-tipo').addEventListener('change', function () {
+        document.getElementById('mp-tipo-parto-group').style.display =
+            this.value === 'MADRE' ? '' : 'none';
+    });
+
+    document.getElementById('btn-guardar-padre').addEventListener('click', function () {
+        var tipo  = document.getElementById('mp-tipo').value;
+        var entry = {
+            tipo:           tipo,
+            apellidos:      document.getElementById('mp-apellidos').value.trim(),
+            nombres:        document.getElementById('mp-nombres').value.trim(),
+            edad:           document.getElementById('mp-edad').value.trim(),
+            dni:            document.getElementById('mp-dni').value.trim(),
+            celular:        document.getElementById('mp-celular').value.trim(),
+            ocupacion:      document.getElementById('mp-ocupacion').value.trim(),
+            religion:       document.getElementById('mp-religion').value.trim(),
+            tipo_parto:     tipo === 'MADRE' ? document.getElementById('mp-tipo-parto').value : '',
+            vive_con_menor: document.getElementById('mp-vive-con-menor').checked ? 1 : 0
+        };
+        var idx = parseInt(document.getElementById('mp-index').value);
+        if (idx >= 0) { padresArr[idx] = entry; } else { padresArr.push(entry); }
+        renderPadres();
+        $('#modalPadre').modal('hide');
+    });
+
+    renderPadres();
+})();
+
+// =========================================================
+// Hermanos modal management
+// =========================================================
+(function () {
+    var hermanosArr = {{ all_hermanos_json|default('[]') }};
+
+    function renderHermanos() {
+        var tbody = document.getElementById('tbody-hermanos');
+        if (hermanosArr.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted py-3" style="font-size:13px;">Sin registros. Haga clic en "Agregar" para añadir.</td></tr>';
+        } else {
+            tbody.innerHTML = '';
+            hermanosArr.forEach(function (h, idx) {
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td>' + (h.label || '') + '</td>' +
+                    '<td class="text-right">' +
+                        '<button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarHermano(' + idx + ')"><i class="fas fa-trash"></i></button>' +
+                    '</td></tr>';
+            });
+        }
+        document.getElementById('hermanos-data-input').value = JSON.stringify(hermanosArr);
+    }
+
+    window.eliminarHermano = function (idx) {
+        if (!confirm('¿Eliminar este hermano?')) return;
+        hermanosArr.splice(idx, 1);
+        renderHermanos();
+    };
+
+    document.getElementById('btn-agregar-hermano').addEventListener('click', function () {
+        document.getElementById('hermano-search').value = '';
+        document.getElementById('hermano-search-results').innerHTML = '';
+        document.getElementById('hermano-search-results').style.display = 'none';
+        document.getElementById('hermano-selected-box').classList.add('d-none');
+        document.getElementById('hermano-selected-id').value = '';
+        document.getElementById('btn-confirmar-hermano').disabled = true;
+        $('#modalHermano').modal('show');
+    });
+
+    function buscarHermano() {
+        var term = document.getElementById('hermano-search').value.trim();
+        var resultsEl = document.getElementById('hermano-search-results');
+        if (term.length < 2) { resultsEl.style.display = 'none'; return; }
+        $.post('{{ ajax_matricula_url }}', { action: 'buscar_usuario', term: term })
+         .done(function (resp) {
+            resultsEl.innerHTML = '';
+            if (resp.success && resp.users.length) {
+                resp.users.forEach(function (u) {
+                    var a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'list-group-item list-group-item-action py-1';
+                    a.style.fontSize = '13px';
+                    a.textContent = u.label;
+                    a.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        document.getElementById('hermano-selected-id').value = u.id;
+                        document.getElementById('hermano-selected-label').textContent = u.label;
+                        document.getElementById('hermano-selected-box').classList.remove('d-none');
+                        document.getElementById('btn-confirmar-hermano').disabled = false;
+                        resultsEl.style.display = 'none';
+                        document.getElementById('hermano-search').value = u.label;
+                    });
+                    resultsEl.appendChild(a);
+                });
+                resultsEl.style.display = 'block';
+            } else {
+                resultsEl.style.display = 'none';
+            }
+         });
+    }
+
+    document.getElementById('btn-buscar-hermano').addEventListener('click', buscarHermano);
+    document.getElementById('hermano-search').addEventListener('keyup', function (e) {
+        if (e.key === 'Enter') buscarHermano();
+        else if (this.value.length >= 2) buscarHermano();
+    });
+
+    document.getElementById('btn-confirmar-hermano').addEventListener('click', function () {
+        var userId = parseInt(document.getElementById('hermano-selected-id').value);
+        var label  = document.getElementById('hermano-selected-label').textContent;
+        if (!userId) return;
+        var exists = hermanosArr.some(function (h) { return h.user_id === userId; });
+        if (exists) { alert('Este usuario ya está en la lista.'); return; }
+        hermanosArr.push({ user_id: userId, label: label });
+        renderHermanos();
+        $('#modalHermano').modal('hide');
+    });
+
+    renderHermanos();
+})();
+
+// =========================================================
+// Contactos de Emergencia modal management
+// =========================================================
+(function () {
+    var contactosArr = {{ all_contactos_json|default('[]') }};
+
+    function renderContactos() {
+        var tbody = document.getElementById('tbody-contactos');
+        if (contactosArr.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3" style="font-size:13px;">Sin registros. Haga clic en "Agregar" para añadir.</td></tr>';
+        } else {
+            tbody.innerHTML = '';
+            contactosArr.forEach(function (c, idx) {
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td>' + (c.nombre_contacto || '') + '</td>' +
+                    '<td>' + (c.telefono || '') + '</td>' +
+                    '<td>' + (c.direccion || '') + '</td>' +
+                    '<td class="text-right">' +
+                        '<button type="button" class="btn btn-xs btn-outline-info mr-1" onclick="editarContacto(' + idx + ')"><i class="fas fa-edit"></i></button>' +
+                        '<button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarContacto(' + idx + ')"><i class="fas fa-trash"></i></button>' +
+                    '</td></tr>';
+            });
+        }
+        document.getElementById('contactos-data-input').value = JSON.stringify(contactosArr);
+    }
+
+    function abrirModalContacto(idx) {
+        var c = idx >= 0 ? contactosArr[idx] : {};
+        document.getElementById('mc-index').value     = idx;
+        document.getElementById('mc-nombre').value    = c.nombre_contacto || '';
+        document.getElementById('mc-telefono').value  = c.telefono  || '';
+        document.getElementById('mc-direccion').value = c.direccion || '';
+        $('#modalContacto').modal('show');
+    }
+
+    window.editarContacto   = function (idx) { abrirModalContacto(idx); };
+    window.eliminarContacto = function (idx) {
+        if (!confirm('¿Eliminar este contacto?')) return;
+        contactosArr.splice(idx, 1);
+        renderContactos();
+    };
+
+    document.getElementById('btn-agregar-contacto').addEventListener('click', function () { abrirModalContacto(-1); });
+
+    document.getElementById('btn-guardar-contacto').addEventListener('click', function () {
+        var nombre = document.getElementById('mc-nombre').value.trim();
+        if (!nombre) { alert('El nombre del contacto es obligatorio.'); return; }
+        var entry = {
+            nombre_contacto: nombre,
+            telefono:        document.getElementById('mc-telefono').value.trim(),
+            direccion:       document.getElementById('mc-direccion').value.trim()
+        };
+        var idx = parseInt(document.getElementById('mc-index').value);
+        if (idx >= 0) { contactosArr[idx] = entry; } else { contactosArr.push(entry); }
+        renderContactos();
+        $('#modalContacto').modal('hide');
+    });
+
+    renderContactos();
 })();
 
 // Preview de foto del alumno

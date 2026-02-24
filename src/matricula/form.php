@@ -35,11 +35,13 @@ if ($fichaId === 0 && empty($_GET['user_id']) && $_SERVER['REQUEST_METHOD'] !== 
     header('Location: ' . api_get_path(WEB_PATH) . 'matricula/alumnos');
     exit;
 }
-$matricula = null;
-$madre     = [];
-$padre     = [];
-$contactos = [];
-$info      = [];
+$matricula   = null;
+$madre       = [];
+$padre       = [];
+$contactos   = [];
+$info        = [];
+$allPadres   = [];
+$allHermanos = [];
 
 if ($fichaId > 0) {
     $full = MatriculaManager::getFichaCompleta($fichaId);
@@ -52,6 +54,12 @@ if ($fichaId > 0) {
     $padre     = $full['padres']['PADRE'] ?? [];
     $contactos = $full['contactos'];
     $info      = $full['info'];
+    foreach ($full['padres'] as $tipo => $pData) {
+        if (!empty($pData)) {
+            $allPadres[] = array_merge(['tipo' => $tipo], $pData);
+        }
+    }
+    $allHermanos = $full['hermanos'] ?? [];
 }
 
 // POST handling
@@ -107,21 +115,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Save madre
-    if (!empty($_POST['madre'])) {
-        MatriculaManager::savePadre($fichaId, 'MADRE', $_POST['madre']);
+    // Save padres / apoderados from modal JSON
+    if (isset($_POST['padres_data'])) {
+        $padresData = json_decode($_POST['padres_data'], true);
+        if (is_array($padresData)) {
+            $padreTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
+            Database::query("DELETE FROM $padreTable WHERE ficha_id = " . (int) $fichaId);
+            foreach ($padresData as $padreEntry) {
+                $tipo = strtoupper(trim($padreEntry['tipo'] ?? ''));
+                if (in_array($tipo, ['PADRE', 'MADRE', 'APODERADO'])) {
+                    MatriculaManager::savePadre($fichaId, $tipo, $padreEntry);
+                }
+            }
+        }
     }
 
-    // Save padre
-    if (!empty($_POST['padre'])) {
-        MatriculaManager::savePadre($fichaId, 'PADRE', $_POST['padre']);
+    // Save contactos de emergencia from modal JSON
+    if (isset($_POST['contactos_data'])) {
+        $contactosData = json_decode($_POST['contactos_data'], true);
+        if (is_array($contactosData)) {
+            $contactoTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_CONTACTO);
+            Database::query("DELETE FROM $contactoTable WHERE ficha_id = " . (int) $fichaId);
+            foreach ($contactosData as $contactoEntry) {
+                if (!empty($contactoEntry['nombre_contacto']) || !empty($contactoEntry['telefono'])) {
+                    MatriculaManager::saveContacto($fichaId, $contactoEntry);
+                }
+            }
+        }
     }
 
-    // Save contacto (single for simplicity)
-    if (!empty($_POST['contacto'])) {
-        $contactoData = $_POST['contacto'];
-        $contactoData['id'] = isset($_POST['contacto_id']) ? (int) $_POST['contacto_id'] : 0;
-        MatriculaManager::saveContacto($fichaId, $contactoData);
+    // Save hermanos from modal JSON
+    if (isset($_POST['hermanos_data'])) {
+        $hermanosData = json_decode($_POST['hermanos_data'], true);
+        if (is_array($hermanosData)) {
+            $hermanoTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA_HERMANO);
+            Database::query("DELETE FROM $hermanoTable WHERE ficha_id = " . (int) $fichaId);
+            foreach ($hermanosData as $h) {
+                $hUserId = (int) ($h['user_id'] ?? 0);
+                if ($hUserId > 0) {
+                    Database::insert($hermanoTable, [
+                        'ficha_id'        => $fichaId,
+                        'hermano_user_id' => $hUserId,
+                    ]);
+                }
+            }
+        }
     }
 
     // Save info adicional
@@ -143,7 +181,10 @@ $regions = json_decode($regionsJson, true) ?: [];
 $plugin->assign('matricula', $matricula);
 $plugin->assign('madre', $madre);
 $plugin->assign('padre', $padre);
+$plugin->assign('all_padres_json', json_encode($allPadres));
 $plugin->assign('contactos', $contactos);
+$plugin->assign('all_contactos_json', json_encode($contactos));
+$plugin->assign('all_hermanos_json', json_encode($allHermanos));
 $plugin->assign('info', $info);
 $plugin->assign('tipos_sangre', $tiposSangre);
 $plugin->assign('ficha_id', $fichaId);

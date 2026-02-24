@@ -8,6 +8,7 @@
 DROP TABLE IF EXISTS plugin_school_matricula_info;
 DROP TABLE IF EXISTS plugin_school_matricula_contacto;
 DROP TABLE IF EXISTS plugin_school_matricula_padre;
+DROP TABLE IF EXISTS plugin_school_ficha_hermano;
 DROP TABLE IF EXISTS plugin_school_matricula;
 DROP TABLE IF EXISTS plugin_school_ficha;
 DROP TABLE IF EXISTS plugin_school_payment_period_price;
