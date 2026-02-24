@@ -127,10 +127,12 @@
                                maxlength="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '8' : '20' }}"
                                placeholder="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '00000000' : '' }}">
                         <div class="input-group-append">
+                            {% if reniec_visible %}
                             <button type="button" id="btn-consultar-reniec" class="btn btn-outline-info"
                                     title="Consultar apellidos y nombres en RENIEC" style="display:none; font-size:12px; width:100px;">
                                 <i class="fas fa-search"></i> RENIEC
                             </button>
+                        {% endif %}
                         </div>
                     </div>
                     <small id="reniec-msg" class="form-text text-muted"></small>
@@ -707,6 +709,7 @@ function updateTipoDoc() {
 }
 document.getElementById('field-nacionalidad').addEventListener('change', updateTipoDoc);
 
+{% if reniec_visible %}
 // --- Integración RENIEC ---
 function toggleReniecBtn() {
     var tipo = document.getElementById('field-tipo-doc').value;
@@ -755,6 +758,7 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
      })
      .always(function() { btn.disabled = false; });
 });
+{% endif %}
 
 // Vincular usuario de Chamilo
 (function() {

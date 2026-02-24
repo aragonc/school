@@ -207,6 +207,7 @@ $plugin->assign('saved_region', $matricula['region'] ?? '');
 $plugin->assign('saved_province', $matricula['provincia'] ?? '');
 $plugin->assign('saved_district', $matricula['distrito'] ?? '');
 $plugin->assign('ajax_matricula_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
+$plugin->assign('reniec_visible', $plugin->getSchoolSetting('reniec_visible') !== '0');
 $fotoUrl = '';
 if (!empty($matricula['foto'])) {
     $fotoUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/matricula/' . $matricula['foto'];

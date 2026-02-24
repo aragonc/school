@@ -38,6 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['favicon_png'])) {
     }
 }
 
+// Handle matricula settings save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_matricula_settings'])) {
+    $reniecVisible = !empty($_POST['reniec_visible']) ? '1' : '0';
+    $plugin->setSchoolSetting('reniec_visible', $reniecVisible);
+    header('Location: ' . api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq() . '&saved=1');
+    exit;
+}
+
 // Handle favicon delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_favicon'])) {
     if (file_exists($faviconPath)) {
@@ -62,6 +70,8 @@ if ($enable) {
     $plugin->assign('favicon_exists', file_exists($faviconPath));
     $plugin->assign('favicon_web_url', $faviconWebUrl);
     $plugin->assign('favicon_msg', $faviconMsg);
+    $plugin->assign('reniec_visible', $plugin->getSchoolSetting('reniec_visible') !== '0');
+    $plugin->assign('settings_saved', isset($_GET['saved']));
     $plugin->assign('settings_url', api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq());
 
     $content = $plugin->fetch('admin/settings.tpl');

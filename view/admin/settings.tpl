@@ -4,6 +4,39 @@
     </div>
 </div>
 
+{% if settings_saved %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    Configuración guardada correctamente.
+    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+</div>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-id-card mr-1"></i> Configuración de Matrículas</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ settings_url }}">
+            <input type="hidden" name="save_matricula_settings" value="1">
+            <div class="form-group mb-3">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="reniec_visible"
+                           name="reniec_visible" value="1" {{ reniec_visible ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="reniec_visible">
+                        Mostrar botón <strong>RENIEC</strong> en la ficha de matrícula
+                    </label>
+                </div>
+                <small class="form-text text-muted ml-4">
+                    Cuando está activo, aparece el botón para consultar apellidos y nombres desde RENIEC al ingresar un DNI peruano.
+                </small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-save mr-1"></i> Guardar configuración
+            </button>
+        </form>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <h6 class="m-0 font-weight-bold text-primary">Favicon (PNG)</h6>
