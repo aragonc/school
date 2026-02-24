@@ -73,7 +73,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
-    if (!empty($_FILES['foto']['tmp_name']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+    if (!empty($_POST['foto_crop_data'])) {
+        // Cropped image sent as base64 data URL
+        $base64Raw = $_POST['foto_crop_data'];
+        $base64Raw = preg_replace('/^data:image\/[a-z]+;base64,/i', '', $base64Raw);
+        $imageData = base64_decode($base64Raw, true);
+        if ($imageData !== false && strlen($imageData) > 0 && strlen($imageData) <= 5 * 1024 * 1024) {
+            $filename = 'foto_new_' . time() . '.jpg';
+            if (file_put_contents($uploadDir . $filename, $imageData) !== false) {
+                $_POST['foto'] = $filename;
+            }
+        }
+    } elseif (!empty($_FILES['foto']['tmp_name']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+        // Fallback: direct file upload (sin crop)
         $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mime  = $finfo->file($_FILES['foto']['tmp_name']);
@@ -103,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fichaId   = MatriculaManager::saveFicha($fichaData);
 
     // Rename temp foto and update ficha record
+    $fotoActualizada = false;
     if (!empty($_POST['foto']) && strpos($_POST['foto'], '_new_') !== false) {
         $oldPath = $uploadDir . $_POST['foto'];
         $newName = str_replace('_new_', '_' . $fichaId . '_', $_POST['foto']);
@@ -114,6 +127,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ['id = ?' => $fichaId]
             );
             $_POST['foto'] = $newName;
+            $fotoActualizada = true;
+        }
+    }
+
+    // Update linked Chamilo user's profile photo
+    if ($fotoActualizada) {
+        $linkedUserId = (int) ($fichaData['user_id'] ?? 0);
+        if ($linkedUserId > 0) {
+            $photoPath = $uploadDir . $_POST['foto'];
+            if (file_exists($photoPath)) {
+                $newPicName = UserManager::update_user_picture(
+                    $linkedUserId,
+                    $_POST['foto'],
+                    $photoPath
+                );
+                if ($newPicName) {
+                    Database::update(
+                        Database::get_main_table(TABLE_MAIN_USER),
+                        ['picture_uri' => $newPicName],
+                        ['user_id = ?' => $linkedUserId]
+                    );
+                }
+            }
         }
     }
 
@@ -208,6 +244,8 @@ $plugin->assign('saved_province', $matricula['provincia'] ?? '');
 $plugin->assign('saved_district', $matricula['distrito'] ?? '');
 $plugin->assign('ajax_matricula_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
 $plugin->assign('reniec_visible', $plugin->getSchoolSetting('reniec_visible') !== '0');
+$plugin->assign('cropper_css_url', 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css');
+$plugin->assign('cropper_js_url', 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js');
 $fotoUrl = '';
 if (!empty($matricula['foto'])) {
     $fotoUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/matricula/' . $matricula['foto'];

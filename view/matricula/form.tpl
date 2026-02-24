@@ -1,3 +1,6 @@
+<link rel="stylesheet" href="{{ cropper_css_url }}">
+<script src="{{ cropper_js_url }}"></script>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="{{ _p.web }}matricula" class="btn btn-secondary btn-sm">
         <i class="fas fa-arrow-left"></i> {{ 'BackToList'|get_plugin_lang('SchoolPlugin') }}
@@ -139,23 +142,34 @@
                 </div>
             </div>
 
-            {# Foto del alumno #}
+            {# Foto del alumno con crop #}
             <div class="form-row align-items-center mb-3">
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                     <label class="font-weight-bold d-block">Foto del alumno</label>
                     <div class="d-flex align-items-center">
-                        <div class="mr-3">
+                        <div class="mr-3" style="flex-shrink:0;">
                             <img id="foto-preview"
                                  src="{{ foto_url ?: '' }}"
                                  alt="Foto"
-                                 style="width:100px; height:120px; object-fit:cover; border:1px solid #ccc; border-radius:4px; background:#f0f0f0; display:{{ foto_url ? 'block' : 'none' }};">
-                            <div id="foto-placeholder" style="width:100px; height:120px; border:1px dashed #ccc; border-radius:4px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:12px; text-align:center; {{ foto_url ? 'display:none;' : '' }}">
-                                <span><i class="fas fa-user" style="font-size:2rem; display:block; margin-bottom:4px;"></i>Sin foto</span>
+                                 style="width:100px; height:130px; object-fit:cover; border:2px solid #ccc; border-radius:6px; background:#f0f0f0; cursor:pointer; display:{{ foto_url ? 'block' : 'none' }};"
+                                 onclick="document.getElementById('input-foto').click()"
+                                 title="Click para cambiar la foto">
+                            <div id="foto-placeholder"
+                                 style="width:100px; height:130px; border:2px dashed #ccc; border-radius:6px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:11px; text-align:center; cursor:pointer; {{ foto_url ? 'display:none;' : '' }}"
+                                 onclick="document.getElementById('input-foto').click()">
+                                <span><i class="fas fa-camera" style="font-size:2rem; display:block; margin-bottom:4px;"></i>Seleccionar<br>foto</span>
                             </div>
                         </div>
                         <div>
-                            <input type="file" name="foto" id="input-foto" accept="image/*" class="form-control-file" style="font-size:12px;">
-                            <small class="text-muted d-block mt-1">JPG, PNG o GIF. Máx. 2 MB.</small>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mb-1"
+                                    onclick="document.getElementById('input-foto').click()">
+                                <i class="fas fa-camera mr-1"></i> {{ foto_url ? 'Cambiar foto' : 'Seleccionar foto' }}
+                            </button>
+                            {# file input sin name para que no se envíe crudo — el crop va por base64 #}
+                            <input type="file" id="input-foto" accept="image/jpeg,image/png,image/webp" class="d-none">
+                            <input type="hidden" name="foto_crop_data" id="foto-crop-data">
+                            <small class="text-muted d-block mt-1">JPG, PNG o WebP. Máx. 5 MB.</small>
+                            <small class="text-muted d-block" id="foto-nombre-elegido"></small>
                         </div>
                     </div>
                 </div>
@@ -382,6 +396,35 @@
         </button>
     </div>
 </form>
+
+{# ============================================================ #}
+{# MODAL: Crop Foto                                             #}
+{# ============================================================ #}
+<div class="modal fade" id="modalCropFoto" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-weight-bold">
+                    <i class="fas fa-crop-alt mr-1"></i> Recortar foto del alumno
+                </h6>
+            </div>
+            <div class="modal-body p-0 text-center" style="background:#1a1a1a; min-height:320px; position:relative;">
+                <img id="crop-image" src="" alt="" style="max-width:100%; display:block; margin:0 auto;">
+            </div>
+            <div class="modal-footer py-2 justify-content-between">
+                <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Arrastra y redimensiona el área de recorte. Relación 3:4 (carnet).</small>
+                <div>
+                    <button type="button" class="btn btn-secondary btn-sm mr-2" id="btn-cancelar-crop">
+                        <i class="fas fa-times mr-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btn-aplicar-crop">
+                        <i class="fas fa-check mr-1"></i>Aplicar recorte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {# ============================================================ #}
 {# MODAL: Padre / Madre / Apoderado                             #}
@@ -1251,18 +1294,81 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
     renderObs();
 })();
 
-// Preview de foto del alumno
-document.getElementById('input-foto').addEventListener('change', function() {
-    var file = this.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        var preview = document.getElementById('foto-preview');
-        var placeholder = document.getElementById('foto-placeholder');
-        preview.src = e.target.result;
+// =========================================================
+// Crop de foto del alumno (Cropper.js)
+// =========================================================
+(function() {
+    var cropperInstance = null;
+    var fileInput  = document.getElementById('input-foto');
+    var cropImage  = document.getElementById('crop-image');
+    var preview    = document.getElementById('foto-preview');
+    var placeholder= document.getElementById('foto-placeholder');
+    var dataInput  = document.getElementById('foto-crop-data');
+    var nombreEl   = document.getElementById('foto-nombre-elegido');
+
+    fileInput.addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            alert('La imagen no debe superar 5 MB.');
+            this.value = '';
+            return;
+        }
+        nombreEl.textContent = file.name;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            cropImage.src = e.target.result;
+            $('#modalCropFoto').modal('show');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    $('#modalCropFoto').on('shown.bs.modal', function() {
+        if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+        if (typeof Cropper === 'undefined') {
+            alert('Error: Cropper.js no está cargado. Recarga la página e intenta de nuevo.');
+            return;
+        }
+        cropperInstance = new Cropper(cropImage, {
+            aspectRatio: 3 / 4,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.9,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: true,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false
+        });
+    });
+
+    $('#modalCropFoto').on('hidden.bs.modal', function() {
+        if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+    });
+
+    document.getElementById('btn-cancelar-crop').addEventListener('click', function() {
+        fileInput.value = '';
+        nombreEl.textContent = '';
+        $('#modalCropFoto').modal('hide');
+    });
+
+    document.getElementById('btn-aplicar-crop').addEventListener('click', function() {
+        if (!cropperInstance) return;
+        var canvas = cropperInstance.getCroppedCanvas({
+            width: 300,
+            height: 400,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        var base64 = canvas.toDataURL('image/jpeg', 0.88);
+        dataInput.value = base64;
+        preview.src = base64;
         preview.style.display = 'block';
         placeholder.style.display = 'none';
-    };
-    reader.readAsDataURL(file);
-});
+        $('#modalCropFoto').modal('hide');
+    });
+})();
 </script>
+
