@@ -36,7 +36,7 @@
                         <th>Correo</th>
                         <th>Perfil</th>
                         <th class="text-center" style="width:100px;">Estado</th>
-                        <th class="text-center" style="width:100px;">Acciones</th>
+                        <th class="text-center" style="width:200px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
