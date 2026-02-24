@@ -297,6 +297,7 @@ CREATE TABLE IF NOT EXISTS plugin_school_matricula (
     ficha_id INT unsigned NOT NULL,
     academic_year_id INT unsigned NULL,
     grade_id INT unsigned NULL,
+    section_id INT unsigned NULL,
     estado ENUM('ACTIVO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
     tipo_ingreso ENUM('NUEVO_INGRESO','REINGRESO','CONTINUACION') NOT NULL DEFAULT 'NUEVO_INGRESO',
     created_by INT NOT NULL DEFAULT 0,

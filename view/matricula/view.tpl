@@ -68,7 +68,7 @@
                     </tr>
                     <tr>
                         <td class="font-weight-bold">{{ 'Grade'|get_plugin_lang('SchoolPlugin') }}:</td>
-                        <td>{% if matricula.level_name %}{{ matricula.level_name }} — {% endif %}{{ matricula.grade_name ?: '—' }}</td>
+                        <td>{% if matricula.level_name %}{{ matricula.level_name }} — {% endif %}{{ matricula.grade_name ?: '—' }}{% if matricula.section_name %} / Sección {{ matricula.section_name }}{% endif %}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-bold">{{ 'Sexo'|get_plugin_lang('SchoolPlugin') }}:</td>
@@ -292,6 +292,7 @@
                 <tr>
                     <th>Año</th>
                     <th>Nivel / Grado</th>
+                    <th>Sección</th>
                     <th>Tipo</th>
                     <th>Estado</th>
                     <th>Registrado</th>
@@ -303,6 +304,7 @@
                 <tr>
                     <td>{{ m.academic_year_name ?: '—' }}</td>
                     <td>{% if m.level_name %}{{ m.level_name }} — {% endif %}{{ m.grade_name ?: '—' }}</td>
+                    <td>{{ m.section_name ?: '—' }}</td>
                     <td>
                         {% if m.tipo_ingreso == 'NUEVO_INGRESO' %}<span class="badge badge-success">Nuevo</span>
                         {% elseif m.tipo_ingreso == 'REINGRESO' %}<span class="badge badge-warning">Reingreso</span>
@@ -317,7 +319,9 @@
                         <button class="btn btn-xs btn-outline-warning btn-editar-mat"
                                 data-id="{{ m.id }}"
                                 data-year="{{ m.academic_year_id }}"
+                                data-level="{{ m.level_id }}"
                                 data-grade="{{ m.grade_id }}"
+                                data-section="{{ m.section_id }}"
                                 data-tipo="{{ m.tipo_ingreso }}"
                                 data-estado="{{ m.estado }}"
                                 title="Editar matrícula">
@@ -366,18 +370,27 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="font-weight-bold">Nivel / Grado</label>
-                    <select class="form-control" id="modal-grade">
-                        <option value="">— Seleccione —</option>
+                    <label class="font-weight-bold">Nivel</label>
+                    <select class="form-control" id="modal-level">
+                        <option value="">— Seleccione Nivel —</option>
                         {% for level in levels %}
-                        <optgroup label="{{ level.name }}">
-                            {% for grade in level.grades %}
-                            <option value="{{ grade.id }}">{{ grade.name }}</option>
-                            {% endfor %}
-                        </optgroup>
+                        <option value="{{ level.id }}">{{ level.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Grado</label>
+                    <select class="form-control" id="modal-grade" disabled>
+                        <option value="">— Seleccione Grado —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Sección</label>
+                    <select class="form-control" id="modal-section" disabled>
+                        <option value="">— Seleccione Sección —</option>
+                    </select>
+                </div>
+                <div id="modal-aula-info" class="alert alert-info py-2" style="display:none; font-size:13px;"></div>
                 <div class="form-group">
                     <label class="font-weight-bold">Tipo de Ingreso</label>
                     <select class="form-control" id="modal-tipo-ingreso">
@@ -462,11 +475,113 @@
     var ajaxUrl = '{{ ajax_url }}';
     var fichaId = {{ ficha_id }};
 
+    var selYear    = document.getElementById('modal-year');
+    var selLevel   = document.getElementById('modal-level');
+    var selGrade   = document.getElementById('modal-grade');
+    var selSection = document.getElementById('modal-section');
+    var aulaInfo   = document.getElementById('modal-aula-info');
+
+    function resetGrade() {
+        selGrade.innerHTML = '<option value="">— Seleccione Grado —</option>';
+        selGrade.disabled = true;
+        resetSection();
+    }
+
+    function resetSection() {
+        selSection.innerHTML = '<option value="">— Seleccione Sección —</option>';
+        selSection.disabled = true;
+        aulaInfo.style.display = 'none';
+        aulaInfo.innerHTML = '';
+    }
+
+    function loadGrades(levelId, selectedGradeId, selectedSectionId) {
+        if (!levelId) { resetGrade(); return; }
+        $.get(ajaxUrl, { action: 'get_grades_by_level', level_id: levelId })
+        .done(function(resp) {
+            selGrade.innerHTML = '<option value="">— Seleccione Grado —</option>';
+            if (resp.success && resp.grades.length) {
+                resp.grades.forEach(function(g) {
+                    var opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.textContent = g.name;
+                    if (selectedGradeId && parseInt(selectedGradeId) === parseInt(g.id)) {
+                        opt.selected = true;
+                    }
+                    selGrade.appendChild(opt);
+                });
+                selGrade.disabled = false;
+                if (selectedGradeId) {
+                    loadSections(selYear.value, selectedGradeId, selectedSectionId || null);
+                }
+            }
+        });
+    }
+
+    function loadSections(yearId, gradeId, selectedSectionId) {
+        resetSection();
+        if (!yearId || !gradeId) return;
+        $.get(ajaxUrl, { action: 'get_sections_by_grade', academic_year_id: yearId, grade_id: gradeId })
+        .done(function(resp) {
+            selSection.innerHTML = '<option value="">— Seleccione Sección —</option>';
+            if (resp.success && resp.sections.length) {
+                resp.sections.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.section_id;
+                    opt.dataset.classroomId  = s.classroom_id;
+                    opt.dataset.capacity     = s.capacity;
+                    opt.dataset.studentCount = s.student_count;
+                    opt.dataset.tutorName    = s.tutor_name;
+                    opt.textContent = 'Sección ' + s.section_name;
+                    if (selectedSectionId && parseInt(selectedSectionId) === parseInt(s.section_id)) {
+                        opt.selected = true;
+                    }
+                    selSection.appendChild(opt);
+                });
+                selSection.disabled = false;
+                if (selectedSectionId) {
+                    showAulaInfo();
+                }
+            }
+        });
+    }
+
+    function showAulaInfo() {
+        var opt = selSection.options[selSection.selectedIndex];
+        if (!opt || !opt.value) { aulaInfo.style.display = 'none'; return; }
+        var parts = [];
+        if (opt.dataset.tutorName) parts.push('<i class="fas fa-chalkboard-teacher mr-1"></i> Tutor: <strong>' + opt.dataset.tutorName + '</strong>');
+        parts.push('<i class="fas fa-users mr-1"></i> Alumnos: <strong>' + opt.dataset.studentCount + ' / ' + opt.dataset.capacity + '</strong>');
+        aulaInfo.innerHTML = parts.join(' &nbsp;|&nbsp; ');
+        aulaInfo.style.display = '';
+    }
+
+    // Cascading selects
+    selLevel.addEventListener('change', function() {
+        resetGrade();
+        loadGrades(this.value, null, null);
+    });
+
+    selGrade.addEventListener('change', function() {
+        resetSection();
+        loadSections(selYear.value, this.value, null);
+    });
+
+    selYear.addEventListener('change', function() {
+        resetSection();
+        if (selGrade.value) {
+            loadSections(this.value, selGrade.value, null);
+        }
+    });
+
+    selSection.addEventListener('change', showAulaInfo);
+
     // Abrir modal en modo "nuevo"
     document.getElementById('btn-nueva-matricula').addEventListener('click', function() {
         document.getElementById('modal-mat-id').value = 0;
         document.getElementById('modalAsignarMatriculaLabel').innerHTML =
             '<i class="fas fa-graduation-cap mr-1"></i> Asignar Matrícula';
+        selLevel.value = '';
+        resetGrade();
         document.getElementById('modal-tipo-ingreso').value = 'CONTINUACION';
         document.getElementById('modal-estado').value = 'ACTIVO';
         document.getElementById('modal-error').style.display = 'none';
@@ -475,12 +590,23 @@
     // Abrir modal en modo "editar" desde botones de la tabla
     document.querySelectorAll('.btn-editar-mat').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var matId = btn.dataset.id;
+            var matId      = btn.dataset.id;
+            var levelId    = btn.dataset.level  || '';
+            var gradeId    = btn.dataset.grade  || '';
+            var sectionId  = btn.dataset.section || '';
+
             document.getElementById('modal-mat-id').value = matId;
             document.getElementById('modalAsignarMatriculaLabel').innerHTML =
                 '<i class="fas fa-graduation-cap mr-1"></i> Editar Matrícula';
-            document.getElementById('modal-year').value        = btn.dataset.year || '';
-            document.getElementById('modal-grade').value       = btn.dataset.grade || '';
+            selYear.value  = btn.dataset.year || '';
+
+            // Pre-load cascading selects
+            selLevel.value = levelId;
+            resetGrade();
+            if (levelId) {
+                loadGrades(levelId, gradeId, sectionId);
+            }
+
             document.getElementById('modal-tipo-ingreso').value = btn.dataset.tipo || 'CONTINUACION';
             document.getElementById('modal-estado').value      = btn.dataset.estado || 'ACTIVO';
             document.getElementById('modal-error').style.display = 'none';
@@ -502,13 +628,17 @@
             action:           'save_matricula_anual',
             ficha_id:         fichaId,
             mat_id:           matId,
-            academic_year_id: document.getElementById('modal-year').value,
-            grade_id:         document.getElementById('modal-grade').value,
+            academic_year_id: selYear.value,
+            grade_id:         selGrade.value,
+            section_id:       selSection.value,
             tipo_ingreso:     document.getElementById('modal-tipo-ingreso').value,
             estado:           document.getElementById('modal-estado').value
         })
         .done(function(resp) {
             if (resp.success) {
+                if (resp.warning) {
+                    alert('Matrícula guardada.\n\nAviso: ' + resp.warning);
+                }
                 location.reload();
             } else {
                 errDiv.textContent = resp.message || 'Error al guardar la matrícula.';

@@ -147,6 +147,7 @@ class MatriculaManager
         $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
         $grade      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
         $level      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $section    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
 
         $where = ['1=1'];
 
@@ -171,7 +172,7 @@ class MatriculaManager
 
         $whereStr = implode(' AND ', $where);
 
-        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.section_id, m.estado, m.tipo_ingreso,
                        m.created_by, m.created_at, m.updated_at,
                        f.user_id, f.apellido_paterno, f.apellido_materno, f.nombres,
                        f.sexo, f.dni, f.tipo_documento, f.tipo_sangre, f.fecha_nacimiento,
@@ -179,12 +180,14 @@ class MatriculaManager
                        f.tiene_alergias, f.alergias_detalle, f.usa_lentes,
                        f.tiene_discapacidad, f.discapacidad_detalle,
                        f.ie_procedencia, f.motivo_traslado, f.foto,
-                       g.name AS grade_name,
-                       lv.name AS level_name
+                       g.name AS grade_name, g.level_id,
+                       lv.name AS level_name,
+                       sec.name AS section_name
                 FROM $matTable m
                 JOIN $fichaTable f ON f.id = m.ficha_id
                 LEFT JOIN $grade g ON m.grade_id = g.id
                 LEFT JOIN $level lv ON g.level_id = lv.id
+                LEFT JOIN $section sec ON m.section_id = sec.id
                 WHERE $whereStr
                 ORDER BY f.apellido_paterno, f.apellido_materno, f.nombres ASC";
 
@@ -205,8 +208,9 @@ class MatriculaManager
         $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
         $grade      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
         $level      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $section    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
 
-        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.section_id, m.estado, m.tipo_ingreso,
                        m.created_by, m.created_at, m.updated_at,
                        f.user_id, f.apellido_paterno, f.apellido_materno, f.nombres,
                        f.sexo, f.dni, f.tipo_documento, f.tipo_sangre, f.fecha_nacimiento,
@@ -214,13 +218,14 @@ class MatriculaManager
                        f.tiene_alergias, f.alergias_detalle, f.usa_lentes,
                        f.tiene_discapacidad, f.discapacidad_detalle,
                        f.ie_procedencia, f.motivo_traslado, f.foto,
-                       g.name AS grade_name,
+                       g.name AS grade_name, g.level_id,
                        lv.name AS level_name,
-                       g.level_id
+                       sec.name AS section_name
                 FROM $fichaTable f
                 JOIN $matTable m ON m.ficha_id = f.id
                 LEFT JOIN $grade g ON m.grade_id = g.id
                 LEFT JOIN $level lv ON g.level_id = lv.id
+                LEFT JOIN $section sec ON m.section_id = sec.id
                 WHERE f.user_id = $userId
                 ORDER BY m.academic_year_id DESC, m.id DESC
                 LIMIT 1";
@@ -241,8 +246,9 @@ class MatriculaManager
         $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
         $grade      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
         $level      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $section    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
 
-        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.section_id, m.estado, m.tipo_ingreso,
                        m.created_by, m.created_at, m.updated_at,
                        f.user_id, f.apellido_paterno, f.apellido_materno, f.nombres,
                        f.sexo, f.dni, f.tipo_documento, f.tipo_sangre, f.fecha_nacimiento,
@@ -250,13 +256,14 @@ class MatriculaManager
                        f.tiene_alergias, f.alergias_detalle, f.usa_lentes,
                        f.tiene_discapacidad, f.discapacidad_detalle,
                        f.ie_procedencia, f.motivo_traslado, f.foto,
-                       g.name AS grade_name,
+                       g.name AS grade_name, g.level_id,
                        lv.name AS level_name,
-                       g.level_id
+                       sec.name AS section_name
                 FROM $matTable m
                 JOIN $fichaTable f ON f.id = m.ficha_id
                 LEFT JOIN $grade g ON m.grade_id = g.id
                 LEFT JOIN $level lv ON g.level_id = lv.id
+                LEFT JOIN $section sec ON m.section_id = sec.id
                 WHERE m.id = $id";
 
         $result = Database::query($sql);
@@ -297,6 +304,7 @@ class MatriculaManager
             'ficha_id'         => (int) ($data['ficha_id'] ?? 0),
             'academic_year_id' => isset($data['academic_year_id']) && $data['academic_year_id'] ? (int) $data['academic_year_id'] : null,
             'grade_id'         => isset($data['grade_id']) && $data['grade_id'] ? (int) $data['grade_id'] : null,
+            'section_id'       => isset($data['section_id']) && $data['section_id'] ? (int) $data['section_id'] : null,
             'estado'           => in_array($data['estado'] ?? '', ['ACTIVO', 'RETIRADO']) ? $data['estado'] : 'ACTIVO',
             'tipo_ingreso'     => $tipoIngreso,
         ];
@@ -618,16 +626,19 @@ class MatriculaManager
         $yearTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_YEAR);
         $grade     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
         $level     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $section   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
 
-        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.estado, m.tipo_ingreso,
+        $sql = "SELECT m.id, m.ficha_id, m.academic_year_id, m.grade_id, m.section_id, m.estado, m.tipo_ingreso,
                        m.created_at, m.updated_at,
                        ay.name AS academic_year_name, ay.year AS academic_year,
-                       g.name AS grade_name,
-                       lv.name AS level_name
+                       g.name AS grade_name, g.level_id,
+                       lv.name AS level_name,
+                       sec.name AS section_name
                 FROM $matTable m
                 LEFT JOIN $yearTable ay ON ay.id = m.academic_year_id
                 LEFT JOIN $grade g     ON g.id  = m.grade_id
                 LEFT JOIN $level lv    ON lv.id = g.level_id
+                LEFT JOIN $section sec ON sec.id = m.section_id
                 WHERE m.ficha_id = $fichaId
                 ORDER BY ay.year DESC, m.id DESC";
 

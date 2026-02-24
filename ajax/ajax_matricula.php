@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../src/MatriculaManager.php';
+require_once __DIR__ . '/../src/AcademicManager.php';
 
 $plugin = SchoolPlugin::create();
 $plugin->requireLogin();
@@ -66,6 +67,7 @@ switch ($action) {
         $matId       = (int) ($_POST['mat_id'] ?? 0);
         $yearId      = (int) ($_POST['academic_year_id'] ?? 0);
         $gradeId     = (int) ($_POST['grade_id'] ?? 0);
+        $sectionId   = (int) ($_POST['section_id'] ?? 0);
         $tipoIngreso = $_POST['tipo_ingreso'] ?? 'NUEVO_INGRESO';
         $estado      = $_POST['estado'] ?? 'ACTIVO';
 
@@ -79,11 +81,58 @@ switch ($action) {
             'ficha_id'         => $fichaId,
             'academic_year_id' => $yearId ?: null,
             'grade_id'         => $gradeId ?: null,
+            'section_id'       => $sectionId ?: null,
             'tipo_ingreso'     => $tipoIngreso,
             'estado'           => $estado,
         ]);
 
-        echo json_encode(['success' => $savedId > 0, 'id' => $savedId]);
+        if (!$savedId) {
+            echo json_encode(['success' => false, 'message' => 'Error al guardar la matrícula']);
+            break;
+        }
+
+        // Auto-assign student to classroom if all required data is present
+        $classroomAssigned = false;
+        $warning           = '';
+
+        if ($yearId > 0 && $gradeId > 0 && $sectionId > 0) {
+            // Get the ficha to retrieve the linked user_id
+            $ficha  = MatriculaManager::getFichaById($fichaId);
+            $userId = $ficha ? (int) ($ficha['user_id'] ?? 0) : 0;
+
+            if ($userId > 0) {
+                // Find the classroom for this year + grade + section
+                $cTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+                $cRes    = Database::query(
+                    "SELECT id FROM $cTable
+                     WHERE academic_year_id = $yearId AND grade_id = $gradeId AND section_id = $sectionId
+                     LIMIT 1"
+                );
+                $cRow = Database::fetch_array($cRes, 'ASSOC');
+
+                if ($cRow) {
+                    $newClassroomId = (int) $cRow['id'];
+
+                    // Remove student from their previous classroom in the same academic year
+                    $prevClassroom = AcademicManager::getStudentClassroom($yearId, $userId);
+                    if ($prevClassroom && (int) $prevClassroom['id'] !== $newClassroomId) {
+                        AcademicManager::removeStudentFromClassroom((int) $prevClassroom['id'], $userId);
+                    }
+
+                    AcademicManager::addStudentToClassroom($newClassroomId, $userId);
+                    $classroomAssigned = true;
+                } else {
+                    $warning = 'No existe un aula creada para esa combinación de año, grado y sección. La matrícula fue guardada pero el alumno no fue asignado a ningún aula.';
+                }
+            }
+        }
+
+        echo json_encode([
+            'success'            => true,
+            'id'                 => $savedId,
+            'classroom_assigned' => $classroomAssigned,
+            'warning'            => $warning,
+        ]);
         break;
 
     case 'crear_usuario_chamilo':
@@ -429,6 +478,55 @@ switch ($action) {
         } else {
             echo json_encode(['success' => false, 'error' => 'No se pudo crear el usuario. Verifique los datos.']);
         }
+        break;
+
+    case 'get_grades_by_level':
+        $levelId = (int) ($_GET['level_id'] ?? $_POST['level_id'] ?? 0);
+        if (!$levelId) {
+            echo json_encode(['success' => false, 'grades' => []]);
+            break;
+        }
+        $grades = AcademicManager::getGrades($levelId, true);
+        echo json_encode(['success' => true, 'grades' => $grades]);
+        break;
+
+    case 'get_sections_by_grade':
+        $sgYearId  = (int) ($_GET['academic_year_id'] ?? $_POST['academic_year_id'] ?? 0);
+        $sgGradeId = (int) ($_GET['grade_id'] ?? $_POST['grade_id'] ?? 0);
+        if (!$sgYearId || !$sgGradeId) {
+            echo json_encode(['success' => false, 'sections' => []]);
+            break;
+        }
+        $cTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $sTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
+        $csTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $uTable  = Database::get_main_table(TABLE_MAIN_USER);
+        $sgRes   = Database::query(
+            "SELECT c.id AS classroom_id, c.section_id, c.capacity, c.tutor_id,
+                    s.name AS section_name,
+                    (SELECT COUNT(*) FROM $csTable cs WHERE cs.classroom_id = c.id) AS student_count
+             FROM $cTable c
+             INNER JOIN $sTable s ON c.section_id = s.id
+             WHERE c.academic_year_id = $sgYearId AND c.grade_id = $sgGradeId AND c.active = 1
+             ORDER BY s.name ASC"
+        );
+        $sections = [];
+        while ($sgRow = Database::fetch_array($sgRes, 'ASSOC')) {
+            $tutorName = '';
+            if (!empty($sgRow['tutor_id'])) {
+                $tInfo     = api_get_user_info((int) $sgRow['tutor_id']);
+                $tutorName = $tInfo ? $tInfo['complete_name'] : '';
+            }
+            $sections[] = [
+                'classroom_id'  => (int) $sgRow['classroom_id'],
+                'section_id'    => (int) $sgRow['section_id'],
+                'section_name'  => $sgRow['section_name'],
+                'capacity'      => (int) $sgRow['capacity'],
+                'student_count' => (int) $sgRow['student_count'],
+                'tutor_name'    => $tutorName,
+            ];
+        }
+        echo json_encode(['success' => true, 'sections' => $sections]);
         break;
 
     default:
