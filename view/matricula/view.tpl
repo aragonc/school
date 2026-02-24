@@ -249,7 +249,7 @@
         </div>
         {% endif %}
 
-        <div class="row mt-5 no-print">
+        <div class="row mt-5 firmas-row">
             <div class="col-md-4 text-center">
                 <div style="border-top:1px solid #333; width:200px; margin:0 auto;"></div>
                 <small class="text-muted">Firma del padre / tutor</small>
@@ -420,9 +420,118 @@
 
 <style>
 @media print {
-    .no-print, .sidebar, nav, .topbar, footer { display: none !important; }
-    #ficha-matricula { border: none !important; box-shadow: none !important; }
-    .card-header { background: none !important; color: #000 !important; }
+    @page { size: A4 portrait; margin: 1.5cm 1.5cm 2cm; }
+
+    /* Ocultar todo el layout de Chamilo */
+    .no-print,
+    .sidebar, .sidebar-wrapper, .side-nav,
+    nav, .navbar, .navbar-default,
+    header, .header, #top-bar, .topbar,
+    footer, .footer,
+    .breadcrumb, .subnav,
+    .modal, .modal-backdrop,
+    .btn, button,
+    .card-footer { display: none !important; }
+
+    /* Reset del contenedor principal */
+    html, body {
+        background: #fff !important;
+        font-size: 10pt !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Quitar padding/margin del wrapper de Chamilo */
+    #main, .main-content, .content-wrapper,
+    .container-fluid, .container,
+    .page-content, .wrapper, #content {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+    }
+
+    /* Ficha */
+    #ficha-matricula {
+        border: 1px solid #aaa !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        page-break-inside: avoid;
+    }
+    .card-header {
+        background: #e8e8e8 !important;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        padding: 8px 12px !important;
+    }
+    .card-body {
+        padding: 10px 14px !important;
+    }
+
+    /* Grilla Bootstrap para impresión */
+    .row { display: flex !important; flex-wrap: wrap !important; margin: 0 !important; }
+    .col-md-2  { flex: 0 0 16.66% !important; max-width: 16.66% !important; padding: 0 6px !important; }
+    .col-md-4  { flex: 0 0 33.33% !important; max-width: 33.33% !important; padding: 0 6px !important; }
+    .col-md-5  { flex: 0 0 41.66% !important; max-width: 41.66% !important; padding: 0 6px !important; }
+    .col-md-6  { flex: 0 0 50%     !important; max-width: 50%     !important; padding: 0 6px !important; }
+    .col-12,
+    .col-md-12 { flex: 0 0 100%    !important; max-width: 100%    !important; padding: 0 6px !important; }
+
+    /* Tablas */
+    .table { width: 100% !important; border-collapse: collapse !important; }
+    .table td, .table th {
+        padding: 3px 5px !important;
+        font-size: 9pt !important;
+        border: none !important;
+    }
+    .font-weight-bold { font-weight: 700 !important; }
+
+    /* Títulos de sección */
+    h6.title-form {
+        font-size: 10pt !important;
+        font-weight: 700 !important;
+        border-bottom: 1pt solid #555 !important;
+        margin-top: 10px !important;
+        margin-bottom: 6px !important;
+        page-break-after: avoid !important;
+    }
+
+    /* Badges */
+    .badge {
+        border: 1px solid #666 !important;
+        background: #eee !important;
+        color: #000 !important;
+        padding: 1px 4px !important;
+        font-size: 8pt !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Foto del alumno */
+    .col-md-2 img {
+        width: 90px !important;
+        height: 110px !important;
+        object-fit: cover !important;
+        border: 1px solid #aaa !important;
+    }
+
+    /* Líneas de firma — mostrar en impresión */
+    .firmas-row {
+        display: flex !important;
+        margin-top: 30px !important;
+        page-break-inside: avoid !important;
+    }
+    .firmas-row .text-muted { color: #333 !important; font-size: 8pt !important; }
+
+    /* Evitar saltos de página dentro de secciones */
+    .card-body > .row,
+    .card-body > .mb-3 { page-break-inside: avoid !important; }
+
+    /* Iconos FontAwesome: ocultar en impresión para limpiar el documento */
+    .fas, .far, .fab { display: none !important; }
 }
 </style>
 

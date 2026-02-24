@@ -280,15 +280,19 @@ body {
     border: 1px solid #e2e8f0;
     overflow: hidden;
 }
-.card-info .info-cell {
+.card-info .info-cell,
+.card-grado .info-cell {
     flex: 1;
     padding: 6px 10px;
 }
-.card-info .info-cell + .info-cell {
+.card-info .info-cell + .info-cell,
+.card-grado .info-cell + .info-cell {
     border-left: 1px solid #e2e8f0;
 }
-.card-info .lbl   { font-size: 7px; color: #718096; text-transform: uppercase; letter-spacing: .8px; }
-.card-info .value { font-size: 11px; font-weight: 700; color: #2d3748; }
+.card-info .lbl,
+.card-grado .lbl   { font-size: 7px; color: #718096; text-transform: uppercase; letter-spacing: .8px; }
+.card-info .value,
+.card-grado .value { font-size: 11px; font-weight: 700; color: #2d3748; }
 
 /* Grado row */
 .card-grado {

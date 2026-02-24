@@ -340,19 +340,9 @@ switch ($action) {
                 echo json_encode(['success' => false, 'error' => 'Matrícula no encontrada']);
                 break;
             }
-            $gradeTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
-            $levelTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
-            $gradeId = (int) ($mat['grade_id'] ?? 0);
-            if ($gradeId > 0) {
-                $gRes = Database::query("SELECT g.name AS grade_name, g.section, l.name AS level_name
-                    FROM $gradeTable g LEFT JOIN $levelTable l ON g.level_id = l.id
-                    WHERE g.id = $gradeId LIMIT 1");
-                if ($gRow = Database::fetch_array($gRes, 'ASSOC')) {
-                    $gradeName   = $gRow['grade_name'];
-                    $sectionName = $gRow['section'] ?? '';
-                    $levelName   = $gRow['level_name'];
-                }
-            }
+            $gradeName   = $mat['grade_name'] ?? '';
+            $sectionName = $mat['section_name'] ?? '';
+            $levelName   = $mat['level_name'] ?? '';
             $fotoUrl = '';
             if (!empty($mat['foto'])) {
                 $fotoUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/matricula/' . $mat['foto'];
