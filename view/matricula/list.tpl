@@ -190,6 +190,86 @@
     </div>
 </div>
 
+<!-- Modal: Retiro de alumno con cálculo de devolución (Minedu) -->
+<div class="modal fade" id="retireModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-user-times"></i> Retirar alumno</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="retire_matricula_id" value="0">
+                <input type="hidden" id="retire_ficha_id" value="0">
+                <input type="hidden" id="retire_user_id" value="0">
+
+                <div class="alert alert-warning py-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Esta acción marcará al alumno como <strong>RETIRADO</strong> y calculará la devolución de cuota de ingreso según la norma Minedu.
+                </div>
+
+                <div class="form-group">
+                    <label class="font-weight-bold">Alumno</label>
+                    <input type="text" class="form-control" id="retire_student_name" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Nivel educativo</label>
+                    <input type="text" class="form-control" id="retire_level_name" readonly>
+                </div>
+
+                <hr>
+                <h6 class="text-muted mb-3"><i class="fas fa-calculator"></i> Cálculo de devolución (Minedu)</h6>
+
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Total años pactados</label>
+                            <input type="number" class="form-control" id="retire_years_contracted" min="1" max="20" value="1" oninput="calcRetireRefund()">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Años cursados</label>
+                            <input type="number" class="form-control" id="retire_years_attended" min="0" max="20" value="0" oninput="calcRetireRefund()">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Años sin cursar (restantes)</label>
+                            <input type="text" class="form-control bg-light" id="retire_years_remaining" readonly value="0">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Cuota de ingreso pagada S/</label>
+                            <input type="number" class="form-control" id="retire_admission_paid" min="0" step="0.01" value="0" oninput="calcRetireRefund()" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2" id="retire_refund_box">
+                    <strong>Monto a devolver: </strong>
+                    <span class="font-weight-bold text-primary" id="retire_refund_amount">S/ 0.00</span>
+                    <small class="d-block text-muted mt-1" id="retire_refund_formula"></small>
+                </div>
+
+                <div class="form-group">
+                    <label>Notas / Observaciones</label>
+                    <textarea class="form-control" id="retire_notes" rows="2" placeholder="Motivo del retiro, acuerdos, etc."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmRetire" onclick="submitRetire()">
+                    <i class="fas fa-user-times"></i> Confirmar retiro
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Promover al siguiente año -->
 <div class="modal fade" id="promoteModal" tabindex="-1">
     <div class="modal-dialog">
@@ -244,13 +324,91 @@ function deleteMatricula(id, name) {
 }
 
 function retireMatricula(id, name) {
-    if (!confirm('¿Marcar como RETIRADO a ' + name + '?')) return;
+    // Pre-fill name while loading info
+    document.getElementById('retire_matricula_id').value = id;
+    document.getElementById('retire_student_name').value = name;
+    document.getElementById('retire_level_name').value = 'Cargando...';
+    document.getElementById('retire_years_contracted').value = 1;
+    document.getElementById('retire_years_attended').value = 0;
+    document.getElementById('retire_admission_paid').value = '0';
+    document.getElementById('retire_notes').value = '';
+    document.getElementById('retire_ficha_id').value = 0;
+    document.getElementById('retire_user_id').value = 0;
+    calcRetireRefund();
+    $('#retireModal').modal('show');
+
+    // Fetch retirement info (years_contracted, years_attended, level)
+    fetch(ajaxUrl + '?action=get_retirement_info&id=' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success && d.data) {
+                document.getElementById('retire_student_name').value  = d.data.full_name  || name;
+                document.getElementById('retire_level_name').value    = d.data.level_name || '—';
+                document.getElementById('retire_years_contracted').value = d.data.years_contracted || 1;
+                document.getElementById('retire_years_attended').value   = d.data.years_attended   || 0;
+                document.getElementById('retire_ficha_id').value         = d.data.ficha_id || 0;
+                document.getElementById('retire_user_id').value          = d.data.user_id  || 0;
+                calcRetireRefund();
+            } else {
+                document.getElementById('retire_level_name').value = '—';
+            }
+        })
+        .catch(function() {
+            document.getElementById('retire_level_name').value = '—';
+        });
+}
+
+function calcRetireRefund() {
+    var contracted = Math.max(1, parseInt(document.getElementById('retire_years_contracted').value) || 1);
+    var attended   = Math.max(0, parseInt(document.getElementById('retire_years_attended').value)   || 0);
+    var remaining  = Math.max(0, contracted - attended);
+    var paid       = parseFloat(document.getElementById('retire_admission_paid').value) || 0;
+    var refund     = contracted > 0 ? Math.round(paid * (remaining / contracted) * 100) / 100 : 0;
+
+    document.getElementById('retire_years_remaining').value = remaining;
+    document.getElementById('retire_refund_amount').textContent = 'S/ ' + refund.toFixed(2);
+    document.getElementById('retire_refund_formula').textContent =
+        paid > 0
+        ? 'S/ ' + paid.toFixed(2) + ' × (' + remaining + ' / ' + contracted + ') = S/ ' + refund.toFixed(2)
+        : 'Ingrese la cuota de ingreso pagada para calcular la devolución.';
+}
+
+function submitRetire() {
+    var id         = document.getElementById('retire_matricula_id').value;
+    var fichaId    = document.getElementById('retire_ficha_id').value;
+    var userId     = document.getElementById('retire_user_id').value;
+    var contracted = document.getElementById('retire_years_contracted').value;
+    var attended   = document.getElementById('retire_years_attended').value;
+    var paid       = document.getElementById('retire_admission_paid').value;
+    var notes      = document.getElementById('retire_notes').value;
+
+    document.getElementById('btnConfirmRetire').disabled = true;
+
     var fd = new FormData();
-    fd.append('action', 'retire_matricula');
-    fd.append('id', id);
+    fd.append('action',            'retire_matricula');
+    fd.append('id',                id);
+    fd.append('ficha_id',          fichaId);
+    fd.append('user_id',           userId);
+    fd.append('years_contracted',  contracted);
+    fd.append('years_attended',    attended);
+    fd.append('admission_paid',    paid);
+    fd.append('retire_notes',      notes);
+
     fetch(ajaxUrl, { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
-        .then(function(d) { if (d.success) location.reload(); else alert(d.message || 'Error'); });
+        .then(function(d) {
+            document.getElementById('btnConfirmRetire').disabled = false;
+            if (d.success) {
+                $('#retireModal').modal('hide');
+                location.reload();
+            } else {
+                alert(d.message || 'Error al procesar el retiro');
+            }
+        })
+        .catch(function() {
+            document.getElementById('btnConfirmRetire').disabled = false;
+            alert('Error de conexión');
+        });
 }
 
 function showPromoteModal() {

@@ -197,6 +197,7 @@ CREATE TABLE IF NOT EXISTS plugin_school_academic_level (
     id INT unsigned NOT NULL auto_increment PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     order_index TINYINT NOT NULL DEFAULT 0,
+    years_duration TINYINT unsigned NOT NULL DEFAULT 1,
     active TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL
 );
@@ -356,4 +357,23 @@ CREATE TABLE IF NOT EXISTS plugin_school_ficha_hermano (
     ficha_id INT unsigned NOT NULL,
     hermano_user_id INT unsigned NOT NULL,
     UNIQUE KEY uk_ficha_hermano (ficha_id, hermano_user_id)
+);
+
+-- 27. Devoluciones de cuota de ingreso (Minedu)
+CREATE TABLE IF NOT EXISTS plugin_school_refund (
+    id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+    matricula_id INT unsigned NOT NULL,
+    ficha_id INT unsigned NOT NULL,
+    user_id INT NULL,
+    years_contracted TINYINT unsigned NOT NULL DEFAULT 1,
+    years_attended   TINYINT unsigned NOT NULL DEFAULT 0,
+    years_remaining  TINYINT unsigned NOT NULL DEFAULT 0,
+    admission_paid   DECIMAL(10,2) NOT NULL DEFAULT 0,
+    refund_amount    DECIMAL(10,2) NOT NULL DEFAULT 0,
+    notes TEXT NULL,
+    status ENUM('pending','processed') NOT NULL DEFAULT 'pending',
+    processed_date DATE NULL,
+    processed_by INT NULL,
+    registered_by INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL
 );

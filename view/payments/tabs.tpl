@@ -19,4 +19,9 @@
             <i class="fas fa-chart-bar"></i> {{ 'PaymentReports'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link {{ active_tab == 'refunds' ? 'active' : '' }}" href="{{ _p.web }}payments/refunds">
+            <i class="fas fa-undo-alt"></i> Devoluciones
+        </a>
+    </li>
 </ul>

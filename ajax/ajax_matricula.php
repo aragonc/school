@@ -41,6 +41,12 @@ switch ($action) {
         echo json_encode(['success' => $result]);
         break;
 
+    case 'get_retirement_info':
+        $id   = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
+        $info = AcademicManager::getRetirementInfo($id);
+        echo json_encode(['success' => !empty($info), 'data' => $info]);
+        break;
+
     case 'retire_matricula':
         $id = (int) ($_POST['id'] ?? 0);
         if (!$id) {
@@ -48,6 +54,23 @@ switch ($action) {
             break;
         }
         $result = MatriculaManager::retireMatricula($id);
+        if ($result) {
+            // Save refund record if admission was paid (amount > 0)
+            $admissionPaid = (float) ($_POST['admission_paid'] ?? 0);
+            $refundData    = [
+                'matricula_id'     => $id,
+                'ficha_id'         => (int) ($_POST['ficha_id']         ?? 0),
+                'user_id'          => (int) ($_POST['user_id']          ?? 0) ?: null,
+                'years_contracted' => (int) ($_POST['years_contracted']  ?? 1),
+                'years_attended'   => (int) ($_POST['years_attended']    ?? 0),
+                'admission_paid'   => $admissionPaid,
+                'notes'            => $_POST['retire_notes'] ?? '',
+            ];
+            // Always save refund record (even if amount is 0, for audit trail)
+            if ((int) $refundData['ficha_id'] > 0) {
+                $plugin->saveRefund($refundData);
+            }
+        }
         echo json_encode(['success' => $result]);
         break;
 

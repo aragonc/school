@@ -53,6 +53,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_MATRICULA_CONTACTO  = 'plugin_school_matricula_contacto';
     const TABLE_SCHOOL_MATRICULA_INFO           = 'plugin_school_matricula_info';
     const TABLE_SCHOOL_MATRICULA_OBSERVACION    = 'plugin_school_matricula_observacion';
+    const TABLE_SCHOOL_REFUND                   = 'plugin_school_refund';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -1176,6 +1177,38 @@ class SchoolPlugin extends Plugin
             Database::query("ALTER TABLE $padreTable ADD COLUMN linked_padre_id INT NULL DEFAULT NULL");
         }
 
+        // Migration: add years_duration to plugin_school_academic_level if not present
+        $levelTableName = self::TABLE_SCHOOL_ACADEMIC_LEVEL;
+        $colCheckLevel = Database::query(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '$levelTableName'
+               AND COLUMN_NAME = 'years_duration'"
+        );
+        $colRowLevel = Database::fetch_array($colCheckLevel, 'ASSOC');
+        if ((int) ($colRowLevel['cnt'] ?? 0) === 0) {
+            Database::query("ALTER TABLE $levelTableName ADD COLUMN years_duration TINYINT unsigned NOT NULL DEFAULT 1 AFTER order_index");
+        }
+
+        // Create refund table
+        Database::query("CREATE TABLE IF NOT EXISTS " . self::TABLE_SCHOOL_REFUND . " (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            matricula_id INT unsigned NOT NULL,
+            ficha_id INT unsigned NOT NULL,
+            user_id INT NULL,
+            years_contracted TINYINT unsigned NOT NULL DEFAULT 1,
+            years_attended   TINYINT unsigned NOT NULL DEFAULT 0,
+            years_remaining  TINYINT unsigned NOT NULL DEFAULT 0,
+            admission_paid   DECIMAL(10,2) NOT NULL DEFAULT 0,
+            refund_amount    DECIMAL(10,2) NOT NULL DEFAULT 0,
+            notes TEXT NULL,
+            status ENUM('pending','processed') NOT NULL DEFAULT 'pending',
+            processed_date DATE NULL,
+            processed_by INT NULL,
+            registered_by INT NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL
+        )");
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -1183,6 +1216,7 @@ class SchoolPlugin extends Plugin
     public function uninstall()
     {
         $tablesToBeDeleted = [
+            self::TABLE_SCHOOL_REFUND,
             self::TABLE_SCHOOL_MATRICULA_OBSERVACION,
             self::TABLE_SCHOOL_MATRICULA_INFO,
             self::TABLE_SCHOOL_MATRICULA_CONTACTO,
@@ -1275,6 +1309,8 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^matricula/editar$ plugin/school/src/matricula/form.php [L,QSA]\n".
             "RewriteRule ^matricula/ver$ plugin/school/src/matricula/view.php [L,QSA]\n".
             "RewriteRule ^matricula/alumnos$ plugin/school/src/matricula/alumnos.php [L,QSA]\n".
+            "RewriteRule ^payments/refunds$ plugin/school/src/payments/refunds.php [L,QSA]\n".
+            "RewriteRule ^payments/refund-receipt$ plugin/school/src/payments/refund_receipt.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -4054,7 +4090,10 @@ class SchoolPlugin extends Plugin
     {
         $periodTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT_PERIOD);
         $paymentTable = Database::get_main_table(self::TABLE_SCHOOL_PAYMENT);
-        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $userTable    = Database::get_main_table(TABLE_MAIN_USER);
+        $fichaTable   = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable     = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $yearTable    = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
 
         // Get the period info
         $sql = "SELECT * FROM $periodTable WHERE id = $periodId";
@@ -4064,18 +4103,23 @@ class SchoolPlugin extends Plugin
             return [];
         }
 
-        $months = !empty($period['months']) ? explode(',', $period['months']) : [];
+        $months     = !empty($period['months']) ? explode(',', $period['months']) : [];
+        $periodYear = (int) $period['year'];
 
-        // Get all students (STUDENT status)
+        // Get all students with tipo_ingreso for this period's year
         $searchFilter = '';
         if (!empty($search)) {
             $search = Database::escape_string($search);
             $searchFilter = " AND (u.firstname LIKE '%$search%' OR u.lastname LIKE '%$search%' OR u.username LIKE '%$search%')";
         }
 
-        $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username
+        $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username,
+                       m.tipo_ingreso
                 FROM $userTable u
-                WHERE u.status = ".STUDENT."
+                LEFT JOIN $fichaTable f  ON f.user_id = u.user_id
+                LEFT JOIN $matTable   m  ON m.ficha_id = f.id
+                LEFT JOIN $yearTable  ay ON ay.id = m.academic_year_id AND ay.year = $periodYear
+                WHERE u.status = " . STUDENT . "
                 AND u.active = 1
                 $searchFilter
                 ORDER BY u.lastname, u.firstname";
@@ -4087,13 +4131,15 @@ class SchoolPlugin extends Plugin
 
             // Get payments for this student
             $sqlPayments = "SELECT type, month, status, amount, discount
-                           FROM $paymentTable
-                           WHERE period_id = $periodId AND user_id = $userId";
+                            FROM $paymentTable
+                            WHERE period_id = $periodId AND user_id = $userId";
             $resPayments = Database::query($sqlPayments);
 
-            $payments = ['enrollment' => null, 'months' => []];
+            $payments = ['admission' => null, 'enrollment' => null, 'months' => []];
             while ($p = Database::fetch_array($resPayments, 'ASSOC')) {
-                if ($p['type'] === 'enrollment') {
+                if ($p['type'] === 'admission') {
+                    $payments['admission'] = $p;
+                } elseif ($p['type'] === 'enrollment') {
                     $payments['enrollment'] = $p;
                 } else {
                     $payments['months'][(int) $p['month']] = $p;
@@ -4452,6 +4498,23 @@ class SchoolPlugin extends Plugin
 
         // Try to resolve price by student's level/grade
         $resolvedPrice = $this->resolveStudentPriceInternal($periodId, $userId, $period);
+
+        // CONTINUACION students are exempt from admission fee
+        if ($type === 'admission') {
+            $matTable   = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+            $fichaTable = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+            $yearTable  = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+            $tipoSql    = "SELECT m.tipo_ingreso
+                           FROM $matTable m
+                           JOIN $fichaTable f  ON f.id  = m.ficha_id
+                           JOIN $yearTable  ay ON ay.id = m.academic_year_id
+                           WHERE f.user_id = $userId AND ay.year = " . (int) $period['year'] . "
+                           LIMIT 1";
+            $tipoRow = Database::fetch_array(Database::query($tipoSql), 'ASSOC');
+            if ($tipoRow && $tipoRow['tipo_ingreso'] === 'CONTINUACION') {
+                return ['original_amount' => 0, 'discount_amount' => 0, 'final_amount' => 0];
+            }
+        }
 
         if ($type === 'admission') {
             $originalAmount = (float) $resolvedPrice['admission_amount'];
@@ -5149,6 +5212,149 @@ class SchoolPlugin extends Plugin
         $extraProfile = $this->getExtraProfileData((int) $row['user_id']);
         $row['document_type'] = $extraProfile['document_type'] ?? '';
         $row['document_number'] = $extraProfile['document_number'] ?? '';
+
+        return $row;
+    }
+
+    // =========================================================================
+    // DEVOLUCIONES (Cuota de ingreso - Norma Minedu)
+    // =========================================================================
+
+    /**
+     * Save a refund record linked to a withdrawn student.
+     */
+    public function saveRefund(array $data): int
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_REFUND);
+
+        $contracted = max(1, (int) ($data['years_contracted'] ?? 1));
+        $attended   = max(0, (int) ($data['years_attended']   ?? 0));
+        $remaining  = max(0, $contracted - $attended);
+        $paid       = max(0, (float) ($data['admission_paid'] ?? 0));
+        $refund     = $contracted > 0 ? round($paid * ($remaining / $contracted), 2) : 0.00;
+
+        $params = [
+            'matricula_id'    => (int) ($data['matricula_id'] ?? 0),
+            'ficha_id'        => (int) ($data['ficha_id'] ?? 0),
+            'user_id'         => isset($data['user_id']) && $data['user_id'] ? (int) $data['user_id'] : null,
+            'years_contracted'=> $contracted,
+            'years_attended'  => $attended,
+            'years_remaining' => $remaining,
+            'admission_paid'  => $paid,
+            'refund_amount'   => $refund,
+            'notes'           => !empty($data['notes']) ? Database::escape_string(trim($data['notes'])) : null,
+            'status'          => 'pending',
+            'registered_by'   => api_get_user_id(),
+            'created_at'      => api_get_utc_datetime(),
+        ];
+
+        return (int) Database::insert($table, $params);
+    }
+
+    /**
+     * Get refund records, optionally filtered by status.
+     * Returns records with student name and level info.
+     */
+    public function getRefunds(?string $status = null): array
+    {
+        $table      = Database::get_main_table(self::TABLE_SCHOOL_REFUND);
+        $fichaTable = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable   = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $gradeTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $levelTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        $where = '1=1';
+        if ($status && in_array($status, ['pending', 'processed'])) {
+            $where .= " AND r.status = '" . Database::escape_string($status) . "'";
+        }
+
+        $sql = "SELECT r.*,
+                       f.apellido_paterno, f.apellido_materno, f.nombres, f.dni,
+                       m.grade_id, m.academic_year_id,
+                       g.name AS grade_name, g.level_id,
+                       lv.name AS level_name
+                FROM $table r
+                JOIN $fichaTable f  ON f.id  = r.ficha_id
+                JOIN $matTable   m  ON m.id  = r.matricula_id
+                LEFT JOIN $gradeTable g   ON g.id  = m.grade_id
+                LEFT JOIN $levelTable lv  ON lv.id = g.level_id
+                WHERE $where
+                ORDER BY r.created_at DESC";
+
+        $result = Database::query($sql);
+        $rows   = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $ap = trim($row['apellido_paterno'] ?? '');
+            $am = trim($row['apellido_materno'] ?? '');
+            $n  = trim($row['nombres'] ?? '');
+            $row['full_name'] = trim("$ap $am") ? trim("$ap $am") . ($n ? ", $n" : '') : $n;
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    /**
+     * Update refund status (pending → processed).
+     */
+    public function updateRefundStatus(int $id, string $status): bool
+    {
+        if ($id <= 0 || !in_array($status, ['pending', 'processed'])) {
+            return false;
+        }
+        $table  = Database::get_main_table(self::TABLE_SCHOOL_REFUND);
+        $params = ['status' => $status];
+        if ($status === 'processed') {
+            $params['processed_date'] = date('Y-m-d');
+            $params['processed_by']   = api_get_user_id();
+        }
+        Database::update($table, $params, ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Delete a refund record.
+     */
+    public function deleteRefund(int $id): bool
+    {
+        if ($id <= 0) return false;
+        Database::delete(Database::get_main_table(self::TABLE_SCHOOL_REFUND), ['id = ?' => $id]);
+        return true;
+    }
+
+    /**
+     * Get a single refund record with student and level info.
+     */
+    public function getRefundById(int $id): ?array
+    {
+        if ($id <= 0) return null;
+
+        $table      = Database::get_main_table(self::TABLE_SCHOOL_REFUND);
+        $fichaTable = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable   = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $gradeTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $levelTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        $sql = "SELECT r.*,
+                       f.apellido_paterno, f.apellido_materno, f.nombres, f.dni, f.tipo_documento,
+                       m.grade_id, m.academic_year_id,
+                       g.name AS grade_name, g.level_id,
+                       lv.name AS level_name
+                FROM $table r
+                JOIN $fichaTable f  ON f.id  = r.ficha_id
+                JOIN $matTable   m  ON m.id  = r.matricula_id
+                LEFT JOIN $gradeTable g   ON g.id  = m.grade_id
+                LEFT JOIN $levelTable lv  ON lv.id = g.level_id
+                WHERE r.id = $id
+                LIMIT 1";
+
+        $result = Database::query($sql);
+        $row    = Database::fetch_array($result, 'ASSOC');
+        if (!$row) return null;
+
+        $ap = trim($row['apellido_paterno'] ?? '');
+        $am = trim($row['apellido_materno'] ?? '');
+        $n  = trim($row['nombres'] ?? '');
+        $row['full_name'] = trim("$ap $am") ? trim("$ap $am") . ($n ? ", $n" : '') : $n;
 
         return $row;
     }

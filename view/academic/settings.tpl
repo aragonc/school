@@ -96,6 +96,7 @@
                         <tr>
                             <th>{{ 'Name'|get_plugin_lang('SchoolPlugin') }}</th>
                             <th>{{ 'Order'|get_plugin_lang('SchoolPlugin') }}</th>
+                            <th title="Años de duración del nivel (para cálculo de devoluciones)">Duración</th>
                             <th>{{ 'Status'|get_plugin_lang('SchoolPlugin') }}</th>
                             <th>{{ 'Actions'|get_plugin_lang('SchoolPlugin') }}</th>
                         </tr>
@@ -105,6 +106,7 @@
                         <tr>
                             <td><strong>{{ l.name }}</strong></td>
                             <td>{{ l.order_index }}</td>
+                            <td>{{ l.years_duration }} año(s)</td>
                             <td>
                                 {% if l.active %}
                                     <span class="badge badge-success">{{ 'Active'|get_plugin_lang('SchoolPlugin') }}</span>
@@ -291,6 +293,11 @@
                     <label>{{ 'Order'|get_plugin_lang('SchoolPlugin') }}</label>
                     <input type="number" class="form-control" id="level_order" value="0" min="0">
                 </div>
+                <div class="form-group">
+                    <label>Duración del nivel (años) *</label>
+                    <input type="number" class="form-control" id="level_years_duration" value="1" min="1" max="20">
+                    <small class="form-text text-muted">Total de años que dura este nivel educativo. Se usa para calcular la devolución de cuota de ingreso al retiro (norma Minedu).</small>
+                </div>
                 <div class="custom-control custom-checkbox">
                     <input type="checkbox" class="custom-control-input" id="level_active" checked>
                     <label class="custom-control-label" for="level_active">{{ 'Active'|get_plugin_lang('SchoolPlugin') }}</label>
@@ -432,6 +439,7 @@ function resetLevelForm() {
     document.getElementById('level_id').value = 0;
     document.getElementById('level_name').value = '';
     document.getElementById('level_order').value = 0;
+    document.getElementById('level_years_duration').value = 1;
     document.getElementById('level_active').checked = true;
 }
 function editLevel(l) {
@@ -439,6 +447,7 @@ function editLevel(l) {
     document.getElementById('level_id').value = l.id;
     document.getElementById('level_name').value = l.name;
     document.getElementById('level_order').value = l.order_index;
+    document.getElementById('level_years_duration').value = l.years_duration || 1;
     document.getElementById('level_active').checked = l.active == 1;
     $('#levelModal').modal('show');
 }
@@ -448,6 +457,7 @@ function saveLevel() {
     fd.append('id', document.getElementById('level_id').value);
     fd.append('name', document.getElementById('level_name').value);
     fd.append('order_index', document.getElementById('level_order').value);
+    fd.append('years_duration', document.getElementById('level_years_duration').value);
     fd.append('active', document.getElementById('level_active').checked ? 1 : 0);
     fetch(ajaxUrl,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.success)reloadWithTab('levels-panel');else alert(d.message||'Error');});
 }

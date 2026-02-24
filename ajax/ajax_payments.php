@@ -150,6 +150,27 @@ switch ($action) {
         $plugin->exportPaymentReportCSV($periodId, $month, $filter);
         break;
 
+    case 'update_refund_status':
+        if (!$isAdminOrSecretary) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            break;
+        }
+        $id     = (int) ($_POST['id'] ?? 0);
+        $status = $_POST['status'] ?? '';
+        $ok     = $plugin->updateRefundStatus($id, $status);
+        echo json_encode(['success' => $ok]);
+        break;
+
+    case 'delete_refund':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            break;
+        }
+        $id = (int) ($_POST['id'] ?? 0);
+        $ok = $plugin->deleteRefund($id);
+        echo json_encode(['success' => $ok]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;

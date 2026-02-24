@@ -92,14 +92,12 @@
                         <!-- Admission cell -->
                         {% if show_admission %}
                         <td class="text-center">
-                            {% if student.payments.admission is defined and student.payments.admission %}
-                                {% if student.payments.admission.status == 'paid' %}
-                                    <span class="badge badge-success" title="S/ {{ student.payments.admission.amount }}"><i class="fas fa-check"></i></span>
-                                {% elseif student.payments.admission.status == 'partial' %}
-                                    <span class="badge badge-warning" title="S/ {{ student.payments.admission.amount }}"><i class="fas fa-minus"></i></span>
-                                {% else %}
-                                    <span class="badge badge-danger"><i class="fas fa-times"></i></span>
-                                {% endif %}
+                            {% if student.tipo_ingreso == 'CONTINUACION' %}
+                                <span class="badge badge-secondary" title="No aplica (Continuación)">—</span>
+                            {% elseif student.payments.admission and student.payments.admission.status == 'paid' %}
+                                <span class="badge badge-success" title="S/ {{ student.payments.admission.amount }}"><i class="fas fa-check"></i></span>
+                            {% elseif student.payments.admission and student.payments.admission.status == 'partial' %}
+                                <span class="badge badge-warning" title="S/ {{ student.payments.admission.amount }}"><i class="fas fa-minus"></i></span>
                             {% else %}
                                 <span class="badge badge-danger"><i class="fas fa-times"></i></span>
                             {% endif %}

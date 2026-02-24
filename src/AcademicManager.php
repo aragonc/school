@@ -89,9 +89,10 @@ class AcademicManager
         $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
         $id = isset($data['id']) ? (int) $data['id'] : 0;
         $params = [
-            'name' => Database::escape_string($data['name'] ?? ''),
-            'order_index' => (int) ($data['order_index'] ?? 0),
-            'active' => isset($data['active']) ? (int) $data['active'] : 1,
+            'name'          => Database::escape_string($data['name'] ?? ''),
+            'order_index'   => (int) ($data['order_index'] ?? 0),
+            'years_duration'=> isset($data['years_duration']) ? max(1, (int) $data['years_duration']) : 1,
+            'active'        => isset($data['active']) ? (int) $data['active'] : 1,
         ];
 
         if ($id > 0) {
@@ -101,6 +102,72 @@ class AcademicManager
             Database::insert($table, $params);
         }
         return true;
+    }
+
+    /**
+     * Returns data needed to pre-populate the retirement refund modal.
+     * Calculates years_attended by counting distinct academic years this student
+     * has been enrolled in the same educational level.
+     */
+    public static function getRetirementInfo(int $matriculaId): array
+    {
+        if ($matriculaId <= 0) {
+            return [];
+        }
+
+        $matTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $gradeTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $levelTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+
+        // Load matricula + ficha + grade + level
+        $sql = "SELECT m.id AS matricula_id, m.ficha_id, m.grade_id, m.academic_year_id,
+                       f.user_id, f.apellido_paterno, f.apellido_materno, f.nombres,
+                       g.level_id, g.name AS grade_name,
+                       lv.name AS level_name, lv.years_duration
+                FROM $matTable m
+                JOIN $fichaTable f ON f.id = m.ficha_id
+                LEFT JOIN $gradeTable g  ON g.id  = m.grade_id
+                LEFT JOIN $levelTable lv ON lv.id = g.level_id
+                WHERE m.id = $matriculaId
+                LIMIT 1";
+        $result = Database::query($sql);
+        $row    = Database::fetch_array($result, 'ASSOC');
+        if (!$row) {
+            return [];
+        }
+
+        $fichaId = (int) $row['ficha_id'];
+        $levelId = (int) ($row['level_id'] ?? 0);
+
+        // Count years attended in this level
+        $yearsAttended = 0;
+        if ($fichaId > 0 && $levelId > 0) {
+            $countSql = "SELECT COUNT(DISTINCT m2.academic_year_id) AS total
+                         FROM $matTable m2
+                         JOIN $gradeTable g2 ON g2.id = m2.grade_id
+                         WHERE m2.ficha_id = $fichaId AND g2.level_id = $levelId";
+            $countResult   = Database::query($countSql);
+            $countRow      = Database::fetch_array($countResult, 'ASSOC');
+            $yearsAttended = (int) ($countRow['total'] ?? 0);
+        }
+
+        $ap = trim($row['apellido_paterno'] ?? '');
+        $am = trim($row['apellido_materno'] ?? '');
+        $n  = trim($row['nombres'] ?? '');
+        $fullName = trim("$ap $am") ? trim("$ap $am") . ($n ? ", $n" : '') : $n;
+
+        return [
+            'matricula_id'    => $matriculaId,
+            'ficha_id'        => $fichaId,
+            'user_id'         => $row['user_id'],
+            'full_name'       => $fullName,
+            'level_id'        => $levelId,
+            'level_name'      => $row['level_name'] ?? '',
+            'grade_name'      => $row['grade_name'] ?? '',
+            'years_contracted'=> max(1, (int) ($row['years_duration'] ?? 1)),
+            'years_attended'  => $yearsAttended,
+        ];
     }
 
     public static function deleteLevel(int $id): bool
