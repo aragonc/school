@@ -2504,7 +2504,6 @@ class SchoolPlugin extends Plugin
                 'url' => '/matricula',
                 'items' => [
                     ['name' => 'matricula-list',      'label' => $this->get_lang('EnrollmentList'),          'url' => '/matricula'],
-                    ['name' => 'matricula-nueva',     'label' => $this->get_lang('NewEnrollment'),            'url' => '/matricula/nueva'],
                     ['name' => 'matricula-alumnos',   'label' => $this->get_lang('Students'),       'url' => '/matricula/alumnos'],
                 ]
             ];

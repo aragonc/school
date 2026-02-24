@@ -58,7 +58,7 @@
             <i class="fas fa-angle-double-right"></i> {{ 'PromoteToNextYear'|get_plugin_lang('SchoolPlugin') }}
         </button>
         {% endif %}
-        <a href="{{ _p.web }}matricula/nueva" class="btn btn-primary btn-sm">
+        <a href="{{ _p.web }}matricula/alumnos" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> {{ 'NewEnrollment'|get_plugin_lang('SchoolPlugin') }}
         </a>
     </div>

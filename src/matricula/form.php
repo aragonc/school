@@ -29,6 +29,12 @@ if (!$fichaId && isset($_GET['id']) && (int) $_GET['id'] > 0) {
         $fichaId = (int) $mat['ficha_id'];
     }
 }
+
+// Direct access with no context → redirect to alumnos (new flow requires creating user first)
+if ($fichaId === 0 && empty($_GET['user_id']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: ' . api_get_path(WEB_PATH) . 'matricula/alumnos');
+    exit;
+}
 $matricula = null;
 $madre     = [];
 $padre     = [];
@@ -67,6 +73,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadDir . $filename)) {
                 $_POST['foto'] = $filename;
             }
+        }
+    }
+
+    // Auto-fill names from linked Chamilo user (avoids re-entering data already in the profile)
+    $postLinkedUserId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+    if ($postLinkedUserId > 0) {
+        $luData = api_get_user_info($postLinkedUserId);
+        if ($luData) {
+            $lparts = explode(' ', trim($luData['lastname']), 2);
+            $_POST['apellido_paterno'] = mb_strtoupper(trim($lparts[0] ?? ''));
+            $_POST['apellido_materno'] = mb_strtoupper(trim($lparts[1] ?? ''));
+            $_POST['nombres']          = mb_strtoupper(trim($luData['firstname']));
         }
     }
 

@@ -61,6 +61,18 @@
         <div class="card-header"><i class="fas fa-user-graduate"></i> {{ 'StudentData'|get_plugin_lang('SchoolPlugin') }}</div>
         <div class="card-body">
 
+            {% if prelinked_user_id or matricula.user_id %}
+            {# Nombre viene del perfil de Chamilo — solo se muestra, no se edita #}
+            <div class="alert alert-light border mb-3 py-2">
+                <span class="text-muted" style="font-size:12px;">Apellidos y Nombres</span><br>
+                <strong style="font-size:15px;">
+                    {{ matricula.apellido_paterno ?? preload.apellido_paterno ?? '' }}
+                    {{ matricula.apellido_materno ?? preload.apellido_materno ?? '' }},
+                    {{ matricula.nombres ?? preload.nombres ?? '' }}
+                </strong>
+                <small class="text-muted ml-2">(tomado del perfil de usuario)</small>
+            </div>
+            {% else %}
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label class="font-weight-bold">{{ 'ApellidoPaterno'|get_plugin_lang('SchoolPlugin') }} *</label>
@@ -75,6 +87,7 @@
                     <input type="text" name="nombres" class="form-control text-uppercase" value="{{ matricula.nombres ?? preload.nombres ?? '' }}" required placeholder="Nombres">
                 </div>
             </div>
+            {% endif %}
 
             <div class="form-row">
                 <div class="form-group col-md-2">

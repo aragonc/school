@@ -331,6 +331,64 @@ switch ($action) {
         ]);
         break;
 
+    case 'crear_alumno_nuevo':
+        $apellidos = Database::escape_string(mb_strtoupper(trim($_POST['apellidos'] ?? '')));
+        $nombres   = Database::escape_string(mb_strtoupper(trim($_POST['nombres']   ?? '')));
+        $dni       = Database::escape_string(preg_replace('/[^0-9]/', '', trim($_POST['dni'] ?? '')));
+
+        if (!$apellidos || !$nombres || !$dni) {
+            echo json_encode(['success' => false, 'error' => 'Apellidos, nombres y DNI son obligatorios.']);
+            break;
+        }
+
+        $domain   = 'playschool.edu.pe';
+        $username = $dni . '@' . $domain;
+        $email    = $username;
+        $password = $dni;
+
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+
+        // Check username not taken
+        $chkUser = Database::query("SELECT user_id FROM $userTable WHERE username = '" . Database::escape_string($username) . "' LIMIT 1");
+        if (Database::num_rows($chkUser) > 0) {
+            echo json_encode(['success' => false, 'error' => 'Ya existe un usuario con el DNI ' . $dni . '.']);
+            break;
+        }
+
+        $newUserId = UserManager::create_user(
+            $nombres,           // firstname
+            $apellidos,         // lastname
+            STUDENT,            // status
+            $email,
+            $username,
+            $password,
+            $dni,               // official_code
+            '',                 // language
+            '',                 // phone
+            '',                 // picture_uri
+            'platform',         // auth_source
+            '',                 // expiration_date
+            1,                  // active
+            0,                  // creator_id (0 = current admin)
+            0,                  // hr_dept_id
+            null,               // extra
+            '',                 // encrypt_method
+            false,              // send_mail
+            false               // dry_run
+        );
+
+        if ($newUserId > 0) {
+            echo json_encode([
+                'success'     => true,
+                'user_id'     => $newUserId,
+                'form_url'    => api_get_path(WEB_PATH) . 'matricula/nueva?user_id=' . $newUserId,
+                'message'     => 'Alumno creado correctamente.',
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'No se pudo crear el usuario. Verifique los datos.']);
+        }
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Acción no reconocida']);
         break;

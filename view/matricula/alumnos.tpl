@@ -5,6 +5,9 @@
         </h6>
         <div class="d-flex align-items-center gap-2">
             <span class="badge badge-primary badge-pill">{{ students|length }}</span>
+            <button type="button" class="btn btn-sm btn-success ml-2" data-toggle="modal" data-target="#modalNuevoAlumno">
+                <i class="fas fa-user-plus mr-1"></i> Nuevo alumno
+            </button>
             <a href="{{ _p.web }}matricula/tarjetas-print" target="_blank"
                class="btn btn-sm btn-outline-primary ml-2">
                 <i class="fas fa-id-card mr-1"></i> Imprimir tarjetas
@@ -202,6 +205,47 @@
 </div>
 
 
+{# ===== MODAL NUEVO ALUMNO ===== #}
+<div class="modal fade" id="modalNuevoAlumno" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-weight-bold">
+                    <i class="fas fa-user-plus mr-1"></i> Nuevo Alumno
+                </h6>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <form id="form-nuevo-alumno">
+                <div class="modal-body pb-2">
+                    <div class="alert alert-danger d-none mb-2" id="nuevo-alumno-error"></div>
+                    <div class="form-group mb-2">
+                        <label class="font-weight-bold mb-1" style="font-size:13px;">Apellidos <span class="text-danger">*</span></label>
+                        <input type="text" id="na-apellidos" class="form-control form-control-sm text-uppercase"
+                               placeholder="Apellido paterno y materno" required autocomplete="off">
+                    </div>
+                    <div class="form-group mb-2">
+                        <label class="font-weight-bold mb-1" style="font-size:13px;">Nombres <span class="text-danger">*</span></label>
+                        <input type="text" id="na-nombres" class="form-control form-control-sm text-uppercase"
+                               placeholder="Nombres completos" required autocomplete="off">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold mb-1" style="font-size:13px;">DNI <span class="text-danger">*</span></label>
+                        <input type="text" id="na-dni" class="form-control form-control-sm"
+                               placeholder="8 dígitos" maxlength="8" pattern="\d{8}" required autocomplete="off">
+                        <small class="text-muted">Usuario: <em>DNI@playschool.edu.pe</em></small>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm" id="btn-guardar-alumno">
+                        <i class="fas fa-save mr-1"></i> Guardar y crear ficha
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="{{ qrcode_js }}"></script>
 <script>
 $(document).ready(function () {
@@ -348,5 +392,37 @@ $(document).ready(function () {
         $a.removeClass('d-none alert-success alert-danger').addClass('alert-' + type).text(msg);
         setTimeout(function () { $a.addClass('d-none'); }, 3000);
     }
+
+    // === Nuevo alumno ===
+    $('#form-nuevo-alumno').on('submit', function (e) {
+        e.preventDefault();
+        var $btn = $('#btn-guardar-alumno');
+        var $err = $('#nuevo-alumno-error');
+        $err.addClass('d-none').text('');
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+
+        $.post('{{ ajax_url }}', {
+            action   : 'crear_alumno_nuevo',
+            apellidos: $('#na-apellidos').val(),
+            nombres  : $('#na-nombres').val(),
+            dni      : $('#na-dni').val()
+        }, function (resp) {
+            $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar y crear ficha');
+            if (resp.success) {
+                $('#modalNuevoAlumno').modal('hide');
+                window.location.href = resp.form_url;
+            } else {
+                $err.removeClass('d-none').text(resp.error || 'Error al crear el usuario.');
+            }
+        }, 'json').fail(function () {
+            $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar y crear ficha');
+            $err.removeClass('d-none').text('Error de conexión.');
+        });
+    });
+
+    $('#modalNuevoAlumno').on('hidden.bs.modal', function () {
+        $('#form-nuevo-alumno')[0].reset();
+        $('#nuevo-alumno-error').addClass('d-none').text('');
+    });
 });
 </script>
