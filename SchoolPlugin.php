@@ -1150,6 +1150,19 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sqlObs);
 
+        // Migration: add section_id to plugin_school_matricula if not present
+        $matTableName = self::TABLE_SCHOOL_MATRICULA;
+        $colCheckSection = Database::query(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '$matTableName'
+               AND COLUMN_NAME = 'section_id'"
+        );
+        $colRowSection = Database::fetch_array($colCheckSection, 'ASSOC');
+        if ((int) ($colRowSection['cnt'] ?? 0) === 0) {
+            Database::query("ALTER TABLE $matTableName ADD COLUMN section_id INT unsigned NULL AFTER grade_id");
+        }
+
         // Migration: add linked_padre_id to matricula_padre if not present
         $padreTable = self::TABLE_SCHOOL_MATRICULA_PADRE;
         $colCheck = Database::query(
