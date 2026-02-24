@@ -172,6 +172,47 @@ switch ($action) {
         ]);
         break;
 
+    case 'buscar_padre':
+        $term = trim($_POST['term'] ?? '');
+        if (strlen($term) < 2) {
+            echo json_encode(['success' => false, 'padres' => []]);
+            break;
+        }
+        $escaped = Database::escape_string($term);
+        $padreTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
+        $res = Database::query(
+            "SELECT id, parentesco, apellidos, nombres, dni, celular, ocupacion,
+                    edad, religion, tipo_parto, vive_con_menor
+             FROM $padreTable
+             WHERE (apellidos LIKE '%$escaped%' OR dni LIKE '%$escaped%')
+             GROUP BY apellidos, nombres, dni
+             ORDER BY apellidos, nombres
+             LIMIT 10"
+        );
+        $padres = [];
+        while ($p = Database::fetch_array($res, 'ASSOC')) {
+            $label = trim(($p['apellidos'] ?? '') . ', ' . ($p['nombres'] ?? ''));
+            if (!empty($p['dni'])) {
+                $label .= ' — DNI: ' . $p['dni'];
+            }
+            $padres[] = [
+                'id'            => (int) $p['id'],
+                'label'         => $label,
+                'parentesco'    => $p['parentesco'],
+                'apellidos'     => $p['apellidos'] ?? '',
+                'nombres'       => $p['nombres'] ?? '',
+                'dni'           => $p['dni'] ?? '',
+                'celular'       => $p['celular'] ?? '',
+                'ocupacion'     => $p['ocupacion'] ?? '',
+                'edad'          => $p['edad'] ?? '',
+                'religion'      => $p['religion'] ?? '',
+                'tipo_parto'    => $p['tipo_parto'] ?? '',
+                'vive_con_menor'=> (int) ($p['vive_con_menor'] ?? 0),
+            ];
+        }
+        echo json_encode(['success' => true, 'padres' => $padres]);
+        break;
+
     case 'buscar_usuario':
         $term = trim($_POST['term'] ?? '');
         if (strlen($term) < 2) {

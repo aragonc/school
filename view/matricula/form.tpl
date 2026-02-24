@@ -397,6 +397,36 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="mp-index" value="-1">
+
+                {# Búsqueda de padre/apoderado existente #}
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold" style="font-size:12px;">
+                        <i class="fas fa-search mr-1 text-info"></i> Buscar padre/apoderado ya registrado (por apellidos o DNI)
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="mp-search-input" class="form-control"
+                               placeholder="Ej: García o 12345678" autocomplete="off">
+                        <div class="input-group-append">
+                            <button type="button" id="btn-buscar-padre" class="btn btn-outline-info">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="mp-search-results" class="list-group mt-1" style="position:relative; z-index:300; display:none;"></div>
+                    <small class="form-text text-muted">Si ya existe, se vinculará sin duplicar datos.</small>
+                </div>
+
+                {# Badge cuando hay un vínculo activo #}
+                <div id="mp-linked-banner" class="alert alert-success py-2 mb-2" style="display:none; font-size:12px;">
+                    <i class="fas fa-link mr-1"></i>
+                    <span id="mp-linked-label">Vinculado a registro existente</span>
+                    &nbsp;—&nbsp;
+                    <a href="#" id="btn-desvincular-padre" class="alert-link">Desvincular y editar datos propios</a>
+                </div>
+                <input type="hidden" id="mp-linked-padre-id" value="">
+                <hr class="mt-0 mb-3">
+
+                <div id="mp-fields-wrapper">
                 <div class="form-row">
                     <div class="form-group col-md-4">
                         <label class="font-weight-bold">Tipo <span class="text-danger">*</span></label>
@@ -453,6 +483,7 @@
                         </div>
                     </div>
                 </div>
+                </div>{# /mp-fields-wrapper #}
             </div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
@@ -832,10 +863,11 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
                 var label  = tipoLabel[p.tipo]  || p.tipo;
                 var badge  = tipoBadge[p.tipo]  || 'badge-secondary';
                 var nombre = (p.apellidos || '') + (p.apellidos && p.nombres ? ', ' : '') + (p.nombres || '');
+                var linkIcon = p.linked_padre_id ? ' <i class="fas fa-link text-success" title="Datos vinculados (sin duplicado)" style="font-size:10px;"></i>' : '';
                 tbody.innerHTML +=
                     '<tr>' +
                     '<td><span class="badge ' + badge + '">' + label + '</span></td>' +
-                    '<td>' + nombre + '</td>' +
+                    '<td>' + nombre + linkIcon + '</td>' +
                     '<td>' + (p.celular || '') + '</td>' +
                     '<td class="text-right">' +
                         '<button type="button" class="btn btn-xs btn-outline-info mr-1" onclick="editarPadre(' + idx + ')"><i class="fas fa-edit"></i></button>' +
@@ -844,6 +876,22 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
             });
         }
         document.getElementById('padres-data-input').value = JSON.stringify(padresArr);
+    }
+
+    function setLinkedMode(linked, label) {
+        var banner  = document.getElementById('mp-linked-banner');
+        var wrapper = document.getElementById('mp-fields-wrapper');
+        var lbl     = document.getElementById('mp-linked-label');
+        if (linked) {
+            lbl.textContent = 'Usando datos del registro: ' + (label || 'vinculado');
+            banner.style.display  = '';
+            wrapper.style.opacity = '0.55';
+            wrapper.style.pointerEvents = 'none';
+        } else {
+            banner.style.display  = 'none';
+            wrapper.style.opacity = '';
+            wrapper.style.pointerEvents = '';
+        }
     }
 
     function abrirModal(idx) {
@@ -859,8 +907,12 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
         document.getElementById('mp-religion').value      = p.religion   || '';
         document.getElementById('mp-tipo-parto').value    = p.tipo_parto || '';
         document.getElementById('mp-vive-con-menor').checked = !!p.vive_con_menor;
+        document.getElementById('mp-linked-padre-id').value  = p.linked_padre_id || '';
         document.getElementById('mp-tipo-parto-group').style.display =
             (document.getElementById('mp-tipo').value === 'MADRE') ? '' : 'none';
+        var linkedId = parseInt(p.linked_padre_id) || 0;
+        var nombre = ((p.apellidos || '') + (p.apellidos && p.nombres ? ', ' : '') + (p.nombres || '')).trim();
+        setLinkedMode(linkedId > 0, nombre);
         $('#modalPadre').modal('show');
     }
 
@@ -873,24 +925,106 @@ document.getElementById('btn-consultar-reniec').addEventListener('click', functi
 
     document.getElementById('btn-agregar-padre').addEventListener('click', function () { abrirModal(-1); });
 
+    // --- Búsqueda de padre existente ---
+    (function () {
+        var searchInput   = document.getElementById('mp-search-input');
+        var searchResults = document.getElementById('mp-search-results');
+        var btnBuscar     = document.getElementById('btn-buscar-padre');
+
+        function buscar() {
+            var term = searchInput.value.trim();
+            searchResults.innerHTML = '';
+            searchResults.style.display = 'none';
+            if (term.length < 2) return;
+            $.post('{{ ajax_matricula_url }}', { action: 'buscar_padre', term: term })
+             .done(function (resp) {
+                if (resp.success && resp.padres.length) {
+                    resp.padres.forEach(function (p) {
+                        var a = document.createElement('a');
+                        a.href = '#';
+                        a.className = 'list-group-item list-group-item-action py-1';
+                        a.style.fontSize = '12px';
+                        a.textContent = p.label;
+                        a.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            // Auto-fill display fields (for visual confirmation)
+                            document.getElementById('mp-apellidos').value        = p.apellidos;
+                            document.getElementById('mp-nombres').value          = p.nombres;
+                            document.getElementById('mp-dni').value              = p.dni;
+                            document.getElementById('mp-celular').value          = p.celular;
+                            document.getElementById('mp-ocupacion').value        = p.ocupacion;
+                            document.getElementById('mp-edad').value             = p.edad;
+                            document.getElementById('mp-religion').value         = p.religion;
+                            document.getElementById('mp-tipo-parto').value       = p.tipo_parto;
+                            document.getElementById('mp-vive-con-menor').checked = !!p.vive_con_menor;
+                            // Set link reference — no data will be duplicated on save
+                            document.getElementById('mp-linked-padre-id').value  = p.id;
+                            var nombre = (p.apellidos + (p.nombres ? ', ' + p.nombres : '')).trim();
+                            setLinkedMode(true, nombre);
+                            searchResults.style.display = 'none';
+                            searchInput.value = '';
+                        });
+                        searchResults.appendChild(a);
+                    });
+                    searchResults.style.display = 'block';
+                } else {
+                    var li = document.createElement('div');
+                    li.className = 'list-group-item py-1 text-muted';
+                    li.style.fontSize = '12px';
+                    li.textContent = 'No se encontraron registros.';
+                    searchResults.appendChild(li);
+                    searchResults.style.display = 'block';
+                }
+             });
+        }
+
+        btnBuscar.addEventListener('click', buscar);
+        searchInput.addEventListener('keyup', function (e) { if (e.key === 'Enter') buscar(); });
+
+        // Close results on outside click
+        document.addEventListener('click', function (e) {
+            if (!searchResults.contains(e.target) && e.target !== searchInput && e.target !== btnBuscar) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Clear search when modal closes
+        document.getElementById('modalPadre').addEventListener('hidden.bs.modal', function () {
+            searchInput.value = '';
+            searchResults.innerHTML = '';
+            searchResults.style.display = 'none';
+            setLinkedMode(false, '');
+            document.getElementById('mp-linked-padre-id').value = '';
+        });
+    })();
+
+    // Desvincular: break link and allow free editing
+    document.getElementById('btn-desvincular-padre').addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('mp-linked-padre-id').value = '';
+        setLinkedMode(false, '');
+    });
+
     document.getElementById('mp-tipo').addEventListener('change', function () {
         document.getElementById('mp-tipo-parto-group').style.display =
             this.value === 'MADRE' ? '' : 'none';
     });
 
     document.getElementById('btn-guardar-padre').addEventListener('click', function () {
-        var tipo  = document.getElementById('mp-tipo').value;
+        var tipo          = document.getElementById('mp-tipo').value;
+        var linkedPadreId = parseInt(document.getElementById('mp-linked-padre-id').value) || 0;
         var entry = {
-            tipo:           tipo,
-            apellidos:      document.getElementById('mp-apellidos').value.trim(),
-            nombres:        document.getElementById('mp-nombres').value.trim(),
-            edad:           document.getElementById('mp-edad').value.trim(),
-            dni:            document.getElementById('mp-dni').value.trim(),
-            celular:        document.getElementById('mp-celular').value.trim(),
-            ocupacion:      document.getElementById('mp-ocupacion').value.trim(),
-            religion:       document.getElementById('mp-religion').value.trim(),
-            tipo_parto:     tipo === 'MADRE' ? document.getElementById('mp-tipo-parto').value : '',
-            vive_con_menor: document.getElementById('mp-vive-con-menor').checked ? 1 : 0
+            tipo:             tipo,
+            linked_padre_id:  linkedPadreId || null,
+            apellidos:        document.getElementById('mp-apellidos').value.trim(),
+            nombres:          document.getElementById('mp-nombres').value.trim(),
+            edad:             document.getElementById('mp-edad').value.trim(),
+            dni:              document.getElementById('mp-dni').value.trim(),
+            celular:          document.getElementById('mp-celular').value.trim(),
+            ocupacion:        document.getElementById('mp-ocupacion').value.trim(),
+            religion:         document.getElementById('mp-religion').value.trim(),
+            tipo_parto:       tipo === 'MADRE' ? document.getElementById('mp-tipo-parto').value : '',
+            vive_con_menor:   document.getElementById('mp-vive-con-menor').checked ? 1 : 0
         };
         var idx = parseInt(document.getElementById('mp-index').value);
         if (idx >= 0) { padresArr[idx] = entry; } else { padresArr.push(entry); }

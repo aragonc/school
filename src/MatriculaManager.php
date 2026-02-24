@@ -407,8 +407,24 @@ class MatriculaManager
 
     public static function getPadresByFicha(int $fichaId): array
     {
-        $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
-        $result = Database::query("SELECT * FROM $table WHERE ficha_id = $fichaId ORDER BY parentesco ASC");
+        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
+        // LEFT JOIN with self to resolve linked_padre_id — avoids data duplication
+        $sql = "SELECT
+                    p.id, p.ficha_id, p.parentesco, p.linked_padre_id,
+                    COALESCE(p.apellidos,      lp.apellidos)      AS apellidos,
+                    COALESCE(p.nombres,        lp.nombres)        AS nombres,
+                    COALESCE(p.celular,        lp.celular)        AS celular,
+                    COALESCE(p.ocupacion,      lp.ocupacion)      AS ocupacion,
+                    COALESCE(p.dni,            lp.dni)            AS dni,
+                    COALESCE(p.edad,           lp.edad)           AS edad,
+                    COALESCE(p.religion,       lp.religion)       AS religion,
+                    COALESCE(p.tipo_parto,     lp.tipo_parto)     AS tipo_parto,
+                    COALESCE(p.vive_con_menor, lp.vive_con_menor) AS vive_con_menor
+                FROM $table p
+                LEFT JOIN $table lp ON lp.id = p.linked_padre_id
+                WHERE p.ficha_id = $fichaId
+                ORDER BY p.parentesco ASC";
+        $result = Database::query($sql);
         $rows   = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             $rows[$row['parentesco']] = $row;
@@ -426,22 +442,44 @@ class MatriculaManager
 
     public static function savePadre(int $fichaId, string $parentesco, array $data): bool
     {
-        $table      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
-        $parentesco = in_array($parentesco, ['MADRE', 'PADRE', 'APODERADO']) ? $parentesco : 'PADRE';
+        $table          = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
+        $parentesco     = in_array($parentesco, ['MADRE', 'PADRE', 'APODERADO']) ? $parentesco : 'PADRE';
+        $linkedPadreId  = isset($data['linked_padre_id']) && (int) $data['linked_padre_id'] > 0
+                          ? (int) $data['linked_padre_id'] : null;
 
-        $params = [
-            'ficha_id'       => $fichaId,
-            'parentesco'     => $parentesco,
-            'apellidos'      => !empty($data['apellidos']) ? Database::escape_string(mb_convert_case(trim($data['apellidos']), MB_CASE_TITLE, 'UTF-8')) : null,
-            'nombres'        => !empty($data['nombres']) ? Database::escape_string(mb_convert_case(trim($data['nombres']), MB_CASE_TITLE, 'UTF-8')) : null,
-            'celular'        => !empty($data['celular']) ? Database::escape_string(trim($data['celular'])) : null,
-            'ocupacion'      => !empty($data['ocupacion']) ? Database::escape_string(trim($data['ocupacion'])) : null,
-            'dni'            => !empty($data['dni']) ? Database::escape_string(trim($data['dni'])) : null,
-            'edad'           => isset($data['edad']) && $data['edad'] !== '' ? (int) $data['edad'] : null,
-            'religion'       => !empty($data['religion']) ? Database::escape_string(trim($data['religion'])) : null,
-            'tipo_parto'     => ($parentesco === 'MADRE' && in_array($data['tipo_parto'] ?? '', ['CESAREA', 'NORMAL'])) ? $data['tipo_parto'] : null,
-            'vive_con_menor' => isset($data['vive_con_menor']) ? (int) (bool) $data['vive_con_menor'] : null,
-        ];
+        if ($linkedPadreId) {
+            // Linked mode: store only the reference — no data duplication
+            $params = [
+                'ficha_id'        => $fichaId,
+                'parentesco'      => $parentesco,
+                'linked_padre_id' => $linkedPadreId,
+                // Data fields left NULL — resolved via JOIN in getPadresByFicha()
+                'apellidos'       => null,
+                'nombres'         => null,
+                'celular'         => null,
+                'ocupacion'       => null,
+                'dni'             => null,
+                'edad'            => null,
+                'religion'        => null,
+                'tipo_parto'      => null,
+                'vive_con_menor'  => null,
+            ];
+        } else {
+            $params = [
+                'ficha_id'        => $fichaId,
+                'parentesco'      => $parentesco,
+                'linked_padre_id' => null,
+                'apellidos'       => !empty($data['apellidos']) ? Database::escape_string(mb_convert_case(trim($data['apellidos']), MB_CASE_TITLE, 'UTF-8')) : null,
+                'nombres'         => !empty($data['nombres']) ? Database::escape_string(mb_convert_case(trim($data['nombres']), MB_CASE_TITLE, 'UTF-8')) : null,
+                'celular'         => !empty($data['celular']) ? Database::escape_string(trim($data['celular'])) : null,
+                'ocupacion'       => !empty($data['ocupacion']) ? Database::escape_string(trim($data['ocupacion'])) : null,
+                'dni'             => !empty($data['dni']) ? Database::escape_string(trim($data['dni'])) : null,
+                'edad'            => isset($data['edad']) && $data['edad'] !== '' ? (int) $data['edad'] : null,
+                'religion'        => !empty($data['religion']) ? Database::escape_string(trim($data['religion'])) : null,
+                'tipo_parto'      => ($parentesco === 'MADRE' && in_array($data['tipo_parto'] ?? '', ['CESAREA', 'NORMAL'])) ? $data['tipo_parto'] : null,
+                'vive_con_menor'  => isset($data['vive_con_menor']) ? (int) (bool) $data['vive_con_menor'] : null,
+            ];
+        }
 
         $sql    = "SELECT id FROM $table WHERE ficha_id = $fichaId AND parentesco = '$parentesco'";
         $result = Database::query($sql);

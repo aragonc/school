@@ -1150,6 +1150,19 @@ class SchoolPlugin extends Plugin
         )";
         Database::query($sqlObs);
 
+        // Migration: add linked_padre_id to matricula_padre if not present
+        $padreTable = self::TABLE_SCHOOL_MATRICULA_PADRE;
+        $colCheck = Database::query(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '$padreTable'
+               AND COLUMN_NAME = 'linked_padre_id'"
+        );
+        $colRow = Database::fetch_array($colCheck, 'ASSOC');
+        if ((int) ($colRow['cnt'] ?? 0) === 0) {
+            Database::query("ALTER TABLE $padreTable ADD COLUMN linked_padre_id INT NULL DEFAULT NULL");
+        }
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
