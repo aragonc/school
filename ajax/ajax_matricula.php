@@ -335,6 +335,7 @@ switch ($action) {
         $apellidos = Database::escape_string(mb_convert_case(trim($_POST['apellidos'] ?? ''), MB_CASE_TITLE, 'UTF-8'));
         $nombres   = Database::escape_string(mb_convert_case(trim($_POST['nombres']   ?? ''), MB_CASE_TITLE, 'UTF-8'));
         $dni       = Database::escape_string(preg_replace('/[^0-9]/', '', trim($_POST['dni'] ?? '')));
+        $active    = isset($_POST['active']) && (int) $_POST['active'] === 1 ? 1 : 0;
 
         if (!$apellidos || !$nombres || !$dni) {
             echo json_encode(['success' => false, 'error' => 'Apellidos, nombres y DNI son obligatorios.']);
@@ -368,7 +369,7 @@ switch ($action) {
             '',                 // picture_uri
             'platform',         // auth_source
             '',                 // expiration_date
-            1,                  // active
+            $active,            // active
             0,                  // creator_id (0 = current admin)
             0,                  // hr_dept_id
             null,               // extra

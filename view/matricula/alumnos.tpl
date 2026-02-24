@@ -228,11 +228,17 @@
                         <input type="text" id="na-nombres" class="form-control form-control-sm"
                                placeholder="Nombres completos" required autocomplete="off">
                     </div>
-                    <div class="form-group mb-0">
+                    <div class="form-group mb-2">
                         <label class="font-weight-bold mb-1" style="font-size:13px;">DNI <span class="text-danger">*</span></label>
                         <input type="text" id="na-dni" class="form-control form-control-sm"
                                placeholder="8 dígitos" maxlength="8" pattern="\d{8}" required autocomplete="off">
                         <small class="text-muted">Usuario: <em>DNI@playschool.edu.pe</em></small>
+                    </div>
+                    <div class="form-group mb-0">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="na-activo" checked>
+                            <label class="custom-control-label" for="na-activo">Usuario activo</label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer py-2">
@@ -405,7 +411,8 @@ $(document).ready(function () {
             action   : 'crear_alumno_nuevo',
             apellidos: $('#na-apellidos').val(),
             nombres  : $('#na-nombres').val(),
-            dni      : $('#na-dni').val()
+            dni      : $('#na-dni').val(),
+            active   : $('#na-activo').is(':checked') ? 1 : 0
         }, function (resp) {
             $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar y crear ficha');
             if (resp.success) {
