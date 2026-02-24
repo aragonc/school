@@ -332,8 +332,8 @@ switch ($action) {
         break;
 
     case 'crear_alumno_nuevo':
-        $apellidos = Database::escape_string(mb_strtoupper(trim($_POST['apellidos'] ?? '')));
-        $nombres   = Database::escape_string(mb_strtoupper(trim($_POST['nombres']   ?? '')));
+        $apellidos = Database::escape_string(mb_convert_case(trim($_POST['apellidos'] ?? ''), MB_CASE_TITLE, 'UTF-8'));
+        $nombres   = Database::escape_string(mb_convert_case(trim($_POST['nombres']   ?? ''), MB_CASE_TITLE, 'UTF-8'));
         $dni       = Database::escape_string(preg_replace('/[^0-9]/', '', trim($_POST['dni'] ?? '')));
 
         if (!$apellidos || !$nombres || !$dni) {

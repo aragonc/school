@@ -220,12 +220,12 @@
                     <div class="alert alert-danger d-none mb-2" id="nuevo-alumno-error"></div>
                     <div class="form-group mb-2">
                         <label class="font-weight-bold mb-1" style="font-size:13px;">Apellidos <span class="text-danger">*</span></label>
-                        <input type="text" id="na-apellidos" class="form-control form-control-sm text-uppercase"
+                        <input type="text" id="na-apellidos" class="form-control form-control-sm"
                                placeholder="Apellido paterno y materno" required autocomplete="off">
                     </div>
                     <div class="form-group mb-2">
                         <label class="font-weight-bold mb-1" style="font-size:13px;">Nombres <span class="text-danger">*</span></label>
-                        <input type="text" id="na-nombres" class="form-control form-control-sm text-uppercase"
+                        <input type="text" id="na-nombres" class="form-control form-control-sm"
                                placeholder="Nombres completos" required autocomplete="off">
                     </div>
                     <div class="form-group mb-0">
