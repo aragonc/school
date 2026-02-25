@@ -124,7 +124,7 @@ class SchoolPlugin extends Plugin
                 //path to the cache folder
                 'autoescape' => false,
                 'debug' => false,
-                'auto_reload' => false,
+                'auto_reload' => true,
                 'optimizations' => -1,
                 // turn on optimizations with -1
                 'strict_variables' => false,
