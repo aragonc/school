@@ -1644,6 +1644,11 @@ class SchoolPlugin extends Plugin
                 INNER JOIN $table_session_course_user scru ON scru.session_id = s.id
                 INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
                 WHERE scru.user_id = $userID AND scru.status = 2 AND aus.access_url_id = $accessUrlId
+                UNION
+                SELECT DISTINCT s.id
+                FROM $table_session s
+                INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
+                WHERE s.id_coach = $userID AND aus.access_url_id = $accessUrlId
             ) AS user_sessions ";
         $result = Database::query($sql);
 
@@ -1752,6 +1757,7 @@ class SchoolPlugin extends Plugin
                 COALESCE(DATE(srs.registered_at), CURDATE()) AS 'registered_at',
                 CASE
                     WHEN s.id_coach = $userID THEN 'true'
+                    WHEN srs.user_id = $userID AND srs.relation_type = 1 THEN 'true'
                     ELSE 'false'
                 END AS coach
             FROM $table_session s
@@ -1759,7 +1765,7 @@ class SchoolPlugin extends Plugin
             LEFT JOIN $table_session_course_user scru ON scru.session_id = s.id AND scru.user_id = $userID AND scru.status = 2
             LEFT JOIN $table_session_category sc ON sc.id = s.session_category_id
             INNER JOIN $table_access_url_session aus ON aus.session_id = s.id
-            WHERE (srs.user_id = $userID OR scru.user_id = $userID) AND aus.access_url_id = $accessUrlId
+            WHERE (srs.user_id = $userID OR scru.user_id = $userID OR s.id_coach = $userID) AND aus.access_url_id = $accessUrlId
             GROUP BY s.id ";
 
         $result = Database::query($sql);
@@ -1880,6 +1886,8 @@ class SchoolPlugin extends Plugin
         $tableCourse = Database::get_main_table(TABLE_MAIN_COURSE);
         $tbl_session_course_user = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
         $tbl_session_course = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
+        $tbl_session_user = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+        $tbl_user = Database::get_main_table(TABLE_MAIN_USER);
 
         $user_id = (int) $user_id;
         $session_id = (int) $session_id;
@@ -1900,18 +1908,41 @@ class SchoolPlugin extends Plugin
                     c.code as course_code,
                     sc.id as insertion_order,
                     sc.position,
-                    c.unsubscribe
-                FROM $tbl_session_course_user as scu
-                INNER JOIN $tbl_session_course sc
-                ON (scu.session_id = sc.session_id AND scu.c_id = sc.c_id)
-                INNER JOIN $tableCourse as c
-                ON (scu.c_id = c.id)
+                    c.unsubscribe,
+                    (
+                        SELECT CONCAT(u.firstname, ' ', u.lastname)
+                        FROM $tbl_session_course_user scu_coach
+                        INNER JOIN $tbl_user u ON u.id = scu_coach.user_id
+                        WHERE scu_coach.session_id = sc.session_id
+                        AND scu_coach.c_id = sc.c_id
+                        AND scu_coach.status = 2
+                        LIMIT 1
+                    ) AS course_coach_name
+                FROM $tbl_session_course sc
+                INNER JOIN $tableCourse as c ON (sc.c_id = c.id)
                 $join_access_url
-                WHERE
-                    scu.user_id = $user_id AND
-                    scu.session_id = $session_id AND
-                    scu.status IN (0, 2)
-                    $where_access_url ORDER BY sc.position ASC ";
+                WHERE sc.session_id = $session_id
+                AND (
+                    EXISTS (
+                        SELECT 1 FROM $tbl_session_course_user scu
+                        WHERE scu.session_id = sc.session_id
+                        AND scu.c_id = sc.c_id
+                        AND scu.user_id = $user_id
+                        AND scu.status IN (0, 2)
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM $tbl_session_user sru
+                        WHERE sru.session_id = sc.session_id
+                        AND sru.user_id = $user_id
+                        AND sru.relation_type = 1
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM $tbl_session s
+                        WHERE s.id = sc.session_id
+                        AND s.id_coach = $user_id
+                    )
+                )
+                $where_access_url ORDER BY sc.position ASC ";
 
         $myCourseList = [];
         $courses = [];
