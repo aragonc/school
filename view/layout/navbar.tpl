@@ -52,6 +52,23 @@
         </li>
         {% endif %}
 
+        {% if show_back_to_portal and (_u.is_admin or _u.status == 1) %}
+        <li class="nav-item mr-2">
+            {% if _u.is_admin %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ _p.web }}main/admin/index.php">
+                <i class="fas fa-arrow-left fa-sm mr-1"></i>
+                {{ 'BackToPreviousPortal'|get_plugin_lang('SchoolPlugin') }}
+            </a>
+            {% else %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ _p.web }}user_portal.php">
+                <i class="fas fa-arrow-left fa-sm mr-1"></i>
+                {{ 'BackToPreviousPortal'|get_plugin_lang('SchoolPlugin') }}
+            </a>
+            {% endif %}
+        </li>
+        {% endif %}
+
+        {% if show_alerts_dropdown %}
         <li class="nav-item dropdown no-arrow mx-1">
             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -71,6 +88,7 @@
             </div>
         </li>
         <li class="topbar-divider d-none d-sm-block"></li>
+        {% endif %}
         <li class="nav-item dropdown no-arrow">
                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

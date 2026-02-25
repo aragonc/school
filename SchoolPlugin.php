@@ -75,6 +75,8 @@ class SchoolPlugin extends Plugin
                 'show_help' => 'boolean',
                 'show_previous_tab' => 'boolean',
                 'show_my_aula' => 'boolean',
+                'show_alerts_dropdown' => 'boolean',
+                'show_back_to_portal' => 'boolean',
                 'template_certificate' => [
                     'type' => 'select',
                     'options' => [
@@ -1614,6 +1616,8 @@ class SchoolPlugin extends Plugin
 
     public function setNavBar()
     {
+        $this->assign('show_alerts_dropdown', $this->get('show_alerts_dropdown') !== 'false');
+        $this->assign('show_back_to_portal', $this->get('show_back_to_portal') !== 'false');
         $content = $this->fetch('/layout/navbar.tpl');
         $this->assign('navbar', $content);
     }
