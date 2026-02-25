@@ -99,6 +99,19 @@ switch ($action) {
             break;
         }
 
+        // If creating new (mat_id=0), check for existing row (e.g. a retired student
+        // re-enrolling in the same year) to avoid unique key violation.
+        if ($matId === 0 && $yearId > 0) {
+            $matTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+            $existCheck = Database::query(
+                "SELECT id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"
+            );
+            $existRow = Database::fetch_array($existCheck, 'ASSOC');
+            if ($existRow) {
+                $matId = (int) $existRow['id'];
+            }
+        }
+
         $savedId = MatriculaManager::saveMatricula([
             'id'               => $matId,
             'ficha_id'         => $fichaId,

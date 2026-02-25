@@ -81,6 +81,14 @@
             font-size: 1.2rem; color: #6c757d;
         }
         .scan-label i { color: #e94560; margin-right: 8px; }
+        .btn-flip-camera {
+            margin-top: 12px;
+            background: #0f3460; color: #a8a8b3;
+            border: 1px solid #1a4a8a; border-radius: 8px;
+            padding: 6px 16px; font-size: 0.9rem; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-flip-camera:hover { background: #1a4a8a; color: #fff; }
 
         /* Result overlay */
         .result-overlay {
@@ -204,6 +212,9 @@
             <div class="scan-label">
                 <i class="fas fa-qrcode"></i> Escanea tu código QR frente a la cámara
             </div>
+            <button class="btn-flip-camera" id="btnFlipCamera" title="Cambiar cámara">
+                <i class="fas fa-sync-alt"></i> Cambiar cámara
+            </button>
         </div>
     </div>
 
@@ -269,6 +280,18 @@
     var video = document.getElementById('video');
     var canvas = document.getElementById('canvas');
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var currentFacingMode = 'environment'; // start with back camera
+    var currentStream = null;
+
+    document.getElementById('btnFlipCamera').addEventListener('click', function() {
+        currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+        var icon = this.querySelector('i');
+        icon.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : '';
+        if (currentStream) {
+            currentStream.getTracks().forEach(function(t) { t.stop(); });
+        }
+        initCamera();
+    });
 
     function initCamera() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -282,8 +305,9 @@
         }
 
         navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+            video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } }
         }).then(function(stream) {
+            currentStream = stream;
             video.srcObject = stream;
             video.play();
             requestAnimationFrame(scanLoop);

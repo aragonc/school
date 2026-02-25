@@ -1,6 +1,6 @@
 <!-- Contadores -->
-<div class="row mb-4">
-    <div class="col-md-2">
+<div class="row mb-3">
+    <div class="col">
         <div class="card border-left-primary shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
@@ -13,7 +13,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col">
         <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
@@ -26,7 +26,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col">
         <div class="card border-left-info shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
@@ -39,7 +39,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col">
         <div class="card border-left-warning shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
@@ -52,7 +52,20 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 d-flex align-items-center justify-content-end" style="gap:8px;">
+    <div class="col">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Retirados</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ counts.RETIRADO }}</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-user-times fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-auto d-flex align-items-center" style="gap:8px;">
         {% if all_years|length > 1 %}
         <button class="btn btn-outline-secondary btn-sm" onclick="showPromoteModal()" title="{{ 'PromoteToNextYear'|get_plugin_lang('SchoolPlugin') }}">
             <i class="fas fa-angle-double-right"></i> {{ 'PromoteToNextYear'|get_plugin_lang('SchoolPlugin') }}

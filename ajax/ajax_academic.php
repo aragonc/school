@@ -61,10 +61,11 @@ switch ($action) {
             exit;
         }
         $data = [
-            'id' => isset($_POST['id']) ? (int) $_POST['id'] : 0,
-            'name' => $_POST['name'] ?? '',
-            'order_index' => $_POST['order_index'] ?? 0,
-            'active' => isset($_POST['active']) ? (int) $_POST['active'] : 1,
+            'id'             => isset($_POST['id']) ? (int) $_POST['id'] : 0,
+            'name'           => $_POST['name'] ?? '',
+            'order_index'    => $_POST['order_index'] ?? 0,
+            'years_duration' => isset($_POST['years_duration']) ? max(1, (int) $_POST['years_duration']) : 1,
+            'active'         => isset($_POST['active']) ? (int) $_POST['active'] : 1,
         ];
         $result = AcademicManager::saveLevel($data);
         echo json_encode(['success' => $result]);

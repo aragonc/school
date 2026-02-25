@@ -657,19 +657,29 @@ class MatriculaManager
     public static function countByTipoIngreso(?int $yearId = null): array
     {
         $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
-        $counts = ['NUEVO_INGRESO' => 0, 'REINGRESO' => 0, 'CONTINUACION' => 0];
+        $counts = ['NUEVO_INGRESO' => 0, 'REINGRESO' => 0, 'CONTINUACION' => 0, 'RETIRADO' => 0];
 
         if ($yearId) {
-            $sql = "SELECT tipo_ingreso, COUNT(*) as total FROM $table WHERE academic_year_id = $yearId GROUP BY tipo_ingreso";
+            $whereBase = "academic_year_id = $yearId";
         } else {
-            $year = date('Y');
-            $sql  = "SELECT tipo_ingreso, COUNT(*) as total FROM $table WHERE YEAR(created_at) = $year GROUP BY tipo_ingreso";
+            $year      = date('Y');
+            $whereBase = "YEAR(created_at) = $year";
         }
 
+        // Count active students by tipo_ingreso
+        $sql    = "SELECT tipo_ingreso, COUNT(*) as total FROM $table
+                   WHERE $whereBase AND estado = 'ACTIVO' GROUP BY tipo_ingreso";
         $result = Database::query($sql);
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             $counts[$row['tipo_ingreso']] = (int) $row['total'];
         }
+
+        // Count retired students separately
+        $sqlR = "SELECT COUNT(*) as total FROM $table WHERE $whereBase AND estado = 'RETIRADO'";
+        $resR = Database::query($sqlR);
+        $rowR = Database::fetch_array($resR, 'ASSOC');
+        $counts['RETIRADO'] = (int) ($rowR['total'] ?? 0);
+
         return $counts;
     }
 }
