@@ -1917,7 +1917,15 @@ class SchoolPlugin extends Plugin
                         AND scu_coach.c_id = sc.c_id
                         AND scu_coach.status = 2
                         LIMIT 1
-                    ) AS course_coach_name
+                    ) AS course_coach_name,
+                    (
+                        SELECT scu_cid.user_id
+                        FROM $tbl_session_course_user scu_cid
+                        WHERE scu_cid.session_id = sc.session_id
+                        AND scu_cid.c_id = sc.c_id
+                        AND scu_cid.status = 2
+                        LIMIT 1
+                    ) AS course_coach_user_id
                 FROM $tbl_session_course sc
                 INNER JOIN $tableCourse as c ON (sc.c_id = c.id)
                 $join_access_url

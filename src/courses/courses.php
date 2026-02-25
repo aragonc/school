@@ -48,6 +48,7 @@ if ($enable) {
     $total = $countCourses + $countHistory + $totalBaseCourses;
     $imgSection = $plugin->get_svg_icon('girl',$plugin->get_lang('CurrentCourses'), 500);
     $plugin->assign('src_plugin', api_get_path(WEB_PLUGIN_PATH) . 'school/');
+    $plugin->assign('current_user_id', $userId);
     $plugin->assign('categories', $sessionsCategories['categories']);
     $plugin->assign('img_section', $imgSection);
     $plugin->assign('total', $countHistory);

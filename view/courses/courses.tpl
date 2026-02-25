@@ -116,9 +116,11 @@
                     <div class="session-courses-grid">
                         {% for course in session.courses %}
                         {% set cidx = loop.index0 % 8 %}
+                        {% set can_upload = (session.coach == 'true') or (course.course_coach_user_id == current_user_id) %}
                         <div class="card course-inner-card"
                              data-session-id="{{ session.id }}"
                              data-course-id="{{ course.real_id }}"
+                             data-course-code="{{ course.course_code }}"
                              data-coach-name="{{ course.course_coach_name|e('html_attr') }}">
                             <a href="{{ course.url }}" class="course-inner-header bg-gc-{{ cidx }}">
                                 {% if course.image_url %}
@@ -129,6 +131,11 @@
                                     {{ course.icon }}
                                 </div>
                             </a>
+                            {% if can_upload %}
+                            <button type="button" class="btn-upload-img" title="Cambiar imagen del curso">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            {% endif %}
                             <div class="card-body p-2">
                                 <a href="{{ course.url }}" class="course-inner-title" title="{{ course.title }}">
                                     {{ course.title }}
@@ -303,6 +310,35 @@
 .course-inner-card .card-footer {
     background: transparent;
     border-top: 1px solid #e2e8f0;
+}
+/* ---- Upload image button ---- */
+.course-inner-card {
+    position: relative;
+}
+.btn-upload-img {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.55);
+    border: none;
+    color: #fff;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .18s;
+    z-index: 10;
+}
+.course-inner-card:hover .btn-upload-img {
+    opacity: 1;
+}
+.btn-upload-img:hover {
+    background: rgba(37,99,170,.9);
 }
 
 /* ---- courses-grid (existing) ---- */
@@ -814,5 +850,92 @@ a.course-card-header:hover {
 
     // Reset modal state on close
     $($modal).on('hidden.bs.modal', function() { resetModal(); _activeCard = null; });
+
+    // ── Upload course image ───────────────────────────────────────────────────
+    var UPLOAD_ENDPOINT = '{{ _p.web_plugin }}school/src/courses/upload_course_image.php';
+
+    // Hidden file input (shared, reused for all cards)
+    var $fileInput = document.createElement('input');
+    $fileInput.type   = 'file';
+    $fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp';
+    $fileInput.style.display = 'none';
+    document.body.appendChild($fileInput);
+
+    var _uploadCard = null;
+
+    document.querySelectorAll('.btn-upload-img').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            _uploadCard = btn.closest('.course-inner-card');
+            $fileInput.value = '';
+            $fileInput.click();
+        });
+    });
+
+    $fileInput.addEventListener('change', function() {
+        if (!$fileInput.files.length || !_uploadCard) return;
+
+        var file      = $fileInput.files[0];
+        var sessionId = _uploadCard.getAttribute('data-session-id');
+        var courseId  = _uploadCard.getAttribute('data-course-id');
+        var courseCode = _uploadCard.getAttribute('data-course-code');
+
+        // Show spinner on the header
+        var header = _uploadCard.querySelector('.course-inner-header');
+        var origContent = header ? header.innerHTML : '';
+        if (header) {
+            header.style.pointerEvents = 'none';
+            header.insertAdjacentHTML('beforeend',
+                '<div class="upload-spinner" style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;">'
+                + '<i class="fas fa-spinner fa-spin fa-2x text-white"></i></div>');
+        }
+
+        var fd = new FormData();
+        fd.append('session_id',  sessionId);
+        fd.append('course_id',   courseId);
+        fd.append('course_code', courseCode);
+        fd.append('file',        file);
+
+        fetch(UPLOAD_ENDPOINT, { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                // Remove spinner
+                var spinner = _uploadCard.querySelector('.upload-spinner');
+                if (spinner) spinner.remove();
+                if (header) header.style.pointerEvents = '';
+
+                if (data.success) {
+                    // Update image in the card header
+                    var img = _uploadCard.querySelector('.card-course-img');
+                    var placeholder = _uploadCard.querySelector('.card-course-placeholder');
+                    if (img) {
+                        img.src = data.image_url;
+                        img.style.display = '';
+                        if (placeholder) placeholder.classList.add('d-none');
+                    } else if (header) {
+                        // No img element yet — insert one
+                        var newImg = document.createElement('img');
+                        newImg.className = 'card-course-img';
+                        newImg.src = data.image_url;
+                        newImg.alt = '';
+                        newImg.addEventListener('error', function() {
+                            newImg.style.display = 'none';
+                            if (placeholder) placeholder.classList.remove('d-none');
+                        });
+                        header.insertBefore(newImg, header.firstChild);
+                        if (placeholder) placeholder.classList.add('d-none');
+                    }
+                } else {
+                    alert('Error al subir imagen: ' + (data.message || 'Error desconocido'));
+                }
+            })
+            .catch(function() {
+                var spinner = _uploadCard.querySelector('.upload-spinner');
+                if (spinner) spinner.remove();
+                if (header) header.style.pointerEvents = '';
+                alert('Error de conexión al subir la imagen');
+            });
+    });
 })();
 </script>
