@@ -54,6 +54,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_MATRICULA_INFO           = 'plugin_school_matricula_info';
     const TABLE_SCHOOL_MATRICULA_OBSERVACION    = 'plugin_school_matricula_observacion';
     const TABLE_SCHOOL_REFUND                   = 'plugin_school_refund';
+    const TABLE_SCHOOL_CLASSROOM_PLAN           = 'plugin_school_classroom_plan';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -1209,6 +1210,20 @@ class SchoolPlugin extends Plugin
             created_at DATETIME NOT NULL
         )");
 
+        // Migration: classroom plan table
+        Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_CLASSROOM_PLAN." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            classroom_id INT unsigned NOT NULL,
+            plan_date DATE NOT NULL,
+            subject VARCHAR(100) NOT NULL,
+            topic TEXT NOT NULL,
+            notes TEXT NULL,
+            teacher_id INT NOT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            INDEX idx_classroom_date (classroom_id, plan_date)
+        )");
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -1216,6 +1231,7 @@ class SchoolPlugin extends Plugin
     public function uninstall()
     {
         $tablesToBeDeleted = [
+            self::TABLE_SCHOOL_CLASSROOM_PLAN,
             self::TABLE_SCHOOL_REFUND,
             self::TABLE_SCHOOL_MATRICULA_OBSERVACION,
             self::TABLE_SCHOOL_MATRICULA_INFO,
@@ -1311,6 +1327,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^matricula/alumnos$ plugin/school/src/matricula/alumnos.php [L,QSA]\n".
             "RewriteRule ^payments/refunds$ plugin/school/src/payments/refunds.php [L,QSA]\n".
             "RewriteRule ^payments/refund-receipt$ plugin/school/src/payments/refund_receipt.php [L,QSA]\n".
+            "RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -2625,6 +2642,21 @@ class SchoolPlugin extends Plugin
                     ['name' => 'admin-personalizacion', 'label' => 'Personalización', 'url' => '/school-admin'],
                     ['name' => 'admin-usuarios', 'label' => 'Usuarios', 'url' => '/admin/usuarios'],
                 ]
+            ];
+        }
+
+        // Mi Aula: visible for teachers, students, admin and secretary
+        $isTeacherUser = $userInfo && (int) $userInfo['status'] === COURSEMANAGER;
+        if ($isAdminOrSecretary || $isTeacherUser || $isStudent) {
+            $menus[] = [
+                'id'      => 12,
+                'name'    => 'my-classroom',
+                'label'   => 'Mi Aula',
+                'current' => $currentSection === 'my-classroom',
+                'icon'    => 'chalkboard-teacher',
+                'class'   => $currentSection === 'my-classroom' ? 'active' : '',
+                'url'     => '/my-aula',
+                'items'   => [],
             ];
         }
 
