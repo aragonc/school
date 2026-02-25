@@ -745,9 +745,6 @@
         })
         .done(function(resp) {
             if (resp.success) {
-                if (resp.warning) {
-                    alert('Matrícula guardada.\n\nAviso: ' + resp.warning);
-                }
                 location.reload();
             } else {
                 errDiv.textContent = resp.message || 'Error al guardar la matrícula.';

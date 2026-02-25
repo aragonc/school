@@ -61,6 +61,19 @@
     </div>
 </div>
 
+{% if pending_count > 0 %}
+<div class="alert alert-warning d-flex align-items-center justify-content-between mb-3" role="alert">
+    <div>
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <strong>{{ pending_count }}</strong>
+        {{ 'PendingStudentsAlert'|get_plugin_lang('SchoolPlugin') }}
+    </div>
+    <button class="btn btn-warning btn-sm ml-3" data-toggle="modal" data-target="#addStudentModal">
+        <i class="fas fa-user-plus mr-1"></i>{{ 'AddStudent'|get_plugin_lang('SchoolPlugin') }}
+    </button>
+</div>
+{% endif %}
+
 <!-- Students -->
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -85,7 +98,7 @@
             </thead>
             <tbody>
                 {% for i, student in students %}
-                <tr>
+                <tr{% if student.matricula_alert %} class="table-warning"{% endif %}>
                     <td>{{ i + 1 }}</td>
                     <td>
                         {% if student.avatar %}
@@ -96,7 +109,26 @@
                             </div>
                         {% endif %}
                     </td>
-                    <td><strong>{{ student.lastname }}, {{ student.firstname }}</strong></td>
+                    <td>
+                        <strong>{{ student.lastname }}, {{ student.firstname }}</strong>
+                        {% if student.matricula_alert == 'moved' %}
+                            <br><span class="badge badge-warning">
+                                <i class="fas fa-exchange-alt"></i>
+                                {{ 'MatriculaMovedTo'|get_plugin_lang('SchoolPlugin') }}:
+                                {{ student.mat_grade_name }} &quot;{{ student.mat_section_name }}&quot;
+                            </span>
+                        {% elseif student.matricula_alert == 'retirado' %}
+                            <br><span class="badge badge-danger">
+                                <i class="fas fa-user-times"></i>
+                                {{ 'MatriculaRetirado'|get_plugin_lang('SchoolPlugin') }}
+                            </span>
+                        {% elseif student.matricula_alert == 'no_matricula' %}
+                            <br><span class="badge badge-secondary">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ 'MatriculaNotFound'|get_plugin_lang('SchoolPlugin') }}
+                            </span>
+                        {% endif %}
+                    </td>
                     <td>{{ student.username }}</td>
                     <td>{{ student.email }}</td>
                     <td>{{ student.enrolled_at|date('d/m/Y') }}</td>
@@ -144,18 +176,42 @@
 
 <!-- Add Student Modal -->
 <div class="modal fade" id="addStudentModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">{{ 'AddStudent'|get_plugin_lang('SchoolPlugin') }}</h5>
+                <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>{{ 'AddStudent'|get_plugin_lang('SchoolPlugin') }}</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>{{ 'SearchStudent'|get_plugin_lang('SchoolPlugin') }}</label>
-                    <input type="text" class="form-control" id="student_search" placeholder="{{ 'TypeToSearch'|get_plugin_lang('SchoolPlugin') }}" autocomplete="off">
+                <!-- Filter -->
+                <div class="form-group mb-2">
+                    <input type="text" class="form-control" id="candidate_filter" placeholder="{{ 'TypeToSearch'|get_plugin_lang('SchoolPlugin') }}" autocomplete="off">
                 </div>
-                <div id="student_results" style="max-height:300px; overflow-y:auto;"></div>
+                <!-- Select all bar -->
+                <div class="d-flex align-items-center justify-content-between mb-2 px-1" id="candidate_toolbar" style="display:none!important">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="select_all_candidates">
+                        <label class="custom-control-label font-weight-bold" for="select_all_candidates">{{ 'SelectAll'|get_plugin_lang('SchoolPlugin') }}</label>
+                    </div>
+                    <small class="text-muted" id="candidate_count_label"></small>
+                </div>
+                <!-- Loading -->
+                <div id="candidate_loading" class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                </div>
+                <!-- Empty state -->
+                <div id="candidate_empty" class="alert alert-info mb-0" style="display:none">
+                    <i class="fas fa-info-circle"></i> {{ 'NoEnrolledStudentsAvailable'|get_plugin_lang('SchoolPlugin') }}
+                </div>
+                <!-- List -->
+                <div id="candidate_list" style="max-height:380px; overflow-y:auto; display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ 'Cancel'|get_plugin_lang('SchoolPlugin') }}</button>
+                <button type="button" class="btn btn-primary" id="btn_add_selected" disabled onclick="addSelectedStudents()">
+                    <i class="fas fa-user-plus mr-1"></i>
+                    <span id="btn_add_label">{{ 'AddSelected'|get_plugin_lang('SchoolPlugin') }}</span>
+                </button>
             </div>
         </div>
     </div>
@@ -205,48 +261,118 @@ function saveTutor(tutorId) {
 }
 
 // =========================================================================
-// STUDENT SEARCH
+// ADD STUDENTS (bulk, from matrícula candidates)
 // =========================================================================
-document.getElementById('student_search').addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    var query = this.value.trim();
-    if (query.length < 2) {
-        document.getElementById('student_results').innerHTML = '';
-        return;
-    }
-    searchTimeout = setTimeout(function() {
-        fetch(ajaxUrl + '?action=search_students&q=' + encodeURIComponent(query))
-            .then(r => r.json())
-            .then(data => {
-                var html = '';
-                if (data.data && data.data.length > 0) {
-                    data.data.forEach(function(s) {
-                        html += '<div class="d-flex align-items-center p-2 border-bottom">';
-                        html += '<i class="fas fa-user text-muted mr-2"></i>';
-                        html += '<div class="flex-grow-1"><strong>' + s.lastname + ', ' + s.firstname + '</strong><br><small class="text-muted">' + s.username + '</small></div>';
-                        html += '<button class="btn btn-success btn-sm" onclick="addStudent(' + s.user_id + ')"><i class="fas fa-plus"></i></button>';
-                        html += '</div>';
-                    });
-                } else {
-                    html = '<div class="text-muted p-2">{{ 'NoResults'|get_plugin_lang('SchoolPlugin') }}</div>';
-                }
-                document.getElementById('student_results').innerHTML = html;
-            });
-    }, 300);
+var allCandidates = [];
+
+$('#addStudentModal').on('show.bs.modal', function() {
+    allCandidates = [];
+    document.getElementById('candidate_loading').style.display = '';
+    document.getElementById('candidate_empty').style.display = 'none';
+    document.getElementById('candidate_list').style.display = 'none';
+    document.getElementById('candidate_toolbar').style.display = 'none !important';
+    document.getElementById('candidate_filter').value = '';
+    document.getElementById('select_all_candidates').checked = false;
+    document.getElementById('btn_add_selected').disabled = true;
+
+    fetch(ajaxUrl + '?action=get_classroom_candidates&classroom_id=' + classroomId)
+        .then(r => r.json())
+        .then(function(data) {
+            document.getElementById('candidate_loading').style.display = 'none';
+            if (data.data && data.data.length > 0) {
+                allCandidates = data.data;
+                document.getElementById('candidate_toolbar').removeAttribute('style');
+                document.getElementById('candidate_list').style.display = '';
+                renderCandidates(allCandidates);
+            } else {
+                document.getElementById('candidate_empty').style.display = '';
+            }
+        })
+        .catch(function() {
+            document.getElementById('candidate_loading').style.display = 'none';
+            document.getElementById('candidate_empty').style.display = '';
+        });
 });
 
-function addStudent(userId) {
-    var fd = new FormData();
-    fd.append('action', 'add_student');
-    fd.append('classroom_id', classroomId);
-    fd.append('user_id', userId);
-    fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{
-        if(d.success) {
-            location.reload();
-        } else {
-            alert(d.message || 'Error');
-        }
+function renderCandidates(list) {
+    var html = '';
+    if (list.length === 0) {
+        html = '<div class="text-muted p-3 text-center">{{ 'NoResults'|get_plugin_lang('SchoolPlugin') }}</div>';
+    } else {
+        list.forEach(function(s) {
+            var fullname = s.apellido_paterno + (s.apellido_materno ? ' ' + s.apellido_materno : '') + ', ' + s.nombres;
+            html += '<div class="d-flex align-items-center p-2 border-bottom candidate-row">';
+            html += '<div class="custom-control custom-checkbox mr-3">';
+            html += '<input type="checkbox" class="custom-control-input candidate-check" id="chk_' + s.user_id + '" value="' + s.user_id + '">';
+            html += '<label class="custom-control-label" for="chk_' + s.user_id + '"></label>';
+            html += '</div>';
+            html += '<div class="flex-grow-1">';
+            html += '<strong>' + fullname + '</strong>';
+            html += '<br><small class="text-muted">' + s.username + ' &bull; ' + s.email + '</small>';
+            html += '</div>';
+            html += '</div>';
+        });
+    }
+    document.getElementById('candidate_list').innerHTML = html;
+    // Attach change listeners
+    document.querySelectorAll('.candidate-check').forEach(function(chk) {
+        chk.addEventListener('change', updateAddButton);
     });
+    updateAddButton();
+}
+
+function updateAddButton() {
+    var checked = document.querySelectorAll('.candidate-check:checked').length;
+    var total   = document.querySelectorAll('.candidate-check').length;
+    var btn     = document.getElementById('btn_add_selected');
+    var label   = document.getElementById('btn_add_label');
+    btn.disabled = checked === 0;
+    label.textContent = checked > 0
+        ? '{{ 'AddSelected'|get_plugin_lang('SchoolPlugin') }} (' + checked + ')'
+        : '{{ 'AddSelected'|get_plugin_lang('SchoolPlugin') }}';
+    document.getElementById('select_all_candidates').checked = total > 0 && checked === total;
+    document.getElementById('candidate_count_label').textContent = checked + ' / ' + total + ' seleccionados';
+}
+
+document.getElementById('select_all_candidates').addEventListener('change', function() {
+    var checked = this.checked;
+    document.querySelectorAll('.candidate-check').forEach(function(chk) {
+        chk.checked = checked;
+    });
+    updateAddButton();
+});
+
+document.getElementById('candidate_filter').addEventListener('input', function() {
+    var q = this.value.toLowerCase().trim();
+    if (!q) {
+        renderCandidates(allCandidates);
+        return;
+    }
+    var filtered = allCandidates.filter(function(s) {
+        var fullname = (s.apellido_paterno + ' ' + (s.apellido_materno || '') + ' ' + s.nombres).toLowerCase();
+        return fullname.indexOf(q) !== -1 || s.username.toLowerCase().indexOf(q) !== -1;
+    });
+    renderCandidates(filtered);
+});
+
+function addSelectedStudents() {
+    var checked = document.querySelectorAll('.candidate-check:checked');
+    if (checked.length === 0) return;
+    var fd = new FormData();
+    fd.append('action', 'add_students_bulk');
+    fd.append('classroom_id', classroomId);
+    checked.forEach(function(chk) { fd.append('user_ids[]', chk.value); });
+    document.getElementById('btn_add_selected').disabled = true;
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(function(d) {
+            if (d.success) {
+                location.reload();
+            } else {
+                alert(d.message || 'Error');
+                document.getElementById('btn_add_selected').disabled = false;
+            }
+        });
 }
 
 function removeStudent(userId) {

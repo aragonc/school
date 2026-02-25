@@ -189,6 +189,23 @@ switch ($action) {
         echo json_encode(['success' => $result]);
         break;
 
+    case 'get_classroom_candidates':
+        $classroomId = (int) ($_GET['classroom_id'] ?? 0);
+        $candidates = AcademicManager::getClassroomCandidates($classroomId);
+        echo json_encode(['success' => true, 'data' => $candidates]);
+        break;
+
+    case 'add_students_bulk':
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $userIds = isset($_POST['user_ids']) ? (array) $_POST['user_ids'] : [];
+        if ($classroomId <= 0 || empty($userIds)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            break;
+        }
+        $result = AcademicManager::addStudentsBulk($classroomId, $userIds);
+        echo json_encode(['success' => true, 'added' => $result['added'], 'skipped' => $result['skipped']]);
+        break;
+
     // =========================================================================
     // SEARCH
     // =========================================================================

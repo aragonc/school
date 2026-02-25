@@ -7,29 +7,11 @@
 
 <div class="card card-home">
     <div class="card-header">
-       {{ icon_course }} {% if session.display_category is defined and session.display_category %}{{ session.display_category }}{% else %}{{ course.name }}{% endif %}
+       {{ icon_course }} {{ course.name }}
     </div>
     <div class="card-body py-0 px-0 py-md-4">
         <div class="container p-0">
             <div class="row">
-                {% if session.name is defined and session.name %}
-                <div class="col-12 col-lg-6">
-                    {% if session_image %}
-                        <img class="img-responsive rounded-md" width="100%" src="{{session_image}}" alt="{{ session.name }}">
-                    {% else %}
-                        <img class="img-responsive rounded-md" width="100%" src="{{session.image}}" alt="{{ session.name }}">
-                    {% endif %}
-                </div>
-                <div class="col-12 col-lg-6 d-flex align-items-center">
-                    <div class="block-course">
-                        {% if session.n_courses > 1 %}
-                        <div class="is_graduates">{{ session.name }}</div>
-                        {% endif %}
-                        <h1 class="course-home-title">{{ course.title }}</h1>
-                        <div class="h-25 d-none d-md-block"></div>
-                    </div>
-                </div>
-                {% else %}
                 <div class="col-12">
                     {% if intro_text %}
                     <div class="intro-text">
@@ -37,7 +19,6 @@
                     </div>
                     {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>

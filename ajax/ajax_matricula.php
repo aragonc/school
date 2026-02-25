@@ -99,75 +99,54 @@ switch ($action) {
             break;
         }
 
-        // If creating new (mat_id=0), check for existing row (e.g. a retired student
-        // re-enrolling in the same year) to avoid unique key violation.
-        if ($matId === 0 && $yearId > 0) {
+        // Check for duplicate enrollment to avoid unique key violation on (ficha_id, academic_year_id).
+        // For new enrollments (mat_id=0): if a row already exists, update that row instead of inserting.
+        // For edits (mat_id>0): if the selected year conflicts with a DIFFERENT existing row, report error.
+        if ($yearId > 0) {
             $matTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
             $existCheck = Database::query(
                 "SELECT id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"
             );
             $existRow = Database::fetch_array($existCheck, 'ASSOC');
             if ($existRow) {
-                $matId = (int) $existRow['id'];
+                $conflictId = (int) $existRow['id'];
+                if ($matId === 0) {
+                    // New enrollment: reuse existing row
+                    $matId = $conflictId;
+                } elseif ($conflictId !== $matId) {
+                    // Edit: another row already holds this ficha+year combination
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Ya existe una matrícula para este alumno en el año académico seleccionado. Elimine la matrícula duplicada antes de continuar.',
+                    ]);
+                    break;
+                }
             }
         }
 
-        $savedId = MatriculaManager::saveMatricula([
-            'id'               => $matId,
-            'ficha_id'         => $fichaId,
-            'academic_year_id' => $yearId ?: null,
-            'grade_id'         => $gradeId ?: null,
-            'section_id'       => $sectionId ?: null,
-            'tipo_ingreso'     => $tipoIngreso,
-            'estado'           => $estado,
-        ]);
+        try {
+            $savedId = MatriculaManager::saveMatricula([
+                'id'               => $matId,
+                'ficha_id'         => $fichaId,
+                'academic_year_id' => $yearId ?: null,
+                'grade_id'         => $gradeId ?: null,
+                'section_id'       => $sectionId ?: null,
+                'tipo_ingreso'     => $tipoIngreso,
+                'estado'           => $estado,
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'Error al guardar la matrícula: ' . $e->getMessage()]);
+            break;
+        }
 
         if (!$savedId) {
             echo json_encode(['success' => false, 'message' => 'Error al guardar la matrícula']);
             break;
         }
 
-        // Auto-assign student to classroom if all required data is present
-        $classroomAssigned = false;
-        $warning           = '';
-
-        if ($yearId > 0 && $gradeId > 0 && $sectionId > 0) {
-            // Get the ficha to retrieve the linked user_id
-            $ficha  = MatriculaManager::getFichaById($fichaId);
-            $userId = $ficha ? (int) ($ficha['user_id'] ?? 0) : 0;
-
-            if ($userId > 0) {
-                // Find the classroom for this year + grade + section
-                $cTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
-                $cRes    = Database::query(
-                    "SELECT id FROM $cTable
-                     WHERE academic_year_id = $yearId AND grade_id = $gradeId AND section_id = $sectionId
-                     LIMIT 1"
-                );
-                $cRow = Database::fetch_array($cRes, 'ASSOC');
-
-                if ($cRow) {
-                    $newClassroomId = (int) $cRow['id'];
-
-                    // Remove student from their previous classroom in the same academic year
-                    $prevClassroom = AcademicManager::getStudentClassroom($yearId, $userId);
-                    if ($prevClassroom && (int) $prevClassroom['id'] !== $newClassroomId) {
-                        AcademicManager::removeStudentFromClassroom((int) $prevClassroom['id'], $userId);
-                    }
-
-                    AcademicManager::addStudentToClassroom($newClassroomId, $userId);
-                    $classroomAssigned = true;
-                } else {
-                    $warning = 'No existe un aula creada para esa combinación de año, grado y sección. La matrícula fue guardada pero el alumno no fue asignado a ningún aula.';
-                }
-            }
-        }
-
         echo json_encode([
-            'success'            => true,
-            'id'                 => $savedId,
-            'classroom_assigned' => $classroomAssigned,
-            'warning'            => $warning,
+            'success' => true,
+            'id'      => $savedId,
         ]);
         break;
 
@@ -553,6 +532,339 @@ switch ($action) {
             ];
         }
         echo json_encode(['success' => true, 'sections' => $sections]);
+        break;
+
+    // =========================================================================
+    // BULK CSV ENROLL
+    // =========================================================================
+    case 'bulk_enroll_csv':
+        // Modal defaults — used as fallback when CSV columns are empty
+        $defaultYearId      = (int) ($_POST['academic_year_id'] ?? 0);
+        $defaultGradeId     = (int) ($_POST['grade_id']         ?? 0);
+        $defaultSectionId   = (int) ($_POST['section_id']       ?? 0);
+        $defaultTipoIngreso = $_POST['tipo_ingreso'] ?? 'NUEVO_INGRESO';
+
+        if (empty($_FILES['csv_file']['tmp_name'])) {
+            echo json_encode(['success' => false, 'message' => 'Archivo CSV requerido']);
+            break;
+        }
+
+        $handle = fopen($_FILES['csv_file']['tmp_name'], 'r');
+        if (!$handle) {
+            echo json_encode(['success' => false, 'message' => 'No se pudo leer el archivo']);
+            break;
+        }
+
+        $userTable    = Database::get_main_table(TABLE_MAIN_USER);
+        $matTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $yearTable    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_YEAR);
+        $levelTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $gradeTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $sectionTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
+
+        // Lookup caches to avoid repeated DB queries for same values
+        $yearCache    = [];
+        $gradeCache   = [];
+        $sectionCache = [];
+
+        $results = [];
+        $lineNum = 0;
+
+        // Column indices (defaults for single-column legacy format)
+        $colUsuario = 0;
+        $colYear    = false;
+        $colTipo    = false;
+        $colNivel   = false;
+        $colGrado   = false;
+        $colSeccion = false;
+
+        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+            $lineNum++;
+
+            // First row: detect if it's a header
+            if ($lineNum === 1) {
+                $knownHeaders = ['usuario', 'username', 'user', 'año_academico', 'ano_academico',
+                                 'tipo_ingreso', 'nivel', 'grado', 'seccion', 'sección'];
+                $firstCell = strtolower(trim($row[0] ?? ''));
+                if (in_array($firstCell, $knownHeaders)) {
+                    // Parse column positions from header row
+                    foreach ($row as $i => $cell) {
+                        $h = strtolower(trim($cell));
+                        if (in_array($h, ['usuario', 'username', 'user']))                          $colUsuario = $i;
+                        elseif (in_array($h, ['año_academico', 'ano_academico', 'año', 'year']))    $colYear    = $i;
+                        elseif (in_array($h, ['tipo_ingreso', 'tipo', 'type']))                     $colTipo    = $i;
+                        elseif (in_array($h, ['nivel', 'level', 'nivel_educativo']))                $colNivel   = $i;
+                        elseif (in_array($h, ['grado', 'grade']))                                   $colGrado   = $i;
+                        elseif (in_array($h, ['seccion', 'sección', 'section']))                    $colSeccion = $i;
+                    }
+                    continue; // Skip header row, process next rows
+                }
+                // No header — treat first row as data (legacy single-column format)
+            }
+
+            $username = trim($row[$colUsuario] ?? '');
+            if ($username === '') continue;
+
+            // ---- Resolve academic year ----
+            $csvYearRaw = ($colYear !== false) ? trim($row[$colYear] ?? '') : '';
+            if ($csvYearRaw !== '') {
+                if (!isset($yearCache[$csvYearRaw])) {
+                    $esc = Database::escape_string($csvYearRaw);
+                    $yr  = Database::fetch_array(
+                        Database::query("SELECT id FROM $yearTable WHERE name = '$esc' OR year = '$esc' LIMIT 1"),
+                        'ASSOC'
+                    );
+                    $yearCache[$csvYearRaw] = $yr ? (int) $yr['id'] : 0;
+                }
+                $yearId = $yearCache[$csvYearRaw];
+                if (!$yearId) {
+                    $results[] = ['username' => $username, 'status' => 'error',
+                                  'message'  => "Año académico no encontrado: $csvYearRaw"];
+                    continue;
+                }
+            } else {
+                $yearId = $defaultYearId;
+            }
+
+            if (!$yearId) {
+                $results[] = ['username' => $username, 'status' => 'error',
+                              'message'  => 'Año académico requerido (columna o valor por defecto)'];
+                continue;
+            }
+
+            // ---- Resolve tipo_ingreso ----
+            $csvTipo     = ($colTipo !== false) ? strtoupper(trim($row[$colTipo] ?? '')) : '';
+            $tipoIngreso = in_array($csvTipo, ['NUEVO_INGRESO', 'REINGRESO', 'CONTINUACION'])
+                ? $csvTipo
+                : $defaultTipoIngreso;
+
+            // ---- Resolve grade ----
+            $csvNivel = ($colNivel !== false) ? trim($row[$colNivel] ?? '') : '';
+            $csvGrado = ($colGrado !== false) ? trim($row[$colGrado] ?? '') : '';
+            if ($csvGrado !== '') {
+                $cacheKey = strtolower($csvNivel . '||' . $csvGrado);
+                if (!isset($gradeCache[$cacheKey])) {
+                    $escNivel = Database::escape_string($csvNivel);
+                    $escGrado = Database::escape_string($csvGrado);
+                    $gradeRow = null;
+                    if ($csvNivel !== '') {
+                        $gradeRow = Database::fetch_array(
+                            Database::query(
+                                "SELECT g.id FROM $gradeTable g
+                                 INNER JOIN $levelTable l ON l.id = g.level_id
+                                 WHERE l.name = '$escNivel' AND g.name = '$escGrado' LIMIT 1"
+                            ),
+                            'ASSOC'
+                        );
+                    }
+                    if (!$gradeRow) {
+                        // Try without level constraint
+                        $gradeRow = Database::fetch_array(
+                            Database::query("SELECT id FROM $gradeTable WHERE name = '$escGrado' LIMIT 1"),
+                            'ASSOC'
+                        );
+                    }
+                    $gradeCache[$cacheKey] = $gradeRow ? (int) $gradeRow['id'] : 0;
+                }
+                $gradeId = $gradeCache[$cacheKey];
+                if (!$gradeId) {
+                    $results[] = ['username' => $username, 'status' => 'error',
+                                  'message'  => "Grado no encontrado: $csvGrado"];
+                    continue;
+                }
+            } else {
+                $gradeId = $defaultGradeId;
+            }
+
+            // ---- Resolve section ----
+            $csvSeccion = ($colSeccion !== false) ? trim($row[$colSeccion] ?? '') : '';
+            if ($csvSeccion !== '') {
+                $ck = strtolower($csvSeccion);
+                if (!isset($sectionCache[$ck])) {
+                    $escSec  = Database::escape_string($csvSeccion);
+                    $secRow  = Database::fetch_array(
+                        Database::query("SELECT id FROM $sectionTable WHERE name = '$escSec' LIMIT 1"),
+                        'ASSOC'
+                    );
+                    $sectionCache[$ck] = $secRow ? (int) $secRow['id'] : 0;
+                }
+                $sectionId = $sectionCache[$ck];
+                if (!$sectionId) {
+                    $results[] = ['username' => $username, 'status' => 'error',
+                                  'message'  => "Sección no encontrada: $csvSeccion"];
+                    continue;
+                }
+            } else {
+                $sectionId = $defaultSectionId;
+            }
+
+            // ---- Find Chamilo user ----
+            $esc     = Database::escape_string($username);
+            $userRow = Database::fetch_array(
+                Database::query("SELECT id, firstname, lastname FROM $userTable WHERE username = '$esc' AND status = 5 LIMIT 1"),
+                'ASSOC'
+            );
+            if (!$userRow) {
+                $results[] = ['username' => $username, 'status' => 'error', 'message' => 'Usuario no encontrado'];
+                continue;
+            }
+            $userId = (int) $userRow['id'];
+
+            // ---- Get or create minimal ficha ----
+            $ficha = MatriculaManager::getFichaByUserId($userId);
+            if ($ficha) {
+                $fichaId = (int) $ficha['id'];
+            } else {
+                $fichaId = MatriculaManager::saveFicha([
+                    'user_id'          => $userId,
+                    'nombres'          => $userRow['firstname'],
+                    'apellido_paterno' => $userRow['lastname'],
+                ]);
+                if (!$fichaId) {
+                    $results[] = ['username' => $username, 'status' => 'error', 'message' => 'Error al crear la ficha'];
+                    continue;
+                }
+            }
+
+            // ---- Check duplicate enrollment ----
+            $existRow = Database::fetch_array(
+                Database::query("SELECT id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"),
+                'ASSOC'
+            );
+            if ($existRow) {
+                $results[] = ['username' => $username, 'status' => 'skipped',
+                              'message'  => $userRow['lastname'] . ', ' . $userRow['firstname'] . ' — ya matriculado'];
+                continue;
+            }
+
+            try {
+                MatriculaManager::saveMatricula([
+                    'id'               => 0,
+                    'ficha_id'         => $fichaId,
+                    'academic_year_id' => $yearId,
+                    'grade_id'         => $gradeId ?: null,
+                    'section_id'       => $sectionId ?: null,
+                    'tipo_ingreso'     => $tipoIngreso,
+                    'estado'           => 'ACTIVO',
+                ]);
+                $results[] = ['username' => $username, 'status' => 'enrolled',
+                              'message'  => $userRow['lastname'] . ', ' . $userRow['firstname']];
+            } catch (\Throwable $e) {
+                $results[] = ['username' => $username, 'status' => 'error', 'message' => $e->getMessage()];
+            }
+        }
+        fclose($handle);
+
+        $enrolled = count(array_filter($results, fn($r) => $r['status'] === 'enrolled'));
+        $skipped  = count(array_filter($results, fn($r) => $r['status'] === 'skipped'));
+        $errors   = count(array_filter($results, fn($r) => $r['status'] === 'error'));
+        echo json_encode(['success' => true, 'results' => $results,
+                          'enrolled' => $enrolled, 'skipped' => $skipped, 'errors' => $errors]);
+        break;
+
+    // =========================================================================
+    // QUICK ENROLL
+    // =========================================================================
+
+    case 'search_users_no_matricula':
+        // Search Chamilo students not yet enrolled in the given academic year
+        $q          = trim($_GET['q'] ?? '');
+        $yearId     = (int) ($_GET['academic_year_id'] ?? 0);
+        $userTable  = Database::get_main_table(TABLE_MAIN_USER);
+        $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $matTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+
+        $esc = Database::escape_string($q);
+        $yearCond = $yearId
+            ? "AND u.id NOT IN (
+                    SELECT f2.user_id FROM $matTable m2
+                    INNER JOIN $fichaTable f2 ON f2.id = m2.ficha_id
+                    WHERE m2.academic_year_id = $yearId AND f2.user_id IS NOT NULL
+               )"
+            : '';
+
+        $sql = "SELECT u.id AS user_id, u.firstname, u.lastname, u.username, u.email
+                FROM $userTable u
+                WHERE u.status = 5
+                  AND u.active = 1
+                  AND (u.firstname LIKE '%$esc%' OR u.lastname LIKE '%$esc%'
+                       OR u.username LIKE '%$esc%' OR u.email LIKE '%$esc%')
+                  $yearCond
+                ORDER BY u.lastname ASC, u.firstname ASC
+                LIMIT 30";
+        $res   = Database::query($sql);
+        $users = [];
+        while ($row = Database::fetch_array($res, 'ASSOC')) {
+            $users[] = $row;
+        }
+        echo json_encode(['success' => true, 'data' => $users]);
+        break;
+
+    case 'quick_enroll':
+        $userId      = (int) ($_POST['user_id']          ?? 0);
+        $yearId      = (int) ($_POST['academic_year_id'] ?? 0);
+        $gradeId     = (int) ($_POST['grade_id']         ?? 0);
+        $sectionId   = (int) ($_POST['section_id']       ?? 0);
+        $tipoIngreso = $_POST['tipo_ingreso'] ?? 'NUEVO_INGRESO';
+
+        if (!$userId || !$yearId) {
+            echo json_encode(['success' => false, 'message' => 'Usuario y año académico son requeridos']);
+            break;
+        }
+
+        // Get or create minimal ficha for this user
+        $ficha = MatriculaManager::getFichaByUserId($userId);
+        if ($ficha) {
+            $fichaId = (int) $ficha['id'];
+        } else {
+            $userInfo = api_get_user_info($userId);
+            if (!$userInfo) {
+                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
+                break;
+            }
+            $fichaId = MatriculaManager::saveFicha([
+                'user_id'          => $userId,
+                'nombres'          => $userInfo['firstname'],
+                'apellido_paterno' => $userInfo['lastname'],
+            ]);
+            if (!$fichaId) {
+                echo json_encode(['success' => false, 'message' => 'Error al crear la ficha']);
+                break;
+            }
+        }
+
+        // Check for existing enrollment (same ficha + year)
+        $matTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $existRow = Database::fetch_array(
+            Database::query("SELECT id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"),
+            'ASSOC'
+        );
+        if ($existRow) {
+            echo json_encode(['success' => false, 'message' => 'Este alumno ya tiene una matrícula para el año seleccionado']);
+            break;
+        }
+
+        try {
+            $matId = MatriculaManager::saveMatricula([
+                'id'               => 0,
+                'ficha_id'         => $fichaId,
+                'academic_year_id' => $yearId,
+                'grade_id'         => $gradeId ?: null,
+                'section_id'       => $sectionId ?: null,
+                'tipo_ingreso'     => $tipoIngreso,
+                'estado'           => 'ACTIVO',
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'Error al guardar la matrícula: ' . $e->getMessage()]);
+            break;
+        }
+
+        echo json_encode([
+            'success'      => true,
+            'ficha_id'     => $fichaId,
+            'matricula_id' => $matId,
+            'ficha_url'    => api_get_path(WEB_PATH) . 'matricula/editar?ficha_id=' . $fichaId,
+        ]);
         break;
 
     default:

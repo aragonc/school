@@ -71,6 +71,12 @@
             <i class="fas fa-angle-double-right"></i> {{ 'PromoteToNextYear'|get_plugin_lang('SchoolPlugin') }}
         </button>
         {% endif %}
+        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#bulkCsvModal">
+            <i class="fas fa-file-csv"></i> {{ 'BulkEnrollCsv'|get_plugin_lang('SchoolPlugin') }}
+        </button>
+        <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#quickEnrollModal">
+            <i class="fas fa-bolt"></i> {{ 'QuickEnroll'|get_plugin_lang('SchoolPlugin') }}
+        </button>
         <a href="{{ _p.web }}matricula/alumnos" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> {{ 'NewEnrollment'|get_plugin_lang('SchoolPlugin') }}
         </a>
@@ -154,7 +160,14 @@
                                 <span class="badge badge-warning text-dark">{{ 'ContinuacionType'|get_plugin_lang('SchoolPlugin') }}</span>
                             {% endif %}
                         </td>
-                        <td><strong>{{ m.full_name }}</strong></td>
+                        <td>
+                            <strong>{{ m.full_name }}</strong>
+                            {% if not m.dni and not m.fecha_nacimiento %}
+                                <br><span class="badge badge-warning" title="{{ 'FichaIncompleta'|get_plugin_lang('SchoolPlugin') }}">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ 'FichaIncompleta'|get_plugin_lang('SchoolPlugin') }}
+                                </span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if m.level_name %}
                                 <small class="text-muted">{{ m.level_name }}</small><br>
@@ -200,6 +213,200 @@
             </div>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Modal: Matrícula Masiva CSV -->
+<div class="modal fade" id="bulkCsvModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-file-csv mr-2"></i>{{ 'BulkEnrollCsv'|get_plugin_lang('SchoolPlugin') }}</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 mb-3">
+                    <i class="fas fa-info-circle"></i> {{ 'BulkEnrollCsvHelp'|get_plugin_lang('SchoolPlugin') }}
+                    &nbsp;
+                    <a href="#" onclick="downloadCsvTemplate();return false;" class="font-weight-bold">
+                        <i class="fas fa-download"></i> {{ 'DownloadTemplate'|get_plugin_lang('SchoolPlugin') }}
+                    </a>
+                </div>
+
+                <p class="text-muted small mb-2"><i class="fas fa-info-circle"></i> {{ 'CsvDefaultsHelp'|get_plugin_lang('SchoolPlugin') }}</p>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Academic year (default) -->
+                        <div class="form-group">
+                            <label class="font-weight-bold">{{ 'AcademicYear'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
+                            <select class="form-control" id="csv_year">
+                                <option value="">— sin defecto —</option>
+                                {% for y in all_years %}
+                                <option value="{{ y.id }}" {{ (active_year and active_year.id == y.id) or selected_year_id == y.id ? 'selected' : '' }}>
+                                    {{ y.name }}{% if y.active %} ★{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <!-- Tipo ingreso (default) -->
+                        <div class="form-group">
+                            <label class="font-weight-bold">{{ 'TipoIngreso'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
+                            <select class="form-control" id="csv_tipo">
+                                <option value="NUEVO_INGRESO">{{ 'NewEnrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
+                                <option value="REINGRESO">{{ 'ReenrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
+                                <option value="CONTINUACION">{{ 'ContinuacionType'|get_plugin_lang('SchoolPlugin') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="font-weight-bold">{{ 'Level'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
+                            <select class="form-control" id="csv_level" onchange="loadCsvGrades()">
+                                <option value="">— {{ 'SelectLevel'|get_plugin_lang('SchoolPlugin') }} —</option>
+                                {% for level in levels %}
+                                <option value="{{ level.id }}">{{ level.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="font-weight-bold">{{ 'Grade'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
+                            <select class="form-control" id="csv_grade" onchange="loadCsvSections()" disabled>
+                                <option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="font-weight-bold">{{ 'Section'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
+                            <select class="form-control" id="csv_section" disabled>
+                                <option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File input -->
+                <div class="form-group">
+                    <label class="font-weight-bold">{{ 'CsvFile'|get_plugin_lang('SchoolPlugin') }} <span class="text-danger">*</span></label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="csv_file_input" accept=".csv,text/csv" onchange="onCsvFileChange(this)">
+                        <label class="custom-file-label" id="csv_file_label" for="csv_file_input">{{ 'ChooseFile'|get_plugin_lang('SchoolPlugin') }}</label>
+                    </div>
+                    <small class="text-muted">{{ 'CsvFormatHelp'|get_plugin_lang('SchoolPlugin') }}</small>
+                </div>
+
+                <!-- Results -->
+                <div id="csv_results" style="display:none">
+                    <hr>
+                    <div id="csv_summary" class="mb-2"></div>
+                    <div style="max-height:250px;overflow-y:auto;">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>{{ 'Username'|get_plugin_lang('SchoolPlugin') }}</th>
+                                    <th>{{ 'FullName'|get_plugin_lang('SchoolPlugin') }}</th>
+                                    <th>{{ 'Status'|get_plugin_lang('SchoolPlugin') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="csv_results_body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ 'Cancel'|get_plugin_lang('SchoolPlugin') }}</button>
+                <button type="button" class="btn btn-info" id="btnBulkCsv" onclick="submitBulkCsv()">
+                    <i class="fas fa-upload mr-1"></i>{{ 'ProcessCsv'|get_plugin_lang('SchoolPlugin') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Matrícula Rápida -->
+<div class="modal fade" id="quickEnrollModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-bolt mr-2"></i>{{ 'QuickEnroll'|get_plugin_lang('SchoolPlugin') }}</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 mb-3">
+                    <i class="fas fa-info-circle"></i> {{ 'QuickEnrollHelp'|get_plugin_lang('SchoolPlugin') }}
+                </div>
+
+                <!-- Student search -->
+                <div class="form-group">
+                    <label class="font-weight-bold">{{ 'Student'|get_plugin_lang('SchoolPlugin') }} <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="qe_search" placeholder="{{ 'TypeToSearch'|get_plugin_lang('SchoolPlugin') }}" autocomplete="off">
+                    <div id="qe_results" style="max-height:200px;overflow-y:auto;border:1px solid #ced4da;border-top:none;display:none;border-radius:0 0 4px 4px;"></div>
+                    <input type="hidden" id="qe_user_id" value="0">
+                    <div id="qe_selected" class="mt-1" style="display:none">
+                        <span class="badge badge-success py-1 px-2" id="qe_selected_name"></span>
+                        <a href="#" onclick="clearQeUser();return false;" class="ml-1 text-danger small"><i class="fas fa-times"></i></a>
+                    </div>
+                </div>
+
+                <!-- Academic year -->
+                <div class="form-group">
+                    <label class="font-weight-bold">{{ 'AcademicYear'|get_plugin_lang('SchoolPlugin') }} <span class="text-danger">*</span></label>
+                    <select class="form-control" id="qe_year">
+                        {% for y in all_years %}
+                        <option value="{{ y.id }}" {{ (active_year and active_year.id == y.id) or selected_year_id == y.id ? 'selected' : '' }}>
+                            {{ y.name }}{% if y.active %} ★{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Level → Grade -->
+                <div class="form-group">
+                    <label class="font-weight-bold">{{ 'Level'|get_plugin_lang('SchoolPlugin') }}</label>
+                    <select class="form-control" id="qe_level" onchange="loadQeGrades()">
+                        <option value="">— {{ 'SelectLevel'|get_plugin_lang('SchoolPlugin') }} —</option>
+                        {% for level in levels %}
+                        <option value="{{ level.id }}">{{ level.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">{{ 'Grade'|get_plugin_lang('SchoolPlugin') }}</label>
+                    <select class="form-control" id="qe_grade" onchange="loadQeSections()" disabled>
+                        <option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">{{ 'Section'|get_plugin_lang('SchoolPlugin') }}</label>
+                    <select class="form-control" id="qe_section" disabled>
+                        <option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>
+                    </select>
+                </div>
+
+                <!-- Tipo ingreso -->
+                <div class="form-group">
+                    <label class="font-weight-bold">{{ 'TipoIngreso'|get_plugin_lang('SchoolPlugin') }} <span class="text-danger">*</span></label>
+                    <select class="form-control" id="qe_tipo">
+                        <option value="NUEVO_INGRESO">{{ 'NewEnrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="REINGRESO">{{ 'ReenrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
+                        <option value="CONTINUACION">{{ 'ContinuacionType'|get_plugin_lang('SchoolPlugin') }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ 'Cancel'|get_plugin_lang('SchoolPlugin') }}</button>
+                <button type="button" class="btn btn-success" id="btnQuickEnroll" onclick="submitQuickEnroll()">
+                    <i class="fas fa-bolt mr-1"></i>{{ 'QuickEnroll'|get_plugin_lang('SchoolPlugin') }}
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -325,6 +532,277 @@
 
 <script>
 var ajaxUrl = '{{ ajax_url }}';
+var qeSearchTimer;
+
+// =========================================================================
+// BULK CSV ENROLL
+// =========================================================================
+$('#bulkCsvModal').on('show.bs.modal', function() {
+    document.getElementById('csv_file_input').value = '';
+    document.getElementById('csv_file_label').textContent = '{{ 'ChooseFile'|get_plugin_lang('SchoolPlugin') }}';
+    document.getElementById('csv_results').style.display = 'none';
+    document.getElementById('csv_grade').innerHTML = '<option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    document.getElementById('csv_grade').disabled = true;
+    document.getElementById('csv_section').innerHTML = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    document.getElementById('csv_section').disabled = true;
+    document.getElementById('btnBulkCsv').disabled = false;
+    document.getElementById('btnBulkCsv').innerHTML = '<i class="fas fa-upload mr-1"></i>{{ 'ProcessCsv'|get_plugin_lang('SchoolPlugin') }}';
+});
+
+function downloadCsvTemplate() {
+    var content = 'usuario,año_academico,tipo_ingreso,nivel,grado,seccion\n';
+    content += '78208072@playschool.edu.pe,2026,NUEVO_INGRESO,INICIAL,3 AÑOS,A\n';
+    content += '90665955@playschool.edu.pe,2026,CONTINUACION,PRIMARIA,1° GRADO,B\n';
+    content += '12345678@playschool.edu.pe,,,,,\n';
+    var blob = new Blob(['\ufeff' + content], {type: 'text/csv;charset=utf-8;'});
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'plantilla_matricula.csv';
+    link.click();
+}
+
+function onCsvFileChange(input) {
+    var label = document.getElementById('csv_file_label');
+    label.textContent = input.files.length > 0 ? input.files[0].name : '{{ 'ChooseFile'|get_plugin_lang('SchoolPlugin') }}';
+    document.getElementById('csv_results').style.display = 'none';
+}
+
+function loadCsvGrades() {
+    var levelId = document.getElementById('csv_level').value;
+    var gradeEl = document.getElementById('csv_grade');
+    var secEl   = document.getElementById('csv_section');
+    gradeEl.innerHTML = '<option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    gradeEl.disabled  = true;
+    secEl.innerHTML   = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    secEl.disabled    = true;
+    if (!levelId) return;
+    fetch(ajaxUrl + '?action=get_grades_by_level&level_id=' + levelId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.grades && data.grades.length) {
+                data.grades.forEach(function(g) {
+                    gradeEl.innerHTML += '<option value="' + g.id + '">' + g.name + '</option>';
+                });
+                gradeEl.disabled = false;
+            }
+        });
+}
+
+function loadCsvSections() {
+    var gradeId = document.getElementById('csv_grade').value;
+    var yearId  = document.getElementById('csv_year').value;
+    var secEl   = document.getElementById('csv_section');
+    secEl.innerHTML = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    secEl.disabled  = true;
+    if (!gradeId || !yearId) return;
+    fetch(ajaxUrl + '?action=get_sections_by_grade&grade_id=' + gradeId + '&academic_year_id=' + yearId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.sections && data.sections.length) {
+                data.sections.forEach(function(s) {
+                    secEl.innerHTML += '<option value="' + s.section_id + '">' + s.section_name + '</option>';
+                });
+                secEl.disabled = false;
+            }
+        });
+}
+
+function submitBulkCsv() {
+    var fileInput = document.getElementById('csv_file_input');
+    if (!fileInput.files.length) {
+        alert('{{ 'CsvFileRequired'|get_plugin_lang('SchoolPlugin') }}');
+        return;
+    }
+    var btn = document.getElementById('btnBulkCsv');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>{{ 'Processing'|get_plugin_lang('SchoolPlugin') }}...';
+
+
+    var fd = new FormData();
+    fd.append('action',           'bulk_enroll_csv');
+    fd.append('academic_year_id', document.getElementById('csv_year').value);
+    fd.append('grade_id',         document.getElementById('csv_grade').value   || '0');
+    fd.append('section_id',       document.getElementById('csv_section').value || '0');
+    fd.append('tipo_ingreso',     document.getElementById('csv_tipo').value);
+    fd.append('csv_file',         fileInput.files[0]);
+
+    fetch(ajaxUrl, { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload mr-1"></i>{{ 'ProcessCsv'|get_plugin_lang('SchoolPlugin') }}';
+            if (!d.success) {
+                alert(d.message || 'Error');
+                return;
+            }
+            // Show results
+            var statusMap = {
+                enrolled: '<span class="badge badge-success">{{ 'BulkStatusEnrolled'|get_plugin_lang('SchoolPlugin') }}</span>',
+                skipped:  '<span class="badge badge-warning text-dark">{{ 'BulkStatusSkipped'|get_plugin_lang('SchoolPlugin') }}</span>',
+                error:    '<span class="badge badge-danger">{{ 'BulkStatusError'|get_plugin_lang('SchoolPlugin') }}</span>'
+            };
+            var tbody = '';
+            d.results.forEach(function(r) {
+                tbody += '<tr>';
+                tbody += '<td><code>' + r.username + '</code></td>';
+                tbody += '<td>' + (r.message || '') + '</td>';
+                tbody += '<td>' + (statusMap[r.status] || r.status) + '</td>';
+                tbody += '</tr>';
+            });
+            document.getElementById('csv_results_body').innerHTML = tbody;
+            document.getElementById('csv_summary').innerHTML =
+                '<div class="d-flex" style="gap:8px">' +
+                '<span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i>' + d.enrolled + ' matriculados</span>' +
+                '<span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-forward mr-1"></i>' + d.skipped + ' omitidos</span>' +
+                '<span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i>' + d.errors + ' errores</span>' +
+                '</div>';
+            document.getElementById('csv_results').style.display = '';
+            if (d.enrolled > 0) {
+                // Auto-refresh after 3 seconds if there were enrollments
+                setTimeout(function() { location.reload(); }, 3000);
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload mr-1"></i>{{ 'ProcessCsv'|get_plugin_lang('SchoolPlugin') }}';
+            alert('Error de conexión');
+        });
+}
+
+// =========================================================================
+// QUICK ENROLL
+// =========================================================================
+$('#quickEnrollModal').on('show.bs.modal', function() {
+    document.getElementById('qe_search').value = '';
+    document.getElementById('qe_user_id').value = '0';
+    document.getElementById('qe_results').style.display = 'none';
+    document.getElementById('qe_selected').style.display = 'none';
+    document.getElementById('qe_grade').innerHTML = '<option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    document.getElementById('qe_grade').disabled = true;
+    document.getElementById('qe_section').innerHTML = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    document.getElementById('qe_section').disabled = true;
+});
+
+document.getElementById('qe_search').addEventListener('input', function() {
+    clearTimeout(qeSearchTimer);
+    var q = this.value.trim();
+    if (q.length < 2) {
+        document.getElementById('qe_results').style.display = 'none';
+        return;
+    }
+    qeSearchTimer = setTimeout(function() {
+        var yearId = document.getElementById('qe_year').value;
+        fetch(ajaxUrl + '?action=search_users_no_matricula&q=' + encodeURIComponent(q) + '&academic_year_id=' + yearId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var box = document.getElementById('qe_results');
+                var html = '';
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(function(u) {
+                        html += '<div class="p-2 border-bottom" style="cursor:pointer" onclick="selectQeUser(' + u.user_id + ',\'' + (u.lastname + ', ' + u.firstname).replace(/'/g, "\\'") + '\')">';
+                        html += '<strong>' + u.lastname + ', ' + u.firstname + '</strong>';
+                        html += '<br><small class="text-muted">' + u.username + '</small>';
+                        html += '</div>';
+                    });
+                } else {
+                    html = '<div class="p-2 text-muted">{{ 'NoResults'|get_plugin_lang('SchoolPlugin') }}</div>';
+                }
+                box.innerHTML = html;
+                box.style.display = '';
+            });
+    }, 300);
+});
+
+function selectQeUser(userId, label) {
+    document.getElementById('qe_user_id').value = userId;
+    document.getElementById('qe_search').value = '';
+    document.getElementById('qe_results').style.display = 'none';
+    document.getElementById('qe_selected_name').textContent = label;
+    document.getElementById('qe_selected').style.display = '';
+}
+
+function clearQeUser() {
+    document.getElementById('qe_user_id').value = '0';
+    document.getElementById('qe_selected').style.display = 'none';
+}
+
+function loadQeGrades() {
+    var levelId = document.getElementById('qe_level').value;
+    var gradeEl = document.getElementById('qe_grade');
+    var secEl   = document.getElementById('qe_section');
+    gradeEl.innerHTML = '<option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    gradeEl.disabled = true;
+    secEl.innerHTML   = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    secEl.disabled    = true;
+    if (!levelId) return;
+    fetch(ajaxUrl + '?action=get_grades_by_level&level_id=' + levelId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.grades && data.grades.length) {
+                data.grades.forEach(function(g) {
+                    gradeEl.innerHTML += '<option value="' + g.id + '">' + g.name + '</option>';
+                });
+                gradeEl.disabled = false;
+            }
+        });
+}
+
+function loadQeSections() {
+    var gradeId = document.getElementById('qe_grade').value;
+    var yearId  = document.getElementById('qe_year').value;
+    var secEl   = document.getElementById('qe_section');
+    secEl.innerHTML = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
+    secEl.disabled  = true;
+    if (!gradeId || !yearId) return;
+    fetch(ajaxUrl + '?action=get_sections_by_grade&grade_id=' + gradeId + '&academic_year_id=' + yearId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.sections && data.sections.length) {
+                data.sections.forEach(function(s) {
+                    secEl.innerHTML += '<option value="' + s.section_id + '">' + s.section_name + '</option>';
+                });
+                secEl.disabled = false;
+            }
+        });
+}
+
+function submitQuickEnroll() {
+    var userId = document.getElementById('qe_user_id').value;
+    var yearId = document.getElementById('qe_year').value;
+    if (userId == '0' || !userId) {
+        alert('{{ 'QuickEnrollSelectUser'|get_plugin_lang('SchoolPlugin') }}');
+        return;
+    }
+    var fd = new FormData();
+    fd.append('action',           'quick_enroll');
+    fd.append('user_id',          userId);
+    fd.append('academic_year_id', yearId);
+    fd.append('grade_id',         document.getElementById('qe_grade').value   || '0');
+    fd.append('section_id',       document.getElementById('qe_section').value || '0');
+    fd.append('tipo_ingreso',     document.getElementById('qe_tipo').value);
+    var btn = document.getElementById('btnQuickEnroll');
+    btn.disabled = true;
+    fetch(ajaxUrl, { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            btn.disabled = false;
+            if (d.success) {
+                $('#quickEnrollModal').modal('hide');
+                if (confirm('{{ 'QuickEnrollSuccessCompleteFicha'|get_plugin_lang('SchoolPlugin') }}')) {
+                    window.location.href = d.ficha_url;
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert(d.message || 'Error');
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            alert('Error de conexión');
+        });
+}
+
 
 function deleteMatricula(id, name) {
     if (!confirm('¿Eliminar la matrícula de ' + name + '? Esta acción no se puede deshacer.')) return;

@@ -419,13 +419,49 @@ class AcademicManager
 
     public static function getClassroomStudents(int $classroomId): array
     {
-        $csTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $csTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $cTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $mTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $fTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $gTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $sTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
         $userTable = Database::get_main_table(TABLE_MAIN_USER);
 
-        $sql = "SELECT cs.*, u.firstname, u.lastname, u.username, u.email, u.picture_uri
+        $sql = "SELECT
+                    cs.id, cs.user_id, cs.classroom_id, cs.enrolled_at,
+                    u.firstname, u.lastname, u.username, u.email, u.picture_uri,
+                    -- current active matrícula for this academic year
+                    m.id         AS mat_id,
+                    m.grade_id   AS mat_grade_id,
+                    m.section_id AS mat_section_id,
+                    m.estado     AS mat_estado,
+                    -- classroom reference
+                    c.grade_id   AS cls_grade_id,
+                    c.section_id AS cls_section_id,
+                    -- human-readable names for the matrícula destination
+                    gm.name  AS mat_grade_name,
+                    sm.name  AS mat_section_name,
+                    -- mismatch flag
+                    CASE
+                        WHEN m.id IS NULL                                                          THEN 'no_matricula'
+                        WHEN m.estado = 'RETIRADO'                                                 THEN 'retirado'
+                        WHEN m.grade_id != c.grade_id OR m.section_id != c.section_id             THEN 'moved'
+                        ELSE NULL
+                    END AS matricula_alert
                 FROM $csTable cs
-                INNER JOIN $userTable u ON cs.user_id = u.id
-                WHERE cs.classroom_id = " . (int) $classroomId . "
+                INNER JOIN $userTable u  ON u.id  = cs.user_id
+                INNER JOIN $cTable   c  ON c.id  = cs.classroom_id
+                LEFT  JOIN $fTable   f  ON f.user_id = cs.user_id
+                LEFT  JOIN (
+                    SELECT ficha_id, MAX(id) AS last_id
+                    FROM $mTable
+                    WHERE academic_year_id = (SELECT academic_year_id FROM $cTable WHERE id = $classroomId LIMIT 1)
+                    GROUP BY ficha_id
+                ) latest ON latest.ficha_id = f.id
+                LEFT  JOIN $mTable   m  ON m.id  = latest.last_id
+                LEFT  JOIN $gTable   gm ON gm.id = m.grade_id
+                LEFT  JOIN $sTable   sm ON sm.id = m.section_id
+                WHERE cs.classroom_id = $classroomId
                 ORDER BY u.lastname ASC, u.firstname ASC";
 
         $result = Database::query($sql);
@@ -463,8 +499,101 @@ class AcademicManager
     {
         if ($classroomId <= 0 || $userId <= 0) return false;
         $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
-        Database::delete($table, ['classroom_id = ?' => $classroomId, 'user_id = ?' => $userId]);
+        Database::delete($table, ['classroom_id = ? AND user_id = ?' => [$classroomId, $userId]]);
         return true;
+    }
+
+    /**
+     * Returns students with an active matrícula for the classroom's year/grade/section
+     * that are NOT yet assigned to any classroom in that academic year.
+     */
+    public static function getClassroomCandidates(int $classroomId): array
+    {
+        if ($classroomId <= 0) return [];
+
+        $cTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $csTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $mTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
+        $fTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $uTable  = Database::get_main_table(TABLE_MAIN_USER);
+
+        // Get classroom data
+        $sql = "SELECT academic_year_id, grade_id, section_id FROM $cTable WHERE id = $classroomId LIMIT 1";
+        $row = Database::fetch_array(Database::query($sql), 'ASSOC');
+        if (!$row) return [];
+
+        $yearId    = (int) $row['academic_year_id'];
+        $gradeId   = (int) $row['grade_id'];
+        $sectionId = (int) $row['section_id'];
+
+        // Students already in any classroom of this academic year
+        $sql = "SELECT DISTINCT cs.user_id
+                FROM $csTable cs
+                INNER JOIN $cTable c ON c.id = cs.classroom_id
+                WHERE c.academic_year_id = $yearId";
+        $assigned = [];
+        $res = Database::query($sql);
+        while ($r = Database::fetch_array($res, 'ASSOC')) {
+            $assigned[] = (int) $r['user_id'];
+        }
+        $excludeClause = !empty($assigned)
+            ? 'AND f.user_id NOT IN (' . implode(',', $assigned) . ')'
+            : '';
+
+        $sql = "SELECT
+                    f.user_id,
+                    f.nombres,
+                    f.apellido_paterno,
+                    f.apellido_materno,
+                    u.username,
+                    u.email,
+                    u.picture_uri,
+                    u.id AS chamilo_user_id
+                FROM $mTable m
+                INNER JOIN $fTable f ON f.id = m.ficha_id
+                INNER JOIN $uTable u ON u.id = f.user_id
+                WHERE m.academic_year_id = $yearId
+                  AND m.grade_id = $gradeId
+                  AND m.section_id = $sectionId
+                  AND m.estado = 'ACTIVO'
+                  AND f.user_id IS NOT NULL
+                  $excludeClause
+                ORDER BY f.apellido_paterno ASC, f.apellido_materno ASC, f.nombres ASC";
+
+        $rows = [];
+        $res = Database::query($sql);
+        while ($r = Database::fetch_array($res, 'ASSOC')) {
+            $rows[] = $r;
+        }
+        return $rows;
+    }
+
+    /**
+     * Bulk-add multiple students to a classroom. Returns counts of added/skipped.
+     */
+    public static function addStudentsBulk(int $classroomId, array $userIds): array
+    {
+        $added   = 0;
+        $skipped = 0;
+        $table   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $now     = date('Y-m-d H:i:s');
+
+        foreach ($userIds as $userId) {
+            $userId = (int) $userId;
+            if ($userId <= 0) continue;
+            $sql = "SELECT id FROM $table WHERE classroom_id = $classroomId AND user_id = $userId";
+            if (Database::num_rows(Database::query($sql)) > 0) {
+                $skipped++;
+                continue;
+            }
+            Database::insert($table, [
+                'classroom_id' => $classroomId,
+                'user_id'      => $userId,
+                'enrolled_at'  => $now,
+            ]);
+            $added++;
+        }
+        return ['added' => $added, 'skipped' => $skipped];
     }
 
     public static function getStudentClassroom(int $yearId, int $userId): ?array
