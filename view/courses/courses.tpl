@@ -195,6 +195,7 @@
 {# ================================================================
    VISTA TARJETAS (grid)
    ================================================================ #}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 <style>
 /* ---- Session card (list view) ---- */
 .session-card {
@@ -581,6 +582,47 @@ a.course-card-header:hover {
     </div>
 </div>
 
+{# ── Modal: recortar imagen de curso ── #}
+<div class="modal fade" id="modalCropImage" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#1a3558 0%,#2563aa 100%);color:#fff;">
+                <h5 class="modal-title">
+                    <i class="fas fa-crop-alt mr-2"></i> Recortar imagen del curso
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body p-0" style="background:#1a1a2e;min-height:300px;">
+                <div style="max-height:420px;">
+                    <img id="cropperImg" src="" alt="" style="max-width:100%;display:block;">
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
+                <div class="d-flex align-items-center flex-wrap" style="gap:6px;">
+                    <small class="text-muted mr-1">Proporción:</small>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary btn-crop-ratio active" data-ratio="1" title="Cuadrado">1:1</button>
+                        <button class="btn btn-outline-secondary btn-crop-ratio" data-ratio="1.7778" title="Panorámico">16:9</button>
+                        <button class="btn btn-outline-secondary btn-crop-ratio" data-ratio="free" title="Sin restricción">Libre</button>
+                    </div>
+                    <div class="btn-group btn-group-sm ml-1">
+                        <button class="btn btn-outline-secondary" id="btnCropRotateL" title="Rotar -90°"><i class="fas fa-undo"></i></button>
+                        <button class="btn btn-outline-secondary" id="btnCropRotateR" title="Rotar +90°"><i class="fas fa-redo"></i></button>
+                        <button class="btn btn-outline-secondary" id="btnCropFlipH" title="Voltear horizontal"><i class="fas fa-arrows-alt-h"></i></button>
+                    </div>
+                </div>
+                <div class="d-flex" style="gap:6px;">
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="btnCropConfirm">
+                        <i class="fas fa-check mr-1"></i> Recortar y subir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
 (function () {
     var PREF_KEY = 'school_courses_view';
@@ -851,18 +893,22 @@ a.course-card-header:hover {
     // Reset modal state on close
     $($modal).on('hidden.bs.modal', function() { resetModal(); _activeCard = null; });
 
-    // ── Upload course image ───────────────────────────────────────────────────
-    var UPLOAD_ENDPOINT = '{{ _p.web_plugin }}school/src/courses/upload_course_image.php';
+    // ── Upload course image with Cropper.js ──────────────────────────────────
+    var UPLOAD_ENDPOINT  = '{{ _p.web_plugin }}school/src/courses/upload_course_image.php';
+    var _cropperInstance = null;
+    var _uploadCard      = null;
 
-    // Hidden file input (shared, reused for all cards)
     var $fileInput = document.createElement('input');
-    $fileInput.type   = 'file';
-    $fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp';
+    $fileInput.type    = 'file';
+    $fileInput.accept  = 'image/jpeg,image/png,image/gif,image/webp';
     $fileInput.style.display = 'none';
     document.body.appendChild($fileInput);
 
-    var _uploadCard = null;
+    var $cropModal      = document.getElementById('modalCropImage');
+    var $cropImg        = document.getElementById('cropperImg');
+    var $btnCropConfirm = document.getElementById('btnCropConfirm');
 
+    // Open file picker on camera button click
     document.querySelectorAll('.btn-upload-img').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -873,69 +919,131 @@ a.course-card-header:hover {
         });
     });
 
+    // File selected → read → open crop modal
     $fileInput.addEventListener('change', function() {
         if (!$fileInput.files.length || !_uploadCard) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            $cropImg.src = ev.target.result;
+            $('#modalCropImage').modal('show');
+        };
+        reader.readAsDataURL($fileInput.files[0]);
+    });
 
-        var file      = $fileInput.files[0];
-        var sessionId = _uploadCard.getAttribute('data-session-id');
-        var courseId  = _uploadCard.getAttribute('data-course-id');
-        var courseCode = _uploadCard.getAttribute('data-course-code');
+    // Init Cropper when modal is shown
+    $($cropModal).on('shown.bs.modal', function() {
+        if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+        _cropperInstance = new Cropper($cropImg, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.85,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false
+        });
+        // Reset confirm button
+        $btnCropConfirm.disabled = false;
+        $btnCropConfirm.innerHTML = '<i class="fas fa-check mr-1"></i> Recortar y subir';
+        // Reset ratio buttons
+        document.querySelectorAll('.btn-crop-ratio').forEach(function(b) {
+            b.classList.toggle('active', b.getAttribute('data-ratio') === '1');
+        });
+    });
 
-        // Show spinner on the header
-        var header = _uploadCard.querySelector('.course-inner-header');
-        var origContent = header ? header.innerHTML : '';
-        if (header) {
-            header.style.pointerEvents = 'none';
-            header.insertAdjacentHTML('beforeend',
-                '<div class="upload-spinner" style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;">'
-                + '<i class="fas fa-spinner fa-spin fa-2x text-white"></i></div>');
-        }
+    // Destroy Cropper when modal is hidden
+    $($cropModal).on('hidden.bs.modal', function() {
+        if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+        $cropImg.src = '';
+    });
 
-        var fd = new FormData();
-        fd.append('session_id',  sessionId);
-        fd.append('course_id',   courseId);
-        fd.append('course_code', courseCode);
-        fd.append('file',        file);
+    // Ratio buttons
+    document.querySelectorAll('.btn-crop-ratio').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.btn-crop-ratio').forEach(function(b){ b.classList.remove('active'); });
+            btn.classList.add('active');
+            if (_cropperInstance) {
+                var r = btn.getAttribute('data-ratio');
+                _cropperInstance.setAspectRatio(r === 'free' ? NaN : parseFloat(r));
+            }
+        });
+    });
 
-        fetch(UPLOAD_ENDPOINT, { method: 'POST', body: fd })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                // Remove spinner
-                var spinner = _uploadCard.querySelector('.upload-spinner');
-                if (spinner) spinner.remove();
-                if (header) header.style.pointerEvents = '';
+    // Rotate & flip
+    document.getElementById('btnCropRotateL').addEventListener('click', function() {
+        if (_cropperInstance) _cropperInstance.rotate(-90);
+    });
+    document.getElementById('btnCropRotateR').addEventListener('click', function() {
+        if (_cropperInstance) _cropperInstance.rotate(90);
+    });
+    document.getElementById('btnCropFlipH').addEventListener('click', function() {
+        if (!_cropperInstance) return;
+        var d = _cropperInstance.getData();
+        _cropperInstance.scaleX(d.scaleX === -1 ? 1 : -1);
+    });
 
-                if (data.success) {
-                    // Update image in the card header
-                    var img = _uploadCard.querySelector('.card-course-img');
-                    var placeholder = _uploadCard.querySelector('.card-course-placeholder');
-                    if (img) {
-                        img.src = data.image_url;
-                        img.style.display = '';
-                        if (placeholder) placeholder.classList.add('d-none');
-                    } else if (header) {
-                        // No img element yet — insert one
-                        var newImg = document.createElement('img');
-                        newImg.className = 'card-course-img';
-                        newImg.src = data.image_url;
-                        newImg.alt = '';
-                        newImg.addEventListener('error', function() {
-                            newImg.style.display = 'none';
-                            if (placeholder) placeholder.classList.remove('d-none');
-                        });
-                        header.insertBefore(newImg, header.firstChild);
-                        if (placeholder) placeholder.classList.add('d-none');
+    // Confirm: get cropped canvas → upload
+    $btnCropConfirm.addEventListener('click', function() {
+        if (!_cropperInstance || !_uploadCard) return;
+
+        $btnCropConfirm.disabled = true;
+        $btnCropConfirm.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Subiendo...';
+
+        var canvas = _cropperInstance.getCroppedCanvas({
+            maxWidth: 600, maxHeight: 600,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+
+        canvas.toBlob(function(blob) {
+            var sessionId  = _uploadCard.getAttribute('data-session-id');
+            var courseId   = _uploadCard.getAttribute('data-course-id');
+            var courseCode = _uploadCard.getAttribute('data-course-code');
+
+            var fd = new FormData();
+            fd.append('session_id',  sessionId);
+            fd.append('course_id',   courseId);
+            fd.append('course_code', courseCode);
+            fd.append('file',        blob, 'course-pic.png');
+
+            fetch(UPLOAD_ENDPOINT, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    $btnCropConfirm.disabled = false;
+                    $btnCropConfirm.innerHTML = '<i class="fas fa-check mr-1"></i> Recortar y subir';
+
+                    if (data.success) {
+                        var header      = _uploadCard.querySelector('.course-inner-header');
+                        var img         = _uploadCard.querySelector('.card-course-img');
+                        var placeholder = _uploadCard.querySelector('.card-course-placeholder');
+
+                        if (img) {
+                            img.src = data.image_url;
+                            img.style.display = '';
+                            if (placeholder) placeholder.classList.add('d-none');
+                        } else if (header) {
+                            var newImg = document.createElement('img');
+                            newImg.className = 'card-course-img';
+                            newImg.src       = data.image_url;
+                            newImg.alt       = '';
+                            header.insertBefore(newImg, header.firstChild);
+                            if (placeholder) placeholder.classList.add('d-none');
+                        }
+                        $('#modalCropImage').modal('hide');
+                    } else {
+                        alert('Error: ' + (data.message || 'No se pudo subir'));
                     }
-                } else {
-                    alert('Error al subir imagen: ' + (data.message || 'Error desconocido'));
-                }
-            })
-            .catch(function() {
-                var spinner = _uploadCard.querySelector('.upload-spinner');
-                if (spinner) spinner.remove();
-                if (header) header.style.pointerEvents = '';
-                alert('Error de conexión al subir la imagen');
-            });
+                })
+                .catch(function() {
+                    $btnCropConfirm.disabled = false;
+                    $btnCropConfirm.innerHTML = '<i class="fas fa-check mr-1"></i> Recortar y subir';
+                    alert('Error de conexión al subir la imagen');
+                });
+        }, 'image/png');
     });
 })();
 </script>
