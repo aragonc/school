@@ -74,6 +74,7 @@ class SchoolPlugin extends Plugin
                 'show_notifications' => 'boolean',
                 'show_help' => 'boolean',
                 'show_previous_tab' => 'boolean',
+                'show_my_aula' => 'boolean',
                 'template_certificate' => [
                     'type' => 'select',
                     'options' => [
@@ -2441,6 +2442,12 @@ class SchoolPlugin extends Plugin
     }
     public function getMenus(string $currentSection = ''): array
     {
+        $userInfo = api_get_user_info();
+        $isAdminOrSecretary = api_is_platform_admin() || ($userInfo && $userInfo['status'] == SCHOOL_SECRETARY);
+        $isStudent = $userInfo && (int) $userInfo['status'] === STUDENT;
+        $isTeacherUser = $userInfo && (int) $userInfo['status'] === COURSEMANAGER;
+        $canAccessPayments = $isAdminOrSecretary || $isStudent;
+
         $menus = [
             [
                 'id' => 0,
@@ -2463,6 +2470,20 @@ class SchoolPlugin extends Plugin
                 'items' => []
             ],
         ];
+
+        // Mi Aula: visible for teachers, students, admin and secretary (if enabled)
+        if ($this->get('show_my_aula') !== 'false' && ($isAdminOrSecretary || $isTeacherUser || $isStudent)) {
+            $menus[] = [
+                'id'      => 12,
+                'name'    => 'my-classroom',
+                'label'   => 'Mi Aula',
+                'current' => $currentSection === 'my-classroom',
+                'icon'    => 'chalkboard-teacher',
+                'class'   => $currentSection === 'my-classroom' ? 'active' : '',
+                'url'     => '/my-aula',
+                'items'   => [],
+            ];
+        }
 
         if ($this->get('show_notifications') !== 'false') {
             $menus[] = [
@@ -2547,10 +2568,6 @@ class SchoolPlugin extends Plugin
         ];
 
         // Payments & Products: only admin, secretary and student
-        $userInfo = api_get_user_info();
-        $isAdminOrSecretary = api_is_platform_admin() || ($userInfo && $userInfo['status'] == SCHOOL_SECRETARY);
-        $isStudent = $userInfo && (int) $userInfo['status'] === STUDENT;
-        $canAccessPayments = $isAdminOrSecretary || $isStudent;
 
         if ($canAccessPayments) {
             $paymentItems = [];
@@ -2645,20 +2662,7 @@ class SchoolPlugin extends Plugin
             ];
         }
 
-        // Mi Aula: visible for teachers, students, admin and secretary
-        $isTeacherUser = $userInfo && (int) $userInfo['status'] === COURSEMANAGER;
-        if ($isAdminOrSecretary || $isTeacherUser || $isStudent) {
-            $menus[] = [
-                'id'      => 12,
-                'name'    => 'my-classroom',
-                'label'   => 'Mi Aula',
-                'current' => $currentSection === 'my-classroom',
-                'icon'    => 'chalkboard-teacher',
-                'class'   => $currentSection === 'my-classroom' ? 'active' : '',
-                'url'     => '/my-aula',
-                'items'   => [],
-            ];
-        }
+
 
         return array_values($menus);
     }
