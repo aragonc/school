@@ -34,11 +34,13 @@ if (!$classroom) {
     exit;
 }
 
-$students   = AcademicManager::getClassroomStudents($classroomId);
-$candidates = AcademicManager::getClassroomCandidates($classroomId);
+$students    = AcademicManager::getClassroomStudents($classroomId);
+$candidates  = AcademicManager::getClassroomCandidates($classroomId);
+$auxiliaries = AcademicManager::getClassroomAuxiliaries($classroomId);
 
 $plugin->assign('classroom', $classroom);
 $plugin->assign('students', $students);
+$plugin->assign('auxiliaries', $auxiliaries);
 $plugin->assign('pending_count', count($candidates));
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_academic.php');

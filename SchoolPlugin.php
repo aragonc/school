@@ -43,7 +43,8 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_ACADEMIC_GRADE = 'plugin_school_academic_grade';
     const TABLE_SCHOOL_ACADEMIC_SECTION = 'plugin_school_academic_section';
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM = 'plugin_school_academic_classroom';
-    const TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT = 'plugin_school_academic_classroom_student';
+    const TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT   = 'plugin_school_academic_classroom_student';
+    const TABLE_SCHOOL_ACADEMIC_CLASSROOM_AUXILIARY = 'plugin_school_academic_classroom_auxiliary';
     const TABLE_SCHOOL_PAYMENT_PERIOD_PRICE = 'plugin_school_payment_period_price';
 
     const TABLE_SCHOOL_FICHA               = 'plugin_school_ficha';

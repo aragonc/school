@@ -670,6 +670,82 @@ class AcademicManager
     }
 
     // =========================================================================
+    // CLASSROOM AUXILIARIES
+    // =========================================================================
+
+    public static function getClassroomAuxiliaries(int $classroomId): array
+    {
+        $auxTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_AUXILIARY);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $sql = "SELECT a.id, a.user_id, a.created_at,
+                       u.firstname, u.lastname, u.username, u.picture_uri
+                FROM $auxTable a
+                INNER JOIN $userTable u ON u.id = a.user_id
+                WHERE a.classroom_id = $classroomId
+                ORDER BY u.lastname ASC, u.firstname ASC";
+        $result = Database::query($sql);
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $row['avatar'] = !empty($row['picture_uri'])
+                ? api_get_path(WEB_UPLOAD_PATH) . 'users/' . $row['user_id'] . '/' . $row['picture_uri']
+                : '';
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    public static function addAuxiliary(int $classroomId, int $userId): bool
+    {
+        if ($classroomId <= 0 || $userId <= 0) return false;
+        // Enforce max 3 auxiliaries per classroom
+        $auxTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_AUXILIARY);
+        $count = Database::fetch_array(
+            Database::query("SELECT COUNT(*) as c FROM $auxTable WHERE classroom_id = $classroomId"),
+            'ASSOC'
+        );
+        if ((int) $count['c'] >= 3) return false;
+        // Prevent duplicate (UNIQUE KEY will also catch it, but let's return gracefully)
+        $exists = Database::fetch_array(
+            Database::query("SELECT id FROM $auxTable WHERE classroom_id = $classroomId AND user_id = $userId LIMIT 1"),
+            'ASSOC'
+        );
+        if ($exists) return false;
+        Database::insert($auxTable, [
+            'classroom_id' => $classroomId,
+            'user_id'      => $userId,
+            'created_at'   => date('Y-m-d H:i:s'),
+        ]);
+        return true;
+    }
+
+    public static function removeAuxiliary(int $classroomId, int $userId): bool
+    {
+        if ($classroomId <= 0 || $userId <= 0) return false;
+        $auxTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_AUXILIARY);
+        Database::delete($auxTable, ['classroom_id = ? AND user_id = ?' => [$classroomId, $userId]]);
+        return true;
+    }
+
+    public static function searchAuxiliaries(string $query): array
+    {
+        if (empty(trim($query))) return [];
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $q = Database::escape_string(trim($query));
+        $sql = "SELECT id as user_id, firstname, lastname, username, email, status
+                FROM $userTable
+                WHERE status IN (" . COURSEMANAGER . ", " . SCHOOL_AUXILIARY . ") AND active = 1
+                AND (firstname LIKE '%$q%' OR lastname LIKE '%$q%' OR username LIKE '%$q%')
+                ORDER BY lastname ASC, firstname ASC
+                LIMIT 20";
+        $result = Database::query($sql);
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    // =========================================================================
     // PERIOD PRICING (by level, with optional grade override)
     // =========================================================================
 

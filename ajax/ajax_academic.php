@@ -207,6 +207,38 @@ switch ($action) {
         break;
 
     // =========================================================================
+    // CLASSROOM AUXILIARIES
+    // =========================================================================
+    case 'get_auxiliaries':
+        $classroomId = (int) ($_GET['classroom_id'] ?? 0);
+        $aux = AcademicManager::getClassroomAuxiliaries($classroomId);
+        echo json_encode(['success' => true, 'data' => $aux]);
+        break;
+
+    case 'add_auxiliary':
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        $result = AcademicManager::addAuxiliary($classroomId, $userId);
+        echo json_encode([
+            'success' => $result,
+            'message' => $result ? '' : 'No se puede agregar: ya existe o se alcanzó el límite de 3 auxiliares',
+        ]);
+        break;
+
+    case 'remove_auxiliary':
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        $result = AcademicManager::removeAuxiliary($classroomId, $userId);
+        echo json_encode(['success' => $result]);
+        break;
+
+    case 'search_auxiliaries':
+        $query = $_GET['q'] ?? '';
+        $results = AcademicManager::searchAuxiliaries($query);
+        echo json_encode(['success' => true, 'data' => $results]);
+        break;
+
+    // =========================================================================
     // SEARCH
     // =========================================================================
     case 'search_students':

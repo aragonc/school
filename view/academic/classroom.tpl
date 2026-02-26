@@ -40,6 +40,43 @@
                         </button>
                     </div>
                 </div>
+                <!-- Auxiliaries -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <small class="font-weight-bold text-muted"><i class="fas fa-chalkboard-teacher mr-1"></i>Auxiliares de aula</small>
+                        {% if auxiliaries|length < 3 %}
+                        <button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#auxiliaryModal">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-0" id="auxiliary_list_wrapper">
+                        {% if auxiliaries|length > 0 %}
+                            {% for aux in auxiliaries %}
+                            <div class="d-flex align-items-center px-3 py-2 border-bottom aux-row" id="aux-row-{{ aux.user_id }}">
+                                {% if aux.avatar %}
+                                    <img src="{{ aux.avatar }}" class="rounded-circle mr-2" width="36" height="36" alt="">
+                                {% else %}
+                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mr-2" style="width:36px;height:36px;font-size:13px;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <strong>{{ aux.lastname }}, {{ aux.firstname }}</strong>
+                                    <br><small class="text-muted">{{ aux.username }}</small>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm" onclick="removeAuxiliary({{ aux.user_id }})" title="Quitar">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-3 text-muted text-center" id="no_auxiliaries_msg">
+                                <small>Sin auxiliares asignados</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             <div class="col-md-3">
                 <div class="card text-center">
@@ -169,6 +206,25 @@
                 <button class="btn btn-outline-secondary btn-sm" onclick="saveTutor(0)">
                     <i class="fas fa-user-slash"></i> {{ 'RemoveTutor'|get_plugin_lang('SchoolPlugin') }}
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Auxiliary Modal -->
+<div class="modal fade" id="auxiliaryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-chalkboard-teacher mr-2"></i>Agregar auxiliar de aula</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Buscar docente o auxiliar</label>
+                    <input type="text" class="form-control" id="aux_search" placeholder="{{ 'TypeToSearch'|get_plugin_lang('SchoolPlugin') }}" autocomplete="off">
+                </div>
+                <div id="aux_results" style="max-height:280px; overflow-y:auto;"></div>
             </div>
         </div>
     </div>
@@ -383,4 +439,69 @@ function removeStudent(userId) {
     fd.append('user_id', userId);
     fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();});
 }
+
+// =========================================================================
+// AUXILIARIES
+// =========================================================================
+var auxSearchTimeout;
+
+document.getElementById('aux_search').addEventListener('input', function() {
+    clearTimeout(auxSearchTimeout);
+    var query = this.value.trim();
+    if (query.length < 2) {
+        document.getElementById('aux_results').innerHTML = '';
+        return;
+    }
+    auxSearchTimeout = setTimeout(function() {
+        fetch(ajaxUrl + '?action=search_auxiliaries&q=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(function(data) {
+                var html = '';
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(function(t) {
+                        var role = (t.status == 26) ? '<span class="badge badge-secondary ml-1">Auxiliar</span>' : '<span class="badge badge-info ml-1">Docente</span>';
+                        html += '<div class="d-flex align-items-center p-2 border-bottom" style="cursor:pointer" onclick="addAuxiliary(' + t.user_id + ')">';
+                        html += '<i class="fas fa-user-tie text-muted mr-2"></i>';
+                        html += '<div><strong>' + t.lastname + ', ' + t.firstname + '</strong>' + role + '<br><small class="text-muted">' + t.username + '</small></div>';
+                        html += '</div>';
+                    });
+                } else {
+                    html = '<div class="text-muted p-2">{{ 'NoResults'|get_plugin_lang('SchoolPlugin') }}</div>';
+                }
+                document.getElementById('aux_results').innerHTML = html;
+            });
+    }, 300);
+});
+
+function addAuxiliary(userId) {
+    var fd = new FormData();
+    fd.append('action', 'add_auxiliary');
+    fd.append('classroom_id', classroomId);
+    fd.append('user_id', userId);
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(function(d) {
+            if (d.success) {
+                location.reload();
+            } else {
+                alert(d.message || 'Error al agregar auxiliar');
+            }
+        });
+}
+
+function removeAuxiliary(userId) {
+    if (!confirm('¿Quitar este auxiliar del aula?')) return;
+    var fd = new FormData();
+    fd.append('action', 'remove_auxiliary');
+    fd.append('classroom_id', classroomId);
+    fd.append('user_id', userId);
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(function(d) { if (d.success) location.reload(); });
+}
+
+$('#auxiliaryModal').on('hidden.bs.modal', function() {
+    document.getElementById('aux_search').value = '';
+    document.getElementById('aux_results').innerHTML = '';
+});
 </script>
