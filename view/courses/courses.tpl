@@ -1,4 +1,69 @@
 
+{# ================================================================
+   MACRO: tarjeta de un curso (reutilizado en grid y en carousel)
+   ================================================================ #}
+{% macro course_card(course, session, cidx, current_user_id) %}
+{% set can_upload = (session.coach == 'true') or (course.course_coach_user_id == current_user_id) %}
+<div class="card course-inner-card"
+     data-session-id="{{ session.id }}"
+     data-course-id="{{ course.real_id }}"
+     data-course-code="{{ course.course_code }}"
+     data-coaches="{{ course.course_coaches|json_encode|e('html_attr') }}"
+     data-is-coach="{{ session.coach }}">
+    <a href="{{ course.url }}" class="course-inner-header bg-gc-{{ cidx }}">
+        {% if course.image_url %}
+        <img class="card-course-img" src="{{ course.image_url }}" alt="{{ course.title }}"
+             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+        {% endif %}
+        <div class="card-course-placeholder {% if course.image_url %}d-none{% endif %}">
+            {{ course.icon }}
+        </div>
+    </a>
+    {% if can_upload %}
+    <button type="button" class="btn-upload-img" title="Cambiar imagen del curso">
+        <i class="fas fa-camera"></i>
+    </button>
+    {% endif %}
+    <div class="card-body p-2">
+        <a href="{{ course.url }}" class="course-inner-title" title="{{ course.title }}">
+            {{ course.title }}
+        </a>
+        <div class="course-coaches-list mt-1">
+            {% if course.course_coaches %}
+                {% for coach in course.course_coaches %}
+                <div class="course-inner-coach d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-chalkboard-teacher"></i> <span class="coach-name-text">{{ coach.name }}</span></span>
+                    {% if session.coach == 'true' %}
+                    <button type="button" class="btn-remove-coach btn btn-link p-0 ml-1"
+                            data-coach-id="{{ coach.id }}"
+                            data-coach-name="{{ coach.name|e('html_attr') }}"
+                            title="Quitar docente">
+                        <i class="fas fa-times" style="font-size:10px;color:#e53e3e;"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if session.coach == 'true' %}
+                <button type="button" class="btn-assign-coach btn btn-link p-0 mt-1" title="Agregar docente" style="font-size:10px;color:#2563aa;">
+                    <i class="fas fa-user-plus mr-1"></i>Agregar docente
+                </button>
+                {% endif %}
+            {% else %}
+                <div class="course-inner-no-coach d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-exclamation-triangle"></i> Sin docente asignado</span>
+                    {% if session.coach == 'true' %}
+                    <button type="button" class="btn-assign-coach btn btn-link p-0 ml-1" title="Asignar docente">
+                        <i class="fas fa-user-plus" style="font-size:10px;color:#dd6b20;"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+{% import _self as macros %}
+
 {# ---- View toggle ---- #}
 <div class="d-flex justify-content-end align-items-center mb-2 pt-1">
     <div class="btn-group btn-group-sm" role="group" id="view-toggle-group">
@@ -82,18 +147,6 @@
         {% if categories %}
         <div class="pt-0 pb-4">
         {% for category in categories %}
-            <div id="category_{{ category.category_id }}" class="category">
-                <div class="container-fluid">
-                    <div class="row align-items-center pb-2 pt-3">
-                        <div class="col">
-                            <h4 class="category-name">
-                                {{ 'MyCoursesCurrent'|get_plugin_lang('SchoolPlugin') }}
-                            </h4>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {% for session in category.sessions %}
             <div class="card session-card mb-3">
                 <div class="card-header session-card-header d-flex align-items-center">
@@ -104,83 +157,47 @@
                         <span class="badge badge-light session-count-badge">
                             <i class="fas fa-book-open mr-1"></i>{{ session.number_courses }}
                         </span>
-                        <div class="btn-group btn-group-sm card-size-toggle" role="group" title="Tamaño de cards">
-                            <button type="button" class="btn btn-outline-light btn-card-size" data-size="sm" title="Pequeño">S</button>
-                            <button type="button" class="btn btn-outline-light btn-card-size" data-size="md" title="Mediano">M</button>
-                            <button type="button" class="btn btn-outline-light btn-card-size" data-size="lg" title="Grande">L</button>
-                        </div>
                     </span>
                 </div>
                 <div class="card-body session-courses-body">
                     {% if session.courses %}
-                    <div class="session-courses-grid">
-                        {% for course in session.courses %}
-                        {% set cidx = loop.index0 % 8 %}
-                        {% set can_upload = (session.coach == 'true') or (course.course_coach_user_id == current_user_id) %}
-                        <div class="card course-inner-card"
-                             data-session-id="{{ session.id }}"
-                             data-course-id="{{ course.real_id }}"
-                             data-course-code="{{ course.course_code }}"
-                             data-coaches="{{ course.course_coaches|json_encode|e('html_attr') }}"
-                             data-is-coach="{{ session.coach }}">
-                            <a href="{{ course.url }}" class="course-inner-header bg-gc-{{ cidx }}">
-                                {% if course.image_url %}
-                                <img class="card-course-img" src="{{ course.image_url }}" alt="{{ course.title }}"
-                                     onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
-                                {% endif %}
-                                <div class="card-course-placeholder {% if course.image_url %}d-none{% endif %}">
-                                    {{ course.icon }}
-                                </div>
-                            </a>
-                            {% if can_upload %}
-                            <button type="button" class="btn-upload-img" title="Cambiar imagen del curso">
-                                <i class="fas fa-camera"></i>
-                            </button>
-                            {% endif %}
-                            <div class="card-body p-2">
-                                <a href="{{ course.url }}" class="course-inner-title" title="{{ course.title }}">
-                                    {{ course.title }}
-                                </a>
-                                <div class="course-coaches-list mt-1">
-                                    {% if course.course_coaches %}
-                                        {% for coach in course.course_coaches %}
-                                        <div class="course-inner-coach d-flex align-items-center justify-content-between">
-                                            <span><i class="fas fa-chalkboard-teacher"></i> <span class="coach-name-text">{{ coach.name }}</span></span>
-                                            {% if session.coach == 'true' %}
-                                            <button type="button" class="btn-remove-coach btn btn-link p-0 ml-1"
-                                                    data-coach-id="{{ coach.id }}"
-                                                    data-coach-name="{{ coach.name|e('html_attr') }}"
-                                                    title="Quitar docente">
-                                                <i class="fas fa-times" style="font-size:10px;color:#e53e3e;"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
+                    {% if session.courses|length > 6 %}
+                    {# ── CAROUSEL: más de 6 cursos ── #}
+                    {% set total_pages = session.courses|batch(6)|length %}
+                    <div class="session-carousel-wrapper">
+                        <div id="carousel-session-{{ session.id }}" class="carousel slide session-carousel" data-interval="false">
+                            <div class="carousel-inner">
+                                {% for chunk in session.courses|batch(6) %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                    <div class="session-courses-grid">
+                                        {% for course in chunk %}
+                                        {{ macros.course_card(course, session, loop.index0 % 8, current_user_id) }}
                                         {% endfor %}
-                                        {% if session.coach == 'true' %}
-                                        <button type="button" class="btn-assign-coach btn btn-link p-0 mt-1" title="Agregar docente" style="font-size:10px;color:#2563aa;">
-                                            <i class="fas fa-user-plus mr-1"></i>Agregar docente
-                                        </button>
-                                        {% endif %}
-                                    {% else %}
-                                        <div class="course-inner-no-coach d-flex align-items-center justify-content-between">
-                                            <span><i class="fas fa-exclamation-triangle"></i> Sin docente asignado</span>
-                                            {% if session.coach == 'true' %}
-                                            <button type="button" class="btn-assign-coach btn btn-link p-0 ml-1" title="Asignar docente">
-                                                <i class="fas fa-user-plus" style="font-size:10px;color:#dd6b20;"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="card-footer p-2">
-                                <a href="{{ course.url }}" class="btn btn-primary btn-sm btn-block">
-                                    <i class="fas fa-play-circle mr-1"></i> Acceder
-                                </a>
+                                {% endfor %}
                             </div>
                         </div>
+                        <div class="session-carousel-nav">
+                            <a href="#carousel-session-{{ session.id }}" data-slide="prev"
+                               class="session-carousel-btn" title="Anterior">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                            <span class="session-carousel-page-info">1 / {{ total_pages }}</span>
+                            <a href="#carousel-session-{{ session.id }}" data-slide="next"
+                               class="session-carousel-btn" title="Siguiente">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    {# ── GRID normal: 6 o menos cursos ── #}
+                    <div class="session-courses-grid">
+                        {% for course in session.courses %}
+                        {{ macros.course_card(course, session, loop.index0 % 8, current_user_id) }}
                         {% endfor %}
                     </div>
+                    {% endif %}
                     {% else %}
                     <p class="text-muted mb-0"><em>Sin cursos disponibles.</em></p>
                     {% endif %}
@@ -238,31 +255,21 @@
 }
 .session-courses-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 14px;
-}
-.session-courses-grid[data-size="sm"] { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-.session-courses-grid[data-size="md"] { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
-.session-courses-grid[data-size="lg"] { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
-.card-size-toggle .btn-card-size {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 1px 7px;
-    line-height: 1.6;
-    border-color: rgba(255,255,255,.4);
-    color: rgba(255,255,255,.8);
-}
-.card-size-toggle .btn-card-size.active,
-.card-size-toggle .btn-card-size:hover {
-    background: rgba(255,255,255,.25);
-    border-color: rgba(255,255,255,.8);
-    color: #fff;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
 }
 .course-inner-card {
     border-radius: 8px !important;
     overflow: hidden;
     border: 1px solid #e2e8f0 !important;
     transition: transform .15s, box-shadow .15s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin-bottom: 1em;
+}
+.course-inner-card .card-body {
+    flex: 1;
 }
 .course-inner-card:hover {
     transform: translateY(-3px);
@@ -292,10 +299,10 @@
     width: 40px; height: 40px;
 }
 .course-inner-title {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 800;
     line-height: 1.3;
-    color: #1a202c;
+    color: #5a5c69;
     display: block;
 }
 .course-inner-title:hover {
@@ -320,10 +327,6 @@
 }
 .course-inner-no-coach i {
     color: #dd6b20;
-}
-.course-inner-card .card-footer {
-    background: transparent;
-    border-top: 1px solid #e2e8f0;
 }
 /* ---- Upload image button ---- */
 .course-inner-card {
@@ -353,6 +356,47 @@
 }
 .btn-upload-img:hover {
     background: rgba(37,99,170,.9);
+}
+
+/* ---- Session carousel ---- */
+.session-carousel-wrapper {
+    position: relative;
+}
+.session-carousel .carousel-item {
+    /* let the grid define height; no fixed height */
+}
+.session-carousel-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 14px;
+}
+.session-carousel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #edf2f7;
+    border: 1px solid #dde3ec;
+    color: #1a3558;
+    font-size: 13px;
+    text-decoration: none !important;
+    transition: background .15s, color .15s;
+}
+.session-carousel-btn:hover {
+    background: #2563aa;
+    color: #fff;
+    border-color: #2563aa;
+}
+.session-carousel-page-info {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4a5568;
+    min-width: 54px;
+    text-align: center;
 }
 
 /* ---- courses-grid (existing) ---- */
@@ -682,29 +726,6 @@ a.course-card-header:hover {
         div.addEventListener('click', function () { gotoList(div.getAttribute('data-anchor')); });
     });
 
-    // ---- Card size toggle ----
-    var SIZE_KEY = 'school_card_size';
-    var savedSize = 'md';
-    try { savedSize = localStorage.getItem(SIZE_KEY) || 'md'; } catch(e) {}
-
-    function applyCardSize(size) {
-        document.querySelectorAll('.session-courses-grid').forEach(function(grid) {
-            grid.setAttribute('data-size', size);
-        });
-        document.querySelectorAll('.btn-card-size').forEach(function(btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-size') === size);
-        });
-        try { localStorage.setItem(SIZE_KEY, size); } catch(e) {}
-    }
-
-    applyCardSize(savedSize);
-
-    document.querySelectorAll('.btn-card-size').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            applyCardSize(btn.getAttribute('data-size'));
-        });
-    });
-
     // When an image loads but errors → show placeholder
     document.querySelectorAll('.course-card-header img.card-course-img').forEach(function (img) {
         img.addEventListener('error', function () {
@@ -942,6 +963,23 @@ a.course-card-header:hover {
 
     // Reset modal state on close
     $($modal).on('hidden.bs.modal', function() { resetModal(); _activeCard = null; });
+
+    // ── Session carousel: init + page indicator ───────────────────────────────
+    $('.session-carousel').carousel({ interval: false, wrap: true });
+
+    $(document).on('slid.bs.carousel', '.session-carousel', function(e) {
+        var $wrapper = $(this).closest('.session-carousel-wrapper');
+        var total    = $(this).find('.carousel-item').length;
+        $wrapper.find('.session-carousel-page-info').text((e.to + 1) + ' / ' + total);
+
+        // Re-bind coach buttons on the newly active slide
+        var activeSlide = $(this).find('.carousel-item.active')[0];
+        if (activeSlide) {
+            activeSlide.querySelectorAll('.course-inner-card').forEach(function(card) {
+                bindCoachButtons(card);
+            });
+        }
+    });
 
     // ── Upload course image with Cropper.js ──────────────────────────────────
     var UPLOAD_ENDPOINT  = '{{ _p.web_plugin }}school/src/courses/upload_course_image.php';
