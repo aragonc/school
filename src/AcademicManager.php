@@ -502,6 +502,19 @@ class AcademicManager
             'user_id' => $userId,
             'enrolled_at' => date('Y-m-d H:i:s'),
         ]);
+
+        // If classroom has a linked Chamilo session, also enroll the student there
+        $sessionId = self::getClassroomSessionId($classroomId);
+        if ($sessionId > 0) {
+            SessionManager::subscribeUsersToSession(
+                $sessionId,
+                [$userId],
+                SESSION_VISIBLE_READ_ONLY,
+                false,
+                true
+            );
+        }
+
         return true;
     }
 
@@ -510,7 +523,36 @@ class AcademicManager
         if ($classroomId <= 0 || $userId <= 0) return false;
         $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
         Database::delete($table, ['classroom_id = ? AND user_id = ?' => [$classroomId, $userId]]);
+
+        // If classroom has a linked Chamilo session, also remove the student from it
+        $sessionId = self::getClassroomSessionId($classroomId);
+        if ($sessionId > 0) {
+            $sruTable   = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+            $srcruTable = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
+            Database::query(
+                "DELETE FROM $sruTable WHERE session_id = $sessionId AND user_id = $userId AND relation_type = 0"
+            );
+            Database::query(
+                "DELETE FROM $srcruTable WHERE session_id = $sessionId AND user_id = $userId"
+            );
+            $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+            Database::query(
+                "UPDATE $sessionTable SET nbr_users = GREATEST(0, nbr_users - 1) WHERE id = $sessionId"
+            );
+        }
+
         return true;
+    }
+
+    /**
+     * Returns the Chamilo session_id linked to a classroom, or 0 if none.
+     */
+    private static function getClassroomSessionId(int $classroomId): int
+    {
+        $cTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $res = Database::query("SELECT session_id FROM $cTable WHERE id = $classroomId LIMIT 1");
+        $row = Database::fetch_array($res, 'ASSOC');
+        return $row ? (int) ($row['session_id'] ?? 0) : 0;
     }
 
     /**
@@ -585,6 +627,7 @@ class AcademicManager
     {
         $added   = 0;
         $skipped = 0;
+        $addedIds = [];
         $table   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
         $now     = date('Y-m-d H:i:s');
 
@@ -601,8 +644,24 @@ class AcademicManager
                 'user_id'      => $userId,
                 'enrolled_at'  => $now,
             ]);
+            $addedIds[] = $userId;
             $added++;
         }
+
+        // If classroom has a linked Chamilo session, also enroll the newly added students
+        if (!empty($addedIds)) {
+            $sessionId = self::getClassroomSessionId($classroomId);
+            if ($sessionId > 0) {
+                SessionManager::subscribeUsersToSession(
+                    $sessionId,
+                    $addedIds,
+                    SESSION_VISIBLE_READ_ONLY,
+                    false,
+                    true
+                );
+            }
+        }
+
         return ['added' => $added, 'skipped' => $skipped];
     }
 
