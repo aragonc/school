@@ -214,7 +214,7 @@
                     <td>{{ student.email }}</td>
                     <td>{{ student.enrolled_at|date('d/m/Y') }}</td>
                     <td>
-                        <button class="btn btn-danger btn-sm" onclick="removeStudent({{ student.user_id }})" title="{{ 'Remove'|get_plugin_lang('SchoolPlugin') }}">
+                        <button class="btn btn-danger btn-sm" id="btn_remove_{{ student.user_id }}" onclick="removeStudent({{ student.user_id }}, this)" title="{{ 'Remove'|get_plugin_lang('SchoolPlugin') }}">
                             <i class="fas fa-user-minus"></i>
                         </button>
                     </td>
@@ -477,11 +477,17 @@ document.getElementById('candidate_filter').addEventListener('input', function()
 function addSelectedStudents() {
     var checked = document.querySelectorAll('.candidate-check:checked');
     if (checked.length === 0) return;
+    var count = checked.length;
+    var btn   = document.getElementById('btn_add_selected');
+    var label = document.getElementById('btn_add_label');
+    btn.disabled = true;
+    label.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Procesando ' + count + ' alumno(s)...';
+
     var fd = new FormData();
     fd.append('action', 'add_students_bulk');
     fd.append('classroom_id', classroomId);
     checked.forEach(function(chk) { fd.append('user_ids[]', chk.value); });
-    document.getElementById('btn_add_selected').disabled = true;
+
     fetch(ajaxUrl, {method:'POST', body:fd})
         .then(r => r.json())
         .then(function(d) {
@@ -489,18 +495,27 @@ function addSelectedStudents() {
                 location.reload();
             } else {
                 alert(d.message || 'Error');
-                document.getElementById('btn_add_selected').disabled = false;
+                btn.disabled = false;
+                label.textContent = '{{ 'AddSelected'|get_plugin_lang('SchoolPlugin') }}';
             }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            label.textContent = '{{ 'AddSelected'|get_plugin_lang('SchoolPlugin') }}';
         });
 }
 
-function removeStudent(userId) {
+function removeStudent(userId, btn) {
     if (!confirm('{{ 'ConfirmRemoveStudent'|get_plugin_lang('SchoolPlugin') }}')) return;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
     var fd = new FormData();
     fd.append('action', 'remove_student');
     fd.append('classroom_id', classroomId);
     fd.append('user_id', userId);
-    fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();});
+    fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{
+        if(d.success) { location.reload(); }
+        else { if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-user-minus"></i>';} }
+    });
 }
 
 // =========================================================================
