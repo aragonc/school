@@ -638,6 +638,7 @@ function submitBulkCsv() {
             // Show results
             var statusMap = {
                 enrolled: '<span class="badge badge-success">{{ 'BulkStatusEnrolled'|get_plugin_lang('SchoolPlugin') }}</span>',
+                updated:  '<span class="badge badge-info">Actualizado</span>',
                 skipped:  '<span class="badge badge-warning text-dark">{{ 'BulkStatusSkipped'|get_plugin_lang('SchoolPlugin') }}</span>',
                 error:    '<span class="badge badge-danger">{{ 'BulkStatusError'|get_plugin_lang('SchoolPlugin') }}</span>'
             };
@@ -650,15 +651,17 @@ function submitBulkCsv() {
                 tbody += '</tr>';
             });
             document.getElementById('csv_results_body').innerHTML = tbody;
+            var updated = d.updated || 0;
             document.getElementById('csv_summary').innerHTML =
                 '<div class="d-flex" style="gap:8px">' +
                 '<span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i>' + d.enrolled + ' matriculados</span>' +
+                (updated > 0 ? '<span class="badge badge-info px-2 py-1"><i class="fas fa-sync-alt mr-1"></i>' + updated + ' actualizados</span>' : '') +
                 '<span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-forward mr-1"></i>' + d.skipped + ' omitidos</span>' +
                 '<span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i>' + d.errors + ' errores</span>' +
                 '</div>';
             document.getElementById('csv_results').style.display = '';
-            if (d.enrolled > 0) {
-                // Auto-refresh after 3 seconds if there were enrollments
+            if (d.enrolled > 0 || updated > 0) {
+                // Auto-refresh after 3 seconds if there were enrollments or updates
                 setTimeout(function() { location.reload(); }, 3000);
             }
         })

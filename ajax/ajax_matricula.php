@@ -555,6 +555,11 @@ switch ($action) {
             break;
         }
 
+        // Auto-detect delimiter: semicolon vs comma
+        $firstLine = fgets($handle);
+        $delimiter = (substr_count($firstLine, ';') >= substr_count($firstLine, ',')) ? ';' : ',';
+        rewind($handle);
+
         $userTable    = Database::get_main_table(TABLE_MAIN_USER);
         $matTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA);
         $yearTable    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_YEAR);
@@ -578,14 +583,20 @@ switch ($action) {
         $colGrado   = false;
         $colSeccion = false;
 
-        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+        while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
             $lineNum++;
 
             // First row: detect if it's a header
             if ($lineNum === 1) {
                 $knownHeaders = ['usuario', 'username', 'user', 'año_academico', 'ano_academico',
                                  'tipo_ingreso', 'nivel', 'grado', 'seccion', 'sección'];
-                $firstCell = strtolower(trim($row[0] ?? ''));
+                // Strip UTF-8 BOM that Excel/Windows adds (\xEF\xBB\xBF)
+                $cell0 = $row[0] ?? '';
+                if (substr($cell0, 0, 3) === "\xef\xbb\xbf") {
+                    $cell0 = substr($cell0, 3);
+                    $row[0] = $cell0;
+                }
+                $firstCell = strtolower(trim($cell0));
                 if (in_array($firstCell, $knownHeaders)) {
                     // Parse column positions from header row
                     foreach ($row as $i => $cell) {
@@ -652,15 +663,15 @@ switch ($action) {
                             Database::query(
                                 "SELECT g.id FROM $gradeTable g
                                  INNER JOIN $levelTable l ON l.id = g.level_id
-                                 WHERE l.name = '$escNivel' AND g.name = '$escGrado' LIMIT 1"
+                                 WHERE LOWER(l.name) = LOWER('$escNivel') AND LOWER(g.name) = LOWER('$escGrado') LIMIT 1"
                             ),
                             'ASSOC'
                         );
                     }
                     if (!$gradeRow) {
-                        // Try without level constraint
+                        // Try without level constraint (case-insensitive)
                         $gradeRow = Database::fetch_array(
-                            Database::query("SELECT id FROM $gradeTable WHERE name = '$escGrado' LIMIT 1"),
+                            Database::query("SELECT id FROM $gradeTable WHERE LOWER(name) = LOWER('$escGrado') LIMIT 1"),
                             'ASSOC'
                         );
                     }
@@ -683,7 +694,7 @@ switch ($action) {
                 if (!isset($sectionCache[$ck])) {
                     $escSec  = Database::escape_string($csvSeccion);
                     $secRow  = Database::fetch_array(
-                        Database::query("SELECT id FROM $sectionTable WHERE name = '$escSec' LIMIT 1"),
+                        Database::query("SELECT id FROM $sectionTable WHERE LOWER(name) = LOWER('$escSec') LIMIT 1"),
                         'ASSOC'
                     );
                     $sectionCache[$ck] = $secRow ? (int) $secRow['id'] : 0;
@@ -728,12 +739,22 @@ switch ($action) {
 
             // ---- Check duplicate enrollment ----
             $existRow = Database::fetch_array(
-                Database::query("SELECT id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"),
+                Database::query("SELECT id, grade_id, section_id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"),
                 'ASSOC'
             );
             if ($existRow) {
-                $results[] = ['username' => $username, 'status' => 'skipped',
-                              'message'  => $userRow['lastname'] . ', ' . $userRow['firstname'] . ' — ya matriculado'];
+                // If CSV provides grade/section and the existing enrollment lacks them, update it
+                $updateData = [];
+                if ($gradeId   && empty($existRow['grade_id']))   $updateData['grade_id']   = $gradeId;
+                if ($sectionId && empty($existRow['section_id'])) $updateData['section_id'] = $sectionId;
+                if (!empty($updateData)) {
+                    Database::update($matTable, $updateData, ['id = ?' => (int) $existRow['id']]);
+                    $results[] = ['username' => $username, 'status' => 'updated',
+                                  'message'  => $userRow['lastname'] . ', ' . $userRow['firstname'] . ' — actualizado'];
+                } else {
+                    $results[] = ['username' => $username, 'status' => 'skipped',
+                                  'message'  => $userRow['lastname'] . ', ' . $userRow['firstname'] . ' — ya matriculado'];
+                }
                 continue;
             }
 
@@ -756,10 +777,12 @@ switch ($action) {
         fclose($handle);
 
         $enrolled = count(array_filter($results, fn($r) => $r['status'] === 'enrolled'));
+        $updated  = count(array_filter($results, fn($r) => $r['status'] === 'updated'));
         $skipped  = count(array_filter($results, fn($r) => $r['status'] === 'skipped'));
         $errors   = count(array_filter($results, fn($r) => $r['status'] === 'error'));
         echo json_encode(['success' => true, 'results' => $results,
-                          'enrolled' => $enrolled, 'skipped' => $skipped, 'errors' => $errors]);
+                          'enrolled' => $enrolled, 'updated' => $updated,
+                          'skipped' => $skipped, 'errors' => $errors]);
         break;
 
     // =========================================================================
