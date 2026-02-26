@@ -301,15 +301,13 @@ try {
     $userId = $userInfo['user_id'];
 
     // Método 1: Usar Login::init_user (más compatible con Chamilo)
-    $_SESSION['_user'] = $userInfo;
-    $_SESSION['_user']['user_id'] = $userId;
-    $_SESSION['is_platformAdmin'] = $userInfo['status'] == 1;
-    $_SESSION['is_allowedCreateCourse'] = $userInfo['status'] == 1 || $userInfo['status'] == 2;
+    $userInfo['user_id'] = $userId;
+    $userInfo['uidReset'] = true;
+    $_SESSION['is_platformAdmin'] = UserManager::is_admin($userId);
+    $_SESSION['is_allowedCreateCourse'] = $userInfo['status'] == COURSEMANAGER || (api_get_setting('drhCourseManagerRights') && $userInfo['status'] == DRH);
 
     // Establecer variables globales que Chamilo necesita
     $_user = $userInfo;
-    $_user['user_id'] = $userId;
-    $_user['uidReset'] = true;
 
     // Guardar en sesión usando ChamiloSession
     ChamiloSession::write('_user', $userInfo);
