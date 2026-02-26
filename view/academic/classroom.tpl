@@ -78,7 +78,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card text-center">
                     <div class="card-body py-2">
                         <small class="text-muted">{{ 'Students'|get_plugin_lang('SchoolPlugin') }}</small>
@@ -86,7 +86,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card text-center">
                     <div class="card-body py-2">
                         <small class="text-muted">{{ 'Capacity'|get_plugin_lang('SchoolPlugin') }}</small>
@@ -94,7 +94,51 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body py-2">
+                        <small class="text-muted">Auxiliares</small>
+                        <div class="h4 mb-0">{{ auxiliaries|length }}/3</div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+</div>
+
+<!-- Session Assignment -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <span><i class="fas fa-graduation-cap mr-1"></i> Sesión de Chamilo</span>
+        {% if not classroom.session_id %}
+        <button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#sessionModal">
+            <i class="fas fa-plus mr-1"></i> Asignar sesión
+        </button>
+        {% endif %}
+    </div>
+    <div class="card-body py-3">
+        {% if classroom.session_id and classroom.session_name %}
+        <div class="d-flex align-items-center">
+            <i class="fas fa-chalkboard text-primary mr-3" style="font-size:1.5rem;"></i>
+            <div>
+                <div class="font-weight-bold">{{ classroom.session_name }}</div>
+                <small class="text-muted">ID sesión: {{ classroom.session_id }}</small>
+            </div>
+            <div class="ml-auto d-flex align-items-center">
+                <button class="btn btn-success btn-sm mr-2" id="btn-enroll-session" onclick="enrollToSession()">
+                    <i class="fas fa-user-plus mr-1"></i> Inscribir alumnos
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="removeSession()">
+                    <i class="fas fa-unlink mr-1"></i> Quitar sesión
+                </button>
+            </div>
+        </div>
+        <div id="enroll-result" class="mt-2" style="display:none;"></div>
+        {% else %}
+        <p class="text-muted mb-0" style="font-size:13px;">
+            <i class="fas fa-info-circle mr-1"></i> Sin sesión asignada. Asigna una sesión de Chamilo para luego inscribir a los alumnos del aula.
+        </p>
+        {% endif %}
     </div>
 </div>
 
@@ -185,6 +229,25 @@
             </div>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Assign Session Modal -->
+<div class="modal fade" id="sessionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-graduation-cap mr-2"></i>Asignar sesión de Chamilo</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Buscar sesión por nombre</label>
+                    <input type="text" class="form-control" id="session_search" placeholder="{{ 'TypeToSearch'|get_plugin_lang('SchoolPlugin') }}" autocomplete="off">
+                </div>
+                <div id="session_results" style="max-height:300px; overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -503,5 +566,103 @@ function removeAuxiliary(userId) {
 $('#auxiliaryModal').on('hidden.bs.modal', function() {
     document.getElementById('aux_search').value = '';
     document.getElementById('aux_results').innerHTML = '';
+});
+
+// =========================================================================
+// SESSION ASSIGNMENT
+// =========================================================================
+var sessionSearchTimeout;
+
+document.getElementById('session_search').addEventListener('input', function() {
+    clearTimeout(sessionSearchTimeout);
+    var query = this.value.trim();
+    if (query.length < 2) {
+        document.getElementById('session_results').innerHTML = '';
+        return;
+    }
+    sessionSearchTimeout = setTimeout(function() {
+        fetch(ajaxUrl + '?action=search_sessions&q=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(function(data) {
+                var html = '';
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(function(s) {
+                        var dates = '';
+                        if (s.display_start_date) {
+                            dates = '<small class="text-muted"> · ' + s.display_start_date.substring(0, 10) +
+                                (s.display_end_date ? ' → ' + s.display_end_date.substring(0, 10) : '') + '</small>';
+                        }
+                        html += '<div class="d-flex align-items-center p-2 border-bottom" style="cursor:pointer" onclick="assignSession(' + s.id + ')">';
+                        html += '<i class="fas fa-chalkboard text-primary mr-2"></i>';
+                        html += '<div><strong>' + s.name + '</strong>' + dates;
+                        html += '<br><small class="text-muted">' + (s.nbr_courses || 0) + ' cursos &bull; ' + (s.nbr_users || 0) + ' inscritos</small></div>';
+                        html += '</div>';
+                    });
+                } else {
+                    html = '<div class="text-muted p-2">{{ 'NoResults'|get_plugin_lang('SchoolPlugin') }}</div>';
+                }
+                document.getElementById('session_results').innerHTML = html;
+            });
+    }, 300);
+});
+
+function assignSession(sessionId) {
+    var fd = new FormData();
+    fd.append('action', 'assign_session');
+    fd.append('classroom_id', classroomId);
+    fd.append('session_id', sessionId);
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(function(d) { if (d.success) location.reload(); else alert('Error al asignar sesión'); });
+}
+
+function removeSession() {
+    if (!confirm('¿Quitar la sesión de este aula?\n\nLos alumnos del aula serán removidos de esa sesión en Chamilo.')) return;
+    var fd = new FormData();
+    fd.append('action', 'remove_session');
+    fd.append('classroom_id', classroomId);
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(function(d) {
+            if (d.success) {
+                location.reload();
+            } else {
+                alert(d.message || 'Error al quitar la sesión');
+            }
+        });
+}
+
+function enrollToSession() {
+    var btn = document.getElementById('btn-enroll-session');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Inscribiendo...';
+    var fd = new FormData();
+    fd.append('action', 'enroll_to_session');
+    fd.append('classroom_id', classroomId);
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(function(d) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i> Inscribir alumnos';
+            var resultDiv = document.getElementById('enroll-result');
+            if (!resultDiv) return;
+            if (d.success) {
+                resultDiv.style.display = '';
+                resultDiv.innerHTML = '<div class="alert alert-success py-2 mb-0">' +
+                    '<i class="fas fa-check-circle mr-1"></i>' +
+                    '<strong>' + d.enrolled + '</strong> alumnos inscritos. ' +
+                    (d.skipped > 0 ? '<span class="text-muted">(' + d.skipped + ' ya estaban inscritos)</span>' : '') +
+                    '</div>';
+            } else {
+                resultDiv.style.display = '';
+                resultDiv.innerHTML = '<div class="alert alert-danger py-2 mb-0">' +
+                    '<i class="fas fa-exclamation-circle mr-1"></i>' + (d.message || 'Error') + '</div>';
+            }
+        });
+}
+
+$('#sessionModal').on('hidden.bs.modal', function() {
+    document.getElementById('session_search').value = '';
+    document.getElementById('session_results').innerHTML = '';
 });
 </script>

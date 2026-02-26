@@ -376,6 +376,16 @@ class AcademicManager
             $row['tutor_avatar'] = '';
         }
 
+        if (!empty($row['session_id'])) {
+            $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+            $sid = (int) $row['session_id'];
+            $sRes = Database::query("SELECT id, name FROM $sessionTable WHERE id = $sid LIMIT 1");
+            $sRow = Database::fetch_array($sRes, 'ASSOC');
+            $row['session_name'] = $sRow ? $sRow['name'] : '';
+        } else {
+            $row['session_name'] = '';
+        }
+
         return $row;
     }
 
@@ -743,6 +753,164 @@ class AcademicManager
             $rows[] = $row;
         }
         return $rows;
+    }
+
+    // =========================================================================
+    // CLASSROOM SESSION ASSIGNMENT
+    // =========================================================================
+
+    public static function searchSessions(string $query): array
+    {
+        if (empty(trim($query))) return [];
+        $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+        $q = Database::escape_string(trim($query));
+        $sql = "SELECT id, name, nbr_courses, nbr_users,
+                       display_start_date, display_end_date
+                FROM $sessionTable
+                WHERE name LIKE '%$q%'
+                ORDER BY name ASC
+                LIMIT 20";
+        $result = Database::query($sql);
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    public static function assignSessionToClassroom(int $classroomId, int $sessionId): bool
+    {
+        if ($classroomId <= 0 || $sessionId <= 0) return false;
+        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        Database::update($table, ['session_id' => $sessionId], ['id = ?' => $classroomId]);
+        return true;
+    }
+
+    /**
+     * Removes the assigned session from a classroom AND unsubscribes all
+     * classroom students from that Chamilo session.
+     * Returns ['removed' => N, 'error' => string|null]
+     */
+    public static function removeSessionFromClassroom(int $classroomId): array
+    {
+        if ($classroomId <= 0) {
+            return ['removed' => 0, 'error' => 'Invalid classroom'];
+        }
+
+        $classroomTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $cRes = Database::query("SELECT session_id FROM $classroomTable WHERE id = $classroomId LIMIT 1");
+        $cRow = Database::fetch_array($cRes, 'ASSOC');
+
+        if (!$cRow || empty($cRow['session_id'])) {
+            return ['removed' => 0, 'error' => null]; // nothing to do
+        }
+
+        $sessionId = (int) $cRow['session_id'];
+
+        // Get classroom student IDs
+        $csTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $result  = Database::query("SELECT user_id FROM $csTable WHERE classroom_id = $classroomId");
+        $userIds = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $userIds[] = (int) $row['user_id'];
+        }
+
+        $removed = 0;
+        if (!empty($userIds)) {
+            $ids = implode(',', $userIds);
+            $sruTable    = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+            $srcruTable  = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
+
+            // Count how many are actually enrolled before removing
+            $countRes = Database::query(
+                "SELECT COUNT(*) as c FROM $sruTable WHERE session_id = $sessionId AND user_id IN ($ids) AND relation_type = 0"
+            );
+            $countRow = Database::fetch_array($countRes, 'ASSOC');
+            $removed  = (int) ($countRow['c'] ?? 0);
+
+            // Remove from session_rel_user
+            Database::query(
+                "DELETE FROM $sruTable WHERE session_id = $sessionId AND user_id IN ($ids) AND relation_type = 0"
+            );
+            // Remove from session_rel_course_rel_user
+            Database::query(
+                "DELETE FROM $srcruTable WHERE session_id = $sessionId AND user_id IN ($ids)"
+            );
+            // Update session nbr_users counter
+            $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+            Database::query(
+                "UPDATE $sessionTable SET nbr_users = GREATEST(0, nbr_users - $removed) WHERE id = $sessionId"
+            );
+        }
+
+        // Clear session link on classroom
+        Database::update($classroomTable, ['session_id' => null], ['id = ?' => $classroomId]);
+
+        return ['removed' => $removed, 'error' => null];
+    }
+
+    /**
+     * Enrolls all classroom students into the classroom's assigned session.
+     * Uses SessionManager::subscribeUsersToSession with $empty_users=false
+     * so existing session enrollments are not removed.
+     * Returns ['enrolled' => N, 'skipped' => N, 'error' => string|null]
+     */
+    public static function enrollClassroomStudentsToSession(int $classroomId): array
+    {
+        $classroomTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $cRes = Database::query("SELECT session_id FROM $classroomTable WHERE id = $classroomId LIMIT 1");
+        $cRow = Database::fetch_array($cRes, 'ASSOC');
+
+        if (!$cRow || empty($cRow['session_id'])) {
+            return ['enrolled' => 0, 'skipped' => 0, 'error' => 'No hay sesión asignada al aula'];
+        }
+
+        $sessionId = (int) $cRow['session_id'];
+
+        // Verify session exists
+        $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+        $sRes = Database::query("SELECT id FROM $sessionTable WHERE id = $sessionId LIMIT 1");
+        if (!Database::fetch_array($sRes, 'ASSOC')) {
+            return ['enrolled' => 0, 'skipped' => 0, 'error' => 'La sesión asignada no existe'];
+        }
+
+        // Get classroom students
+        $csTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $result = Database::query("SELECT user_id FROM $csTable WHERE classroom_id = $classroomId");
+        $userIds = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $userIds[] = (int) $row['user_id'];
+        }
+
+        if (empty($userIds)) {
+            return ['enrolled' => 0, 'skipped' => 0, 'error' => null];
+        }
+
+        // Find already-enrolled users
+        $sruTable = Database::get_main_table(TABLE_MAIN_SESSION_USER);
+        $already  = [];
+        $res2 = Database::query(
+            "SELECT user_id FROM $sruTable WHERE session_id = $sessionId AND relation_type = 0"
+        );
+        while ($row = Database::fetch_array($res2, 'ASSOC')) {
+            $already[(int) $row['user_id']] = true;
+        }
+
+        $toEnroll = array_filter($userIds, fn($uid) => !isset($already[$uid]));
+        $skipped  = count($userIds) - count($toEnroll);
+
+        if (!empty($toEnroll)) {
+            // $empty_users = false: keeps existing session users untouched
+            SessionManager::subscribeUsersToSession(
+                $sessionId,
+                array_values($toEnroll),
+                SESSION_VISIBLE_READ_ONLY,
+                false,
+                true
+            );
+        }
+
+        return ['enrolled' => count($toEnroll), 'skipped' => $skipped, 'error' => null];
     }
 
     // =========================================================================

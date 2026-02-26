@@ -160,6 +160,43 @@ switch ($action) {
         echo json_encode(['success' => $result]);
         break;
 
+    // =========================================================================
+    // CLASSROOM SESSION
+    // =========================================================================
+    case 'search_sessions':
+        $query = $_GET['q'] ?? '';
+        $sessions = AcademicManager::searchSessions($query);
+        echo json_encode(['success' => true, 'data' => $sessions]);
+        break;
+
+    case 'assign_session':
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $sessionId   = (int) ($_POST['session_id'] ?? 0);
+        $result = AcademicManager::assignSessionToClassroom($classroomId, $sessionId);
+        echo json_encode(['success' => $result]);
+        break;
+
+    case 'remove_session':
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $result = AcademicManager::removeSessionFromClassroom($classroomId);
+        echo json_encode([
+            'success' => $result['error'] === null,
+            'removed' => $result['removed'],
+            'message' => $result['error'] ?? '',
+        ]);
+        break;
+
+    case 'enroll_to_session':
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $result = AcademicManager::enrollClassroomStudentsToSession($classroomId);
+        echo json_encode([
+            'success'  => $result['error'] === null,
+            'enrolled' => $result['enrolled'],
+            'skipped'  => $result['skipped'],
+            'message'  => $result['error'] ?? '',
+        ]);
+        break;
+
     case 'update_tutor':
         $classroomId = (int) ($_POST['classroom_id'] ?? 0);
         $tutorId = (int) ($_POST['tutor_id'] ?? 0);
