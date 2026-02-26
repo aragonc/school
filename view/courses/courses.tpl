@@ -121,7 +121,8 @@
                              data-session-id="{{ session.id }}"
                              data-course-id="{{ course.real_id }}"
                              data-course-code="{{ course.course_code }}"
-                             data-coach-name="{{ course.course_coach_name|e('html_attr') }}">
+                             data-coaches="{{ course.course_coaches|json_encode|e('html_attr') }}"
+                             data-is-coach="{{ session.coach }}">
                             <a href="{{ course.url }}" class="course-inner-header bg-gc-{{ cidx }}">
                                 {% if course.image_url %}
                                 <img class="card-course-img" src="{{ course.image_url }}" alt="{{ course.title }}"
@@ -140,25 +141,37 @@
                                 <a href="{{ course.url }}" class="course-inner-title" title="{{ course.title }}">
                                     {{ course.title }}
                                 </a>
-                                {% if course.course_coach_name %}
-                                <div class="course-inner-coach mt-1 d-flex align-items-center justify-content-between">
-                                    <span><i class="fas fa-chalkboard-teacher"></i> <span class="coach-name-text">{{ course.course_coach_name }}</span></span>
-                                    {% if session.coach == 'true' %}
-                                    <button type="button" class="btn-assign-coach btn btn-link p-0 ml-1" title="Cambiar tutor">
-                                        <i class="fas fa-pencil-alt" style="font-size:10px;color:#2563aa;"></i>
-                                    </button>
+                                <div class="course-coaches-list mt-1">
+                                    {% if course.course_coaches %}
+                                        {% for coach in course.course_coaches %}
+                                        <div class="course-inner-coach d-flex align-items-center justify-content-between">
+                                            <span><i class="fas fa-chalkboard-teacher"></i> <span class="coach-name-text">{{ coach.name }}</span></span>
+                                            {% if session.coach == 'true' %}
+                                            <button type="button" class="btn-remove-coach btn btn-link p-0 ml-1"
+                                                    data-coach-id="{{ coach.id }}"
+                                                    data-coach-name="{{ coach.name|e('html_attr') }}"
+                                                    title="Quitar docente">
+                                                <i class="fas fa-times" style="font-size:10px;color:#e53e3e;"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                        {% if session.coach == 'true' %}
+                                        <button type="button" class="btn-assign-coach btn btn-link p-0 mt-1" title="Agregar docente" style="font-size:10px;color:#2563aa;">
+                                            <i class="fas fa-user-plus mr-1"></i>Agregar docente
+                                        </button>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="course-inner-no-coach d-flex align-items-center justify-content-between">
+                                            <span><i class="fas fa-exclamation-triangle"></i> Sin docente asignado</span>
+                                            {% if session.coach == 'true' %}
+                                            <button type="button" class="btn-assign-coach btn btn-link p-0 ml-1" title="Asignar docente">
+                                                <i class="fas fa-user-plus" style="font-size:10px;color:#dd6b20;"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
                                     {% endif %}
                                 </div>
-                                {% else %}
-                                <div class="course-inner-no-coach mt-1 d-flex align-items-center justify-content-between">
-                                    <span><i class="fas fa-exclamation-triangle"></i> Sin tutor asignado</span>
-                                    {% if session.coach == 'true' %}
-                                    <button type="button" class="btn-assign-coach btn btn-link p-0 ml-1" title="Asignar tutor">
-                                        <i class="fas fa-user-plus" style="font-size:10px;color:#dd6b20;"></i>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                                {% endif %}
                             </div>
                             <div class="card-footer p-2">
                                 <a href="{{ course.url }}" class="btn btn-primary btn-sm btn-block">
@@ -531,14 +544,14 @@ a.course-card-header:hover {
 {% include 'profile/completion_modal.tpl' %}
 {% endif %}
 
-{# ── Modal: asignar / cambiar tutor de curso ── #}
+{# ── Modal: agregar docente al curso ── #}
 <div class="modal fade" id="modalAssignCoach" tabindex="-1" role="dialog" aria-labelledby="modalAssignCoachLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header" style="background:linear-gradient(135deg,#1a3558 0%,#2563aa 100%);color:#fff;">
                 <h5 class="modal-title" id="modalAssignCoachLabel">
                     <i class="fas fa-chalkboard-teacher mr-2"></i>
-                    <span id="modalAssignCoachAction">Asignar tutor</span>
+                    Agregar docente
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
                     <span aria-hidden="true">&times;</span>
@@ -567,10 +580,7 @@ a.course-card-header:hover {
                     Seleccionado: <strong id="coachSelectedName"></strong>
                 </div>
             </div>
-            <div class="modal-footer d-flex justify-content-between">
-                <button type="button" class="btn btn-sm btn-outline-danger" id="btnRemoveCoach">
-                    <i class="fas fa-user-times mr-1"></i> Quitar tutor
-                </button>
+            <div class="modal-footer d-flex justify-content-end">
                 <div>
                     <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-sm btn-primary" id="btnSaveCoach" disabled>
@@ -706,54 +716,143 @@ a.course-card-header:hover {
     });
 
     // ── Assign coach modal ────────────────────────────────────────────────────
-    var COACH_ENDPOINT = '{{ _p.web_plugin }}school/src/courses/assign_course_coach.php';
-    var _activeCard    = null;
+    var COACH_ENDPOINT    = '{{ _p.web_plugin }}school/src/courses/assign_course_coach.php';
+    var _activeCard       = null;
     var _selectedUserId   = null;
     var _selectedUserName = null;
 
-    var $modal          = document.getElementById('modalAssignCoach');
-    var $searchInput    = document.getElementById('coachSearchInput');
-    var $searchBtn      = document.getElementById('btnSearchCoach');
-    var $results        = document.getElementById('coachSearchResults');
-    var $selected       = document.getElementById('coachSelected');
-    var $selectedName   = document.getElementById('coachSelectedName');
-    var $saveBtn        = document.getElementById('btnSaveCoach');
-    var $removeBtn      = document.getElementById('btnRemoveCoach');
-    var $actionLabel    = document.getElementById('modalAssignCoachAction');
-    var $courseName     = document.getElementById('modalCourseName');
+    var $modal        = document.getElementById('modalAssignCoach');
+    var $searchInput  = document.getElementById('coachSearchInput');
+    var $searchBtn    = document.getElementById('btnSearchCoach');
+    var $results      = document.getElementById('coachSearchResults');
+    var $selected     = document.getElementById('coachSelected');
+    var $selectedName = document.getElementById('coachSelectedName');
+    var $saveBtn      = document.getElementById('btnSaveCoach');
+    var $courseName   = document.getElementById('modalCourseName');
 
     function resetModal() {
         $searchInput.value = '';
         $results.innerHTML = '';
         $selected.classList.add('d-none');
-        $saveBtn.disabled  = true;
-        _selectedUserId    = null;
-        _selectedUserName  = null;
+        $saveBtn.disabled = true;
+        _selectedUserId   = null;
+        _selectedUserName = null;
+    }
+
+    /**
+     * Re-render the coaches list inside a card and re-bind all coach buttons.
+     * @param {Element} card     - .course-inner-card element
+     * @param {Array}   coaches  - [{id, name}, ...] from backend
+     */
+    function renderCoachesList(card, coaches) {
+        // Update JSON attribute
+        card.setAttribute('data-coaches', JSON.stringify(coaches));
+
+        var list = card.querySelector('.course-coaches-list');
+        if (!list) return;
+
+        var isCoach = card.getAttribute('data-is-coach') === 'true';
+        var html = '';
+
+        if (coaches.length) {
+            coaches.forEach(function(c) {
+                html += '<div class="course-inner-coach d-flex align-items-center justify-content-between">'
+                      + '<span><i class="fas fa-chalkboard-teacher"></i> <span class="coach-name-text">'
+                      + escHtml(c.name) + '</span></span>';
+                if (isCoach) {
+                    html += '<button type="button" class="btn-remove-coach btn btn-link p-0 ml-1"'
+                          + ' data-coach-id="' + c.id + '"'
+                          + ' data-coach-name="' + escHtml(c.name) + '"'
+                          + ' title="Quitar docente">'
+                          + '<i class="fas fa-times" style="font-size:10px;color:#e53e3e;"></i>'
+                          + '</button>';
+                }
+                html += '</div>';
+            });
+            if (isCoach) {
+                html += '<button type="button" class="btn-assign-coach btn btn-link p-0 mt-1"'
+                      + ' title="Agregar docente" style="font-size:10px;color:#2563aa;">'
+                      + '<i class="fas fa-user-plus mr-1"></i>Agregar docente</button>';
+            }
+        } else {
+            html += '<div class="course-inner-no-coach d-flex align-items-center justify-content-between">'
+                  + '<span><i class="fas fa-exclamation-triangle"></i> Sin docente asignado</span>';
+            if (isCoach) {
+                html += '<button type="button" class="btn-assign-coach btn btn-link p-0 ml-1"'
+                      + ' title="Asignar docente">'
+                      + '<i class="fas fa-user-plus" style="font-size:10px;color:#dd6b20;"></i>'
+                      + '</button>';
+            }
+            html += '</div>';
+        }
+
+        list.innerHTML = html;
+        bindCoachButtons(card);
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function bindCoachButtons(card) {
+        card.querySelectorAll('.btn-assign-coach').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openAssignModal(card);
+            });
+        });
+
+        card.querySelectorAll('.btn-remove-coach').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var coachId   = btn.getAttribute('data-coach-id');
+                var coachName = btn.getAttribute('data-coach-name');
+                if (!confirm('¿Quitar a ' + coachName + ' de este curso?')) return;
+
+                var sessionId = card.getAttribute('data-session-id');
+                var courseId  = card.getAttribute('data-course-id');
+
+                var fd = new FormData();
+                fd.append('action',        'remove');
+                fd.append('session_id',    sessionId);
+                fd.append('course_id',     courseId);
+                fd.append('coach_user_id', coachId);
+
+                fetch(COACH_ENDPOINT, { method: 'POST', body: fd })
+                    .then(function(r){ return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            renderCoachesList(card, data.coaches);
+                        } else {
+                            alert('Error: ' + (data.message || 'No se pudo quitar'));
+                        }
+                    })
+                    .catch(function() {
+                        alert('Error de conexión');
+                    });
+            });
+        });
     }
 
     function openAssignModal(card) {
         _activeCard = card;
-        var sessionId  = card.getAttribute('data-session-id');
-        var courseId   = card.getAttribute('data-course-id');
-        var coachName  = card.getAttribute('data-coach-name');
         var courseTitle = card.querySelector('.course-inner-title')
-                             ? card.querySelector('.course-inner-title').textContent.trim()
-                             : '';
-
+                            ? card.querySelector('.course-inner-title').textContent.trim()
+                            : '';
         resetModal();
-        $courseName.textContent  = 'Curso: ' + courseTitle;
-        $actionLabel.textContent = coachName ? 'Cambiar tutor' : 'Asignar tutor';
-        $removeBtn.style.display = coachName ? '' : 'none';
-
+        $courseName.textContent = 'Curso: ' + courseTitle;
         $('#modalAssignCoach').modal('show');
     }
 
-    document.querySelectorAll('.btn-assign-coach').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            openAssignModal(btn.closest('.course-inner-card'));
-        });
+    // Initial binding for all cards
+    document.querySelectorAll('.course-inner-card').forEach(function(card) {
+        bindCoachButtons(card);
     });
 
     function doSearch() {
@@ -774,11 +873,11 @@ a.course-card-header:hover {
                 }
                 var html = '<ul class="list-group list-group-flush">';
                 data.users.forEach(function(u) {
-                    html += '<li class="list-group-item list-group-item-action py-1 px-2 coach-result-item" '
-                          + 'data-id="' + u.id + '" data-name="' + u.name.replace(/"/g,'&quot;') + '" '
-                          + 'style="cursor:pointer;font-size:13px;">'
+                    html += '<li class="list-group-item list-group-item-action py-1 px-2 coach-result-item"'
+                          + ' data-id="' + u.id + '" data-name="' + escHtml(u.name) + '"'
+                          + ' style="cursor:pointer;font-size:13px;">'
                           + '<i class="fas fa-user mr-1 text-muted"></i>'
-                          + u.name + ' <small class="text-muted">(' + u.username + ')</small>'
+                          + escHtml(u.name) + ' <small class="text-muted">(' + escHtml(u.username) + ')</small>'
                           + '</li>';
                 });
                 html += '</ul>';
@@ -827,25 +926,7 @@ a.course-card-header:hover {
             .then(function(data) {
                 $saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i>Guardar';
                 if (data.success) {
-                    // Update card UI without reload
-                    _activeCard.setAttribute('data-coach-name', data.coach_name);
-                    var coachDiv = _activeCard.querySelector('.course-inner-coach, .course-inner-no-coach');
-                    if (coachDiv) {
-                        coachDiv.className = 'course-inner-coach mt-1 d-flex align-items-center justify-content-between';
-                        var editBtn = coachDiv.querySelector('.btn-assign-coach');
-                        var editBtnHtml = editBtn ? editBtn.outerHTML : '';
-                        coachDiv.innerHTML = '<span><i class="fas fa-chalkboard-teacher"></i> <span class="coach-name-text">' + data.coach_name + '</span></span>' + editBtnHtml;
-                        if (!editBtnHtml) {
-                            // Re-bind if button was recreated
-                            var newBtn = coachDiv.querySelector('.btn-assign-coach');
-                            if (newBtn) {
-                                newBtn.addEventListener('click', function(e) {
-                                    e.preventDefault(); e.stopPropagation();
-                                    openAssignModal(newBtn.closest('.course-inner-card'));
-                                });
-                            }
-                        }
-                    }
+                    renderCoachesList(_activeCard, data.coaches);
                     $('#modalAssignCoach').modal('hide');
                 } else {
                     alert('Error: ' + (data.message || 'No se pudo guardar'));
@@ -856,37 +937,6 @@ a.course-card-header:hover {
                 $saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i>Guardar';
                 alert('Error de conexión');
                 $saveBtn.disabled = false;
-            });
-    });
-
-    $removeBtn.addEventListener('click', function() {
-        if (!_activeCard) return;
-        if (!confirm('¿Quitar el tutor asignado a este curso?')) return;
-
-        var sessionId = _activeCard.getAttribute('data-session-id');
-        var courseId  = _activeCard.getAttribute('data-course-id');
-
-        var fd = new FormData();
-        fd.append('action',     'remove');
-        fd.append('session_id', sessionId);
-        fd.append('course_id',  courseId);
-
-        fetch(COACH_ENDPOINT, { method: 'POST', body: fd })
-            .then(function(r){ return r.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    _activeCard.setAttribute('data-coach-name', '');
-                    var coachDiv = _activeCard.querySelector('.course-inner-coach, .course-inner-no-coach');
-                    if (coachDiv) {
-                        var editBtn = coachDiv.querySelector('.btn-assign-coach');
-                        var editBtnHtml = editBtn ? editBtn.outerHTML : '';
-                        coachDiv.className = 'course-inner-no-coach mt-1 d-flex align-items-center justify-content-between';
-                        coachDiv.innerHTML = '<span><i class="fas fa-exclamation-triangle"></i> Sin tutor asignado</span>' + editBtnHtml;
-                    }
-                    $('#modalAssignCoach').modal('hide');
-                } else {
-                    alert('Error: ' + (data.message || 'No se pudo quitar'));
-                }
             });
     });
 

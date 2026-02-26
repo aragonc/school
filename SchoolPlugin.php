@@ -199,6 +199,8 @@ class SchoolPlugin extends Plugin
             }
         }
 
+        $this->twig->addFilter(new Twig_SimpleFilter('json_encode', 'json_encode'));
+
         $js_file_to_string = '';
 
         $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PLUGIN_PATH).'school/assets/jquery/jquery.min.js').'"></script>'."\n";
@@ -1958,6 +1960,27 @@ class SchoolPlugin extends Plugin
         $result = Database::query($sql);
         $rows = $result->fetchAll(PDO::FETCH_ASSOC);
 
+        // Build map of all coaches per course for this session
+        $coachesMap = [];
+        if (!empty($rows)) {
+            $courseIds = array_unique(array_column($rows, 'real_id'));
+            $courseIdsStr = implode(',', array_map('intval', $courseIds));
+            $sqlCoaches = "SELECT scu.c_id, scu.user_id, CONCAT(u.firstname, ' ', u.lastname) AS coach_name
+                           FROM $tbl_session_course_user scu
+                           INNER JOIN $tbl_user u ON u.id = scu.user_id
+                           WHERE scu.session_id = $session_id
+                             AND scu.c_id IN ($courseIdsStr)
+                             AND scu.status = 2
+                           ORDER BY u.lastname ASC, u.firstname ASC";
+            $coachResult = Database::query($sqlCoaches);
+            while ($coachRow = Database::fetch_array($coachResult, 'ASSOC')) {
+                $coachesMap[(int)$coachRow['c_id']][] = [
+                    'id'   => (int)$coachRow['user_id'],
+                    'name' => $coachRow['coach_name'],
+                ];
+            }
+        }
+
         $count = 0;
         if (count($rows) > 0) {
             foreach ($rows as $result_row) {
@@ -1972,6 +1995,7 @@ class SchoolPlugin extends Plugin
                     ? api_get_path(WEB_COURSE_PATH) . $result_row['course_code'] . '/course-pic.png'
                     : '';
                 $result_row['position_number'] = $count-1;
+                $result_row['course_coaches'] = $coachesMap[(int)$result_row['real_id']] ?? [];
                 if ($count % 2 == 0) {
                     $result_row['ribbon'] = 'even';
                 } else {

@@ -106,27 +106,37 @@ if ($action === 'assign' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $tbl_scu = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
     $tbl_usr = Database::get_main_table(TABLE_MAIN_USER);
 
-    // Remove any existing coach for this course+session
-    Database::query(
-        "DELETE FROM $tbl_scu
-         WHERE session_id = $sessionId AND c_id = $courseId AND status = 2"
+    // Check if this coach is already assigned to this course+session
+    $rExists = Database::query(
+        "SELECT 1 FROM $tbl_scu
+         WHERE session_id = $sessionId AND c_id = $courseId AND user_id = $coachUserId AND status = 2
+         LIMIT 1"
     );
+    if (Database::num_rows($rExists) > 0) {
+        echo json_encode(['success' => false, 'message' => 'El docente ya está asignado a este curso']);
+        exit;
+    }
 
-    // Insert new coach
+    // Insert new coach without removing existing ones
     Database::query(
         "INSERT INTO $tbl_scu (session_id, c_id, user_id, status)
          VALUES ($sessionId, $courseId, $coachUserId, 2)"
     );
 
-    // Return coach name for UI update
-    $rName = Database::query(
-        "SELECT CONCAT(firstname,' ',lastname) AS name
-         FROM $tbl_usr WHERE id = $coachUserId LIMIT 1"
+    // Return all coaches for UI update
+    $rCoaches = Database::query(
+        "SELECT scu.user_id, CONCAT(u.firstname,' ',u.lastname) AS name
+         FROM $tbl_scu scu
+         INNER JOIN $tbl_usr u ON u.id = scu.user_id
+         WHERE scu.session_id = $sessionId AND scu.c_id = $courseId AND scu.status = 2
+         ORDER BY u.lastname ASC, u.firstname ASC"
     );
-    $nameRow   = Database::fetch_array($rName, 'ASSOC');
-    $coachName = $nameRow['name'] ?? '';
+    $coaches = [];
+    while ($row = Database::fetch_array($rCoaches, 'ASSOC')) {
+        $coaches[] = ['id' => (int)$row['user_id'], 'name' => $row['name']];
+    }
 
-    echo json_encode(['success' => true, 'coach_name' => $coachName]);
+    echo json_encode(['success' => true, 'coaches' => $coaches]);
     exit;
 }
 
@@ -137,13 +147,38 @@ if ($action === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    $coachUserId = (int)($_POST['coach_user_id'] ?? 0);
     $tbl_scu = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
-    Database::query(
-        "DELETE FROM $tbl_scu
-         WHERE session_id = $sessionId AND c_id = $courseId AND status = 2"
-    );
+    $tbl_usr = Database::get_main_table(TABLE_MAIN_USER);
 
-    echo json_encode(['success' => true]);
+    if ($coachUserId) {
+        // Remove a specific coach
+        Database::query(
+            "DELETE FROM $tbl_scu
+             WHERE session_id = $sessionId AND c_id = $courseId AND user_id = $coachUserId AND status = 2"
+        );
+    } else {
+        // Remove all coaches (backward-compat)
+        Database::query(
+            "DELETE FROM $tbl_scu
+             WHERE session_id = $sessionId AND c_id = $courseId AND status = 2"
+        );
+    }
+
+    // Return remaining coaches for UI update
+    $rCoaches = Database::query(
+        "SELECT scu.user_id, CONCAT(u.firstname,' ',u.lastname) AS name
+         FROM $tbl_scu scu
+         INNER JOIN $tbl_usr u ON u.id = scu.user_id
+         WHERE scu.session_id = $sessionId AND scu.c_id = $courseId AND scu.status = 2
+         ORDER BY u.lastname ASC, u.firstname ASC"
+    );
+    $coaches = [];
+    while ($row = Database::fetch_array($rCoaches, 'ASSOC')) {
+        $coaches[] = ['id' => (int)$row['user_id'], 'name' => $row['name']];
+    }
+
+    echo json_encode(['success' => true, 'coaches' => $coaches]);
     exit;
 }
 
