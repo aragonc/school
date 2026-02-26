@@ -233,11 +233,9 @@
                     </a>
                 </div>
 
-                <p class="text-muted small mb-2"><i class="fas fa-info-circle"></i> {{ 'CsvDefaultsHelp'|get_plugin_lang('SchoolPlugin') }}</p>
-
                 <div class="row">
                     <div class="col-md-6">
-                        <!-- Academic year (default) -->
+                        <!-- Academic year (default for rows without año_academico column) -->
                         <div class="form-group">
                             <label class="font-weight-bold">{{ 'AcademicYear'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
                             <select class="form-control" id="csv_year">
@@ -247,46 +245,6 @@
                                     {{ y.name }}{% if y.active %} ★{% endif %}
                                 </option>
                                 {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <!-- Tipo ingreso (default) -->
-                        <div class="form-group">
-                            <label class="font-weight-bold">{{ 'TipoIngreso'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
-                            <select class="form-control" id="csv_tipo">
-                                <option value="NUEVO_INGRESO">{{ 'NewEnrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
-                                <option value="REINGRESO">{{ 'ReenrollmentType'|get_plugin_lang('SchoolPlugin') }}</option>
-                                <option value="CONTINUACION">{{ 'ContinuacionType'|get_plugin_lang('SchoolPlugin') }}</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="font-weight-bold">{{ 'Level'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
-                            <select class="form-control" id="csv_level" onchange="loadCsvGrades()">
-                                <option value="">— {{ 'SelectLevel'|get_plugin_lang('SchoolPlugin') }} —</option>
-                                {% for level in levels %}
-                                <option value="{{ level.id }}">{{ level.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="font-weight-bold">{{ 'Grade'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
-                            <select class="form-control" id="csv_grade" onchange="loadCsvSections()" disabled>
-                                <option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="font-weight-bold">{{ 'Section'|get_plugin_lang('SchoolPlugin') }} <span class="text-muted font-weight-normal small">({{ 'DefaultIfEmpty'|get_plugin_lang('SchoolPlugin') }})</span></label>
-                            <select class="form-control" id="csv_section" disabled>
-                                <option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>
                             </select>
                         </div>
                     </div>
@@ -541,10 +499,6 @@ $('#bulkCsvModal').on('show.bs.modal', function() {
     document.getElementById('csv_file_input').value = '';
     document.getElementById('csv_file_label').textContent = '{{ 'ChooseFile'|get_plugin_lang('SchoolPlugin') }}';
     document.getElementById('csv_results').style.display = 'none';
-    document.getElementById('csv_grade').innerHTML = '<option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>';
-    document.getElementById('csv_grade').disabled = true;
-    document.getElementById('csv_section').innerHTML = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
-    document.getElementById('csv_section').disabled = true;
     document.getElementById('btnBulkCsv').disabled = false;
     document.getElementById('btnBulkCsv').innerHTML = '<i class="fas fa-upload mr-1"></i>{{ 'ProcessCsv'|get_plugin_lang('SchoolPlugin') }}';
 });
@@ -567,46 +521,6 @@ function onCsvFileChange(input) {
     document.getElementById('csv_results').style.display = 'none';
 }
 
-function loadCsvGrades() {
-    var levelId = document.getElementById('csv_level').value;
-    var gradeEl = document.getElementById('csv_grade');
-    var secEl   = document.getElementById('csv_section');
-    gradeEl.innerHTML = '<option value="">— {{ 'SelectGrade'|get_plugin_lang('SchoolPlugin') }} —</option>';
-    gradeEl.disabled  = true;
-    secEl.innerHTML   = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
-    secEl.disabled    = true;
-    if (!levelId) return;
-    fetch(ajaxUrl + '?action=get_grades_by_level&level_id=' + levelId)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.grades && data.grades.length) {
-                data.grades.forEach(function(g) {
-                    gradeEl.innerHTML += '<option value="' + g.id + '">' + g.name + '</option>';
-                });
-                gradeEl.disabled = false;
-            }
-        });
-}
-
-function loadCsvSections() {
-    var gradeId = document.getElementById('csv_grade').value;
-    var yearId  = document.getElementById('csv_year').value;
-    var secEl   = document.getElementById('csv_section');
-    secEl.innerHTML = '<option value="">— {{ 'SelectSection'|get_plugin_lang('SchoolPlugin') }} —</option>';
-    secEl.disabled  = true;
-    if (!gradeId || !yearId) return;
-    fetch(ajaxUrl + '?action=get_sections_by_grade&grade_id=' + gradeId + '&academic_year_id=' + yearId)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.sections && data.sections.length) {
-                data.sections.forEach(function(s) {
-                    secEl.innerHTML += '<option value="' + s.section_id + '">' + s.section_name + '</option>';
-                });
-                secEl.disabled = false;
-            }
-        });
-}
-
 function submitBulkCsv() {
     var fileInput = document.getElementById('csv_file_input');
     if (!fileInput.files.length) {
@@ -617,13 +531,9 @@ function submitBulkCsv() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>{{ 'Processing'|get_plugin_lang('SchoolPlugin') }}...';
 
-
     var fd = new FormData();
     fd.append('action',           'bulk_enroll_csv');
     fd.append('academic_year_id', document.getElementById('csv_year').value);
-    fd.append('grade_id',         document.getElementById('csv_grade').value   || '0');
-    fd.append('section_id',       document.getElementById('csv_section').value || '0');
-    fd.append('tipo_ingreso',     document.getElementById('csv_tipo').value);
     fd.append('csv_file',         fileInput.files[0]);
 
     fetch(ajaxUrl, { method: 'POST', body: fd })

@@ -538,11 +538,13 @@ switch ($action) {
     // BULK CSV ENROLL
     // =========================================================================
     case 'bulk_enroll_csv':
-        // Modal defaults — used as fallback when CSV columns are empty
-        $defaultYearId      = (int) ($_POST['academic_year_id'] ?? 0);
-        $defaultGradeId     = (int) ($_POST['grade_id']         ?? 0);
-        $defaultSectionId   = (int) ($_POST['section_id']       ?? 0);
-        $defaultTipoIngreso = $_POST['tipo_ingreso'] ?? 'NUEVO_INGRESO';
+        // Only the academic year can be set as a modal default (fallback for rows with empty año_academico).
+        // Grade, section and tipo_ingreso must come from the CSV columns.
+        $defaultYearId    = (int) ($_POST['academic_year_id'] ?? 0);
+        $defaultGradeId   = 0;
+        $defaultSectionId = 0;
+        // Fallback tipo if CSV column is absent/empty
+        $defaultTipoIngreso = 'NUEVO_INGRESO';
 
         if (empty($_FILES['csv_file']['tmp_name'])) {
             echo json_encode(['success' => false, 'message' => 'Archivo CSV requerido']);
@@ -644,7 +646,13 @@ switch ($action) {
             }
 
             // ---- Resolve tipo_ingreso ----
-            $csvTipo     = ($colTipo !== false) ? strtoupper(trim($row[$colTipo] ?? '')) : '';
+            $csvTipoRaw  = ($colTipo !== false) ? strtoupper(trim($row[$colTipo] ?? '')) : '';
+            // Normalize accented variants: CONTINUACIÓN→CONTINUACION, NUEVO INGRESO→NUEVO_INGRESO, etc.
+            $csvTipo = str_replace(
+                ['Á','É','Í','Ó','Ú','À','È','Ì','Ò','Ù',' '],
+                ['A','E','I','O','U','A','E','I','O','U','_'],
+                $csvTipoRaw
+            );
             $tipoIngreso = in_array($csvTipo, ['NUEVO_INGRESO', 'REINGRESO', 'CONTINUACION'])
                 ? $csvTipo
                 : $defaultTipoIngreso;
@@ -739,14 +747,15 @@ switch ($action) {
 
             // ---- Check duplicate enrollment ----
             $existRow = Database::fetch_array(
-                Database::query("SELECT id, grade_id, section_id FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"),
+                Database::query("SELECT id, grade_id, section_id, tipo_ingreso FROM $matTable WHERE ficha_id = $fichaId AND academic_year_id = $yearId LIMIT 1"),
                 'ASSOC'
             );
             if ($existRow) {
-                // If CSV provides grade/section and the existing enrollment lacks them, update it
+                // Update grade/section if missing, and always update tipo_ingreso if CSV provides it explicitly
                 $updateData = [];
-                if ($gradeId   && empty($existRow['grade_id']))   $updateData['grade_id']   = $gradeId;
-                if ($sectionId && empty($existRow['section_id'])) $updateData['section_id'] = $sectionId;
+                if ($gradeId   && empty($existRow['grade_id']))                              $updateData['grade_id']    = $gradeId;
+                if ($sectionId && empty($existRow['section_id']))                             $updateData['section_id']  = $sectionId;
+                if ($colTipo !== false && $tipoIngreso !== ($existRow['tipo_ingreso'] ?? '')) $updateData['tipo_ingreso'] = $tipoIngreso;
                 if (!empty($updateData)) {
                     Database::update($matTable, $updateData, ['id = ?' => (int) $existRow['id']]);
                     $results[] = ['username' => $username, 'status' => 'updated',
