@@ -43,6 +43,7 @@ $info            = [];
 $allPadres       = [];
 $allHermanos     = [];
 $allObservaciones = [];
+$docs            = [];
 
 if ($fichaId > 0) {
     $full = MatriculaManager::getFichaCompleta($fichaId);
@@ -62,6 +63,7 @@ if ($fichaId > 0) {
     }
     $allHermanos      = $full['hermanos'] ?? [];
     $allObservaciones = $full['observaciones'] ?? [];
+    $docs             = $full['docs'] ?? [];
 }
 
 // POST handling
@@ -214,6 +216,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Save document checklist
+    MatriculaManager::saveDocs($fichaId, $_POST);
+
     Display::addFlash(Display::return_message($plugin->get_lang('EnrollmentSaved'), 'success'));
     header('Location: ' . api_get_path(WEB_PATH) . 'matricula/ver?ficha_id=' . $fichaId);
     exit;
@@ -233,6 +238,7 @@ $plugin->assign('contactos', $contactos);
 $plugin->assign('all_contactos_json', json_encode($contactos));
 $plugin->assign('all_hermanos_json', json_encode($allHermanos));
 $plugin->assign('all_observaciones_json', json_encode($allObservaciones));
+$plugin->assign('docs', $docs);
 $plugin->assign('info', $info);
 $plugin->assign('tipos_sangre', $tiposSangre);
 $plugin->assign('ficha_id', $fichaId);

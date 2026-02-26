@@ -272,6 +272,61 @@
 </div>
 
 {# ============================================================ #}
+{# SECCIÓN: DOCUMENTOS ENTREGADOS                               #}
+{# ============================================================ #}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-folder-open mr-1"></i> Documentos entregados</span>
+        <a href="{{ _p.web }}matricula/editar?ficha_id={{ ficha_id }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+    </div>
+    <div class="card-body">
+        {% set doc_list = [
+            {key: 'doc_partida_nacimiento',     label: 'Partida de Nacimiento Original'},
+            {key: 'doc_copia_dni',              label: 'Copia de DNI a color'},
+            {key: 'doc_libreta_calificaciones', label: 'Libreta de calificaciones o informe de progreso'},
+            {key: 'doc_ficha_matricula',        label: 'Ficha de matrícula actualizada'},
+            {key: 'doc_certificado_estudios',   label: 'Certificado de estudios'},
+            {key: 'doc_constancia_conducta',    label: 'Constancia de conducta'},
+            {key: 'doc_foto_carnet',            label: 'Foto tamaño carnet'},
+            {key: 'doc_copia_dni_padres',       label: 'Copia del DNI de los padres de familia'}
+        ] %}
+        {% set delivered = 0 %}
+        {% for doc in doc_list %}{% if docs[doc.key] ?? 0 %}{% set delivered = delivered + 1 %}{% endif %}{% endfor %}
+        <div class="d-flex align-items-center mb-3">
+            <div class="mr-3">
+                {% if delivered == doc_list|length %}
+                    <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Completo ({{ delivered }}/{{ doc_list|length }})</span>
+                {% elseif delivered > 0 %}
+                    <span class="badge badge-warning px-2 py-1"><i class="fas fa-exclamation-circle mr-1"></i>Parcial ({{ delivered }}/{{ doc_list|length }})</span>
+                {% else %}
+                    <span class="badge badge-secondary px-2 py-1"><i class="fas fa-times-circle mr-1"></i>Sin documentos (0/{{ doc_list|length }})</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            {% for doc in doc_list %}
+            <div class="col-md-6 mb-1">
+                {% if docs[doc.key] ?? 0 %}
+                    <i class="fas fa-check-square text-success mr-1"></i>
+                {% else %}
+                    <i class="far fa-square text-muted mr-1"></i>
+                {% endif %}
+                <span class="{{ (docs[doc.key] ?? 0) ? '' : 'text-muted' }}" style="font-size:13px;">{{ doc.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% if docs.observaciones_docs %}
+        <div class="mt-3 p-2 bg-light rounded border">
+            <small class="font-weight-bold text-muted">Observaciones:</small>
+            <p class="mb-0 mt-1" style="font-size:13px;">{{ docs.observaciones_docs }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ============================================================ #}
 {# HISTORIAL DE MATRÍCULAS                                      #}
 {# ============================================================ #}
 <div class="card mt-4 no-print">

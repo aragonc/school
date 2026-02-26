@@ -137,6 +137,7 @@ $plugin->assign('linked_user_name', $linkedUserName);
 $plugin->assign('levels', array_values($levels));
 $plugin->assign('all_years', $allYears);
 $plugin->assign('active_year_id', $activeYear['id'] ?? 0);
+$plugin->assign('docs', $fichaCompleta['docs'] ?? []);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_matricula.php');
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('is_secretary', $isSecretary);

@@ -54,6 +54,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_MATRICULA_CONTACTO  = 'plugin_school_matricula_contacto';
     const TABLE_SCHOOL_MATRICULA_INFO           = 'plugin_school_matricula_info';
     const TABLE_SCHOOL_MATRICULA_OBSERVACION    = 'plugin_school_matricula_observacion';
+    const TABLE_SCHOOL_MATRICULA_DOCS           = 'plugin_school_matricula_docs';
     const TABLE_SCHOOL_REFUND                   = 'plugin_school_refund';
     const TABLE_SCHOOL_CLASSROOM_PLAN           = 'plugin_school_classroom_plan';
 

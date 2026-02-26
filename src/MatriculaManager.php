@@ -133,6 +133,7 @@ class MatriculaManager
         $ficha['info']          = self::getInfoByFicha($fichaId);
         $ficha['hermanos']      = self::getHermanosByFicha($fichaId);
         $ficha['observaciones'] = self::getObservacionesByFicha($fichaId);
+        $ficha['docs']          = self::getDocsByFicha($fichaId);
 
         return $ficha;
     }
@@ -612,6 +613,43 @@ class MatriculaManager
             'created_at' => api_get_utc_datetime(),
         ];
         return (int) Database::insert($table, $params);
+    }
+
+    // =========================================================================
+    // DOCUMENTOS ENTREGADOS
+    // =========================================================================
+
+    public static function getDocsByFicha(int $fichaId): array
+    {
+        $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_DOCS);
+        $result = Database::query("SELECT * FROM $table WHERE ficha_id = $fichaId LIMIT 1");
+        $row    = Database::fetch_array($result, 'ASSOC');
+        return $row ?: [];
+    }
+
+    public static function saveDocs(int $fichaId, array $data): void
+    {
+        if ($fichaId <= 0) return;
+        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_DOCS);
+        $docFields = [
+            'doc_partida_nacimiento', 'doc_copia_dni', 'doc_libreta_calificaciones',
+            'doc_ficha_matricula', 'doc_certificado_estudios', 'doc_constancia_conducta',
+            'doc_foto_carnet', 'doc_copia_dni_padres',
+        ];
+        $params = ['updated_at' => date('Y-m-d H:i:s')];
+        foreach ($docFields as $field) {
+            $params[$field] = isset($data[$field]) ? (int) $data[$field] : 0;
+        }
+        $params['observaciones_docs'] = isset($data['observaciones_docs'])
+            ? Database::escape_string(trim($data['observaciones_docs'])) : null;
+
+        $existing = Database::query("SELECT id FROM $table WHERE ficha_id = $fichaId LIMIT 1");
+        if (Database::fetch_array($existing, 'ASSOC')) {
+            Database::update($table, $params, ['ficha_id = ?' => $fichaId]);
+        } else {
+            $params['ficha_id'] = $fichaId;
+            Database::insert($table, $params);
+        }
     }
 
     /**

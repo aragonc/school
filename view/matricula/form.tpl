@@ -387,6 +387,45 @@
         <input type="hidden" name="observaciones_data" id="obs-data-input" value="[]">
     </div>
 
+    {# ============================================================ #}
+    {# SECCIÓN 6: DOCUMENTOS ENTREGADOS                            #}
+    {# ============================================================ #}
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-file-check mr-1"></i> Documentos entregados
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3" style="font-size:13px;">Marque los documentos que el apoderado ha entregado al momento de la matrícula.</p>
+            <div class="row">
+                {% set doc_list = [
+                    {key: 'doc_partida_nacimiento',     label: 'Partida de Nacimiento Original'},
+                    {key: 'doc_copia_dni',              label: 'Copia de DNI a color'},
+                    {key: 'doc_libreta_calificaciones', label: 'Libreta de calificaciones o informe de progreso (Bimestres concluidos)'},
+                    {key: 'doc_ficha_matricula',        label: 'Ficha de matrícula actualizada'},
+                    {key: 'doc_certificado_estudios',   label: 'Certificado de estudios'},
+                    {key: 'doc_constancia_conducta',    label: 'Constancia de conducta'},
+                    {key: 'doc_foto_carnet',            label: 'Una foto tamaño carnet'},
+                    {key: 'doc_copia_dni_padres',       label: 'Copia del DNI de los padres de familia'}
+                ] %}
+                {% for doc in doc_list %}
+                <div class="col-md-6 mb-2">
+                    <div class="custom-control custom-checkbox">
+                        <input type="hidden" name="{{ doc.key }}" value="0">
+                        <input type="checkbox" class="custom-control-input" id="{{ doc.key }}" name="{{ doc.key }}" value="1"
+                            {{ (docs[doc.key] ?? 0) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="{{ doc.key }}">{{ doc.label }}</label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="form-group mt-3 mb-0">
+                <label class="font-weight-bold">Observaciones sobre documentos</label>
+                <textarea name="observaciones_docs" class="form-control" rows="3"
+                    placeholder="Documentos pendientes, fechas comprometidas, etc.">{{ docs.observaciones_docs ?? '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
     <div class="d-flex justify-content-between mb-4">
         <a href="{{ _p.web }}matricula" class="btn btn-secondary">
             <i class="fas fa-times"></i> {{ 'Cancel'|get_plugin_lang('SchoolPlugin') }}
