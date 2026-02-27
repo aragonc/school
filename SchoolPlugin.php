@@ -2570,7 +2570,7 @@ class SchoolPlugin extends Plugin
             $myAulaItems = [
                 [
                     'name'    => 'my-aula-plan',
-                    'label'   => 'Mi Aula',
+                    'label'   => 'Calendario Mensual',
                     'url'     => '/my-aula',
                     'current' => $currentSection === 'my-classroom',
                 ],

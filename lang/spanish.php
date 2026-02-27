@@ -224,6 +224,7 @@ $strings['AttendancePersonal']  = 'Asistencia Personal';
 $strings['AttendanceStudents']  = 'Asistencia Alumnos';
 $strings['NoStudentsFound']     = 'No se encontraron alumnos con los filtros seleccionados.';
 $strings['AllLevels']           = 'Todos los niveles';
+$strings['AllSections']         = 'Todas las secciones';
 $strings['ExportExcel'] = 'Exportar Excel';
 $strings['ExportPDF'] = 'Exportar PDF';
 $strings['ScheduleName'] = 'Nombre del Turno';
