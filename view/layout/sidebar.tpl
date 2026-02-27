@@ -37,7 +37,9 @@
              data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 {% for submenu in menu.items %}
-                <a id="submenu-{{ submenu.name }}" class="collapse-item" href="{{ submenu.url }}">{{ submenu.label }}</a>
+                <a id="submenu-{{ submenu.name }}"
+                   class="collapse-item{% if submenu.current %} active{% endif %}"
+                   href="{{ submenu.url }}">{{ submenu.label }}</a>
                 {% endfor %}
             </div>
         </div>

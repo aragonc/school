@@ -12,10 +12,8 @@ if (!$enable) {
 }
 
 $isAdmin = api_is_platform_admin();
-$userInfo = api_get_user_info();
-$isSecretary = $userInfo && $userInfo['status'] == SCHOOL_SECRETARY;
 
-if (!$isAdmin && !$isSecretary) {
+if (!$isAdmin) {
     api_not_allowed(true);
 }
 

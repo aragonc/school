@@ -21,8 +21,13 @@ $isSecretary   = $userInfo && (int) $userInfo['status'] === SCHOOL_SECRETARY;
 $isTeacher     = $userInfo && (int) $userInfo['status'] === COURSEMANAGER;
 $isStudent     = $userInfo && (int) $userInfo['status'] === STUDENT;
 
-// Only admin, secretary, teacher or student can access
-if (!$isAdmin && !$isSecretary && !$isTeacher && !$isStudent) {
+// Secretary cannot access Mi Aula
+if ($isSecretary) {
+    api_not_allowed(true);
+}
+
+// Only admin, teacher or student can access
+if (!$isAdmin && !$isTeacher && !$isStudent) {
     api_not_allowed(true);
 }
 

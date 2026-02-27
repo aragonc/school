@@ -1350,6 +1350,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^payments/refunds$ plugin/school/src/payments/refunds.php [L,QSA]\n".
             "RewriteRule ^payments/refund-receipt$ plugin/school/src/payments/refund_receipt.php [L,QSA]\n".
             "RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]\n".
+            "RewriteRule ^my-aula/mis-alumnos$ plugin/school/src/classroom/mis_alumnos.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -2527,11 +2528,14 @@ class SchoolPlugin extends Plugin
     public function getMenus(string $currentSection = ''): array
     {
         $userInfo = api_get_user_info();
-        $isAdminOrSecretary = api_is_platform_admin() || ($userInfo && $userInfo['status'] == SCHOOL_SECRETARY);
-        $isStudent = $userInfo && (int) $userInfo['status'] === STUDENT;
-        $isTeacherUser = $userInfo && (int) $userInfo['status'] === COURSEMANAGER;
-        $canAccessPayments = $isAdminOrSecretary || $isStudent;
+        $isAdmin            = api_is_platform_admin();
+        $isSecretary        = !$isAdmin && ($userInfo && (int) $userInfo['status'] === SCHOOL_SECRETARY);
+        $isAdminOrSecretary = $isAdmin || $isSecretary;
+        $isStudent          = $userInfo && (int) $userInfo['status'] === STUDENT;
+        $isTeacherUser      = $userInfo && (int) $userInfo['status'] === COURSEMANAGER;
+        $canAccessPayments  = $isAdminOrSecretary || $isStudent;
 
+        // Secretary is restricted to: Dashboard (home), Payments, Products, Matricula
         $menus = [
             [
                 'id' => 0,
@@ -2543,7 +2547,11 @@ class SchoolPlugin extends Plugin
                 'url' => '/dashboard',
                 'items' => []
             ],
-            [
+        ];
+
+        // Courses: not shown to secretary
+        if (!$isSecretary) {
+            $menus[] = [
                 'id' => 1,
                 'name' => 'courses',
                 'label' => $this->get_lang('MyCourses'),
@@ -2552,106 +2560,126 @@ class SchoolPlugin extends Plugin
                 'class' => $currentSection === 'courses' ? 'active':'',
                 'url' => '/courses',
                 'items' => []
-            ],
-        ];
+            ];
+        }
 
-        // Mi Aula: visible for teachers, students, admin and secretary (if enabled)
-        if ($this->get('show_my_aula') !== 'false' && ($isAdminOrSecretary || $isTeacherUser || $isStudent)) {
+        // Mi Aula: visible for teachers, students and admin (NOT secretary)
+        if ($this->get('show_my_aula') !== 'false' && !$isSecretary && ($isAdmin || $isTeacherUser || $isStudent)) {
+            $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos']);
+
+            $myAulaItems = [
+                [
+                    'name'    => 'my-aula-plan',
+                    'label'   => 'Mi Aula',
+                    'url'     => '/my-aula',
+                    'current' => $currentSection === 'my-classroom',
+                ],
+            ];
+
+            // "Mis Alumnos" only for admin and teacher (secretary and students excluded)
+            if (api_is_platform_admin() || $isTeacherUser) {
+                $myAulaItems[] = [
+                    'name'    => 'my-aula-alumnos',
+                    'label'   => 'Mis Alumnos',
+                    'url'     => '/my-aula/mis-alumnos',
+                    'current' => $currentSection === 'my-classroom-alumnos',
+                ];
+            }
+
             $menus[] = [
                 'id'      => 12,
                 'name'    => 'my-classroom',
                 'label'   => 'Mi Aula',
-                'current' => $currentSection === 'my-classroom',
+                'current' => $myAulaActive,
                 'icon'    => 'chalkboard-teacher',
-                'class'   => $currentSection === 'my-classroom' ? 'active' : '',
+                'class'   => $myAulaActive ? 'show' : '',
                 'url'     => '/my-aula',
-                'items'   => [],
+                'items'   => $myAulaItems,
             ];
         }
 
-        if ($this->get('show_notifications') !== 'false') {
+        // Notifications, Certificates, Help, Shopping, Attendance: hidden from secretary
+        if (!$isSecretary) {
+            if ($this->get('show_notifications') !== 'false') {
+                $menus[] = [
+                    'id' => 2,
+                    'name' => 'notifications',
+                    'label' => $this->get_lang('MyNotifications'),
+                    'current' => false,
+                    'icon' => 'bell',
+                    'class' => $currentSection === 'notifications' ? 'active':'',
+                    'url' => '/notifications',
+                    'items' => []
+                ];
+            }
+
+            if ($this->get('show_certificates') == 'true') {
+                $menus[] = [
+                    'id' => 3,
+                    'name' => 'certificates',
+                    'label' => $this->get_lang('MyCertificates'),
+                    'current' => false,
+                    'icon' => 'file',
+                    'url' => '/certified',
+                    'class' => $currentSection === 'certificates' ? 'active':'',
+                    'items' => []
+                ];
+            }
+
+            if ($this->get('show_help') !== 'false') {
+                $menus[] = [
+                    'id' => 4,
+                    'name' => 'help',
+                    'label' => $this->get_lang('Help'),
+                    'current' => false,
+                    'icon' => 'question-circle',
+                    'url' => '/help',
+                    'class' => $currentSection === 'help' ? 'active':'',
+                    'items' => []
+                ];
+            }
+
+            if ($this->get('activate_shopping') !== 'false' && api_get_user_status() != STUDENT) {
+                $menus[] = [
+                    'id' => 5,
+                    'name' => 'shopping',
+                    'label' => $this->get_lang('BuyCourses'),
+                    'current' => false,
+                    'icon' => 'shopping-cart',
+                    'url' => '/shopping',
+                    'class' => $currentSection === 'shopping' ? 'active':'',
+                    'items' => []
+                ];
+            }
+
+            $attendanceItems = [];
+            if ($isAdmin) {
+                $attendanceItems = [
+                    ['name' => 'attendance-today',           'label' => $this->get_lang('TodayAttendance'),    'url' => '/attendance/today'],
+                    ['name' => 'attendance-manual',          'label' => $this->get_lang('AttendancePersonal'), 'url' => '/attendance/manual'],
+                    ['name' => 'attendance-manual-students', 'label' => $this->get_lang('AttendanceStudents'),  'url' => '/attendance/manual_students'],
+                    ['name' => 'attendance-schedules',       'label' => $this->get_lang('Schedules'),           'url' => '/attendance/schedules'],
+                    ['name' => 'attendance-reports',         'label' => $this->get_lang('Reports'),             'url' => '/attendance/reports'],
+                    ['name' => 'attendance-calendar',        'label' => $this->get_lang('AttendanceCalendar'),  'url' => '/attendance/calendar'],
+                    ['name' => 'attendance-my',              'label' => $this->get_lang('MyAttendance'),        'url' => '/attendance/my'],
+                ];
+            } else {
+                $attendanceItems = [
+                    ['name' => 'attendance-my', 'label' => $this->get_lang('MyAttendance'), 'url' => '/attendance/my'],
+                ];
+            }
+
             $menus[] = [
-                'id' => 2,
-                'name' => 'notifications',
-                'label' => $this->get_lang('MyNotifications'),
-                'current' => false,
-                'icon' => 'bell',
-                'class' => $currentSection === 'notifications' ? 'active':'',
-                'url' => '/notifications',
-                'items' => []
+                'id' => 6,
+                'name' => 'attendance',
+                'label' => $this->get_lang('Attendance'),
+                'current' => $currentSection === 'attendance',
+                'icon' => 'clipboard-check',
+                'class' => $currentSection === 'attendance' ? 'show' : '',
+                'url' => '/attendance',
+                'items' => $attendanceItems
             ];
         }
-
-        if ($this->get('show_certificates') == 'true') {
-            $menus[] = [
-                'id' => 3,
-                'name' => 'certificates',
-                'label' => $this->get_lang('MyCertificates'),
-                'current' => false,
-                'icon' => 'file',
-                'url' => '/certified',
-                'class' => $currentSection === 'certificates' ? 'active':'',
-                'items' => []
-            ];
-        }
-
-        if ($this->get('show_help') !== 'false') {
-            $menus[] = [
-                'id' => 4,
-                'name' => 'help',
-                'label' => $this->get_lang('Help'),
-                'current' => false,
-                'icon' => 'question-circle',
-                'url' => '/help',
-                'class' => $currentSection === 'help' ? 'active':'',
-                'items' => []
-            ];
-        }
-
-        $menus[] = [
-            'id' => 5,
-            'name' => 'shopping',
-            'label' => $this->get_lang('BuyCourses'),
-            'current' => false,
-            'icon' => 'shopping-cart',
-            'url' => '/shopping',
-            'class' => $currentSection === 'shopping' ? 'active':'',
-            'items' => []
-        ];
-
-        if ($this->get('activate_shopping') == 'false' || api_get_user_status() == STUDENT) {
-            $menus = array_filter($menus, function ($menu) {
-                return $menu['name'] !== 'shopping';
-            });
-        }
-
-        $attendanceItems = [];
-        if (api_is_platform_admin()) {
-            $attendanceItems = [
-                ['name' => 'attendance-today',           'label' => $this->get_lang('TodayAttendance'),    'url' => '/attendance/today'],
-                ['name' => 'attendance-manual',          'label' => $this->get_lang('AttendancePersonal'), 'url' => '/attendance/manual'],
-                ['name' => 'attendance-manual-students', 'label' => $this->get_lang('AttendanceStudents'),  'url' => '/attendance/manual_students'],
-                ['name' => 'attendance-schedules',       'label' => $this->get_lang('Schedules'),           'url' => '/attendance/schedules'],
-                ['name' => 'attendance-reports',         'label' => $this->get_lang('Reports'),             'url' => '/attendance/reports'],
-                ['name' => 'attendance-calendar',        'label' => $this->get_lang('AttendanceCalendar'),  'url' => '/attendance/calendar'],
-                ['name' => 'attendance-my',              'label' => $this->get_lang('MyAttendance'),        'url' => '/attendance/my'],
-            ];
-        } else {
-            $attendanceItems = [
-                ['name' => 'attendance-my', 'label' => $this->get_lang('MyAttendance'), 'url' => '/attendance/my'],
-            ];
-        }
-
-        $menus[] = [
-            'id' => 6,
-            'name' => 'attendance',
-            'label' => $this->get_lang('Attendance'),
-            'current' => $currentSection === 'attendance',
-            'icon' => 'clipboard-check',
-            'class' => $currentSection === 'attendance' ? 'show' : '',
-            'url' => '/attendance',
-            'items' => $attendanceItems
-        ];
 
         // Payments & Products: only admin, secretary and student
 
@@ -2712,14 +2740,12 @@ class SchoolPlugin extends Plugin
             ];
         }
 
-        // Academic menu
-        if ($isAdminOrSecretary) {
+        // Academic menu: admin only (secretary excluded)
+        if ($isAdmin) {
             $academicItems = [
                 ['name' => 'academic-classrooms', 'label' => $this->get_lang('Classrooms'), 'url' => '/academic'],
+                ['name' => 'academic-settings',   'label' => $this->get_lang('AcademicSettings'), 'url' => '/academic/settings'],
             ];
-            if (api_is_platform_admin()) {
-                $academicItems[] = ['name' => 'academic-settings', 'label' => $this->get_lang('AcademicSettings'), 'url' => '/academic/settings'];
-            }
             $menus[] = [
                 'id' => 9,
                 'name' => 'academic',

@@ -14,11 +14,8 @@ if (!$userId) {
 }
 
 $isAdmin = api_is_platform_admin();
-$userInfo = api_get_user_info();
-$isSecretary = $userInfo && $userInfo['status'] == SCHOOL_SECRETARY;
-$isAdminOrSecretary = $isAdmin || $isSecretary;
 
-if (!$isAdminOrSecretary) {
+if (!$isAdmin) {
     echo json_encode(['success' => false, 'message' => 'Access denied']);
     exit;
 }
