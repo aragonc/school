@@ -19,7 +19,7 @@ if (!$isAdmin) {
     api_not_allowed(true);
 }
 
-$users = $plugin->getUsersForAttendance();
+$users = $plugin->getUsersForAttendance('staff');
 foreach ($users as &$user) {
     if (!empty($user['check_in'])) {
         $user['check_in'] = api_get_local_time($user['check_in']);

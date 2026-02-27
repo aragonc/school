@@ -4,6 +4,8 @@ require_once __DIR__.'/../config.php';
 
 $plugin = SchoolPlugin::create();
 
+date_default_timezone_set(api_get_timezone());
+
 $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
 
 header('Content-Type: application/json');
@@ -165,10 +167,13 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Not authorized']);
             exit;
         }
-        $startDate = isset($_GET['start_date']) ? $_GET['start_date'] : null;
-        $endDate = isset($_GET['end_date']) ? $_GET['end_date'] : null;
-        $userType = isset($_GET['user_type']) ? $_GET['user_type'] : null;
-        $plugin->exportAttendanceCSV($startDate, $endDate, $userType);
+        $startDate = isset($_GET['start_date'])  ? $_GET['start_date']       : null;
+        $endDate   = isset($_GET['end_date'])     ? $_GET['end_date']         : null;
+        $userType  = isset($_GET['user_type'])    ? $_GET['user_type']        : null;
+        $levelId   = isset($_GET['level_id'])     ? (int) $_GET['level_id']   : 0;
+        $gradeId   = isset($_GET['grade_id'])     ? (int) $_GET['grade_id']   : 0;
+        $sectionId = isset($_GET['section_id'])   ? (int) $_GET['section_id'] : 0;
+        $plugin->exportAttendanceCSV($startDate, $endDate, $userType, $levelId, $gradeId, $sectionId);
         break;
 
     case 'export_pdf':
@@ -176,10 +181,13 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Not authorized']);
             exit;
         }
-        $startDate = isset($_GET['start_date']) ? $_GET['start_date'] : null;
-        $endDate = isset($_GET['end_date']) ? $_GET['end_date'] : null;
-        $userType = isset($_GET['user_type']) ? $_GET['user_type'] : null;
-        $plugin->exportAttendancePDF($startDate, $endDate, $userType);
+        $startDate = isset($_GET['start_date'])  ? $_GET['start_date']       : null;
+        $endDate   = isset($_GET['end_date'])     ? $_GET['end_date']         : null;
+        $userType  = isset($_GET['user_type'])    ? $_GET['user_type']        : null;
+        $levelId   = isset($_GET['level_id'])     ? (int) $_GET['level_id']   : 0;
+        $gradeId   = isset($_GET['grade_id'])     ? (int) $_GET['grade_id']   : 0;
+        $sectionId = isset($_GET['section_id'])   ? (int) $_GET['section_id'] : 0;
+        $plugin->exportAttendancePDF($startDate, $endDate, $userType, $levelId, $gradeId, $sectionId);
         break;
 
     case 'delete_attendance':

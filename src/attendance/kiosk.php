@@ -9,6 +9,7 @@ if (!$enable) {
     api_not_allowed(true);
 }
 
+date_default_timezone_set(api_get_timezone());
 $serverTime = date('Y-m-d H:i:s');
 
 $plugin->assign('server_time', $serverTime);

@@ -21,17 +21,31 @@ if (!$isAdmin) {
 
 $today = date('Y-m-d');
 $reportStartDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
-$reportEndDate = isset($_GET['end_date']) ? $_GET['end_date'] : $today;
-$reportUserType = isset($_GET['user_type']) ? $_GET['user_type'] : null;
+$reportEndDate   = isset($_GET['end_date'])   ? $_GET['end_date']   : $today;
+$reportUserType  = isset($_GET['user_type'])  ? $_GET['user_type']  : null;
+$reportLevelId   = isset($_GET['level_id'])   ? (int) $_GET['level_id']   : 0;
+$reportGradeId   = isset($_GET['grade_id'])   ? (int) $_GET['grade_id']   : 0;
+$reportSectionId = isset($_GET['section_id']) ? (int) $_GET['section_id'] : 0;
 
-$reportStats = $plugin->getAttendanceStats($reportStartDate, $reportEndDate, $reportUserType);
+$reportStats = $plugin->getAttendanceStats(
+    $reportStartDate, $reportEndDate, $reportUserType,
+    $reportLevelId, $reportGradeId, $reportSectionId
+);
+
+$filters = $plugin->getAcademicFiltersForAttendance();
 
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('active_tab', 'reports');
 $plugin->assign('report_start_date', $reportStartDate);
-$plugin->assign('report_end_date', $reportEndDate);
-$plugin->assign('report_user_type', $reportUserType);
-$plugin->assign('report_stats', $reportStats);
+$plugin->assign('report_end_date',   $reportEndDate);
+$plugin->assign('report_user_type',  $reportUserType);
+$plugin->assign('report_level_id',   $reportLevelId);
+$plugin->assign('report_grade_id',   $reportGradeId);
+$plugin->assign('report_section_id', $reportSectionId);
+$plugin->assign('report_stats',  $reportStats);
+$plugin->assign('levels',   $filters['levels']);
+$plugin->assign('grades',   $filters['grades']);
+$plugin->assign('sections', $filters['sections']);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH).'school/ajax/ajax_attendance.php');
 
 $plugin->setTitle($plugin->get_lang('AttendanceControl'));

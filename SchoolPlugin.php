@@ -56,7 +56,8 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_MATRICULA_OBSERVACION    = 'plugin_school_matricula_observacion';
     const TABLE_SCHOOL_MATRICULA_DOCS           = 'plugin_school_matricula_docs';
     const TABLE_SCHOOL_REFUND                   = 'plugin_school_refund';
-    const TABLE_SCHOOL_CLASSROOM_PLAN           = 'plugin_school_classroom_plan';
+    const TABLE_SCHOOL_CLASSROOM_PLAN             = 'plugin_school_classroom_plan';
+    const TABLE_SCHOOL_ATTENDANCE_NONWORKING      = 'plugin_school_attendance_nonworking';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -1231,6 +1232,17 @@ class SchoolPlugin extends Plugin
             INDEX idx_classroom_date (classroom_id, plan_date)
         )");
 
+        // Migration: attendance non-working day calendar
+        Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ATTENDANCE_NONWORKING." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            type ENUM('holiday','vacation') NOT NULL DEFAULT 'holiday',
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            description VARCHAR(255) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL,
+            INDEX idx_dates (start_date, end_date)
+        )");
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -1238,6 +1250,7 @@ class SchoolPlugin extends Plugin
     public function uninstall()
     {
         $tablesToBeDeleted = [
+            self::TABLE_SCHOOL_ATTENDANCE_NONWORKING,
             self::TABLE_SCHOOL_CLASSROOM_PLAN,
             self::TABLE_SCHOOL_REFUND,
             self::TABLE_SCHOOL_MATRICULA_OBSERVACION,
@@ -1292,8 +1305,10 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^attendance$ plugin/school/src/attendance/today.php [L]\n".
             "RewriteRule ^attendance/today$ plugin/school/src/attendance/today.php [L]\n".
             "RewriteRule ^attendance/manual$ plugin/school/src/attendance/manual.php [L]\n".
+            "RewriteRule ^attendance/manual_students$ plugin/school/src/attendance/manual_students.php [L,QSA]\n".
             "RewriteRule ^attendance/schedules$ plugin/school/src/attendance/schedules.php [L]\n".
             "RewriteRule ^attendance/reports$ plugin/school/src/attendance/reports.php [L]\n".
+            "RewriteRule ^attendance/calendar$ plugin/school/src/attendance/calendar.php [L,QSA]\n".
             "RewriteRule ^attendance/my$ plugin/school/src/attendance/my.php [L]\n".
             "RewriteRule ^attendance/scan$ plugin/school/src/attendance/scan.php [L,QSA]\n".
             "RewriteRule ^attendance/kiosk$ plugin/school/src/attendance/kiosk.php [L]\n".
@@ -2613,11 +2628,13 @@ class SchoolPlugin extends Plugin
         $attendanceItems = [];
         if (api_is_platform_admin()) {
             $attendanceItems = [
-                ['name' => 'attendance-today', 'label' => $this->get_lang('TodayAttendance'), 'url' => '/attendance/today'],
-                ['name' => 'attendance-manual', 'label' => $this->get_lang('ManualRegistration'), 'url' => '/attendance/manual'],
-                ['name' => 'attendance-schedules', 'label' => $this->get_lang('Schedules'), 'url' => '/attendance/schedules'],
-                ['name' => 'attendance-reports', 'label' => $this->get_lang('Reports'), 'url' => '/attendance/reports'],
-                ['name' => 'attendance-my', 'label' => $this->get_lang('MyAttendance'), 'url' => '/attendance/my'],
+                ['name' => 'attendance-today',           'label' => $this->get_lang('TodayAttendance'),    'url' => '/attendance/today'],
+                ['name' => 'attendance-manual',          'label' => $this->get_lang('AttendancePersonal'), 'url' => '/attendance/manual'],
+                ['name' => 'attendance-manual-students', 'label' => $this->get_lang('AttendanceStudents'),  'url' => '/attendance/manual_students'],
+                ['name' => 'attendance-schedules',       'label' => $this->get_lang('Schedules'),           'url' => '/attendance/schedules'],
+                ['name' => 'attendance-reports',         'label' => $this->get_lang('Reports'),             'url' => '/attendance/reports'],
+                ['name' => 'attendance-calendar',        'label' => $this->get_lang('AttendanceCalendar'),  'url' => '/attendance/calendar'],
+                ['name' => 'attendance-my',              'label' => $this->get_lang('MyAttendance'),        'url' => '/attendance/my'],
             ];
         } else {
             $attendanceItems = [
@@ -3581,6 +3598,32 @@ class SchoolPlugin extends Plugin
                 ];
             }
 
+            // If QR scan and the existing record is 'absent' (auto-marked by cron),
+            // update it to the calculated on_time/late status.
+            if ($method === 'qr' && $existing['status'] === 'absent') {
+                $schedule   = $this->getApplicableSchedule($userId);
+                $scheduleId = $schedule ? (int) $schedule['id'] : null;
+                $newStatus  = $this->calculateAttendanceStatus($now, $scheduleId);
+                Database::update(
+                    $table,
+                    [
+                        'status'        => $newStatus,
+                        'check_in'      => $now,
+                        'method'        => 'qr',
+                        'schedule_id'   => $scheduleId,
+                        'registered_by' => null,
+                        'notes'         => null,
+                    ],
+                    ['id = ?' => (int) $existing['id']]
+                );
+                return [
+                    'success' => true,
+                    'message' => 'AttendanceUpdated',
+                    'status'  => $newStatus,
+                    'id'      => (int) $existing['id'],
+                ];
+            }
+
             return [
                 'success' => false,
                 'message' => 'AttendanceAlreadyRegistered',
@@ -3736,29 +3779,73 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Build extra JOINs and WHERE fragments for student academic filters.
+     * Returns ['joins' => string, 'where' => string]
+     */
+    private function getStudentAcademicFilter(int $levelId, int $gradeId, int $sectionId, int $activeYearId = 0): array
+    {
+        if (!$levelId && !$gradeId && !$sectionId) {
+            return ['joins' => '', 'where' => ''];
+        }
+        $fichaTable   = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable     = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $gradeTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $yearTable    = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+
+        if (!$activeYearId) {
+            $yr = Database::fetch_array(
+                Database::query("SELECT id FROM $yearTable WHERE active = 1 LIMIT 1"), 'ASSOC'
+            );
+            $activeYearId = $yr ? (int) $yr['id'] : 0;
+        }
+
+        $joins  = " INNER JOIN $fichaTable sf ON sf.user_id = u.id";
+        $joins .= " INNER JOIN $matTable sm ON sm.ficha_id = sf.id AND sm.estado = 'ACTIVO'";
+        if ($activeYearId) $joins .= " AND sm.academic_year_id = $activeYearId";
+        if ($gradeId || $levelId) {
+            $joins .= " INNER JOIN $gradeTable sg ON sg.id = sm.grade_id";
+        }
+
+        $where = '';
+        if ($levelId)   $where .= " AND sg.level_id = $levelId";
+        if ($gradeId)   $where .= " AND sm.grade_id = $gradeId";
+        if ($sectionId) $where .= " AND sm.section_id = $sectionId";
+
+        return ['joins' => $joins, 'where' => $where];
+    }
+
+    /**
      * Get attendance statistics for a date range.
      */
-    public function getAttendanceStats(?string $startDate = null, ?string $endDate = null, ?string $userType = null): array
-    {
-        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+    public function getAttendanceStats(
+        ?string $startDate = null,
+        ?string $endDate   = null,
+        ?string $userType  = null,
+        int $levelId = 0, int $gradeId = 0, int $sectionId = 0
+    ): array {
+        $logTable  = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
         $userTable = Database::get_main_table(TABLE_MAIN_USER);
 
         $where = "WHERE 1=1";
-        if ($startDate) {
-            $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
-        }
-        if ($endDate) {
-            $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
-        }
+        if ($startDate) $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
         $where .= $this->getUserTypeFilter($userType);
+
+        $extraJoins = '';
+        if ($userType === 'students' && ($levelId || $gradeId || $sectionId)) {
+            $af = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
+            $extraJoins = $af['joins'];
+            $where     .= $af['where'];
+        }
 
         $sql = "SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN al.status = 'on_time' THEN 1 ELSE 0 END) as on_time,
-                    SUM(CASE WHEN al.status = 'late' THEN 1 ELSE 0 END) as late,
-                    SUM(CASE WHEN al.status = 'absent' THEN 1 ELSE 0 END) as absent
+                    SUM(CASE WHEN al.status = 'late'    THEN 1 ELSE 0 END) as late,
+                    SUM(CASE WHEN al.status = 'absent'  THEN 1 ELSE 0 END) as absent
                 FROM $logTable al
                 INNER JOIN $userTable u ON al.user_id = u.id
+                $extraJoins
                 $where";
         $result = Database::query($sql);
         return Database::fetch_array($result, 'ASSOC') ?: ['total' => 0, 'on_time' => 0, 'late' => 0, 'absent' => 0];
@@ -3887,24 +3974,287 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Get students for manual attendance, with ficha DNI and academic nivel/grado/sección.
+     */
+    public function getStudentsForAttendance(?int $levelId = null, ?int $gradeId = null, ?int $sectionId = null): array
+    {
+        date_default_timezone_set(api_get_timezone());
+        $today = date('Y-m-d');
+
+        $userTable    = Database::get_main_table(TABLE_MAIN_USER);
+        $logTable     = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $fichaTable   = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable     = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $yearTable    = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+        $gradeTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
+
+        // Get active academic year
+        $activeYear = Database::fetch_array(
+            Database::query("SELECT id FROM $yearTable WHERE active = 1 LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$activeYear) return [];
+        $activeYearId = (int) $activeYear['id'];
+
+        // Build WHERE filters — applied AFTER all JOINs to avoid "unknown column" errors
+        $where = "WHERE u.active = 1 AND u.status = ".STUDENT."
+                    AND m.id IS NOT NULL
+                    AND m.estado = 'ACTIVO'
+                    AND m.academic_year_id = $activeYearId";
+        if ($levelId)   $where .= " AND g.level_id = $levelId";
+        if ($gradeId)   $where .= " AND m.grade_id = $gradeId";
+        if ($sectionId) $where .= " AND m.section_id = $sectionId";
+
+        $sql = "SELECT u.id, u.firstname, u.lastname, u.username, u.official_code,
+                       f.dni, f.tipo_documento,
+                       m.grade_id, m.section_id,
+                       g.name AS grade_name, g.level_id,
+                       l.name AS level_name,
+                       s.name AS section_name,
+                       al.id AS attendance_id, al.check_in, al.status AS attendance_status, al.method
+                FROM $userTable u
+                LEFT JOIN $fichaTable f ON f.user_id = u.id
+                LEFT JOIN $matTable m ON m.ficha_id = f.id AND m.estado = 'ACTIVO' AND m.academic_year_id = $activeYearId
+                LEFT JOIN $gradeTable g ON g.id = m.grade_id
+                LEFT JOIN $levelTable l ON l.id = g.level_id
+                LEFT JOIN $sectionTable s ON s.id = m.section_id
+                LEFT JOIN $logTable al ON u.id = al.user_id AND al.date = '$today'
+                $where
+                ORDER BY l.name ASC, g.name ASC, s.name ASC, u.lastname ASC, u.firstname ASC";
+
+        $result = Database::query($sql);
+        $students = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            // DNI display: use dni from ficha, else official_code from Chamilo user
+            $row['dni_display'] = !empty($row['dni']) ? $row['dni'] : ($row['official_code'] ?: $row['username']);
+            $students[] = $row;
+        }
+        return $students;
+    }
+
+    /**
+     * Get distinct levels, grades and sections for students with active matricula.
+     */
+    public function getAcademicFiltersForAttendance(): array
+    {
+        $yearTable    = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+        $matTable     = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $gradeTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
+
+        $activeYear = Database::fetch_array(
+            Database::query("SELECT id FROM $yearTable WHERE active = 1 LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$activeYear) return ['levels' => [], 'grades' => [], 'sections' => []];
+        $yearId = (int) $activeYear['id'];
+
+        $levels = [];
+        $res = Database::query(
+            "SELECT DISTINCT l.id, l.name FROM $levelTable l
+             INNER JOIN $gradeTable g ON g.level_id = l.id
+             INNER JOIN $matTable m ON m.grade_id = g.id AND m.academic_year_id = $yearId AND m.estado = 'ACTIVO'
+             ORDER BY l.name ASC"
+        );
+        while ($r = Database::fetch_array($res, 'ASSOC')) $levels[] = $r;
+
+        $grades = [];
+        $res = Database::query(
+            "SELECT DISTINCT g.id, g.name, g.level_id FROM $gradeTable g
+             INNER JOIN $matTable m ON m.grade_id = g.id AND m.academic_year_id = $yearId AND m.estado = 'ACTIVO'
+             ORDER BY g.name ASC"
+        );
+        while ($r = Database::fetch_array($res, 'ASSOC')) $grades[] = $r;
+
+        $sections = [];
+        $res = Database::query(
+            "SELECT DISTINCT s.id, s.name FROM $sectionTable s
+             INNER JOIN $matTable m ON m.section_id = s.id AND m.academic_year_id = $yearId AND m.estado = 'ACTIVO'
+             ORDER BY s.name ASC"
+        );
+        while ($r = Database::fetch_array($res, 'ASSOC')) $sections[] = $r;
+
+        return ['levels' => $levels, 'grades' => $grades, 'sections' => $sections];
+    }
+
+    /**
+     * Check if a date is a non-working day (holiday or vacation).
+     */
+    public function isNonWorkingDay(string $date): bool
+    {
+        $this->ensureNonWorkingTable();
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
+        $d = Database::escape_string($date);
+        $result = Database::query("SELECT id FROM $table WHERE '$d' BETWEEN start_date AND end_date LIMIT 1");
+        return Database::num_rows($result) > 0;
+    }
+
+    /**
+     * Generate absent records for all active users on the given date.
+     * Only runs on weekdays (Mon–Fri) that are not holidays or vacations.
+     * Skips users that already have a record for that date.
+     */
+    public function generateDailyAbsences(string $date): array
+    {
+        $this->ensureNonWorkingTable();
+
+        // Only weekdays
+        $dow = (int) date('N', strtotime($date)); // 1=Mon ... 7=Sun
+        if ($dow >= 6) {
+            return ['skipped' => true, 'reason' => 'weekend', 'count' => 0];
+        }
+
+        // Check holiday/vacation calendar
+        if ($this->isNonWorkingDay($date)) {
+            return ['skipped' => true, 'reason' => 'nonworking', 'count' => 0];
+        }
+
+        $userTable  = Database::get_main_table(TABLE_MAIN_USER);
+        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $logTable   = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+
+        $allStatuses = COURSEMANAGER.", ".STUDENT.", ".DRH.", ".SCHOOL_PARENT.", ".SCHOOL_GUARDIAN.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY;
+
+        $sql = "SELECT DISTINCT u.id
+                FROM $userTable u
+                LEFT JOIN $adminTable a ON u.id = a.user_id
+                WHERE u.active = 1
+                  AND (u.status IN ($allStatuses) OR a.user_id IS NOT NULL)";
+        $result = Database::query($sql);
+
+        $dateEsc = Database::escape_string($date);
+        $now     = api_get_utc_datetime();
+        $inserted = 0;
+        $skippedExisting = 0;
+
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $userId = (int) $row['id'];
+
+            // Skip if already has a record for this date
+            $chk = Database::query(
+                "SELECT id FROM $logTable WHERE user_id = $userId AND date = '$dateEsc' LIMIT 1"
+            );
+            if (Database::num_rows($chk) > 0) {
+                $skippedExisting++;
+                continue;
+            }
+
+            Database::insert($logTable, [
+                'user_id'       => $userId,
+                'schedule_id'   => null,
+                'check_in'      => $date . ' 00:00:00',
+                'status'        => 'absent',
+                'method'        => 'manual',
+                'registered_by' => null,
+                'date'          => $date,
+                'notes'         => 'auto_absent',
+                'created_at'    => $now,
+            ]);
+            $inserted++;
+        }
+
+        return [
+            'skipped'          => false,
+            'date'             => $date,
+            'inserted'         => $inserted,
+            'skipped_existing' => $skippedExisting,
+        ];
+    }
+
+    /**
+     * Get list of non-working days for a given year (all if year=0).
+     */
+    public function getNonWorkingDays(int $year = 0): array
+    {
+        $this->ensureNonWorkingTable();
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
+        $where = $year ? "WHERE YEAR(start_date) = $year OR YEAR(end_date) = $year" : '';
+        $result = Database::query("SELECT * FROM $table $where ORDER BY start_date ASC");
+        $rows = [];
+        while ($r = Database::fetch_array($result, 'ASSOC')) $rows[] = $r;
+        return $rows;
+    }
+
+    /**
+     * Add a non-working day entry.
+     */
+    public function addNonWorkingDay(string $type, string $startDate, string $endDate, string $description): int
+    {
+        $this->ensureNonWorkingTable();
+        if (!in_array($type, ['holiday', 'vacation'])) $type = 'holiday';
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
+        return (int) Database::insert($table, [
+            'type'        => $type,
+            'start_date'  => Database::escape_string($startDate),
+            'end_date'    => Database::escape_string($endDate),
+            'description' => Database::escape_string($description),
+            'created_at'  => api_get_utc_datetime(),
+        ]);
+    }
+
+    /**
+     * Delete a non-working day entry.
+     */
+    public function deleteNonWorkingDay(int $id): bool
+    {
+        $this->ensureNonWorkingTable();
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
+        return (bool) Database::delete($table, ['id = ?' => $id]);
+    }
+
+    /**
+     * Ensure the non-working day table exists (lazy migration).
+     */
+    private function ensureNonWorkingTable(): void
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
+        Database::query("CREATE TABLE IF NOT EXISTS $table (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            type ENUM('holiday','vacation') NOT NULL DEFAULT 'holiday',
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            description VARCHAR(255) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL,
+            INDEX idx_dates (start_date, end_date)
+        )");
+    }
+
+    /**
      * Export attendance data to CSV.
      */
-    public function exportAttendanceCSV(?string $startDate = null, ?string $endDate = null, ?string $userType = null): void
-    {
-        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
-        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+    public function exportAttendanceCSV(
+        ?string $startDate = null,
+        ?string $endDate   = null,
+        ?string $userType  = null,
+        int $levelId = 0, int $gradeId = 0, int $sectionId = 0
+    ): void {
+        $logTable      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable     = Database::get_main_table(TABLE_MAIN_USER);
         $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $adminTable    = Database::get_main_table(TABLE_MAIN_ADMIN);
 
         $where = "WHERE 1=1";
-        if ($startDate) {
-            $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
-        }
-        if ($endDate) {
-            $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
-        }
+        if ($startDate) $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
         $where .= $this->getUserTypeFilter($userType);
 
-        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $extraJoins  = '';
+        $extraSelect = '';
+        if ($userType === 'students' && ($levelId || $gradeId || $sectionId)) {
+            $af = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
+            $extraJoins  = $af['joins'];
+            $where      .= $af['where'];
+            // Also join level/section for labels in CSV
+            $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+            $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
+            $extraJoins  .= " LEFT JOIN $levelTable slv ON slv.id = sg.level_id";
+            $extraJoins  .= " LEFT JOIN $sectionTable ssc ON ssc.id = sm.section_id";
+            $extraSelect  = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+        }
+
         $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
                        CASE
                            WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
@@ -3917,27 +4267,34 @@ class SchoolPlugin extends Plugin
                            ELSE 'Alumno'
                        END as role,
                        al.check_in, al.status, al.method, s.name as schedule_name, al.notes
+                       $extraSelect
                 FROM $logTable al
                 INNER JOIN $userTable u ON al.user_id = u.id
                 LEFT JOIN $adminTable adm ON u.id = adm.user_id
                 LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $extraJoins
                 $where
                 ORDER BY al.date DESC, u.lastname ASC";
         $result = Database::query($sql);
 
+        $isStudentExport = ($userType === 'students' && ($levelId || $gradeId || $sectionId));
         $filename = 'asistencia_' . date('Y-m-d_His') . '.csv';
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 
         $output = fopen('php://output', 'w');
         fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
-        fputcsv($output, ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Turno', 'Notas'], ';');
+        $headers = ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Turno', 'Notas'];
+        if ($isStudentExport) {
+            $headers = array_merge($headers, ['Nivel', 'Grado', 'Sección']);
+        }
+        fputcsv($output, $headers, ';');
 
         $statusLabels = ['on_time' => 'Asistio puntualmente', 'late' => 'Asistio con tardanza', 'absent' => 'No asistio'];
         $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
 
         while ($row = Database::fetch_array($result, 'ASSOC')) {
-            fputcsv($output, [
+            $line = [
                 $row['date'],
                 $row['lastname'],
                 $row['firstname'],
@@ -3948,7 +4305,13 @@ class SchoolPlugin extends Plugin
                 $methodLabels[$row['method']] ?? $row['method'],
                 $row['schedule_name'] ?? '-',
                 $row['notes'] ?? '',
-            ], ';');
+            ];
+            if ($isStudentExport) {
+                $line[] = $row['nivel_name']   ?? '-';
+                $line[] = $row['grado_name']   ?? '-';
+                $line[] = $row['seccion_name'] ?? '-';
+            }
+            fputcsv($output, $line, ';');
         }
         fclose($output);
         exit;
@@ -3957,22 +4320,35 @@ class SchoolPlugin extends Plugin
     /**
      * Export attendance data to PDF.
      */
-    public function exportAttendancePDF(?string $startDate = null, ?string $endDate = null, ?string $userType = null): void
-    {
-        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
-        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+    public function exportAttendancePDF(
+        ?string $startDate = null,
+        ?string $endDate   = null,
+        ?string $userType  = null,
+        int $levelId = 0, int $gradeId = 0, int $sectionId = 0
+    ): void {
+        $logTable      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable     = Database::get_main_table(TABLE_MAIN_USER);
         $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $adminTable    = Database::get_main_table(TABLE_MAIN_ADMIN);
 
         $where = "WHERE 1=1";
-        if ($startDate) {
-            $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
-        }
-        if ($endDate) {
-            $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
-        }
+        if ($startDate) $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
         $where .= $this->getUserTypeFilter($userType);
 
-        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $extraJoins  = '';
+        $extraSelect = '';
+        if ($userType === 'students' && ($levelId || $gradeId || $sectionId)) {
+            $af = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
+            $extraJoins  = $af['joins'];
+            $where      .= $af['where'];
+            $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+            $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
+            $extraJoins  .= " LEFT JOIN $levelTable slv ON slv.id = sg.level_id";
+            $extraJoins  .= " LEFT JOIN $sectionTable ssc ON ssc.id = sm.section_id";
+            $extraSelect  = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+        }
+
         $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
                        CASE
                            WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
@@ -3985,10 +4361,12 @@ class SchoolPlugin extends Plugin
                            ELSE 'Alumno'
                        END as role,
                        al.check_in, al.status, al.method, s.name as schedule_name, al.notes
+                       $extraSelect
                 FROM $logTable al
                 INNER JOIN $userTable u ON al.user_id = u.id
                 LEFT JOIN $adminTable adm ON u.id = adm.user_id
                 LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $extraJoins
                 $where
                 ORDER BY al.date DESC, u.lastname ASC";
         $result = Database::query($sql);

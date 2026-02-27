@@ -2,7 +2,7 @@
 
 <div class="card">
     <div class="card-header">
-        <i class="fas fa-user-check"></i> {{ 'ManualRegistration'|get_plugin_lang('SchoolPlugin') }}
+        <i class="fas fa-id-badge"></i> {{ 'AttendancePersonal'|get_plugin_lang('SchoolPlugin') }}
     </div>
     <div class="card-body">
         <!-- Search and filters -->
@@ -21,9 +21,9 @@
                         <div class="btn-group mr-2 mb-1" role="group">
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users active" data-filter="all">{{ 'AllUsers'|get_plugin_lang('SchoolPlugin') }}</button>
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="teacher">{{ 'RoleTeacher'|get_plugin_lang('SchoolPlugin') }}</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="students">{{ 'RoleStudent'|get_plugin_lang('SchoolPlugin') }}</button>
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="secretary">{{ 'RoleSecretary'|get_plugin_lang('SchoolPlugin') }}</button>
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="auxiliary">{{ 'RoleAuxiliary'|get_plugin_lang('SchoolPlugin') }}</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="admin">{{ 'RoleAdmin'|get_plugin_lang('SchoolPlugin') }}</button>
                         </div>
                         <div class="d-flex align-items-center mb-1">
                             <select id="bulkStatus" class="form-control form-control-sm mr-2" style="width: auto;">

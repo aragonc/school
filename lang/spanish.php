@@ -219,7 +219,11 @@ $strings['Absent'] = 'No asistió';
 $strings['CheckIn'] = 'Hora de Ingreso';
 $strings['GenerateQR'] = 'Generar QR del Día';
 $strings['ScanQR'] = 'Escanear QR';
-$strings['ManualRegistration'] = 'Registro Manual';
+$strings['ManualRegistration']  = 'Registro Manual';
+$strings['AttendancePersonal']  = 'Asistencia Personal';
+$strings['AttendanceStudents']  = 'Asistencia Alumnos';
+$strings['NoStudentsFound']     = 'No se encontraron alumnos con los filtros seleccionados.';
+$strings['AllLevels']           = 'Todos los niveles';
 $strings['ExportExcel'] = 'Exportar Excel';
 $strings['ExportPDF'] = 'Exportar PDF';
 $strings['ScheduleName'] = 'Nombre del Turno';
@@ -265,6 +269,28 @@ $strings['RegisterSelected'] = 'Registrar Seleccionados';
 $strings['FullName'] = 'Nombre Completo';
 $strings['AlreadyRegistered'] = 'Ya registrado';
 $strings['NotRegistered'] = 'Sin registrar';
+
+// Attendance Calendar (non-working days)
+$strings['AttendanceCalendar']      = 'Calendario Laboral';
+$strings['NonWorkingDays']          = 'Días No Laborables';
+$strings['AddNonWorkingDay']        = 'Agregar Día No Laborable';
+$strings['Holiday']                 = 'Feriado';
+$strings['Vacation']                = 'Vacaciones';
+$strings['NonWorkingType']          = 'Tipo';
+$strings['StartDateLabel']          = 'Fecha Inicio';
+$strings['EndDateLabel']            = 'Fecha Fin';
+$strings['DescriptionLabel']        = 'Descripción';
+$strings['DeleteNonWorkingDay']     = 'Eliminar';
+$strings['ConfirmDeleteNonWorking'] = '¿Eliminar este día no laborable?';
+$strings['NonWorkingDayAdded']      = 'Día no laborable agregado';
+$strings['NonWorkingDayDeleted']    = 'Día no laborable eliminado';
+$strings['CronInfo']                = 'Para marcar ausentes automáticamente, configure el cron en el servidor:';
+$strings['NoNonWorkingDays']        = 'No hay días no laborables registrados';
+$strings['GenerateAbsences']        = 'Generar Ausencias Hoy';
+$strings['AbsencesGenerated']       = 'Ausencias generadas';
+$strings['AbsencesSkipped']         = 'Ya tenían registro';
+$strings['SkippedWeekend']          = 'Fin de semana — no se generan ausencias';
+$strings['SkippedNonWorking']       = 'Día no laborable — no se generan ausencias';
 
 // Extra Profile
 $strings['ExtraProfileData'] = 'Datos Adicionales';
