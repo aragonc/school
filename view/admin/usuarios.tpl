@@ -281,8 +281,8 @@ $(document).ready(function () {
             if (resp.email) {
                 new QRCode(document.getElementById('sc-qr'), {
                     text: resp.email,
-                    width: 90,
-                    height: 90,
+                    width: 200,
+                    height: 200,
                     colorDark: '#2d3748',
                     colorLight: '#f7f8fa',
                     correctLevel: QRCode.CorrectLevel.M

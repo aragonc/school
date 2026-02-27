@@ -233,9 +233,10 @@ $(document).ready(function () {
                     $('#tp-foto-placeholder').show();
                 }
                 $('#tp-qr').empty();
-                if (resp.email) {
+                var qrVal = resp.dni || resp.email;
+                if (qrVal) {
                     new QRCode(document.getElementById('tp-qr'), {
-                        text: resp.email, width: 98, height: 98,
+                        text: qrVal, width: 200, height: 200,
                         colorDark: '#1a3a6b', colorLight: '#ffffff',
                         correctLevel: QRCode.CorrectLevel.M
                     });
@@ -273,7 +274,7 @@ $(document).ready(function () {
                 $('#tp-qr').empty();
                 if (resp.email) {
                     new QRCode(document.getElementById('tp-qr'), {
-                        text: resp.email, width: 90, height: 90,
+                        text: resp.email, width: 200, height: 200,
                         colorDark: '#2d3748', colorLight: '#f7f8fa',
                         correctLevel: QRCode.CorrectLevel.M
                     });

@@ -337,11 +337,12 @@ $(document).ready(function () {
 
             // QR
             $('#tc-qr').empty();
-            if (resp.email) {
+            var qrValue = resp.dni || resp.email;
+            if (qrValue) {
                 new QRCode(document.getElementById('tc-qr'), {
-                    text: resp.email,
-                    width: 98,
-                    height: 98,
+                    text: qrValue,
+                    width: 200,
+                    height: 200,
                     colorDark: '#1a3a6b',
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.M

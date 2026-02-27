@@ -28,12 +28,14 @@ $activeYearId = $activeYear ? (int) $activeYear['id'] : 0;
 // Fetch all fichas with their most recent matricula data.
 // Section comes from classroom assignment (classroom_student → classroom → section),
 // not from the grade table (which has no section column).
+$userTable = Database::get_main_table(TABLE_MAIN_USER);
+
 $sql = "SELECT
             f.id          AS ficha_id,
             f.apellido_paterno,
             f.apellido_materno,
             f.nombres,
-            f.dni,
+            COALESCE(NULLIF(TRIM(f.dni), ''), u.official_code) AS dni,
             f.foto,
             f.user_id,
             m.id          AS matricula_id,
@@ -49,6 +51,7 @@ $sql = "SELECT
             l.order_index AS level_order,
             sec.name      AS section_name
         FROM $fichaTable f
+        LEFT JOIN $userTable u ON u.id = f.user_id
         LEFT JOIN $matriculaTable m
             ON m.id = (
                 SELECT m2.id FROM $matriculaTable m2
@@ -306,7 +309,8 @@ body {
 
 /* QR */
 .card-qr { text-align: center; padding: 0 14px 12px; }
-.qr-box  { background: #f7f8fa; border: 1px solid #e2e8f0; padding: 6px; border-radius: 6px; display: inline-block; }
+.qr-box  { background: #f7f8fa; border: 1px solid #e2e8f0; padding: 6px; border-radius: 6px; display: inline-block; max-width: 100%; }
+.qr-box img, .qr-box canvas { max-width: 100%; height: auto !important; }
 .card-qr .dni-text { font-size: 9px; color: #718096; margin-top: 4px; font-weight: 700; letter-spacing: 1px; }
 
 /* Footer */
@@ -508,8 +512,8 @@ foreach ($groups as $groupData):
     boxes.forEach(function (box) {
         new QRCode(box, {
             text: box.dataset.value || '-',
-            width:  64,
-            height: 64,
+            width:  200,
+            height: 200,
             colorDark:  '#1a3558',
             colorLight: '#f7f8fa',
             correctLevel: QRCode.CorrectLevel.M

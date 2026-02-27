@@ -366,15 +366,21 @@ switch ($action) {
                 $fotoUrl   = $uInfoCard['avatar'] ?? '';
             }
             $email = '';
+            $officialCode = '';
             if (!empty($mat['user_id'])) {
-                $uInfoCard = api_get_user_info((int) $mat['user_id']);
-                $email     = $uInfoCard['email'] ?? '';
+                $uInfoCard    = api_get_user_info((int) $mat['user_id']);
+                $email        = $uInfoCard['email'] ?? '';
+                $officialCode = $uInfoCard['official_code'] ?? '';
+            }
+            $dniValue = trim($mat['dni'] ?? '');
+            if ($dniValue === '') {
+                $dniValue = $officialCode;
             }
             echo json_encode([
                 'success'   => true,
                 'nombres'   => trim($mat['nombres'] ?? ''),
                 'apellidos' => trim(($mat['apellido_paterno'] ?? '') . ' ' . ($mat['apellido_materno'] ?? '')),
-                'dni'       => $mat['dni'] ?? '',
+                'dni'       => $dniValue,
                 'grade'     => $gradeName,
                 'section'   => $sectionName,
                 'level'     => $levelName,
@@ -388,13 +394,14 @@ switch ($action) {
                 echo json_encode(['success' => false, 'error' => 'Usuario no encontrado']);
                 break;
             }
-            $apellidos = trim($uInfoCard['lastname'] ?? '');
-            $nombres   = trim($uInfoCard['firstname'] ?? '');
+            $apellidos    = trim($uInfoCard['lastname'] ?? '');
+            $nombres      = trim($uInfoCard['firstname'] ?? '');
+            $officialCode = $uInfoCard['official_code'] ?? '';
             echo json_encode([
                 'success'   => true,
                 'nombres'   => $nombres,
                 'apellidos' => $apellidos,
-                'dni'       => '',
+                'dni'       => $officialCode,
                 'grade'     => '',
                 'section'   => '',
                 'level'     => '',

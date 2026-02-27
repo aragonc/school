@@ -175,7 +175,8 @@ body {
 
 /* QR */
 .card-qr { text-align: center; padding: 0 14px 12px; }
-.qr-box  { background: #f7f8fa; border: 1px solid #e2e8f0; padding: 6px; border-radius: 6px; display: inline-block; }
+.qr-box  { background: #f7f8fa; border: 1px solid #e2e8f0; padding: 6px; border-radius: 6px; display: inline-block; max-width: 100%; }
+.qr-box img, .qr-box canvas { max-width: 100%; height: auto !important; }
 .card-qr .email { font-size: 8px; color: #718096; margin-top: 4px; word-break: break-all; }
 
 /* Footer azul marino */
@@ -273,8 +274,8 @@ body {
     boxes.forEach(function (box) {
         new QRCode(box, {
             text: box.dataset.value || '-',
-            width:  64,
-            height: 64,
+            width:  200,
+            height: 200,
             colorDark:  '#1a3558',
             colorLight: '#f7f8fa',
             correctLevel: QRCode.CorrectLevel.M
