@@ -57,6 +57,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_MATRICULA_DOCS           = 'plugin_school_matricula_docs';
     const TABLE_SCHOOL_REFUND                   = 'plugin_school_refund';
     const TABLE_SCHOOL_CLASSROOM_PLAN             = 'plugin_school_classroom_plan';
+    const TABLE_SCHOOL_CLASSROOM_SCHEDULE         = 'plugin_school_classroom_schedule';
     const TABLE_SCHOOL_ATTENDANCE_NONWORKING      = 'plugin_school_attendance_nonworking';
 
     const TEMPLATE_ZERO = 0;
@@ -1243,6 +1244,22 @@ class SchoolPlugin extends Plugin
             INDEX idx_dates (start_date, end_date)
         )");
 
+        Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_CLASSROOM_SCHEDULE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            classroom_id INT unsigned NOT NULL,
+            day_of_week TINYINT NOT NULL DEFAULT 0 COMMENT '0=Todos, 1=Lunes, 2=Martes, 3=Miercoles, 4=Jueves, 5=Viernes',
+            time_start TIME NOT NULL,
+            time_end TIME NOT NULL,
+            subject VARCHAR(255) NOT NULL DEFAULT '',
+            teacher_id INT NULL,
+            teacher_name VARCHAR(255) NULL,
+            style VARCHAR(30) NOT NULL DEFAULT '' COMMENT 'empty=normal|break|pause|exit|highlight|fullday',
+            sort_order SMALLINT NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            INDEX idx_classroom (classroom_id),
+            INDEX idx_classroom_day (classroom_id, day_of_week)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -1351,6 +1368,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^payments/refund-receipt$ plugin/school/src/payments/refund_receipt.php [L,QSA]\n".
             "RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]\n".
             "RewriteRule ^my-aula/mis-alumnos$ plugin/school/src/classroom/mis_alumnos.php [L,QSA]\n".
+            "RewriteRule ^my-aula/horario$ plugin/school/src/classroom/schedule.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -2565,7 +2583,7 @@ class SchoolPlugin extends Plugin
 
         // Mi Aula: visible for teachers, students and admin (NOT secretary)
         if ($this->get('show_my_aula') !== 'false' && !$isSecretary && ($isAdmin || $isTeacherUser || $isStudent)) {
-            $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos']);
+            $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos', 'my-classroom-schedule']);
 
             $myAulaItems = [
                 [
@@ -2576,13 +2594,19 @@ class SchoolPlugin extends Plugin
                 ],
             ];
 
-            // "Mis Alumnos" only for admin and teacher (secretary and students excluded)
+            // "Mis Alumnos" and "Horario" only for admin and teacher (secretary and students excluded)
             if (api_is_platform_admin() || $isTeacherUser) {
                 $myAulaItems[] = [
                     'name'    => 'my-aula-alumnos',
                     'label'   => 'Mis Alumnos',
                     'url'     => '/my-aula/mis-alumnos',
                     'current' => $currentSection === 'my-classroom-alumnos',
+                ];
+                $myAulaItems[] = [
+                    'name'    => 'my-aula-horario',
+                    'label'   => 'Horario',
+                    'url'     => '/my-aula/horario',
+                    'current' => $currentSection === 'my-classroom-schedule',
                 ];
             }
 
