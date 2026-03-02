@@ -131,12 +131,14 @@ switch ($action) {
             exit;
         }
         $data = [
-            'id' => isset($_POST['id']) ? (int) $_POST['id'] : 0,
-            'name' => isset($_POST['name']) ? trim($_POST['name']) : '',
+            'id'         => isset($_POST['id']) ? (int) $_POST['id'] : 0,
+            'name'       => isset($_POST['name']) ? trim($_POST['name']) : '',
             'entry_time' => isset($_POST['entry_time']) ? $_POST['entry_time'] : '',
-            'late_time' => isset($_POST['late_time']) ? $_POST['late_time'] : '',
+            'late_time'  => isset($_POST['late_time']) ? $_POST['late_time'] : '',
             'applies_to' => isset($_POST['applies_to']) ? $_POST['applies_to'] : ['all'],
-            'active' => isset($_POST['active']) ? (int) $_POST['active'] : 1,
+            'level_id'   => isset($_POST['level_id']) && $_POST['level_id'] !== '' ? (int) $_POST['level_id'] : null,
+            'grade_id'   => isset($_POST['grade_id']) && $_POST['grade_id'] !== '' ? (int) $_POST['grade_id'] : null,
+            'active'     => isset($_POST['active']) ? (int) $_POST['active'] : 1,
         ];
 
         if (empty($data['name']) || empty($data['entry_time']) || empty($data['late_time'])) {
@@ -160,6 +162,63 @@ switch ($action) {
         }
         $plugin->deleteSchedule($id);
         echo json_encode(['success' => true, 'message' => 'Schedule deleted']);
+        break;
+
+    case 'get_schedule_users':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $scheduleId = isset($_GET['schedule_id']) ? (int) $_GET['schedule_id'] : 0;
+        if ($scheduleId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid schedule']);
+            exit;
+        }
+        $users = $plugin->getScheduleUserAssignments($scheduleId);
+        echo json_encode(['success' => true, 'data' => $users]);
+        break;
+
+    case 'search_users_for_schedule':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $query = isset($_GET['q']) ? trim($_GET['q']) : '';
+        if (strlen($query) < 2) {
+            echo json_encode(['success' => true, 'data' => []]);
+            exit;
+        }
+        $users = $plugin->searchUsersForScheduleAssignment($query);
+        echo json_encode(['success' => true, 'data' => $users]);
+        break;
+
+    case 'assign_user_schedule':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $userId     = isset($_POST['user_id'])     ? (int) $_POST['user_id']     : 0;
+        $scheduleId = isset($_POST['schedule_id']) ? (int) $_POST['schedule_id'] : 0;
+        if ($userId <= 0 || $scheduleId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            exit;
+        }
+        $plugin->assignUserSchedule($userId, $scheduleId);
+        echo json_encode(['success' => true, 'message' => 'User assigned']);
+        break;
+
+    case 'remove_user_schedule':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+        if ($userId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid user']);
+            exit;
+        }
+        $plugin->removeUserSchedule($userId);
+        echo json_encode(['success' => true, 'message' => 'Assignment removed']);
         break;
 
     case 'export_excel':

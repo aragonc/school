@@ -20,10 +20,13 @@ if (!$isAdmin) {
 }
 
 $schedules = $plugin->getSchedules();
+$academicFilters = $plugin->getAcademicFiltersForAttendance();
 
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('active_tab', 'schedules');
 $plugin->assign('schedules', $schedules);
+$plugin->assign('levels', $academicFilters['levels']);
+$plugin->assign('grades', $academicFilters['grades']);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH).'school/ajax/ajax_attendance.php');
 
 $plugin->setTitle($plugin->get_lang('AttendanceControl'));

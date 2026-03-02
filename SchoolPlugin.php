@@ -59,6 +59,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_CLASSROOM_PLAN             = 'plugin_school_classroom_plan';
     const TABLE_SCHOOL_CLASSROOM_SCHEDULE         = 'plugin_school_classroom_schedule';
     const TABLE_SCHOOL_ATTENDANCE_NONWORKING      = 'plugin_school_attendance_nonworking';
+    const TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER   = 'plugin_school_attendance_schedule_user';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -1258,6 +1259,31 @@ class SchoolPlugin extends Plugin
             created_at DATETIME NOT NULL,
             INDEX idx_classroom (classroom_id),
             INDEX idx_classroom_day (classroom_id, day_of_week)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+        // Migration: add level_id to plugin_school_attendance_schedule if not present
+        $schedTableName = self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE;
+        $colCheckSched = Database::query(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '$schedTableName'
+               AND COLUMN_NAME = 'level_id'"
+        );
+        $colRowSched = Database::fetch_array($colCheckSched, 'ASSOC');
+        if ((int) ($colRowSched['cnt'] ?? 0) === 0) {
+            Database::query("ALTER TABLE $schedTableName
+                ADD COLUMN level_id INT unsigned NULL DEFAULT NULL AFTER applies_to,
+                ADD COLUMN grade_id INT unsigned NULL DEFAULT NULL AFTER level_id");
+        }
+
+        // Migration: table for user-specific schedule assignments
+        Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            user_id INT NOT NULL,
+            schedule_id INT unsigned NOT NULL,
+            created_at DATETIME NOT NULL,
+            UNIQUE KEY unique_user (user_id),
+            INDEX idx_schedule (schedule_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
         // Add rewrite rules to .htaccess
@@ -3488,9 +3514,18 @@ class SchoolPlugin extends Plugin
      */
     public function getSchedules(bool $activeOnly = false): array
     {
-        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
-        $where = $activeOnly ? "WHERE active = 1" : "";
-        $sql = "SELECT * FROM $table $where ORDER BY entry_time ASC";
+        $table      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $levelTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $gradeTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $where = $activeOnly ? "WHERE s.active = 1" : "";
+        $sql = "SELECT s.*,
+                       l.name AS level_name,
+                       g.name AS grade_name
+                FROM $table s
+                LEFT JOIN $levelTable l ON l.id = s.level_id
+                LEFT JOIN $gradeTable g ON g.id = s.grade_id
+                $where
+                ORDER BY s.entry_time ASC";
         $result = Database::query($sql);
         $schedules = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
@@ -3518,12 +3553,20 @@ class SchoolPlugin extends Plugin
             }
         }
 
+        // level_id and grade_id only relevant when applies_to includes 'student'
+        $roles = explode(',', $appliesTo);
+        $hasStudent = in_array('student', $roles) || in_array('all', $roles);
+        $levelId = ($hasStudent && !empty($data['level_id'])) ? (int) $data['level_id'] : null;
+        $gradeId = ($levelId && !empty($data['grade_id'])) ? (int) $data['grade_id'] : null;
+
         $params = [
-            'name' => Database::escape_string($data['name']),
+            'name'       => Database::escape_string($data['name']),
             'entry_time' => Database::escape_string($data['entry_time']),
-            'late_time' => Database::escape_string($data['late_time']),
+            'late_time'  => Database::escape_string($data['late_time']),
             'applies_to' => Database::escape_string($appliesTo),
-            'active' => isset($data['active']) ? (int) $data['active'] : 1,
+            'level_id'   => $levelId,
+            'grade_id'   => $gradeId,
+            'active'     => isset($data['active']) ? (int) $data['active'] : 1,
         ];
 
         if (!empty($data['id'])) {
@@ -3541,17 +3584,115 @@ class SchoolPlugin extends Plugin
      */
     public function deleteSchedule(int $id): bool
     {
-        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
-        Database::delete($table, ['id = ?' => $id]);
+        $table     = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $userTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
+        Database::delete($table,     ['id = ?' => $id]);
+        Database::delete($userTable, ['schedule_id = ?' => $id]);
         return true;
     }
 
     /**
-     * Get the applicable schedule for a user based on their role.
+     * Assign a custom schedule to a specific user (overrides all other logic).
+     */
+    public function assignUserSchedule(int $userId, int $scheduleId): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
+        $existing = Database::fetch_array(
+            Database::query("SELECT id FROM $table WHERE user_id = $userId LIMIT 1"),
+            'ASSOC'
+        );
+        if ($existing) {
+            Database::update($table, ['schedule_id' => $scheduleId], ['user_id = ?' => $userId]);
+        } else {
+            Database::insert($table, [
+                'user_id'     => $userId,
+                'schedule_id' => $scheduleId,
+                'created_at'  => api_get_utc_datetime(),
+            ]);
+        }
+        return true;
+    }
+
+    /**
+     * Remove the custom schedule assignment for a user.
+     */
+    public function removeUserSchedule(int $userId): bool
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
+        Database::delete($table, ['user_id = ?' => $userId]);
+        return true;
+    }
+
+    /**
+     * Get all users assigned to a specific schedule.
+     */
+    public function getScheduleUserAssignments(int $scheduleId): array
+    {
+        $table     = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $sql = "SELECT u.id, u.firstname, u.lastname, u.username, u.status, su.created_at
+                FROM $table su
+                INNER JOIN $userTable u ON u.id = su.user_id
+                WHERE su.schedule_id = $scheduleId
+                ORDER BY u.lastname ASC, u.firstname ASC";
+        $result = Database::query($sql);
+        $users = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $users[] = $row;
+        }
+        return $users;
+    }
+
+    /**
+     * Search users by name or username for schedule assignment.
+     */
+    public function searchUsersForScheduleAssignment(string $query): array
+    {
+        $userTable  = Database::get_main_table(TABLE_MAIN_USER);
+        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $q = '%' . Database::escape_string(trim($query)) . '%';
+        $sql = "SELECT u.id, u.firstname, u.lastname, u.username, u.status,
+                       CASE WHEN a.user_id IS NOT NULL THEN 1 ELSE 0 END as is_admin
+                FROM $userTable u
+                LEFT JOIN $adminTable a ON u.id = a.user_id
+                WHERE u.active = 1
+                  AND (u.firstname LIKE '$q' OR u.lastname LIKE '$q' OR u.username LIKE '$q'
+                       OR CONCAT(u.firstname,' ',u.lastname) LIKE '$q'
+                       OR CONCAT(u.lastname,' ',u.firstname) LIKE '$q')
+                ORDER BY u.lastname ASC, u.firstname ASC
+                LIMIT 20";
+        $result = Database::query($sql);
+        $users = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $users[] = $row;
+        }
+        return $users;
+    }
+
+    /**
+     * Get the applicable schedule for a user.
+     * For students: priority = grade-specific > level-specific > role-only > all.
+     * For staff roles: matches by applies_to role or 'all'.
      */
     public function getApplicableSchedule(int $userId): ?array
     {
-        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $table      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $userTable  = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
+        $matTable   = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $gradeTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $yearTable  = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+
+        // Priority 0: user-specific custom schedule
+        $uid = (int) $userId;
+        $custom = Database::fetch_array(
+            Database::query(
+                "SELECT s.* FROM $userTable su
+                 INNER JOIN $table s ON s.id = su.schedule_id AND s.active = 1
+                 WHERE su.user_id = $uid LIMIT 1"
+            ),
+            'ASSOC'
+        );
+        if ($custom) return $custom;
 
         $user = api_get_user_info($userId);
         $userRole = 'student';
@@ -3569,9 +3710,58 @@ class SchoolPlugin extends Plugin
             }
         }
 
-        $userRole = Database::escape_string($userRole);
+        // For students, try level/grade-specific schedules first
+        if ($userRole === 'student') {
+            $uid = (int) $userId;
+            $enrollment = Database::fetch_array(
+                Database::query(
+                    "SELECT m.grade_id, g.level_id
+                     FROM $matTable m
+                     INNER JOIN $gradeTable g ON g.id = m.grade_id
+                     INNER JOIN $yearTable y ON y.id = m.academic_year_id AND y.active = 1
+                     WHERE m.user_id = $uid AND m.estado = 'ACTIVO'
+                     LIMIT 1"
+                ),
+                'ASSOC'
+            );
+
+            if ($enrollment) {
+                $levelId = (int) $enrollment['level_id'];
+                $gradeId = (int) $enrollment['grade_id'];
+
+                // 1) Exact grade match
+                $sql = "SELECT * FROM $table
+                        WHERE active = 1
+                          AND level_id = $levelId AND grade_id = $gradeId
+                          AND (FIND_IN_SET('student', applies_to) OR applies_to = 'all')
+                        ORDER BY entry_time ASC LIMIT 1";
+                $row = Database::fetch_array(Database::query($sql), 'ASSOC');
+                if ($row) return $row;
+
+                // 2) Level match, no grade restriction
+                $sql = "SELECT * FROM $table
+                        WHERE active = 1
+                          AND level_id = $levelId AND grade_id IS NULL
+                          AND (FIND_IN_SET('student', applies_to) OR applies_to = 'all')
+                        ORDER BY entry_time ASC LIMIT 1";
+                $row = Database::fetch_array(Database::query($sql), 'ASSOC');
+                if ($row) return $row;
+            }
+
+            // 3) Student role, no level restriction
+            $sql = "SELECT * FROM $table
+                    WHERE active = 1 AND level_id IS NULL AND grade_id IS NULL
+                      AND (FIND_IN_SET('student', applies_to) OR applies_to = 'all')
+                    ORDER BY entry_time ASC LIMIT 1";
+            $row = Database::fetch_array(Database::query($sql), 'ASSOC');
+            if ($row) return $row;
+        }
+
+        // Staff roles or fallback: match by role or 'all'
+        $safeRole = Database::escape_string($userRole);
         $sql = "SELECT * FROM $table
-                WHERE active = 1 AND (applies_to = 'all' OR FIND_IN_SET('$userRole', applies_to))
+                WHERE active = 1 AND level_id IS NULL AND grade_id IS NULL
+                  AND (applies_to = 'all' OR FIND_IN_SET('$safeRole', applies_to))
                 ORDER BY entry_time ASC LIMIT 1";
         $result = Database::query($sql);
         $row = Database::fetch_array($result, 'ASSOC');
