@@ -27,7 +27,7 @@ class ClassroomPlanManager
         $sTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
         $lTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
 
-        $sql = "SELECT c.id, c.academic_year_id, c.grade_id, c.section_id, c.tutor_id, c.capacity,
+        $sql = "SELECT c.id, c.academic_year_id, c.grade_id, c.section_id, c.tutor_id, c.supervisor_id, c.capacity,
                        g.name AS grade_name, g.level_id,
                        s.name AS section_name,
                        l.name AS level_name
@@ -35,12 +35,95 @@ class ClassroomPlanManager
                 INNER JOIN $gTable  g ON g.id  = c.grade_id
                 INNER JOIN $sTable  s ON s.id  = c.section_id
                 INNER JOIN $lTable  l ON l.id  = g.level_id
-                WHERE c.tutor_id = $userId AND c.academic_year_id = $yearId
+                WHERE (c.tutor_id = $userId OR c.supervisor_id = $userId)
+                  AND c.academic_year_id = $yearId
                 LIMIT 1";
 
         $result = Database::query($sql);
         $row    = Database::fetch_array($result, 'ASSOC');
         return $row ?: null;
+    }
+
+    /**
+     * Returns all classrooms where $userId is assigned as supervisor for $yearId.
+     */
+    public static function getSupervisorClassrooms(int $userId, int $yearId): array
+    {
+        if ($userId <= 0 || $yearId <= 0) {
+            return [];
+        }
+
+        $cTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $gTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $sTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
+        $lTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $csTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $uTable  = Database::get_main_table(TABLE_MAIN_USER);
+
+        $sql = "SELECT c.id, c.academic_year_id, c.grade_id, c.section_id,
+                       c.tutor_id, c.supervisor_id, c.session_id, c.capacity,
+                       g.name AS grade_name, g.level_id, g.order_index AS grade_order,
+                       s.name AS section_name,
+                       l.name AS level_name, l.order_index AS level_order,
+                       (SELECT COUNT(*) FROM $csTable cs WHERE cs.classroom_id = c.id) AS student_count,
+                       CONCAT(u.firstname, ' ', u.lastname) AS tutor_full_name
+                FROM $cTable c
+                INNER JOIN $gTable g ON g.id = c.grade_id
+                INNER JOIN $sTable s ON s.id = c.section_id
+                INNER JOIN $lTable l ON l.id = g.level_id
+                LEFT  JOIN $uTable u ON u.id = c.tutor_id
+                WHERE c.supervisor_id = $userId
+                  AND c.academic_year_id = $yearId
+                ORDER BY l.order_index ASC, g.order_index ASC, s.name ASC";
+
+        $result = Database::query($sql);
+        $rows   = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            // Resolve session name
+            if (!empty($row['session_id'])) {
+                $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
+                $sid = (int) $row['session_id'];
+                $sRes = Database::query("SELECT id, name FROM $sessionTable WHERE id = $sid LIMIT 1");
+                $sRow = Database::fetch_array($sRes, 'ASSOC');
+                $row['session_name'] = $sRow ? $sRow['name'] : '';
+
+                // Get courses in the session
+                $srcTable    = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
+                $courseTable = Database::get_main_table(TABLE_MAIN_COURSE);
+                $cRes = Database::query(
+                    "SELECT c.id, c.code, c.title, c.visual_code
+                     FROM $srcTable src
+                     INNER JOIN $courseTable c ON c.id = src.c_id
+                     WHERE src.session_id = $sid
+                     ORDER BY c.title ASC"
+                );
+                $courses = [];
+                while ($cRow = Database::fetch_array($cRes, 'ASSOC')) {
+                    $courses[] = $cRow;
+                }
+                $row['session_courses'] = $courses;
+            } else {
+                $row['session_name']    = '';
+                $row['session_courses'] = [];
+            }
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    /**
+     * Returns true if $userId is supervisor of at least one classroom in $yearId.
+     */
+    public static function isSupervisor(int $userId, int $yearId): bool
+    {
+        if ($userId <= 0 || $yearId <= 0) {
+            return false;
+        }
+        $cTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $res = Database::query(
+            "SELECT id FROM $cTable WHERE supervisor_id = $userId AND academic_year_id = $yearId LIMIT 1"
+        );
+        return Database::num_rows($res) > 0;
     }
 
     /**

@@ -40,6 +40,31 @@
                         </button>
                     </div>
                 </div>
+                <!-- Supervisor -->
+                <div class="card mb-3">
+                    <div class="card-body d-flex align-items-center">
+                        {% if classroom.supervisor_avatar %}
+                            <img src="{{ classroom.supervisor_avatar }}" class="rounded-circle mr-3" width="50" height="50" alt="Supervisor">
+                        {% else %}
+                            <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mr-3" style="width:50px;height:50px;">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <small class="text-muted">Supervisor</small>
+                            <div class="font-weight-bold">
+                                {% if classroom.supervisor_name %}
+                                    {{ classroom.supervisor_name }}
+                                {% else %}
+                                    <span class="text-muted">Sin supervisor</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-info btn-sm ml-auto" data-toggle="modal" data-target="#supervisorModal">
+                            <i class="fas fa-exchange-alt"></i> Cambiar
+                        </button>
+                    </div>
+                </div>
                 <!-- Auxiliaries -->
                 <div class="card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -274,6 +299,29 @@
     </div>
 </div>
 
+<!-- Change Supervisor Modal -->
+<div class="modal fade" id="supervisorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-shield mr-2"></i>Cambiar supervisor</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Buscar docente</label>
+                    <input type="text" class="form-control" id="supervisor_search" placeholder="{{ 'TypeToSearch'|get_plugin_lang('SchoolPlugin') }}" autocomplete="off">
+                </div>
+                <div id="supervisor_results" style="max-height:250px; overflow-y:auto;"></div>
+                <hr>
+                <button class="btn btn-outline-secondary btn-sm" onclick="saveSupervisor(0)">
+                    <i class="fas fa-user-slash"></i> Quitar supervisor
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Add Auxiliary Modal -->
 <div class="modal fade" id="auxiliaryModal" tabindex="-1">
     <div class="modal-dialog">
@@ -376,6 +424,44 @@ function saveTutor(tutorId) {
     fd.append('action', 'update_tutor');
     fd.append('classroom_id', classroomId);
     fd.append('tutor_id', tutorId);
+    fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();});
+}
+
+// =========================================================================
+// SUPERVISOR SEARCH
+// =========================================================================
+document.getElementById('supervisor_search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    var query = this.value.trim();
+    if (query.length < 2) {
+        document.getElementById('supervisor_results').innerHTML = '';
+        return;
+    }
+    searchTimeout = setTimeout(function() {
+        fetch(ajaxUrl + '?action=search_teachers&q=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(data => {
+                var html = '';
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(function(t) {
+                        html += '<div class="d-flex align-items-center p-2 border-bottom" style="cursor:pointer" onclick="saveSupervisor(' + t.user_id + ')">';
+                        html += '<i class="fas fa-user-shield text-info mr-2"></i>';
+                        html += '<div><strong>' + t.lastname + ', ' + t.firstname + '</strong><br><small class="text-muted">' + t.username + '</small></div>';
+                        html += '</div>';
+                    });
+                } else {
+                    html = '<div class="text-muted p-2">{{ 'NoResults'|get_plugin_lang('SchoolPlugin') }}</div>';
+                }
+                document.getElementById('supervisor_results').innerHTML = html;
+            });
+    }, 300);
+});
+
+function saveSupervisor(supervisorId) {
+    var fd = new FormData();
+    fd.append('action', 'update_supervisor');
+    fd.append('classroom_id', classroomId);
+    fd.append('supervisor_id', supervisorId);
     fetch(ajaxUrl, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{if(d.success)location.reload();});
 }
 

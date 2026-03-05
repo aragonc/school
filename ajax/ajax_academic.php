@@ -206,6 +206,18 @@ switch ($action) {
         }
         break;
 
+    case 'update_supervisor':
+        $classroomId  = (int) ($_POST['classroom_id'] ?? 0);
+        $supervisorId = (int) ($_POST['supervisor_id'] ?? 0);
+        if ($classroomId > 0) {
+            $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+            Database::update($table, ['supervisor_id' => $supervisorId ?: null], ['id = ?' => $classroomId]);
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+        break;
+
     // =========================================================================
     // CLASSROOM STUDENTS
     // =========================================================================

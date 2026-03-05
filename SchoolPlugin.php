@@ -2648,6 +2648,38 @@ class SchoolPlugin extends Plugin
             ];
         }
 
+        // Supervisión: visible only for teachers who are supervisors of at least one classroom
+        if ($isTeacherUser && !$isAdmin) {
+            $yearTbl  = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+            $clsTbl   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+            $menuUid  = (int) api_get_user_id();
+            $ayRow    = Database::fetch_array(
+                Database::query("SELECT id FROM $yearTbl WHERE active = 1 LIMIT 1"),
+                'ASSOC'
+            );
+            $ayId = $ayRow ? (int) $ayRow['id'] : 0;
+            $isSup = false;
+            if ($ayId > 0 && $menuUid > 0) {
+                $supRes = Database::query(
+                    "SELECT id FROM $clsTbl WHERE supervisor_id = $menuUid AND academic_year_id = $ayId LIMIT 1"
+                );
+                $isSup = Database::num_rows($supRes) > 0;
+            }
+            if ($isSup) {
+                $supervisionActive = $currentSection === 'supervision';
+                $menus[] = [
+                    'id'      => 25,
+                    'name'    => 'supervision',
+                    'label'   => 'Supervisión',
+                    'current' => $supervisionActive,
+                    'icon'    => 'user-shield',
+                    'class'   => $supervisionActive ? 'active' : '',
+                    'url'     => '/supervision',
+                    'items'   => [],
+                ];
+            }
+        }
+
         // Notifications, Certificates, Help, Shopping, Attendance: hidden from secretary
         if (!$isSecretary) {
             if ($this->get('show_notifications') !== 'false') {

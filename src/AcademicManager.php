@@ -341,6 +341,14 @@ class AcademicManager
                 $row['tutor_name'] = '';
                 $row['tutor_avatar'] = '';
             }
+            if (!empty($row['supervisor_id'])) {
+                $supInfo = api_get_user_info($row['supervisor_id']);
+                $row['supervisor_name']   = $supInfo ? $supInfo['complete_name'] : '';
+                $row['supervisor_avatar'] = $supInfo ? $supInfo['avatar_small'] : '';
+            } else {
+                $row['supervisor_name']   = '';
+                $row['supervisor_avatar'] = '';
+            }
             $rows[] = $row;
         }
         return $rows;
@@ -376,6 +384,15 @@ class AcademicManager
             $row['tutor_avatar'] = '';
         }
 
+        if (!empty($row['supervisor_id'])) {
+            $supInfo = api_get_user_info($row['supervisor_id']);
+            $row['supervisor_name']   = $supInfo ? $supInfo['complete_name'] : '';
+            $row['supervisor_avatar'] = $supInfo ? $supInfo['avatar'] : '';
+        } else {
+            $row['supervisor_name']   = '';
+            $row['supervisor_avatar'] = '';
+        }
+
         if (!empty($row['session_id'])) {
             $sessionTable = Database::get_main_table(TABLE_MAIN_SESSION);
             $sid = (int) $row['session_id'];
@@ -397,7 +414,8 @@ class AcademicManager
             'academic_year_id' => (int) ($data['academic_year_id'] ?? 0),
             'grade_id' => (int) ($data['grade_id'] ?? 0),
             'section_id' => (int) ($data['section_id'] ?? 0),
-            'tutor_id' => !empty($data['tutor_id']) ? (int) $data['tutor_id'] : null,
+            'tutor_id'      => !empty($data['tutor_id']) ? (int) $data['tutor_id'] : null,
+            'supervisor_id' => !empty($data['supervisor_id']) ? (int) $data['supervisor_id'] : null,
             'capacity' => (int) ($data['capacity'] ?? 30),
             'active' => isset($data['active']) ? (int) $data['active'] : 1,
         ];

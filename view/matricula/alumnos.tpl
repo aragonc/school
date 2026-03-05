@@ -12,6 +12,10 @@
                class="btn btn-sm btn-outline-primary ml-2">
                 <i class="fas fa-id-card mr-1"></i> Imprimir tarjetas
             </a>
+            <a href="{{ _p.web }}matricula/qr-print" target="_blank"
+               class="btn btn-sm btn-outline-secondary ml-2">
+                <i class="fas fa-qrcode mr-1"></i> Imprimir QR
+            </a>
         </div>
     </div>
     <div class="card-body">

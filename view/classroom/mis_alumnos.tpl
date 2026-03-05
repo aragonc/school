@@ -154,6 +154,7 @@
                             <th style="width:48px;" class="pl-3"></th>
                             <th>Alumno</th>
                             <th>DNI</th>
+                            <th>Correo</th>
                             <th>Asistencia</th>
                             <th>Hora entrada</th>
                         </tr>
@@ -187,6 +188,15 @@
                             {# DNI #}
                             <td class="text-muted" style="font-size:12px;letter-spacing:.5px;">
                                 {{ s.dni ?: '—' }}
+                            </td>
+
+                            {# Correo #}
+                            <td class="text-muted" style="font-size:12px;">
+                                {% if s.email %}
+                                <a href="mailto:{{ s.email }}" class="text-muted">{{ s.email }}</a>
+                                {% else %}
+                                &mdash;
+                                {% endif %}
                             </td>
 
                             {# Estado asistencia #}

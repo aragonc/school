@@ -83,7 +83,7 @@ if ($classroomId > 0) {
 
     $sql = "SELECT
                 cs.user_id,
-                u.firstname, u.lastname, u.official_code, u.picture_uri,
+                u.firstname, u.lastname, u.official_code, u.picture_uri, u.email,
                 COALESCE(NULLIF(TRIM(f.dni), ''), u.official_code) AS dni,
                 f.apellido_paterno, f.apellido_materno,
                 f.nombres     AS ficha_nombres,
