@@ -167,13 +167,34 @@
     </div>
 </div>
 
-{% if session_courses %}
+{% if unsynced_courses and classroom.session_id %}
+<div class="alert alert-warning d-flex align-items-center mb-2 py-2" id="sync-alert">
+    <i class="fas fa-exclamation-triangle mr-2 flex-shrink-0"></i>
+    <span>
+        <strong>{{ unsynced_courses|length }} curso(s)</strong> de la sesión no están registrados en el aula:
+        <em>{% for uc in unsynced_courses %}{{ uc.title }}{% if not loop.last %}, {% endif %}{% endfor %}</em>
+    </span>
+    <button class="btn btn-warning btn-sm ml-auto flex-shrink-0" onclick="syncSessionCourses()">
+        <i class="fas fa-sync mr-1"></i> Sincronizar
+    </button>
+</div>
+{% endif %}
+
+{% if session_courses or is_admin %}
 <!-- Session Courses -->
 <div class="card mb-4">
-    <div class="card-header py-2">
+    <div class="card-header py-2 d-flex align-items-center">
         <i class="fas fa-book-open mr-1 text-primary"></i>
-        <strong>Cursos de la sesión</strong>
+        <strong>Cursos del aula</strong>
         <span class="badge badge-primary ml-2">{{ session_courses|length }}</span>
+        {% if is_admin %}
+        <div class="ml-auto d-flex align-items-center" style="position:relative;">
+            <input type="text" id="course-search-input" class="form-control form-control-sm"
+                   placeholder="Agregar curso..." autocomplete="off" style="width:200px;font-size:11px;">
+            <div id="course-search-results" class="border rounded bg-white shadow-sm"
+                 style="display:none;position:absolute;top:100%;right:0;z-index:999;min-width:280px;max-height:200px;overflow-y:auto;"></div>
+        </div>
+        {% endif %}
     </div>
     <div class="card-body p-0">
         <table class="table table-sm mb-0" id="courses-table">
@@ -248,13 +269,24 @@
                                  style="display:none; max-height:180px; overflow-y:auto; position:absolute; z-index:999; min-width:280px;"></div>
                         </div>
                     </td>
-                    <td class="text-center align-middle">
+                    <td class="text-center align-middle" style="white-space:nowrap;">
+                        {% if classroom.session_id %}
                         <a href="{{ web_course_path }}{{ course.code }}/index.php?id_session={{ classroom.session_id }}"
                            target="_blank"
                            class="btn btn-outline-primary btn-sm"
                            title="Abrir curso">
                             <i class="fas fa-external-link-alt"></i>
                         </a>
+                        {% else %}
+                        <span class="text-muted" title="Sin sesión activa">—</span>
+                        {% endif %}
+                        {% if is_admin %}
+                        <button class="btn btn-outline-danger btn-sm ml-1" style="padding:2px 7px;"
+                                title="Quitar curso del aula"
+                                onclick="removeClassroomCourse({{ course.id }}, this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -262,12 +294,13 @@
         </table>
     </div>
 </div>
+{% endif %}
 
 <!-- JS para gestión de docentes en cursos -->
 <script>
 (function () {
     var ajaxUrl   = '{{ ajax_url }}';
-    var sessionId = {{ classroom.session_id }};
+    var sessionId = {{ classroom.session_id|default(0) }};
     var ctTimers  = {};
 
     // ---- Buscador de docentes por curso ----
@@ -313,10 +346,11 @@
     // ---- Asignar docente ----
     window.assignCourseTeacher = function (courseId, teacherId, lastname, firstname, email) {
         var fd = new FormData();
-        fd.append('action',     'assign_course_teacher');
-        fd.append('session_id', sessionId);
-        fd.append('course_id',  courseId);
-        fd.append('teacher_id', teacherId);
+        fd.append('action',       'assign_course_teacher');
+        fd.append('session_id',   sessionId);
+        fd.append('classroom_id', classroomId);
+        fd.append('course_id',    courseId);
+        fd.append('teacher_id',   teacherId);
 
         fetch(ajaxUrl, { method: 'POST', body: fd })
             .then(function(r){ return r.json(); })
@@ -357,10 +391,11 @@
     window.removeCourseTeacher = function (courseId, teacherId, btn) {
         if (!confirm('¿Quitar este docente del curso?')) return;
         var fd = new FormData();
-        fd.append('action',     'remove_course_teacher');
-        fd.append('session_id', sessionId);
-        fd.append('course_id',  courseId);
-        fd.append('teacher_id', teacherId);
+        fd.append('action',       'remove_course_teacher');
+        fd.append('session_id',   sessionId);
+        fd.append('classroom_id', classroomId);
+        fd.append('course_id',    courseId);
+        fd.append('teacher_id',   teacherId);
 
         fetch(ajaxUrl, { method: 'POST', body: fd })
             .then(function(r){ return r.json(); })
@@ -384,9 +419,89 @@
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+
+    // ---- Buscador de cursos ----
+    var courseSearchTimer;
+    var courseSearchInput = document.getElementById('course-search-input');
+    var courseSearchRes   = document.getElementById('course-search-results');
+    if (courseSearchInput) {
+        courseSearchInput.addEventListener('input', function () {
+            clearTimeout(courseSearchTimer);
+            var q = this.value.trim();
+            if (q.length < 2) { courseSearchRes.style.display = 'none'; return; }
+            courseSearchTimer = setTimeout(function () {
+                fetch(ajaxUrl + '?action=search_courses&q=' + encodeURIComponent(q) + '&classroom_id=' + classroomId)
+                    .then(function(r){ return r.json(); })
+                    .then(function (data) {
+                        var html = '';
+                        if (data.data && data.data.length) {
+                            data.data.forEach(function (c) {
+                                html += '<div class="px-2 py-1 border-bottom" style="cursor:pointer;font-size:12px;"'
+                                      + ' onclick="addClassroomCourse(' + c.id + ',\'' + escHtml(c.code) + '\',\'' + escHtml(c.title) + '\')">'
+                                      + '<strong>' + escHtml(c.title) + '</strong>'
+                                      + ' <small class="text-muted">' + escHtml(c.code) + '</small></div>';
+                            });
+                        } else {
+                            html = '<div class="p-2 text-muted" style="font-size:12px;">Sin resultados</div>';
+                        }
+                        courseSearchRes.innerHTML = html;
+                        courseSearchRes.style.display = '';
+                    });
+            }, 280);
+        });
+        document.addEventListener('click', function (e) {
+            if (!courseSearchInput.contains(e.target) && !courseSearchRes.contains(e.target)) {
+                courseSearchRes.style.display = 'none';
+            }
+        });
+    }
+
+    // ---- Agregar curso al aula ----
+    window.addClassroomCourse = function (courseId, code, title) {
+        var fd = new FormData();
+        fd.append('action',       'add_classroom_course');
+        fd.append('classroom_id', classroomId);
+        fd.append('course_id',    courseId);
+        fd.append('session_id',   sessionId);
+        fetch(ajaxUrl, { method: 'POST', body: fd })
+            .then(function(r){ return r.json(); })
+            .then(function (d) {
+                if (d.success) location.reload();
+            });
+    };
+
+    // ---- Quitar curso del aula ----
+    window.removeClassroomCourse = function (courseId, btn) {
+        if (!confirm('¿Quitar este curso del aula? Se eliminarán también los docentes asignados.')) return;
+        var fd = new FormData();
+        fd.append('action',       'remove_classroom_course');
+        fd.append('classroom_id', classroomId);
+        fd.append('course_id',    courseId);
+        fd.append('session_id',   sessionId);
+        fetch(ajaxUrl, { method: 'POST', body: fd })
+            .then(function(r){ return r.json(); })
+            .then(function (d) {
+                if (!d.success) return;
+                var row = document.getElementById('course-row-' + courseId);
+                if (row) row.remove();
+            });
+    };
+
+    // ---- Re-sincronizar cursos desde sesión Chamilo ----
+    window.syncSessionCourses = function () {
+        var fd = new FormData();
+        fd.append('action',       'sync_session_courses');
+        fd.append('classroom_id', classroomId);
+        fd.append('session_id',   sessionId);
+        fetch(ajaxUrl, { method: 'POST', body: fd })
+            .then(function(r){ return r.json(); })
+            .then(function (d) {
+                if (d.success) location.reload();
+            });
+    };
+
 })();
 </script>
-{% endif %}
 
 {% if pending_count > 0 %}
 <div class="alert alert-warning d-flex align-items-center justify-content-between mb-3" role="alert">

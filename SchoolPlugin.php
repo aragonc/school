@@ -45,6 +45,8 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM = 'plugin_school_academic_classroom';
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT   = 'plugin_school_academic_classroom_student';
     const TABLE_SCHOOL_ACADEMIC_CLASSROOM_AUXILIARY = 'plugin_school_academic_classroom_auxiliary';
+    const TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE    = 'plugin_school_academic_classroom_course';
+    const TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER      = 'plugin_school_academic_course_teacher';
     const TABLE_SCHOOL_PAYMENT_PERIOD_PRICE = 'plugin_school_payment_period_price';
 
     const TABLE_SCHOOL_FICHA               = 'plugin_school_ficha';
@@ -2620,7 +2622,7 @@ class SchoolPlugin extends Plugin
                 ],
             ];
 
-            // "Mis Alumnos" and "Horario" only for admin and teacher (secretary and students excluded)
+            // "Mis Alumnos" only for admin and teacher
             if (api_is_platform_admin() || $isTeacherUser) {
                 $myAulaItems[] = [
                     'name'    => 'my-aula-alumnos',
@@ -2628,13 +2630,15 @@ class SchoolPlugin extends Plugin
                     'url'     => '/my-aula/mis-alumnos',
                     'current' => $currentSection === 'my-classroom-alumnos',
                 ];
-                $myAulaItems[] = [
-                    'name'    => 'my-aula-horario',
-                    'label'   => 'Horario',
-                    'url'     => '/my-aula/horario',
-                    'current' => $currentSection === 'my-classroom-schedule',
-                ];
             }
+
+            // "Horario de cursos" visible for admin, teacher and student
+            $myAulaItems[] = [
+                'name'    => 'my-aula-horario',
+                'label'   => 'Horario de cursos',
+                'url'     => '/my-aula/horario',
+                'current' => $currentSection === 'my-classroom-schedule',
+            ];
 
             $menus[] = [
                 'id'      => 12,

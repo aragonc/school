@@ -36,14 +36,16 @@ $students    = AcademicManager::getClassroomStudents($classroomId);
 $candidates  = AcademicManager::getClassroomCandidates($classroomId);
 $auxiliaries = AcademicManager::getClassroomAuxiliaries($classroomId);
 
-$sessionCourses = !empty($classroom['session_id'])
-    ? AcademicManager::getSessionCourses((int) $classroom['session_id'])
+$sessionCourses  = AcademicManager::getClassroomCourses($classroomId);
+$unsyncedCourses = !empty($classroom['session_id'])
+    ? AcademicManager::getUnsyncedSessionCourses($classroomId, (int) $classroom['session_id'])
     : [];
 
 $plugin->assign('classroom',       $classroom);
 $plugin->assign('students',        $students);
 $plugin->assign('auxiliaries',     $auxiliaries);
-$plugin->assign('session_courses', $sessionCourses);
+$plugin->assign('session_courses',  $sessionCourses);
+$plugin->assign('unsynced_courses', $unsyncedCourses);
 $plugin->assign('pending_count',   count($candidates));
 $plugin->assign('is_admin',        $isAdmin);
 $plugin->assign('web_course_path', api_get_path(WEB_COURSE_PATH));

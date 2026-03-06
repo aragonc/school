@@ -76,23 +76,25 @@ if ($isAdmin) {
     $isTutor = true; // admin can always edit
 } elseif ($isTeacher) {
     $tutorClassroom = $yearId > 0 ? ClassroomPlanManager::getTutorClassroom($userId, $yearId) : null;
-    if ($tutorClassroom) {
+
+    // Load all classrooms where this teacher is tutor OR assigned as course teacher
+    $classroomsList = $yearId > 0 ? AcademicManager::getTeacherClassrooms($userId, $yearId) : [];
+
+    if ($classroomId > 0) {
+        $classroom = AcademicManager::getClassroom($classroomId);
+    } elseif ($tutorClassroom) {
         $classroom   = $tutorClassroom;
         $classroomId = (int) $tutorClassroom['id'];
-        $isTutor     = true;
-    } else {
-        // Non-tutor teacher: show all classrooms (read-only)
-        if ($yearId > 0) {
-            $classroomsList = AcademicManager::getClassrooms($yearId);
-        }
-        if ($classroomId > 0) {
-            $classroom = AcademicManager::getClassroom($classroomId);
-        } elseif (!empty($classroomsList)) {
-            $classroom   = $classroomsList[0];
-            $classroomId = (int) $classroom['id'];
-        }
-        $isTutor = false;
+    } elseif (!empty($classroomsList)) {
+        $classroom   = $classroomsList[0];
+        $classroomId = (int) $classroom['id'];
     }
+
+    // Teacher can edit only if they are tutor or supervisor of the selected classroom
+    $isTutor = $classroom && (
+        (int) ($classroom['tutor_id'] ?? 0) === $userId ||
+        (int) ($classroom['supervisor_id'] ?? 0) === $userId
+    );
 } elseif ($isStudent) {
     $studentClassroom = $yearId > 0 ? AcademicManager::getStudentClassroom($yearId, $userId) : null;
     if ($studentClassroom) {
@@ -158,6 +160,9 @@ $scheduleGrid = array_values($timeSlotsMap);
 // Teachers list for edit modal
 $teachersList = ($isAdmin || $isTutor) ? AcademicManager::getTeachers() : [];
 
+// Courses from plugin permanent table (with assigned teachers)
+$classroomCourses = ($isAdmin || $isTutor) ? AcademicManager::getClassroomCourses($classroomId) : [];
+
 // Day names
 $dayNames = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes'];
 
@@ -170,6 +175,7 @@ $plugin->assign('can_edit',            $isAdmin || $isTutor);
 $plugin->assign('is_student',          $isStudent);
 $plugin->assign('schedule_grid',       $scheduleGrid);
 $plugin->assign('teachers_list',       $teachersList);
+$plugin->assign('classroom_courses',   $classroomCourses);
 $plugin->assign('day_names',           $dayNames);
 $plugin->assign('active_year',         $activeYear);
 $plugin->assign('ajax_url',            api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_schedule.php');

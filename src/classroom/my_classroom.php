@@ -65,30 +65,21 @@ if ($isAdmin || $isSecretary) {
         $isTutor     = $isAdmin;
     }
 } elseif ($isTeacher) {
-    // Teacher: try to find their tutored classroom first
-    $tutorClassroom = $yearId > 0 ? ClassroomPlanManager::getTutorClassroom($userId, $yearId) : null;
+    // All classrooms where this teacher is tutor OR assigned as course teacher
+    $classroomsList = $yearId > 0 ? AcademicManager::getTeacherClassrooms($userId, $yearId) : [];
 
-    if ($tutorClassroom) {
-        $isTutor = true;
-        if ($classroomId > 0 && $classroomId !== (int) $tutorClassroom['id'] && $isAdmin) {
-            $classroom = AcademicManager::getClassroom($classroomId);
-        } else {
-            $classroom   = $tutorClassroom;
-            $classroomId = (int) $tutorClassroom['id'];
-        }
-    } else {
-        // Not a tutor: show all classrooms so they can pick one to add topics
-        if ($yearId > 0) {
-            $classroomsList = AcademicManager::getClassrooms($yearId);
-        }
-        if ($classroomId > 0) {
-            $classroom = AcademicManager::getClassroom($classroomId);
-        } elseif (!empty($classroomsList)) {
-            $classroom   = $classroomsList[0];
-            $classroomId = (int) $classroom['id'];
-        }
-        $isTutor = false;
+    if ($classroomId > 0) {
+        $classroom = AcademicManager::getClassroom($classroomId);
+    } elseif (!empty($classroomsList)) {
+        $classroom   = $classroomsList[0];
+        $classroomId = (int) $classroom['id'];
     }
+
+    // Can edit only if tutor or supervisor of the selected classroom
+    $isTutor = $classroom && (
+        (int) ($classroom['tutor_id'] ?? 0) === $userId ||
+        (int) ($classroom['supervisor_id'] ?? 0) === $userId
+    );
 } elseif ($isStudent) {
     // Student: find their classroom (read-only)
     $studentClassroom = $yearId > 0 ? AcademicManager::getStudentClassroom($yearId, $userId) : null;
@@ -111,6 +102,23 @@ if ($classroomId > 0) {
     $plansByDate = ClassroomPlanManager::getPlansByClassroomMonth($classroomId, $currentYear, $currentMonth);
 }
 
+// Load weekly schedule grouped by day_of_week (1=Mon … 5=Fri)
+$scheduleByDay = [];
+if ($classroomId > 0) {
+    $schedTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CLASSROOM_SCHEDULE);
+    $schedResult = Database::query(
+        "SELECT day_of_week, subject, time_start, style
+         FROM $schedTable
+         WHERE classroom_id = $classroomId
+           AND day_of_week BETWEEN 1 AND 5
+           AND (style = '' OR style NOT IN ('break','pause','exit'))
+         ORDER BY sort_order ASC, time_start ASC"
+    );
+    while ($sr = Database::fetch_array($schedResult, 'ASSOC')) {
+        $scheduleByDay[(int) $sr['day_of_week']][] = $sr['subject'];
+    }
+}
+
 // Build calendar weeks (Mon–Fri only)
 $firstDay    = mktime(0, 0, 0, $currentMonth, 1, $currentYear);
 $daysInMonth = (int) date('t', $firstDay);
@@ -129,11 +137,40 @@ for ($d = 1; $d <= $daysInMonth; $d++) {
         'day_num'    => $d,
         'day_name'   => ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'][$dayOfWeek],
         'plans'      => $plansByDate[$dateStr] ?? [],
+        'schedule'   => $scheduleByDay[$dayOfWeek] ?? [],
     ];
     // When we reach Friday or the last weekday of the month, close the week
     if ($dayOfWeek === 5 || $d === $daysInMonth) {
         $calendarWeeks[] = $week;
         $week = [];
+    }
+}
+
+// Load non-working periods (holidays/vacations) that overlap with current month
+$nonworkingTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
+$monthStart = sprintf('%d-%02d-01', $currentYear, $currentMonth);
+$monthEnd   = sprintf('%d-%02d-%02d', $currentYear, $currentMonth, $daysInMonth);
+$nwResult   = Database::query(
+    "SELECT * FROM $nonworkingTable
+     WHERE start_date <= '$monthEnd' AND end_date >= '$monthStart'
+     ORDER BY start_date ASC"
+);
+$nonworkingPeriods = [];
+while ($nwRow = Database::fetch_array($nwResult, 'ASSOC')) {
+    $nonworkingPeriods[] = $nwRow;
+}
+
+// Annotate each calendar day with its non-working period (if any)
+for ($wi = 0; $wi < count($calendarWeeks); $wi++) {
+    foreach ($calendarWeeks[$wi] as $col => $dayData) {
+        $nw = null;
+        foreach ($nonworkingPeriods as $period) {
+            if ($dayData['date'] >= $period['start_date'] && $dayData['date'] <= $period['end_date']) {
+                $nw = $period;
+                break;
+            }
+        }
+        $calendarWeeks[$wi][$col]['nonworking'] = $nw;
     }
 }
 

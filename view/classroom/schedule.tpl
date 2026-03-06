@@ -30,13 +30,15 @@
         </div>
     </div>
 
-    {# ---- Classroom selector (admin only) ---- #}
-    {% if is_admin and classrooms_list %}
+    {# ---- Classroom selector (admin or teacher with multiple classrooms) ---- #}
+    {% if classrooms_list and classrooms_list|length > 0 and (is_admin or (not is_admin and not is_student)) %}
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body py-3">
-            <form method="get" action="" class="d-flex align-items-end" style="gap:16px;">
+            <form method="get" action="" class="d-flex align-items-center flex-wrap" style="gap:16px;">
                 <div>
-                    <label class="mb-1 small font-weight-bold text-muted">Aula</label>
+                    <label class="mb-1 small font-weight-bold text-muted">
+                        {% if is_admin %}Aula{% else %}Aula donde dictas curso{% endif %}
+                    </label>
                     <select name="classroom_id" class="form-control form-control-sm" onchange="this.form.submit()" style="min-width:240px;">
                         {% for cls in classrooms_list %}
                         <option value="{{ cls.id }}" {% if cls.id == classroom_id %}selected{% endif %}>
@@ -45,6 +47,19 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% if is_tutor %}
+                <div class="mt-3">
+                    <span class="badge badge-success px-3 py-2" style="font-size:0.8rem;">
+                        <i class="fas fa-star mr-1"></i>Eres tutor(a) de esta aula — puedes editar el horario
+                    </span>
+                </div>
+                {% elseif not is_admin and not is_student %}
+                <div class="mt-3">
+                    <span class="badge badge-secondary px-3 py-2" style="font-size:0.8rem;">
+                        <i class="fas fa-eye mr-1"></i>Dictas un curso en esta aula — solo lectura
+                    </span>
+                </div>
+                {% endif %}
             </form>
         </div>
     </div>
@@ -265,20 +280,23 @@
                     </div>
 
                     <div id="entrySubjectGroup">
-                        <div class="form-group">
-                            <label class="small font-weight-bold">Curso / Materia <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-sm" id="entrySubject" name="subject" placeholder="Ej: Matemáticas" maxlength="255">
-                        </div>
-
                         <div class="form-group mb-0">
-                            <label class="small font-weight-bold">Docente</label>
-                            <select class="form-control form-control-sm" id="entryTeacherId" name="teacher_id">
-                                <option value="">-- Sin docente --</option>
-                                {% for t in teachers_list %}
-                                <option value="{{ t.user_id }}">{{ t.lastname }}, {{ t.firstname }}</option>
+                            <label class="small font-weight-bold">Curso / Materia <span class="text-danger">*</span></label>
+                            {% if classroom_courses %}
+                            <select class="form-control form-control-sm" id="entrySubject" name="subject" onchange="autoFillTeacher(this)">
+                                <option value="">-- Seleccionar curso --</option>
+                                {% for course in classroom_courses %}
+                                <option value="{{ course.title }}"
+                                    data-teacher-id="{{ course.teachers|first.user_id|default('') }}">
+                                    {{ course.title }}{% if course.teachers %} — {{ course.teachers|first.lastname }}, {{ course.teachers|first.firstname }}{% endif %}
+                                </option>
                                 {% endfor %}
                             </select>
+                            {% else %}
+                            <input type="text" class="form-control form-control-sm" id="entrySubject" name="subject" placeholder="Ej: Matemáticas" maxlength="255">
+                            {% endif %}
                         </div>
+                        <input type="hidden" id="entryTeacherId" name="teacher_id" value="">
                     </div>
 
                     <div class="form-group mt-3 mb-0">
@@ -338,6 +356,11 @@ tr.schedule-exit td { background: #d1ecf1 !important; }
         }
         toggleSubjectGroup($('#entryStyle').val());
         $('#modalScheduleEntry').modal('show');
+    }
+
+    function autoFillTeacher(select) {
+        var opt = $(select).find(':selected');
+        $('#entryTeacherId').val(opt.data('teacher-id') || '');
     }
 
     function toggleSubjectGroup(style) {

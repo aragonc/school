@@ -62,6 +62,33 @@
     .content-wrapper { margin: 0 !important; padding: 0 !important; }
 }
 .print-header { display: none; }
+
+/* Schedule courses in calendar */
+.cal-sched-list { list-style: none; padding: 0; margin: 0 0 3px 0; }
+.cal-sched-item {
+    font-size: 0.68rem; color: #555; padding: 1px 4px;
+    border-left: 2px solid #90caf9; margin-bottom: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+@media print {
+    .cal-sched-item { border-left-color: #90caf9 !important; -webkit-print-color-adjust: exact; }
+}
+
+/* Non-working days */
+.cal-holiday  { background: #fff8e1; }
+.cal-vacation { background: #e3f2fd; }
+.cal-nw-label {
+    display: block; font-size: 0.68rem; font-weight: 600;
+    border-radius: 3px; padding: 2px 5px; margin-bottom: 3px;
+}
+.cal-holiday  .cal-nw-label { background: #ffc107; color: #333; }
+.cal-vacation .cal-nw-label { background: #29b6f6; color: #fff; }
+@media print {
+    .cal-holiday  { background: #fff8e1 !important; -webkit-print-color-adjust: exact; }
+    .cal-vacation { background: #e3f2fd !important; -webkit-print-color-adjust: exact; }
+    .cal-holiday  .cal-nw-label { background: #ffc107 !important; -webkit-print-color-adjust: exact; }
+    .cal-vacation .cal-nw-label { background: #29b6f6 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
+}
 </style>
 
 <!-- Print-only header -->
@@ -79,7 +106,7 @@
 <div class="miAulaHeader no-print">
     <div class="d-flex align-items-center" style="gap:12px;">
         {% if classrooms_list|length > 0 %}
-        <form method="get" class="form-inline">
+        <form method="get" class="form-inline" style="gap:10px;">
             <select name="classroom_id" class="form-control form-control-sm" onchange="this.form.submit()" title="Seleccionar aula">
                 {% for c in classrooms_list %}
                 <option value="{{ c.id }}" {{ classroom_id == c.id ? 'selected' : '' }}>
@@ -90,6 +117,15 @@
             <input type="hidden" name="year"  value="{{ current_year }}">
             <input type="hidden" name="month" value="{{ current_month }}">
         </form>
+        {% if is_tutor %}
+        <span class="badge badge-success px-2 py-1" style="font-size:0.75rem;">
+            <i class="fas fa-star mr-1"></i>Eres tutor(a) — puedes editar
+        </span>
+        {% elseif not is_admin_or_secretary and not is_student %}
+        <span class="badge badge-secondary px-2 py-1" style="font-size:0.75rem;">
+            <i class="fas fa-eye mr-1"></i>Solo lectura
+        </span>
+        {% endif %}
         {% elseif classroom %}
         <span class="font-weight-bold text-primary" style="font-size:1.1rem;">
             {{ classroom.level_name }} — {{ classroom.grade_name }} "{{ classroom.section_name }}"
@@ -148,8 +184,20 @@
             {% set dayData = week[col] ?? null %}
 
             {% if dayData %}
-            <td>
+            <td{% if dayData.nonworking %} class="cal-{{ dayData.nonworking.type }}"{% endif %}>
                 <span class="cal-day-num">{{ dayData.day_num }}</span>
+                {% if dayData.nonworking %}
+                <span class="cal-nw-label">
+                    <i class="fas fa-{% if dayData.nonworking.type == 'vacation' %}umbrella-beach{% else %}flag{% endif %} mr-1"></i>{{ dayData.nonworking.description }}
+                </span>
+                {% endif %}
+                {% if dayData.schedule %}
+                <ul class="cal-sched-list">
+                    {% for subject in dayData.schedule %}
+                    <li class="cal-sched-item" title="{{ subject }}">{{ subject }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
                 {% for plan in dayData.plans %}
                 <div class="plan-entry"
                      {% if can_edit %}
@@ -176,6 +224,14 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
+
+<!-- Leyenda -->
+<div class="d-flex align-items-center mt-2 no-print" style="gap:16px;font-size:0.75rem;">
+    <span><span style="display:inline-block;width:3px;height:12px;background:#90caf9;border-radius:1px;margin-right:4px;"></span>Cursos del horario</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#e8f0fe;border:1px solid #1a4a8a;border-radius:2px;margin-right:4px;"></span>Tema planificado</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#ffc107;border-radius:2px;margin-right:4px;"></span>Feriado</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#29b6f6;border-radius:2px;margin-right:4px;"></span>Vacaciones / Descanso</span>
 </div>
 
 {% else %}

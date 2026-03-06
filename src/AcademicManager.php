@@ -699,6 +699,52 @@ class AcademicManager
         return $row ?: null;
     }
 
+    /**
+     * Returns all classrooms (for a given academic year) where the teacher is:
+     * - tutor of the classroom, OR
+     * - assigned as course teacher via plugin_school_academic_course_teacher
+     * Results are deduplicated and ordered by level/grade/section.
+     */
+    public static function getTeacherClassrooms(int $teacherId, int $yearId): array
+    {
+        if ($teacherId <= 0 || $yearId <= 0) return [];
+
+        $cTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $gTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $sTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
+        $lTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $ctTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER);
+        $tid     = (int) $teacherId;
+        $yid     = (int) $yearId;
+
+        $sql = "SELECT DISTINCT c.*, g.name AS grade_name, g.level_id,
+                       s.name AS section_name, l.name AS level_name,
+                       l.order_index AS level_order, g.order_index AS grade_order
+                FROM $cTable c
+                INNER JOIN $gTable g ON c.grade_id = g.id
+                INNER JOIN $sTable s ON c.section_id = s.id
+                INNER JOIN $lTable l ON g.level_id = l.id
+                WHERE c.academic_year_id = $yid
+                  AND (
+                      c.tutor_id = $tid
+                      OR c.id IN (
+                          SELECT cc.classroom_id
+                          FROM $ccTable cc
+                          INNER JOIN $ctTable ct ON ct.classroom_course_id = cc.id
+                          WHERE ct.teacher_id = $tid
+                      )
+                  )
+                ORDER BY l.order_index ASC, g.order_index ASC, s.name ASC";
+
+        $result = Database::query($sql);
+        $rows   = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
     // =========================================================================
     // TEACHERS / STUDENT SEARCH
     // =========================================================================
@@ -750,6 +796,58 @@ class AcademicManager
                 LIMIT 20";
         $result = Database::query($sql);
         $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    /**
+     * Busca cursos Chamilo por título o código, excluyendo los ya asignados al aula.
+     */
+    public static function searchCourses(string $query, int $classroomId): array
+    {
+        if (empty(trim($query))) return [];
+        $cTable  = Database::get_main_table(TABLE_MAIN_COURSE);
+        $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $q       = Database::escape_string(trim($query));
+        $sql = "SELECT id, code, title, visual_code
+                FROM $cTable
+                WHERE active = 1
+                  AND (title LIKE '%$q%' OR code LIKE '%$q%' OR visual_code LIKE '%$q%')
+                  AND id NOT IN (
+                      SELECT course_id FROM $ccTable WHERE classroom_id = $classroomId
+                  )
+                ORDER BY title ASC
+                LIMIT 20";
+        $result = Database::query($sql);
+        $rows   = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    /**
+     * Devuelve cursos en session_rel_course que NO están en la tabla del plugin para el aula.
+     * Permite detectar desincronización cuando el admin agrega cursos desde el panel de Chamilo.
+     */
+    public static function getUnsyncedSessionCourses(int $classroomId, int $sessionId): array
+    {
+        if ($classroomId <= 0 || $sessionId <= 0) return [];
+        $srcTable = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
+        $ccTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $cTable   = Database::get_main_table(TABLE_MAIN_COURSE);
+        $sql = "SELECT c.id, c.code, c.title
+                FROM $srcTable src
+                INNER JOIN $cTable c ON c.id = src.c_id
+                WHERE src.session_id = $sessionId
+                  AND src.c_id NOT IN (
+                      SELECT course_id FROM $ccTable WHERE classroom_id = $classroomId
+                  )
+                ORDER BY c.title ASC";
+        $result = Database::query($sql);
+        $rows   = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             $rows[] = $row;
         }
@@ -911,7 +1009,112 @@ class AcademicManager
         if ($classroomId <= 0 || $sessionId <= 0) return false;
         $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
         Database::update($table, ['session_id' => $sessionId], ['id = ?' => $classroomId]);
+        self::syncSessionCourses($classroomId, $sessionId);
         return true;
+    }
+
+    /**
+     * Syncs all courses from a Chamilo session into the plugin's permanent
+     * classroom-course table. Called when a session is assigned to a classroom.
+     * Existing rows are preserved (existence-check before insert).
+     *
+     * @return int Number of courses newly inserted.
+     */
+    public static function syncSessionCourses(int $classroomId, int $sessionId): int
+    {
+        if ($classroomId <= 0 || $sessionId <= 0) return 0;
+
+        $classroomTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+        $clRes = Database::query(
+            "SELECT academic_year_id FROM $classroomTable WHERE id = $classroomId LIMIT 1"
+        );
+        $clRow = Database::fetch_array($clRes, 'ASSOC');
+        if (!$clRow) return 0;
+        $academicYearId = (int) $clRow['academic_year_id'];
+
+        $srcTable = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
+        $ccTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $now      = date('Y-m-d H:i:s');
+
+        $cRes = Database::query(
+            "SELECT c_id FROM $srcTable WHERE session_id = $sessionId"
+        );
+
+        $inserted = 0;
+        while ($row = Database::fetch_array($cRes, 'ASSOC')) {
+            $courseId = (int) $row['c_id'];
+            $exists   = Database::fetch_array(Database::query(
+                "SELECT id FROM $ccTable
+                 WHERE classroom_id = $classroomId AND course_id = $courseId
+                 LIMIT 1"
+            ), 'ASSOC');
+            if (!$exists) {
+                Database::insert($ccTable, [
+                    'classroom_id'     => $classroomId,
+                    'course_id'        => $courseId,
+                    'academic_year_id' => $academicYearId,
+                    'session_id'       => $sessionId,
+                    'created_at'       => $now,
+                ]);
+                $inserted++;
+            }
+        }
+        return $inserted;
+    }
+
+    /**
+     * Returns all courses assigned to a classroom from the plugin's permanent
+     * tables, each with its list of assigned teachers.
+     * Works even when the Chamilo session no longer exists.
+     */
+    public static function getClassroomCourses(int $classroomId): array
+    {
+        if ($classroomId <= 0) return [];
+
+        $ccTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $ctTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER);
+        $cTable   = Database::get_main_table(TABLE_MAIN_COURSE);
+        $uTable   = Database::get_main_table(TABLE_MAIN_USER);
+
+        $cRes = Database::query(
+            "SELECT cc.id AS classroom_course_id,
+                    cc.course_id,
+                    cc.session_id,
+                    c.code,
+                    c.title,
+                    c.visual_code
+             FROM $ccTable cc
+             INNER JOIN $cTable c ON c.id = cc.course_id
+             WHERE cc.classroom_id = $classroomId
+             ORDER BY c.title ASC"
+        );
+
+        $courses = [];
+        while ($cRow = Database::fetch_array($cRes, 'ASSOC')) {
+            $classroomCourseId = (int) $cRow['classroom_course_id'];
+            $cRow['id']        = (int) $cRow['course_id'];
+
+            $tRes = Database::query(
+                "SELECT u.id AS user_id, u.firstname, u.lastname, u.email, u.picture_uri
+                 FROM $ctTable ct
+                 INNER JOIN $uTable u ON u.id = ct.teacher_id
+                 WHERE ct.classroom_course_id = $classroomCourseId
+                 ORDER BY u.lastname ASC, u.firstname ASC"
+            );
+            $teachers = [];
+            while ($tRow = Database::fetch_array($tRes, 'ASSOC')) {
+                if (!empty($tRow['picture_uri'])) {
+                    $uInfo         = api_get_user_info((int) $tRow['user_id']);
+                    $tRow['avatar'] = $uInfo ? ($uInfo['avatar_small'] ?? '') : '';
+                } else {
+                    $tRow['avatar'] = '';
+                }
+                $teachers[] = $tRow;
+            }
+            $cRow['teachers'] = $teachers;
+            $courses[]        = $cRow;
+        }
+        return $courses;
     }
 
     /**
