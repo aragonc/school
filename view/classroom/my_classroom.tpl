@@ -117,11 +117,15 @@
             <input type="hidden" name="year"  value="{{ current_year }}">
             <input type="hidden" name="month" value="{{ current_month }}">
         </form>
-        {% if is_tutor %}
+        {% if is_admin_or_secretary %}
+        <span class="badge badge-primary px-2 py-1" style="font-size:0.75rem;">
+            <i class="fas fa-shield-alt mr-1"></i>Administrador — acceso total
+        </span>
+        {% elseif is_tutor %}
         <span class="badge badge-success px-2 py-1" style="font-size:0.75rem;">
             <i class="fas fa-star mr-1"></i>Eres tutor(a) — puedes editar
         </span>
-        {% elseif not is_admin_or_secretary and not is_student %}
+        {% elseif not is_student %}
         <span class="badge badge-secondary px-2 py-1" style="font-size:0.75rem;">
             <i class="fas fa-eye mr-1"></i>Solo lectura
         </span>

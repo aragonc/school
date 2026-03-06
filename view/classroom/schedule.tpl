@@ -47,13 +47,19 @@
                         {% endfor %}
                     </select>
                 </div>
-                {% if is_tutor %}
+                {% if is_admin %}
+                <div class="mt-3">
+                    <span class="badge badge-primary px-3 py-2" style="font-size:0.8rem;">
+                        <i class="fas fa-shield-alt mr-1"></i>Administrador — acceso total a todas las aulas
+                    </span>
+                </div>
+                {% elseif is_tutor %}
                 <div class="mt-3">
                     <span class="badge badge-success px-3 py-2" style="font-size:0.8rem;">
                         <i class="fas fa-star mr-1"></i>Eres tutor(a) de esta aula — puedes editar el horario
                     </span>
                 </div>
-                {% elseif not is_admin and not is_student %}
+                {% elseif not is_student %}
                 <div class="mt-3">
                     <span class="badge badge-secondary px-3 py-2" style="font-size:0.8rem;">
                         <i class="fas fa-eye mr-1"></i>Dictas un curso en esta aula — solo lectura
