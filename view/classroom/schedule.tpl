@@ -108,6 +108,8 @@
                         <tr class="schedule-pause" data-slot="{{ slot.time_start }}|{{ slot.time_end }}|{{ slot.sort_order }}">
                         {% elseif rowStyle == 'exit' %}
                         <tr class="schedule-exit" data-slot="{{ slot.time_start }}|{{ slot.time_end }}|{{ slot.sort_order }}">
+                        {% elseif rowStyle == 'activity' %}
+                        <tr class="schedule-activity" data-slot="{{ slot.time_start }}|{{ slot.time_end }}|{{ slot.sort_order }}">
                         {% else %}
                         <tr data-slot="{{ slot.time_start }}|{{ slot.time_end }}|{{ slot.sort_order }}">
                         {% endif %}
@@ -133,6 +135,10 @@
                             {% elseif rowStyle == 'exit' %}
                             <td class="schedule-exit-cell text-center align-middle" style="background:#d1ecf1; color:#0c5460; font-size:11px; font-style:italic;">
                                 {% if entry %}<i class="fas fa-door-open mr-1"></i>{{ entry.subject ?: 'Salida' }}{% else %}<i class="fas fa-door-open mr-1"></i>Salida{% endif %}
+                            </td>
+                            {% elseif rowStyle == 'activity' %}
+                            <td class="schedule-activity-cell text-center align-middle" style="background:#d4edda; color:#155724; font-size:11px; font-style:italic;">
+                                <i class="fas fa-star mr-1"></i>{% if entry %}{{ entry.subject ?: 'Actividad' }}{% else %}Actividad{% endif %}
                             </td>
                             {% else %}
                                 {% if entry %}
@@ -268,6 +274,7 @@
                             <option value="break">Recreo / Descanso</option>
                             <option value="pause">Pausa</option>
                             <option value="exit">Salida</option>
+                            <option value="activity">Actividad extra</option>
                         </select>
                     </div>
 
@@ -305,6 +312,14 @@
                         <input type="hidden" id="entryTeacherId" name="teacher_id" value="">
                     </div>
 
+                    <div id="entryActivityGroup" style="display:none;">
+                        <div class="form-group mb-0">
+                            <label class="small font-weight-bold">Nombre de la actividad <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" id="entryActivityName"
+                                   placeholder="Ej: Excursión al museo, Día del logro..." maxlength="255">
+                        </div>
+                    </div>
+
                     <div class="form-group mt-3 mb-0">
                         <label class="small font-weight-bold">Orden</label>
                         <input type="number" class="form-control form-control-sm" id="entrySortOrder" name="sort_order" value="0" min="0" max="999" style="width:80px;">
@@ -331,6 +346,8 @@
 tr.schedule-pause td { background: #f2f2f2 !important; }
 tr.schedule-exit td { background: #d1ecf1 !important; }
 .btn-xs { padding: 0.1rem 0.3rem; font-size: 0.7rem; line-height: 1.2; }
+tr.schedule-activity td { background: #d4edda !important; }
+.schedule-activity-cell { font-size: 11px; }
 </style>
 
 {% if can_edit %}
@@ -348,6 +365,7 @@ tr.schedule-exit td { background: #d1ecf1 !important; }
         $('#entryStyle').val(data.style || '');
         $('#entrySortOrder').val(data.sort_order || 0);
         $('#entrySubject').val(data.subject || '');
+        $('#entryActivityName').val((data.style === 'activity') ? (data.subject || '') : '');
         $('#entryTeacherId').val(data.teacher_id || '');
 
         // Days
@@ -372,13 +390,19 @@ tr.schedule-exit td { background: #d1ecf1 !important; }
     function toggleSubjectGroup(style) {
         if (style === 'break' || style === 'pause' || style === 'exit') {
             $('#entryDayGroup').hide();
-            $('#entrySubjectGroup').hide();
-            // For special rows, subject field is optional label; show it
             $('#entrySubjectGroup').show();
+            $('#entryActivityGroup').hide();
             $('#entrySubject').removeAttr('required');
+        } else if (style === 'activity') {
+            $('#entryDayGroup').show();
+            $('#entrySubjectGroup').hide();
+            $('#entryActivityGroup').show();
+            $('#entrySubject').removeAttr('required');
+            $('#entryTeacherId').val('');
         } else {
             $('#entryDayGroup').show();
             $('#entrySubjectGroup').show();
+            $('#entryActivityGroup').hide();
             $('#entrySubject').attr('required', 'required');
         }
     }
@@ -437,7 +461,9 @@ tr.schedule-exit td { background: #d1ecf1 !important; }
         var timeStart = $('#entryTimeStart').val().trim();
         var timeEnd   = $('#entryTimeEnd').val().trim();
         var style     = $('#entryStyle').val();
-        var subject   = $('#entrySubject').val().trim();
+        var subject   = (style === 'activity')
+            ? $('#entryActivityName').val().trim()
+            : $('#entrySubject').val().trim();
         var entryId   = parseInt($('#entryId').val()) || 0;
 
         if (!timeStart || !timeEnd) {
@@ -450,6 +476,10 @@ tr.schedule-exit td { background: #d1ecf1 !important; }
         $('input[name="days[]"]:checked').each(function () {
             days.push($(this).val());
         });
+        if (style === 'activity' && !subject) {
+            alert('Ingresa el nombre de la actividad.');
+            return;
+        }
         if (!style && days.length === 0 && entryId === 0) {
             alert('Selecciona al menos un día.');
             return;
