@@ -158,8 +158,11 @@
     {% if is_student %}
     <span class="badge badge-secondary"><i class="fas fa-eye"></i> Solo lectura</span>
     {% endif %}
-    {% if is_tutor %}
-    <span class="badge badge-success"><i class="fas fa-star"></i> Eres tutor de esta aula</span>
+    {% if classroom.tutor_name %}
+    <span class="badge badge-success">
+        <i class="fas fa-star"></i>
+        {% if is_tutor and not is_admin_or_secretary %}Eres tutor de esta aula{% else %}Es tutor de esta aula{% endif %}
+    </span>
     {% endif %}
 </div>
 
