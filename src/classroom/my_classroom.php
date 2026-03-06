@@ -111,11 +111,15 @@ if ($classroomId > 0) {
          FROM $schedTable
          WHERE classroom_id = $classroomId
            AND day_of_week BETWEEN 1 AND 5
-           AND (style = '' OR style NOT IN ('break','pause','exit'))
+           AND style = ''
          ORDER BY sort_order ASC, time_start ASC"
     );
     while ($sr = Database::fetch_array($schedResult, 'ASSOC')) {
-        $scheduleByDay[(int) $sr['day_of_week']][] = $sr['subject'];
+        $day  = (int) $sr['day_of_week'];
+        $subj = $sr['subject'];
+        if (!isset($scheduleByDay[$day]) || !in_array($subj, $scheduleByDay[$day], true)) {
+            $scheduleByDay[$day][] = $subj;
+        }
     }
 }
 

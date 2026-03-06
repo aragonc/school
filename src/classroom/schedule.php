@@ -161,7 +161,44 @@ $scheduleGrid = array_values($timeSlotsMap);
 $teachersList = ($isAdmin || $isTutor) ? AcademicManager::getTeachers() : [];
 
 // Courses from plugin permanent table (with assigned teachers)
-$classroomCourses = ($isAdmin || $isTutor) ? AcademicManager::getClassroomCourses($classroomId) : [];
+// Always load for teacher-name backfill, even for read-only roles
+$classroomCourses = $classroomId > 0 ? AcademicManager::getClassroomCourses($classroomId) : [];
+
+// Build course-title → teacher map and auto-fill missing teacher_name in DB + grid
+if ($classroomId > 0 && !empty($classroomCourses)) {
+    $courseTeacherMap = [];
+    foreach ($classroomCourses as $cc) {
+        if (!empty($cc['teachers'])) {
+            $ft = $cc['teachers'][0];
+            $courseTeacherMap[$cc['title']] = [
+                'teacher_id'   => (int) $ft['user_id'],
+                'teacher_name' => $ft['lastname'] . ', ' . $ft['firstname'],
+            ];
+        }
+    }
+    if (!empty($courseTeacherMap)) {
+        foreach ($scheduleGrid as &$slot) {
+            foreach ($slot['days'] as &$entry) {
+                if (empty($entry['teacher_name']) && isset($courseTeacherMap[$entry['subject']])) {
+                    $map   = $courseTeacherMap[$entry['subject']];
+                    $entry['teacher_name'] = $map['teacher_name'];
+                    $entry['teacher_id']   = $map['teacher_id'];
+                    // Persist to DB so future loads are already correct
+                    $tNameE = Database::escape_string($map['teacher_name']);
+                    $tId    = $map['teacher_id'];
+                    Database::query("UPDATE $schedTable SET teacher_id=$tId, teacher_name='$tNameE' WHERE id=" . (int) $entry['id']);
+                }
+            }
+            unset($entry);
+        }
+        unset($slot);
+    }
+}
+
+// Restrict classroom_courses to editors only (for the modal select)
+if (!$isAdmin && !$isTutor) {
+    $classroomCourses = [];
+}
 
 // Day names
 $dayNames = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes'];
