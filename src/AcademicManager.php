@@ -855,6 +855,57 @@ class AcademicManager
         return $rows;
     }
 
+    /**
+     * Returns courses in a Chamilo session with their assigned teachers (status=2).
+     */
+    public static function getSessionCourses(int $sessionId): array
+    {
+        if ($sessionId <= 0) return [];
+
+        $srcTable    = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
+        $srcuTable   = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
+        $courseTable = Database::get_main_table(TABLE_MAIN_COURSE);
+        $userTable   = Database::get_main_table(TABLE_MAIN_USER);
+
+        // Get all courses of the session
+        $cRes = Database::query(
+            "SELECT c.id, c.code, c.title, c.visual_code
+             FROM $srcTable src
+             INNER JOIN $courseTable c ON c.id = src.c_id
+             WHERE src.session_id = $sessionId
+             ORDER BY c.title ASC"
+        );
+
+        $courses = [];
+        while ($cRow = Database::fetch_array($cRes, 'ASSOC')) {
+            $cId = (int) $cRow['id'];
+
+            // Get teachers (status=2 = coach) for this course in this session
+            $tRes = Database::query(
+                "SELECT u.id AS user_id, u.firstname, u.lastname, u.email, u.picture_uri
+                 FROM $srcuTable scu
+                 INNER JOIN $userTable u ON u.id = scu.user_id
+                 WHERE scu.session_id = $sessionId
+                   AND scu.c_id = $cId
+                   AND scu.status = 2
+                 ORDER BY u.lastname ASC, u.firstname ASC"
+            );
+            $teachers = [];
+            while ($tRow = Database::fetch_array($tRes, 'ASSOC')) {
+                if (!empty($tRow['picture_uri'])) {
+                    $uInfo = api_get_user_info((int) $tRow['user_id']);
+                    $tRow['avatar'] = $uInfo ? ($uInfo['avatar_small'] ?? '') : '';
+                } else {
+                    $tRow['avatar'] = '';
+                }
+                $teachers[] = $tRow;
+            }
+            $cRow['teachers'] = $teachers;
+            $courses[] = $cRow;
+        }
+        return $courses;
+    }
+
     public static function assignSessionToClassroom(int $classroomId, int $sessionId): bool
     {
         if ($classroomId <= 0 || $sessionId <= 0) return false;

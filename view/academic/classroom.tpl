@@ -167,6 +167,227 @@
     </div>
 </div>
 
+{% if session_courses %}
+<!-- Session Courses -->
+<div class="card mb-4">
+    <div class="card-header py-2">
+        <i class="fas fa-book-open mr-1 text-primary"></i>
+        <strong>Cursos de la sesión</strong>
+        <span class="badge badge-primary ml-2">{{ session_courses|length }}</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0" id="courses-table">
+            <thead class="thead-light">
+                <tr>
+                    <th style="width:36px;" class="pl-3">#</th>
+                    <th>Curso</th>
+                    <th style="width:110px;">Código</th>
+                    <th>Docente(s)</th>
+                    <th style="width:110px;" class="text-center">Acceso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i, course in session_courses %}
+                <tr id="course-row-{{ course.id }}">
+                    <td class="pl-3 text-muted align-middle" style="font-size:12px;">{{ i + 1 }}</td>
+                    <td class="align-middle">
+                        <span class="font-weight-bold" style="font-size:13px;">{{ course.title }}</span>
+                    </td>
+                    <td class="text-muted align-middle" style="font-size:12px; letter-spacing:.3px;">{{ course.code }}</td>
+                    <td>
+                        {# Lista de docentes asignados #}
+                        <div id="teachers-{{ course.id }}" class="mb-1">
+                            {% if course.teachers %}
+                                {% for t in course.teachers %}
+                                <div class="d-flex align-items-center mb-1" id="trow-{{ course.id }}-{{ t.user_id }}">
+                                    {% if t.avatar %}
+                                    <img src="{{ t.avatar }}" class="rounded-circle mr-2 flex-shrink-0" width="26" height="26" alt="">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mr-2 flex-shrink-0"
+                                         style="width:26px;height:26px;font-size:10px;">
+                                        <i class="fas fa-user-tie"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <span style="font-size:12px; font-weight:600;">{{ t.lastname }}, {{ t.firstname }}</span>
+                                        {% if t.email %}
+                                        <br><a href="mailto:{{ t.email }}" class="text-muted" style="font-size:10px;">{{ t.email }}</a>
+                                        {% endif %}
+                                    </div>
+                                    <button class="btn btn-outline-danger btn-sm ml-2 flex-shrink-0"
+                                            style="padding:1px 6px; font-size:11px;"
+                                            title="Quitar docente"
+                                            onclick="removeCourseTeacher({{ course.id }}, {{ t.user_id }}, this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <span class="text-muted" style="font-size:12px;" id="no-teacher-{{ course.id }}">
+                                <i class="fas fa-minus mr-1"></i>Sin docente
+                            </span>
+                            {% endif %}
+                        </div>
+                        {# Buscador inline para agregar docente #}
+                        <div class="mt-1">
+                            <div class="input-group input-group-sm" style="max-width:280px;">
+                                <input type="text"
+                                       class="form-control form-control-sm ct-search"
+                                       data-course-id="{{ course.id }}"
+                                       placeholder="Agregar docente..."
+                                       autocomplete="off"
+                                       style="font-size:11px;">
+                                <div class="input-group-append">
+                                    <span class="input-group-text" style="font-size:11px;">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="ct-results border rounded bg-white shadow-sm"
+                                 id="ctres-{{ course.id }}"
+                                 style="display:none; max-height:180px; overflow-y:auto; position:absolute; z-index:999; min-width:280px;"></div>
+                        </div>
+                    </td>
+                    <td class="text-center align-middle">
+                        <a href="{{ web_course_path }}{{ course.code }}/index.php?id_session={{ classroom.session_id }}"
+                           target="_blank"
+                           class="btn btn-outline-primary btn-sm"
+                           title="Abrir curso">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JS para gestión de docentes en cursos -->
+<script>
+(function () {
+    var ajaxUrl   = '{{ ajax_url }}';
+    var sessionId = {{ classroom.session_id }};
+    var ctTimers  = {};
+
+    // ---- Buscador de docentes por curso ----
+    document.querySelectorAll('.ct-search').forEach(function (input) {
+        var courseId = input.dataset.courseId;
+        var resBox   = document.getElementById('ctres-' + courseId);
+
+        input.addEventListener('input', function () {
+            clearTimeout(ctTimers[courseId]);
+            var q = this.value.trim();
+            if (q.length < 2) { resBox.style.display = 'none'; return; }
+            ctTimers[courseId] = setTimeout(function () {
+                fetch(ajaxUrl + '?action=search_teachers&q=' + encodeURIComponent(q))
+                    .then(function(r){ return r.json(); })
+                    .then(function (data) {
+                        var html = '';
+                        if (data.data && data.data.length) {
+                            data.data.forEach(function (t) {
+                                html += '<div class="d-flex align-items-center px-2 py-1 border-bottom ct-item" style="cursor:pointer;font-size:12px;"'
+                                      + ' onclick="assignCourseTeacher(' + courseId + ',' + t.user_id + ',\'' + escHtml(t.lastname) + '\',\'' + escHtml(t.firstname) + '\',\'' + escHtml(t.email||'') + '\')">'
+                                      + '<i class="fas fa-user-tie text-muted mr-2"></i>'
+                                      + '<div><strong>' + escHtml(t.lastname) + ', ' + escHtml(t.firstname) + '</strong>'
+                                      + '<br><small class="text-muted">' + escHtml(t.username) + '</small></div>'
+                                      + '</div>';
+                            });
+                        } else {
+                            html = '<div class="p-2 text-muted" style="font-size:12px;">Sin resultados</div>';
+                        }
+                        resBox.innerHTML = html;
+                        resBox.style.display = '';
+                    });
+            }, 280);
+        });
+
+        // Cerrar al hacer clic fuera
+        document.addEventListener('click', function (e) {
+            if (!input.contains(e.target) && !resBox.contains(e.target)) {
+                resBox.style.display = 'none';
+            }
+        });
+    });
+
+    // ---- Asignar docente ----
+    window.assignCourseTeacher = function (courseId, teacherId, lastname, firstname, email) {
+        var fd = new FormData();
+        fd.append('action',     'assign_course_teacher');
+        fd.append('session_id', sessionId);
+        fd.append('course_id',  courseId);
+        fd.append('teacher_id', teacherId);
+
+        fetch(ajaxUrl, { method: 'POST', body: fd })
+            .then(function(r){ return r.json(); })
+            .then(function (d) {
+                if (!d.success) return;
+
+                // Quitar "sin docente" si existe
+                var noT = document.getElementById('no-teacher-' + courseId);
+                if (noT) noT.remove();
+
+                // Agregar fila del docente
+                var existing = document.getElementById('trow-' + courseId + '-' + teacherId);
+                if (!existing) {
+                    var wrap  = document.getElementById('teachers-' + courseId);
+                    var div   = document.createElement('div');
+                    div.id    = 'trow-' + courseId + '-' + teacherId;
+                    div.className = 'd-flex align-items-center mb-1';
+                    var av = d.avatar
+                        ? '<img src="' + escHtml(d.avatar) + '" class="rounded-circle mr-2 flex-shrink-0" width="26" height="26">'
+                        : '<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mr-2 flex-shrink-0" style="width:26px;height:26px;font-size:10px;"><i class="fas fa-user-tie"></i></div>';
+                    var emailHtml = d.email ? '<br><a href="mailto:' + escHtml(d.email) + '" class="text-muted" style="font-size:10px;">' + escHtml(d.email) + '</a>' : '';
+                    div.innerHTML = av
+                        + '<div class="flex-grow-1"><span style="font-size:12px;font-weight:600;">' + escHtml(d.lastname) + ', ' + escHtml(d.firstname) + '</span>' + emailHtml + '</div>'
+                        + '<button class="btn btn-outline-danger btn-sm ml-2 flex-shrink-0" style="padding:1px 6px;font-size:11px;" title="Quitar" onclick="removeCourseTeacher(' + courseId + ',' + teacherId + ',this)">'
+                        + '<i class="fas fa-times"></i></button>';
+                    wrap.appendChild(div);
+                }
+
+                // Limpiar buscador
+                var inp = document.querySelector('.ct-search[data-course-id="' + courseId + '"]');
+                if (inp) inp.value = '';
+                var res = document.getElementById('ctres-' + courseId);
+                if (res) res.style.display = 'none';
+            });
+    };
+
+    // ---- Quitar docente ----
+    window.removeCourseTeacher = function (courseId, teacherId, btn) {
+        if (!confirm('¿Quitar este docente del curso?')) return;
+        var fd = new FormData();
+        fd.append('action',     'remove_course_teacher');
+        fd.append('session_id', sessionId);
+        fd.append('course_id',  courseId);
+        fd.append('teacher_id', teacherId);
+
+        fetch(ajaxUrl, { method: 'POST', body: fd })
+            .then(function(r){ return r.json(); })
+            .then(function (d) {
+                if (!d.success) return;
+                var row = document.getElementById('trow-' + courseId + '-' + teacherId);
+                if (row) row.remove();
+                // Si no quedan docentes, mostrar "sin docente"
+                var wrap = document.getElementById('teachers-' + courseId);
+                if (wrap && wrap.querySelectorAll('[id^="trow-"]').length === 0) {
+                    var span = document.createElement('span');
+                    span.id = 'no-teacher-' + courseId;
+                    span.className = 'text-muted';
+                    span.style.fontSize = '12px';
+                    span.innerHTML = '<i class="fas fa-minus mr-1"></i>Sin docente';
+                    wrap.appendChild(span);
+                }
+            });
+    };
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+})();
+</script>
+{% endif %}
+
 {% if pending_count > 0 %}
 <div class="alert alert-warning d-flex align-items-center justify-content-between mb-3" role="alert">
     <div>

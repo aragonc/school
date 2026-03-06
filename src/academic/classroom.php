@@ -36,12 +36,18 @@ $students    = AcademicManager::getClassroomStudents($classroomId);
 $candidates  = AcademicManager::getClassroomCandidates($classroomId);
 $auxiliaries = AcademicManager::getClassroomAuxiliaries($classroomId);
 
-$plugin->assign('classroom', $classroom);
-$plugin->assign('students', $students);
-$plugin->assign('auxiliaries', $auxiliaries);
-$plugin->assign('pending_count', count($candidates));
-$plugin->assign('is_admin', $isAdmin);
-$plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_academic.php');
+$sessionCourses = !empty($classroom['session_id'])
+    ? AcademicManager::getSessionCourses((int) $classroom['session_id'])
+    : [];
+
+$plugin->assign('classroom',       $classroom);
+$plugin->assign('students',        $students);
+$plugin->assign('auxiliaries',     $auxiliaries);
+$plugin->assign('session_courses', $sessionCourses);
+$plugin->assign('pending_count',   count($candidates));
+$plugin->assign('is_admin',        $isAdmin);
+$plugin->assign('web_course_path', api_get_path(WEB_COURSE_PATH));
+$plugin->assign('ajax_url',        api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_academic.php');
 
 $title = $classroom['level_name'] . ' - ' . $classroom['grade_name'] . ' "' . $classroom['section_name'] . '"';
 $plugin->setTitle($title);

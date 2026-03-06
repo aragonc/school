@@ -293,6 +293,55 @@ switch ($action) {
         echo json_encode(['success' => true, 'data' => $students]);
         break;
 
+    case 'assign_course_teacher':
+        $sessionId = (int) ($_POST['session_id'] ?? 0);
+        $courseId  = (int) ($_POST['course_id'] ?? 0);
+        $teacherId = (int) ($_POST['teacher_id'] ?? 0);
+        if ($sessionId > 0 && $courseId > 0 && $teacherId > 0) {
+            $table = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
+            // avoid duplicate
+            $exists = Database::fetch_array(Database::query(
+                "SELECT id FROM $table WHERE session_id=$sessionId AND c_id=$courseId AND user_id=$teacherId AND status=2 LIMIT 1"
+            ), 'ASSOC');
+            if (!$exists) {
+                Database::insert($table, [
+                    'session_id'      => $sessionId,
+                    'c_id'            => $courseId,
+                    'user_id'         => $teacherId,
+                    'status'          => 2,
+                    'visibility'      => 0,
+                    'legal_agreement' => 0,
+                ]);
+            }
+            $uInfo = api_get_user_info($teacherId);
+            echo json_encode([
+                'success'   => true,
+                'user_id'   => $teacherId,
+                'firstname' => $uInfo['firstname'] ?? '',
+                'lastname'  => $uInfo['lastname']  ?? '',
+                'email'     => $uInfo['email']     ?? '',
+                'avatar'    => $uInfo['avatar_small'] ?? '',
+            ]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+        break;
+
+    case 'remove_course_teacher':
+        $sessionId = (int) ($_POST['session_id'] ?? 0);
+        $courseId  = (int) ($_POST['course_id'] ?? 0);
+        $teacherId = (int) ($_POST['teacher_id'] ?? 0);
+        if ($sessionId > 0 && $courseId > 0 && $teacherId > 0) {
+            $table = Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER);
+            Database::delete($table, [
+                'session_id = ? AND c_id = ? AND user_id = ? AND status = 2' => [$sessionId, $courseId, $teacherId],
+            ]);
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+        break;
+
     case 'search_teachers':
         $query = $_GET['q'] ?? '';
         $teachers = AcademicManager::searchTeachers($query);
