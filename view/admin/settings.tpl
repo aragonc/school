@@ -37,6 +37,66 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary"><i class="fab fa-google mr-1"></i> Configuración de Inicio de Sesión</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ settings_url }}">
+            <input type="hidden" name="save_login_settings" value="1">
+            <div class="form-group mb-3">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="google_only_login"
+                           name="google_only_login" value="1" {{ google_only_login ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="google_only_login">
+                        Permitir <strong>solo inicio de sesión con Google</strong>
+                    </label>
+                </div>
+                <small class="form-text text-muted ml-4">
+                    Cuando está activo, se oculta el formulario de usuario/contraseña y solo se muestra el botón de Google.
+                </small>
+            </div>
+            <div class="form-group mb-3">
+                <label for="login_info_message" class="font-weight-bold">Mensaje informativo en el login</label>
+                <textarea class="form-control" id="login_info_message" name="login_info_message" rows="3"
+                          placeholder="Ej: Para ingresar al aula virtual debes usar la cuenta Google institucional que te proporcionó la institución.">{{ login_info_message }}</textarea>
+                <small class="form-text text-muted">
+                    Este mensaje se mostrará como aviso informativo en la pantalla de inicio de sesión. Déjalo en blanco para no mostrar ningún aviso.
+                </small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-save mr-1"></i> Guardar configuración
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-clock mr-1"></i> Configuración de Asistencia</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ settings_url }}">
+            <input type="hidden" name="save_attendance_settings" value="1">
+            <div class="form-group mb-3">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="attendance_show_checkin_time"
+                           name="attendance_show_checkin_time" value="1" {{ attendance_show_checkin_time ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="attendance_show_checkin_time">
+                        Mostrar <strong>hora de ingreso</strong> al alumno en su historial de asistencia
+                    </label>
+                </div>
+                <small class="form-text text-muted ml-4">
+                    Cuando está desactivado, el alumno solo verá su estado (Puntual / Tarde / Ausente) sin la hora exacta de registro.
+                </small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-save mr-1"></i> Guardar configuración
+            </button>
+        </form>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <h6 class="m-0 font-weight-bold text-primary">Favicon (PNG)</h6>

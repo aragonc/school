@@ -4,9 +4,12 @@ require_once __DIR__ . '/../../config.php';
 $plugin = SchoolPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');
-$plugin->setSidebar('');
-$content = null;
 api_block_anonymous_users();
+if (!api_is_platform_admin()) {
+    api_not_allowed(true);
+}
+$plugin->setSidebar('admin');
+$content = null;
 $userId = api_get_user_id();
 $action = $_REQUEST['action'] ?? '';
 
@@ -46,6 +49,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_matricula_settin
     exit;
 }
 
+// Handle attendance settings save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_attendance_settings'])) {
+    $showCheckin = !empty($_POST['attendance_show_checkin_time']) ? '1' : '0';
+    $plugin->setSchoolSetting('attendance_show_checkin_time', $showCheckin);
+    header('Location: ' . api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq() . '&saved=1');
+    exit;
+}
+
+// Handle login settings save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_login_settings'])) {
+    $googleOnlyLogin = !empty($_POST['google_only_login']) ? '1' : '0';
+    $plugin->setSchoolSetting('google_only_login', $googleOnlyLogin);
+    $loginInfoMessage = Security::remove_XSS(trim($_POST['login_info_message'] ?? ''));
+    $plugin->setSchoolSetting('login_info_message', $loginInfoMessage);
+    header('Location: ' . api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq() . '&saved=1');
+    exit;
+}
+
 // Handle favicon delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_favicon'])) {
     if (file_exists($faviconPath)) {
@@ -71,6 +92,9 @@ if ($enable) {
     $plugin->assign('favicon_web_url', $faviconWebUrl);
     $plugin->assign('favicon_msg', $faviconMsg);
     $plugin->assign('reniec_visible', $plugin->getSchoolSetting('reniec_visible') !== '0');
+    $plugin->assign('attendance_show_checkin_time', $plugin->getSchoolSetting('attendance_show_checkin_time') === '1');
+    $plugin->assign('google_only_login', $plugin->getSchoolSetting('google_only_login') === '1');
+    $plugin->assign('login_info_message', $plugin->getSchoolSetting('login_info_message') ?: '');
     $plugin->assign('settings_saved', isset($_GET['saved']));
     $plugin->assign('settings_url', api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq());
 

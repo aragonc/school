@@ -27,9 +27,12 @@ foreach ($myAttendance as &$record) {
 }
 unset($record);
 
+$showCheckinTime = $plugin->getSchoolSetting('attendance_show_checkin_time') === '1';
+
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('active_tab', 'my');
 $plugin->assign('my_attendance', $myAttendance);
+$plugin->assign('show_checkin_time', $showCheckinTime);
 
 $plugin->setTitle($plugin->get_lang('AttendanceControl'));
 

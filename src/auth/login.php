@@ -79,7 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'], $_POST['pass
 
 // Obtener parámetros de error desde URL (si viene redirigido)
 if (isset($_GET['error'])) {
-    $errorMessage = $plugin->get_lang('LoginFailed');
+    $googleLoginError = ChamiloSession::read('google_login_error');
+    if (!empty($googleLoginError)) {
+        $errorMessage = $googleLoginError;
+        ChamiloSession::erase('google_login_error');
+    } else {
+        $errorMessage = $plugin->get_lang('LoginFailed');
+    }
 }
 
 $siteName = api_get_setting('siteName');
@@ -137,6 +143,12 @@ $plugin->assign('lost_password_url', $lostPasswordUrl);
 
 $googleLoginUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/src/auth/external_login/login_google.php';
 $plugin->assign('google_login_url', $googleLoginUrl);
+
+$googleOnlyLogin = $plugin->getSchoolSetting('google_only_login') === '1';
+$plugin->assign('google_only_login', $googleOnlyLogin);
+
+$loginInfoMessage = $plugin->getSchoolSetting('login_info_message') ?: '';
+$plugin->assign('login_info_message', $loginInfoMessage);
 
 $content = $plugin->fetch('auth/login.tpl');
 $plugin->assign('content', $content);

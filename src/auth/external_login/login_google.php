@@ -197,97 +197,13 @@ try {
 
     } else {
         // ========================================
-        // CREAR NUEVO USUARIO
+        // USUARIO NO REGISTRADO — ACCESO DENEGADO
         // ========================================
-        error_log('Google OAuth: Creando nuevo usuario para email: ' . $email);
-
-        // Generar username único
-        $username = substr($email, 0, strpos($email, '@'));
-        $username = preg_replace('/[^a-zA-Z0-9_]/', '', $username);
-
-        if (empty($username) || strlen($username) < 3) {
-            $username = 'user_' . substr(md5($email), 0, 8);
-        }
-
-        $username_base = $username;
-        $counter = 1;
-
-        while (UserManager::is_username_available($username) === false) {
-            $username = $username_base . $counter;
-            $counter++;
-            if ($counter > 100) {
-                throw new Exception('No se pudo generar un nombre de usuario único');
-            }
-        }
-
-        // Si faltan nombres, usar valores por defecto
-        if (empty($firstName)) {
-            $firstName = $username;
-        }
-        if (empty($lastName)) {
-            $lastName = 'Usuario';
-        }
-
-        error_log('Google OAuth: Intentando crear usuario con datos: ' . json_encode([
-                'email' => $email,
-                'username' => $username,
-                'firstName' => $firstName,
-                'lastName' => $lastName
-            ]));
-
-        // Crear el nuevo usuario con UserManager::create_user()
-        $userId = UserManager::create_user(
-            $firstName,
-            $lastName,
-            STUDENT,
-            $email,
-            $email,
-            '',
-            null,
-            api_get_setting('platformLanguage'),
-            '',
-            $picture,
-            'oauth2-google',
-            null,
-            1,
-            0,
-            [],
-            ''
-        );
-
-        error_log('Google OAuth: Resultado create_user - UserID: ' . ($userId ? $userId : 'FALSE'));
-
-        if (!$userId || $userId === false) {
-            // Log de error detallado
-            $lastError = error_get_last();
-            if ($lastError) {
-                error_log('Google OAuth: Error PHP al crear usuario: ' . print_r($lastError, true));
-            }
-
-            throw new Exception('No se pudo crear la cuenta de usuario. Por favor contacta al administrador.');
-        }
-
-        error_log('Google OAuth: Usuario creado exitosamente - ID: ' . $userId);
-
-        // Marcar que es un usuario nuevo de OAuth que necesita completar perfil
-        ChamiloSession::write('is_new_oauth_user', true);
-        ChamiloSession::write('oauth_user_id', $userId);
-
-        // Guardar Google ID como campo extra (opcional)
-        if (!empty($googleId)) {
-            try {
-                UserManager::update_extra_field_value($userId, 'google_id', $googleId);
-            } catch (Exception $e) {
-                error_log('Google OAuth: No se pudo guardar google_id: ' . $e->getMessage());
-            }
-        }
-
-        // Obtener info completa del usuario recién creado
-        $userInfo = api_get_user_info($userId);
-
-        if (!$userInfo || empty($userInfo)) {
-            throw new Exception('Usuario creado pero no se pudo obtener su información');
-        }
+        error_log('Google OAuth: Email no registrado en la plataforma - ' . $email);
+        $loginUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/src/auth/login.php';
+        ChamiloSession::write('google_login_error', 'Tu cuenta de Google (' . $email . ') no está registrada en la plataforma. Contacta al administrador.');
+        header('Location: ' . $loginUrl . '?error=not_registered');
+        exit;
     }
 
     // ============================================

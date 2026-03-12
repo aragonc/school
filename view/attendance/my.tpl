@@ -11,7 +11,7 @@
                 <thead class="thead-light">
                     <tr>
                         <th>{{ 'Date'|get_plugin_lang('SchoolPlugin') }}</th>
-                        <th>{{ 'CheckIn'|get_plugin_lang('SchoolPlugin') }}</th>
+                        {% if show_checkin_time %}<th>{{ 'CheckIn'|get_plugin_lang('SchoolPlugin') }}</th>{% endif %}
                         <th>{{ 'Status'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Method'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Schedule'|get_plugin_lang('SchoolPlugin') }}</th>
@@ -21,7 +21,7 @@
                     {% for record in my_attendance %}
                     <tr>
                         <td>{{ record.date }}</td>
-                        <td>{{ record.check_in|date('H:i:s') }}</td>
+                        {% if show_checkin_time %}<td>{{ record.check_in|date('H:i:s') }}</td>{% endif %}
                         <td>
                             {% if record.status == 'on_time' %}
                                 <span class="badge badge-success">{{ 'OnTime'|get_plugin_lang('SchoolPlugin') }}</span>
