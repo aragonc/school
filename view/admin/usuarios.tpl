@@ -4,9 +4,14 @@
             <i class="fas fa-users mr-1"></i> Usuarios
             <span class="badge badge-primary badge-pill ml-1">{{ users|length }}</span>
         </h6>
-        <a href="{{ _p.web }}admin/tarjetas-print" target="_blank" class="btn btn-sm btn-outline-primary">
-            <i class="fas fa-print mr-1"></i> Imprimir tarjetas
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ _p.web }}admin/usuarios-qr-print" target="_blank" class="btn btn-sm btn-outline-secondary mr-2">
+                <i class="fas fa-qrcode mr-1"></i> Imprimir QR
+            </a>
+            <a href="{{ _p.web }}admin/tarjetas-print" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-print mr-1"></i> Imprimir tarjetas
+            </a>
+        </div>
     </div>
     <div class="card-body">
 
