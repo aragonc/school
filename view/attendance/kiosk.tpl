@@ -383,6 +383,12 @@
             return;
         }
 
+        // QR de alumnos antiguos contiene solo el DNI (ej: "12345678").
+        // El username real es dni@playschool.edu.pe — normalizar aquí.
+        if (/^\d{6,12}$/.test(username)) {
+            username = username + '@playschool.edu.pe';
+        }
+
         var formData = new FormData();
         formData.append('action', 'scan_qr_kiosk');
         formData.append('username', username);
