@@ -82,11 +82,13 @@
         }
         .scan-label i { color: #e94560; margin-right: 8px; }
         .btn-flip-camera {
-            margin-top: 12px;
-            background: #0f3460; color: #a8a8b3;
+            position: absolute; bottom: 10px; right: 10px;
+            background: rgba(15,52,96,0.85); color: #a8a8b3;
             border: 1px solid #1a4a8a; border-radius: 8px;
-            padding: 6px 16px; font-size: 0.9rem; cursor: pointer;
+            padding: 6px 14px; font-size: 0.85rem; cursor: pointer;
             transition: background 0.2s;
+            z-index: 10;
+            display: none; /* oculto hasta confirmar múltiples cámaras */
         }
         .btn-flip-camera:hover { background: #1a4a8a; color: #fff; }
 
@@ -208,13 +210,13 @@
                 <div class="scan-overlay">
                     <div class="scan-frame"></div>
                 </div>
+                <button class="btn-flip-camera" id="btnFlipCamera" title="Cambiar cámara">
+                    <i class="fas fa-sync-alt"></i> Cambiar cámara
+                </button>
             </div>
             <div class="scan-label">
                 <i class="fas fa-qrcode"></i> Escanea tu código QR frente a la cámara
             </div>
-            <button class="btn-flip-camera" id="btnFlipCamera" title="Cambiar cámara">
-                <i class="fas fa-sync-alt"></i> Cambiar cámara
-            </button>
         </div>
     </div>
 
@@ -283,7 +285,20 @@
     var currentFacingMode = 'environment'; // start with back camera
     var currentStream = null;
 
-    document.getElementById('btnFlipCamera').addEventListener('click', function() {
+    var btnFlip = document.getElementById('btnFlipCamera');
+
+    // Mostrar botón solo si hay más de una cámara disponible
+    function checkCameraCount() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+        navigator.mediaDevices.enumerateDevices().then(function(devices) {
+            var videoDevices = devices.filter(function(d) { return d.kind === 'videoinput'; });
+            if (videoDevices.length > 1) {
+                btnFlip.style.display = 'inline-block';
+            }
+        }).catch(function() {});
+    }
+
+    btnFlip.addEventListener('click', function() {
         currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
         var icon = this.querySelector('i');
         icon.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : '';
@@ -311,6 +326,7 @@
             video.srcObject = stream;
             video.play();
             requestAnimationFrame(scanLoop);
+            checkCameraCount();
         }).catch(function(err) {
             console.error('Camera error:', err);
             var msg = '<i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> ';
