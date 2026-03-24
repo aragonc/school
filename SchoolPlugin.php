@@ -3716,6 +3716,7 @@ class SchoolPlugin extends Plugin
     {
         $table      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
         $userTable  = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
+        $fichaTable = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
         $matTable   = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
         $gradeTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
         $yearTable  = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
@@ -3755,9 +3756,10 @@ class SchoolPlugin extends Plugin
                 Database::query(
                     "SELECT m.grade_id, g.level_id
                      FROM $matTable m
+                     INNER JOIN $fichaTable f ON f.id = m.ficha_id
                      INNER JOIN $gradeTable g ON g.id = m.grade_id
                      INNER JOIN $yearTable y ON y.id = m.academic_year_id AND y.active = 1
-                     WHERE m.user_id = $uid AND m.estado = 'ACTIVO'
+                     WHERE f.user_id = $uid AND m.estado = 'ACTIVO'
                      LIMIT 1"
                 ),
                 'ASSOC'
