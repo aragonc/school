@@ -4670,7 +4670,7 @@ class SchoolPlugin extends Plugin
                 $row['firstname'],
                 $row['username'],
                 $row['role'],
-                date('H:i:s', strtotime($row['check_in'])),
+                date('H:i:s', strtotime(api_get_local_time($row['check_in']))),
                 $statusLabels[$row['status']] ?? $row['status'],
                 $methodLabels[$row['method']] ?? $row['method'],
                 $row['schedule_name'] ?? '-',
@@ -4755,7 +4755,7 @@ class SchoolPlugin extends Plugin
                 $row['firstname'],
                 $row['username'],
                 $row['role'],
-                date('H:i:s', strtotime($row['check_in'])),
+                date('H:i:s', strtotime(api_get_local_time($row['check_in']))),
                 $statusLabels[$row['status']] ?? $row['status'],
                 $methodLabels[$row['method']] ?? $row['method'],
                 $row['schedule_name'] ?? '-',
@@ -4955,17 +4955,14 @@ class SchoolPlugin extends Plugin
         if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
         $where .= $this->getUserTypeFilter($userType);
 
-        $extraJoins  = '';
-        $extraSelect = '';
-        if ($userType === 'students' && ($levelId || $gradeId || $sectionId)) {
+        $extraJoins      = '';
+        $extraSelect     = '';
+        $isStudentExport = ($userType === 'students');
+        if ($isStudentExport) {
             $af = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
-            $extraJoins  = $af['joins'];
             $where      .= $af['where'];
-            $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
-            $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
-            $extraJoins  .= " LEFT JOIN $levelTable slv ON slv.id = sg.level_id";
-            $extraJoins  .= " LEFT JOIN $sectionTable ssc ON ssc.id = sm.section_id";
-            $extraSelect  = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+            $extraJoins  = $this->getStudentAcademicDisplayJoins($levelId, $gradeId);
+            $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
         }
 
         $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
@@ -4990,15 +4987,18 @@ class SchoolPlugin extends Plugin
                 ORDER BY al.date DESC, u.lastname ASC";
         $result = Database::query($sql);
 
-        $statusLabels = ['on_time' => 'Asistió puntualmente', 'late' => 'Asistió con tardanza', 'absent' => 'No asistió'];
-        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
-
-        $records = [];
+        $records    = [];
+        $cntTotal   = 0;
+        $cntOnTime  = 0;
+        $cntLate    = 0;
+        $cntAbsent  = 0;
         while ($row = Database::fetch_array($result, 'ASSOC')) {
-            $row['status_label'] = $statusLabels[$row['status']] ?? $row['status'];
-            $row['method_label'] = $methodLabels[$row['method']] ?? $row['method'];
-            $row['check_in_time'] = date('H:i:s', strtotime($row['check_in']));
+            $row['check_in_time'] = date('H:i:s', strtotime(api_get_local_time($row['check_in'])));
             $records[] = $row;
+            $cntTotal++;
+            if ($row['status'] === 'on_time')     $cntOnTime++;
+            elseif ($row['status'] === 'late')    $cntLate++;
+            elseif ($row['status'] === 'absent')  $cntAbsent++;
         }
 
         $dateRange = '';
@@ -5010,10 +5010,17 @@ class SchoolPlugin extends Plugin
             $dateRange = "Hasta $endDate";
         }
 
-        $this->assign('records', $records);
-        $this->assign('date_range', $dateRange);
-        $this->assign('report_date', date('Y-m-d H:i:s'));
-        $this->assign('institution', api_get_setting('Institution'));
+        $this->assign('records',           $records);
+        $this->assign('is_student_export', $isStudentExport);
+        $this->assign('stats', [
+            'total'   => $cntTotal,
+            'on_time' => $cntOnTime,
+            'late'    => $cntLate,
+            'absent'  => $cntAbsent,
+        ]);
+        $this->assign('date_range',   $dateRange);
+        $this->assign('report_date',  date('d/m/Y H:i'));
+        $this->assign('institution',  api_get_setting('Institution'));
 
         $content = $this->fetch('attendance/pdf.tpl');
 
