@@ -4589,6 +4589,9 @@ class SchoolPlugin extends Plugin
         $result  = Database::query($sql);
         $records = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
+            if (!empty($row['check_in'])) {
+                $row['check_in'] = api_get_local_time($row['check_in']);
+            }
             $records[] = $row;
         }
         return $records;
