@@ -32,6 +32,11 @@ $reportStats = $plugin->getAttendanceStats(
     $reportLevelId, $reportGradeId, $reportSectionId
 );
 
+$reportRecords = $plugin->getAttendanceRecords(
+    $reportStartDate, $reportEndDate, $reportUserType,
+    $reportLevelId, $reportGradeId, $reportSectionId
+);
+
 $filters = $plugin->getAcademicFiltersForAttendance();
 
 $plugin->assign('is_admin', $isAdmin);
@@ -42,7 +47,9 @@ $plugin->assign('report_user_type',  $reportUserType);
 $plugin->assign('report_level_id',   $reportLevelId);
 $plugin->assign('report_grade_id',   $reportGradeId);
 $plugin->assign('report_section_id', $reportSectionId);
-$plugin->assign('report_stats',  $reportStats);
+$plugin->assign('report_stats',   $reportStats);
+$plugin->assign('report_records', $reportRecords);
+$plugin->assign('report_is_students', $reportUserType === 'students');
 $plugin->assign('levels',   $filters['levels']);
 $plugin->assign('grades',   $filters['grades']);
 $plugin->assign('sections', $filters['sections']);

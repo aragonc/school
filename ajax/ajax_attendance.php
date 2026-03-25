@@ -232,7 +232,7 @@ switch ($action) {
         $levelId   = isset($_GET['level_id'])     ? (int) $_GET['level_id']   : 0;
         $gradeId   = isset($_GET['grade_id'])     ? (int) $_GET['grade_id']   : 0;
         $sectionId = isset($_GET['section_id'])   ? (int) $_GET['section_id'] : 0;
-        $plugin->exportAttendanceCSV($startDate, $endDate, $userType, $levelId, $gradeId, $sectionId);
+        $plugin->exportAttendanceExcel($startDate, $endDate, $userType, $levelId, $gradeId, $sectionId);
         break;
 
     case 'export_pdf':

@@ -170,4 +170,68 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
         </div>
     </div>
 </div>
+
+{% if report_records %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list"></i> Detalle de registros</span>
+        <span class="badge badge-secondary">{{ report_records|length }} registros</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover table-bordered mb-0" id="reportTable">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Apellidos</th>
+                        <th>Nombres</th>
+                        {% if report_is_students %}
+                        <th>Nivel</th>
+                        <th>Grado</th>
+                        <th>Sección</th>
+                        {% else %}
+                        <th>Rol</th>
+                        {% endif %}
+                        <th>Hora</th>
+                        <th>Estado</th>
+                        <th>Método</th>
+                        <th>Turno</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in report_records %}
+                    <tr>
+                        <td>{{ rec.date }}</td>
+                        <td>{{ rec.lastname }}</td>
+                        <td>{{ rec.firstname }}</td>
+                        {% if report_is_students %}
+                        <td>{{ rec.nivel_name ?: '-' }}</td>
+                        <td>{{ rec.grado_name ?: '-' }}</td>
+                        <td>{{ rec.seccion_name ?: '-' }}</td>
+                        {% else %}
+                        <td>{{ rec.role }}</td>
+                        {% endif %}
+                        <td>{{ rec.check_in|slice(11,8) }}</td>
+                        <td>
+                            {% if rec.status == 'on_time' %}
+                                <span class="badge badge-success">Puntual</span>
+                            {% elseif rec.status == 'late' %}
+                                <span class="badge badge-warning">Tardanza</span>
+                            {% else %}
+                                <span class="badge badge-danger">Ausente</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ rec.method == 'qr' ? 'QR' : 'Manual' }}</td>
+                        <td>{{ rec.schedule_name ?: '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay registros para el filtro seleccionado.</div>
+{% endif %}
+
 {% endif %}

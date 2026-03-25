@@ -4095,6 +4095,36 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Build LEFT JOINs to always retrieve nivel/grado/sección labels for students,
+     * regardless of whether academic filters are applied.
+     */
+    private function getStudentAcademicDisplayJoins(int $levelId = 0, int $gradeId = 0): string
+    {
+        $fichaTable   = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable     = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $gradeTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
+        $yearTable    = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+
+        $yr = Database::fetch_array(
+            Database::query("SELECT id FROM $yearTable WHERE active = 1 LIMIT 1"), 'ASSOC'
+        );
+        $activeYearId = $yr ? (int) $yr['id'] : 0;
+
+        $joins  = " LEFT JOIN $fichaTable sf ON sf.user_id = u.id";
+        $joins .= " LEFT JOIN $matTable sm ON sm.ficha_id = sf.id AND sm.estado = 'ACTIVO'";
+        if ($activeYearId) {
+            $joins .= " AND sm.academic_year_id = $activeYearId";
+        }
+        $joins .= " LEFT JOIN $gradeTable sg ON sg.id = sm.grade_id";
+        $joins .= " LEFT JOIN $levelTable slv ON slv.id = sg.level_id";
+        $joins .= " LEFT JOIN $sectionTable ssc ON ssc.id = sm.section_id";
+
+        return $joins;
+    }
+
+    /**
      * Get attendance statistics for a date range.
      */
     public function getAttendanceStats(
@@ -4503,6 +4533,68 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Get filtered attendance records for display in reports table.
+     */
+    public function getAttendanceRecords(
+        ?string $startDate = null,
+        ?string $endDate   = null,
+        ?string $userType  = null,
+        int $levelId = 0, int $gradeId = 0, int $sectionId = 0,
+        int $limit = 500
+    ): array {
+        $logTable      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable     = Database::get_main_table(TABLE_MAIN_USER);
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $adminTable    = Database::get_main_table(TABLE_MAIN_ADMIN);
+
+        $where = "WHERE 1=1";
+        if ($startDate) $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+        $where .= $this->getUserTypeFilter($userType);
+
+        $extraJoins  = '';
+        $extraSelect = '';
+        $isStudentExport = ($userType === 'students');
+        if ($isStudentExport) {
+            $af = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
+            $where      .= $af['where'];
+            $extraJoins  = $this->getStudentAcademicDisplayJoins($levelId, $gradeId);
+            $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+        }
+
+        $limitSql = $limit > 0 ? "LIMIT $limit" : '';
+
+        $sql = "SELECT al.id, al.date, u.lastname, u.firstname, u.username,
+                       CASE
+                           WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
+                           WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
+                           WHEN u.status = ".DRH." THEN 'Administrativo'
+                           WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
+                           WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
+                           WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
+                           ELSE 'Alumno'
+                       END as role,
+                       al.check_in, al.status, al.method, s.name as schedule_name, al.notes
+                       $extraSelect
+                FROM $logTable al
+                INNER JOIN $userTable u ON al.user_id = u.id
+                LEFT JOIN $adminTable adm ON u.id = adm.user_id
+                LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $extraJoins
+                $where
+                ORDER BY al.date DESC, u.lastname ASC
+                $limitSql";
+
+        $result  = Database::query($sql);
+        $records = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $records[] = $row;
+        }
+        return $records;
+    }
+
+    /**
      * Export attendance data to CSV.
      */
     public function exportAttendanceCSV(
@@ -4523,16 +4615,12 @@ class SchoolPlugin extends Plugin
 
         $extraJoins  = '';
         $extraSelect = '';
-        if ($userType === 'students' && ($levelId || $gradeId || $sectionId)) {
+        $isStudentExport = ($userType === 'students');
+        if ($isStudentExport) {
             $af = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
-            $extraJoins  = $af['joins'];
             $where      .= $af['where'];
-            // Also join level/section for labels in CSV
-            $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
-            $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
-            $extraJoins  .= " LEFT JOIN $levelTable slv ON slv.id = sg.level_id";
-            $extraJoins  .= " LEFT JOIN $sectionTable ssc ON ssc.id = sm.section_id";
-            $extraSelect  = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+            $extraJoins  = $this->getStudentAcademicDisplayJoins($levelId, $gradeId);
+            $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
         }
 
         $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
@@ -4557,7 +4645,6 @@ class SchoolPlugin extends Plugin
                 ORDER BY al.date DESC, u.lastname ASC";
         $result = Database::query($sql);
 
-        $isStudentExport = ($userType === 'students' && ($levelId || $gradeId || $sectionId));
         $filename = 'asistencia_' . date('Y-m-d_His') . '.csv';
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -4595,6 +4682,255 @@ class SchoolPlugin extends Plugin
         }
         fclose($output);
         exit;
+    }
+
+    /**
+     * Export attendance data to XLSX (native ZipArchive, no external library needed).
+     */
+    public function exportAttendanceExcel(
+        ?string $startDate = null,
+        ?string $endDate   = null,
+        ?string $userType  = null,
+        int $levelId = 0, int $gradeId = 0, int $sectionId = 0
+    ): void {
+        $logTable      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable     = Database::get_main_table(TABLE_MAIN_USER);
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $adminTable    = Database::get_main_table(TABLE_MAIN_ADMIN);
+
+        $where = "WHERE 1=1";
+        if ($startDate) $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+        $where .= $this->getUserTypeFilter($userType);
+
+        $extraJoins  = '';
+        $extraSelect = '';
+        $isStudentExport = ($userType === 'students');
+        if ($isStudentExport) {
+            $af = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
+            $where      .= $af['where'];
+            $extraJoins  = $this->getStudentAcademicDisplayJoins($levelId, $gradeId);
+            $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+        }
+
+        $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
+                       CASE
+                           WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
+                           WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
+                           WHEN u.status = ".DRH." THEN 'Administrativo'
+                           WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
+                           WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
+                           WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
+                           ELSE 'Alumno'
+                       END as role,
+                       al.check_in, al.status, al.method, s.name as schedule_name, al.notes
+                       $extraSelect
+                FROM $logTable al
+                INNER JOIN $userTable u ON al.user_id = u.id
+                LEFT JOIN $adminTable adm ON u.id = adm.user_id
+                LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $extraJoins
+                $where
+                ORDER BY al.date DESC, u.lastname ASC";
+        $result = Database::query($sql);
+
+        $headers = ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Turno', 'Notas'];
+        if ($isStudentExport) {
+            $headers = array_merge($headers, ['Nivel', 'Grado', 'Sección']);
+        }
+
+        $statusLabels = ['on_time' => 'Asistio puntualmente', 'late' => 'Asistio con tardanza', 'absent' => 'No asistio'];
+        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
+
+        // --- Build rows array ---
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $line = [
+                $row['date'],
+                $row['lastname'],
+                $row['firstname'],
+                $row['username'],
+                $row['role'],
+                date('H:i:s', strtotime($row['check_in'])),
+                $statusLabels[$row['status']] ?? $row['status'],
+                $methodLabels[$row['method']] ?? $row['method'],
+                $row['schedule_name'] ?? '-',
+                $row['notes'] ?? '',
+            ];
+            if ($isStudentExport) {
+                $line[] = $row['nivel_name']   ?? '-';
+                $line[] = $row['grado_name']   ?? '-';
+                $line[] = $row['seccion_name'] ?? '-';
+            }
+            // status for row coloring (index 6)
+            $rows[] = ['data' => $line, 'status' => $row['status']];
+        }
+
+        // --- Generate XLSX via ZipArchive ---
+        $xlsx = $this->buildXlsx($headers, $rows);
+
+        $filename = 'asistencia_' . date('Y-m-d_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($xlsx));
+        header('Cache-Control: max-age=0');
+        echo $xlsx;
+        exit;
+    }
+
+    /**
+     * Build a minimal XLSX binary string using ZipArchive.
+     * Supports bold headers and per-row fill colors.
+     */
+    private function buildXlsx(array $headers, array $rows): string
+    {
+        // Shared strings table
+        $strings  = [];
+        $strIndex = [];
+        $addStr = function(string $val) use (&$strings, &$strIndex): int {
+            if (!isset($strIndex[$val])) {
+                $strIndex[$val] = count($strings);
+                $strings[] = $val;
+            }
+            return $strIndex[$val];
+        };
+
+        // Style indices (defined in styles.xml)
+        // 0 = normal, 1 = bold header (dark blue bg), 2 = green fill, 3 = orange fill, 4 = red fill
+        $styleNormal  = 0;
+        $styleHeader  = 1;
+        $styleGreen   = 2;
+        $styleOrange  = 3;
+        $styleRed     = 4;
+
+        $statusStyle = [
+            'on_time' => $styleGreen,
+            'late'    => $styleOrange,
+            'absent'  => $styleRed,
+        ];
+
+        // --- sheet data ---
+        $sheetXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $sheetXml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $sheetXml .= '<sheetData>';
+
+        // Header row
+        $sheetXml .= '<row r="1">';
+        foreach ($headers as $ci => $h) {
+            $col = $this->xlsxColName($ci) . '1';
+            $si  = $addStr($h);
+            $sheetXml .= '<c r="'.$col.'" t="s" s="'.$styleHeader.'"><v>'.$si.'</v></c>';
+        }
+        $sheetXml .= '</row>';
+
+        // Data rows
+        foreach ($rows as $ri => $rowInfo) {
+            $rn  = $ri + 2;
+            $st  = $rowInfo['status'];
+            $sheetXml .= '<row r="'.$rn.'">';
+            foreach ($rowInfo['data'] as $ci => $val) {
+                $col    = $this->xlsxColName($ci) . $rn;
+                $cellSt = ($ci === 6) ? ($statusStyle[$st] ?? $styleNormal) : $styleNormal;
+                $si     = $addStr((string) $val);
+                $sheetXml .= '<c r="'.$col.'" t="s" s="'.$cellSt.'"><v>'.$si.'</v></c>';
+            }
+            $sheetXml .= '</row>';
+        }
+
+        $sheetXml .= '</sheetData></worksheet>';
+
+        // --- shared strings ---
+        $ssXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $ssXml .= '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="'.count($strings).'" uniqueCount="'.count($strings).'">';
+        foreach ($strings as $s) {
+            $ssXml .= '<si><t xml:space="preserve">'.htmlspecialchars($s, ENT_XML1, 'UTF-8').'</t></si>';
+        }
+        $ssXml .= '</sst>';
+
+        // --- styles ---
+        $stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts>
+    <font><sz val="11"/><name val="Calibri"/></font>
+    <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FFFFFFFF"/></font>
+    <font><sz val="11"/><name val="Calibri"/><color rgb="FFFFFFFF"/></font>
+  </fonts>
+  <fills>
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF1F4E79"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF27AE60"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFF39C12"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFE74C3C"/></patternFill></fill>
+  </fills>
+  <borders><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="2" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="2" fillId="5" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+  </cellXfs>
+</styleSheet>';
+
+        // --- workbook ---
+        $wbXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $wbXml .= '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+        $wbXml .= '<sheets><sheet name="Asistencia" sheetId="1" r:id="rId1"/></sheets></workbook>';
+
+        // --- relationships ---
+        $wbRels  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $wbRels .= '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        $wbRels .= '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>';
+        $wbRels .= '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>';
+        $wbRels .= '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+        $wbRels .= '</Relationships>';
+
+        $rootRels  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $rootRels .= '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        $rootRels .= '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>';
+        $rootRels .= '</Relationships>';
+
+        $contentTypes  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $contentTypes .= '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
+        $contentTypes .= '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>';
+        $contentTypes .= '<Default Extension="xml" ContentType="application/xml"/>';
+        $contentTypes .= '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
+        $contentTypes .= '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        $contentTypes .= '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>';
+        $contentTypes .= '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+        $contentTypes .= '</Types>';
+
+        // --- pack into ZIP ---
+        $tmpFile = tempnam(sys_get_temp_dir(), 'xlsx_');
+        $zip = new ZipArchive();
+        $zip->open($tmpFile, ZipArchive::OVERWRITE);
+        $zip->addFromString('[Content_Types].xml',            $contentTypes);
+        $zip->addFromString('_rels/.rels',                    $rootRels);
+        $zip->addFromString('xl/workbook.xml',                $wbXml);
+        $zip->addFromString('xl/_rels/workbook.xml.rels',     $wbRels);
+        $zip->addFromString('xl/worksheets/sheet1.xml',       $sheetXml);
+        $zip->addFromString('xl/sharedStrings.xml',           $ssXml);
+        $zip->addFromString('xl/styles.xml',                  $stylesXml);
+        $zip->close();
+
+        $data = file_get_contents($tmpFile);
+        unlink($tmpFile);
+        return $data;
+    }
+
+    private function xlsxColName(int $index): string
+    {
+        $col = '';
+        $index++;
+        while ($index > 0) {
+            $rem  = ($index - 1) % 26;
+            $col  = chr(65 + $rem) . $col;
+            $index = (int)(($index - $rem) / 26);
+        }
+        return $col;
     }
 
     /**
