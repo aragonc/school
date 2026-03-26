@@ -182,9 +182,9 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
             <table class="table table-sm table-hover table-bordered mb-0" id="reportTable">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Fecha</th>
-                        <th>Apellidos</th>
-                        <th>Nombres</th>
+                        <th class="sortable" data-col="0" style="cursor:pointer;white-space:nowrap;">Fecha <span class="sort-icon">↕</span></th>
+                        <th class="sortable" data-col="1" style="cursor:pointer;white-space:nowrap;">Apellidos <span class="sort-icon">↕</span></th>
+                        <th class="sortable" data-col="2" style="cursor:pointer;white-space:nowrap;">Nombres <span class="sort-icon">↕</span></th>
                         {% if report_is_students %}
                         <th>Nivel</th>
                         <th>Grado</th>
@@ -192,7 +192,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         {% else %}
                         <th>Rol</th>
                         {% endif %}
-                        <th>Hora</th>
+                        <th class="sortable" data-col="{{ report_is_students ? 5 : 3 }}" style="cursor:pointer;white-space:nowrap;">Hora <span class="sort-icon">↕</span></th>
                         <th>Estado</th>
                         <th>Método</th>
                         <th>Turno</th>
@@ -235,3 +235,54 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
 {% endif %}
 
 {% endif %}
+
+<script>
+(function () {
+    var table = document.getElementById('reportTable');
+    if (!table) return;
+
+    var sortState = { col: -1, asc: true };
+
+    function getCellText(row, col) {
+        var cell = row.cells[col];
+        return cell ? cell.textContent.trim().toLowerCase() : '';
+    }
+
+    function sortTable(colIndex) {
+        var tbody = table.tBodies[0];
+        var rows  = Array.prototype.slice.call(tbody.rows);
+
+        if (sortState.col === colIndex) {
+            sortState.asc = !sortState.asc;
+        } else {
+            sortState.col = colIndex;
+            sortState.asc = true;
+        }
+
+        rows.sort(function (a, b) {
+            var va = getCellText(a, colIndex);
+            var vb = getCellText(b, colIndex);
+            var cmp = va.localeCompare(vb, 'es', { sensitivity: 'base' });
+            return sortState.asc ? cmp : -cmp;
+        });
+
+        rows.forEach(function (r) { tbody.appendChild(r); });
+
+        // Update icons
+        table.querySelectorAll('th.sortable').forEach(function (th) {
+            var icon = th.querySelector('.sort-icon');
+            if (parseInt(th.getAttribute('data-col')) === colIndex) {
+                icon.textContent = sortState.asc ? '↑' : '↓';
+            } else {
+                icon.textContent = '↕';
+            }
+        });
+    }
+
+    table.querySelectorAll('th.sortable').forEach(function (th) {
+        th.addEventListener('click', function () {
+            sortTable(parseInt(th.getAttribute('data-col')));
+        });
+    });
+})();
+</script>

@@ -117,21 +117,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-left-secondary shadow-sm h-100 py-2">
-                <div class="card-body py-2">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Sin registro</div>
-                            <div class="h4 mb-0 font-weight-bold text-gray-800">{{ count_sin_registro }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-minus-circle fa-2x text-secondary" style="opacity:.4;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     {# ---- Lista de alumnos ---- #}
@@ -214,8 +199,8 @@
                                     <i class="fas fa-times mr-1"></i>Ausente
                                 </span>
                                 {% else %}
-                                <span class="badge badge-secondary px-2 py-1">
-                                    <i class="fas fa-minus mr-1"></i>Sin registro
+                                <span class="badge badge-danger px-2 py-1">
+                                    <i class="fas fa-times mr-1"></i>Ausente
                                 </span>
                                 {% endif %}
                             </td>

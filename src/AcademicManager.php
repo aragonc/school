@@ -328,7 +328,7 @@ class AcademicManager
             $sql .= " AND g.level_id = " . (int) $levelId;
         }
 
-        $sql .= " ORDER BY l.order_index ASC, g.order_index ASC, s.name ASC";
+        $sql .= " ORDER BY l.order_index ASC, l.name ASC, g.order_index ASC, g.name ASC, s.name ASC";
         $result = Database::query($sql);
         $rows = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {

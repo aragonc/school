@@ -20,7 +20,7 @@ if (!$isAdmin) {
 }
 
 $today = date('Y-m-d');
-$reportStartDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
+$reportStartDate = isset($_GET['start_date']) ? $_GET['start_date'] : $today;
 $reportEndDate   = isset($_GET['end_date'])   ? $_GET['end_date']   : $today;
 $reportUserType  = isset($_GET['user_type'])  ? $_GET['user_type']  : null;
 $reportLevelId   = isset($_GET['level_id'])   ? (int) $_GET['level_id']   : 0;

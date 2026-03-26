@@ -122,14 +122,7 @@ if ($classroomId > 0) {
 
         // Format check-in time (stored UTC → local)
         if (!empty($row['att_check_in'])) {
-            try {
-                $dt = new DateTime($row['att_check_in'], new DateTimeZone('UTC'));
-                $tz = date_default_timezone_get() ?: 'America/Lima';
-                $dt->setTimezone(new DateTimeZone($tz));
-                $row['att_time'] = $dt->format('H:i');
-            } catch (Exception $e) {
-                $row['att_time'] = '';
-            }
+            $row['att_time'] = date('H:i', strtotime(api_get_local_time($row['att_check_in'])));
         } else {
             $row['att_time'] = '';
         }
@@ -138,8 +131,8 @@ if ($classroomId > 0) {
         switch ($row['att_status']) {
             case 'on_time': $countPuntual++;   break;
             case 'late':    $countTardanza++;  break;
-            case 'absent':  $countAusente++;   break;
-            default:        $countSinRegistro++; break;
+            case 'absent':
+            default:        $countAusente++;   break;
         }
 
         $students[] = $row;
