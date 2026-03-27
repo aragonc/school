@@ -687,11 +687,12 @@ class SchoolPlugin extends Plugin
         // Migration: add new columns to extra_profile (v2)
         $extraTable = Database::get_main_table(self::TABLE_SCHOOL_EXTRA_PROFILE);
         foreach ([
-            'sexo'         => "ENUM('F','M') NULL AFTER region",
-            'nacionalidad' => "VARCHAR(50) NULL DEFAULT 'Peruana' AFTER sexo",
-            'tipo_sangre'  => "VARCHAR(5) NULL AFTER nacionalidad",
-            'peso'         => "DECIMAL(5,2) NULL AFTER tipo_sangre",
-            'estatura'     => "DECIMAL(4,2) NULL AFTER peso",
+            'sexo'             => "ENUM('F','M') NULL AFTER region",
+            'nacionalidad'     => "VARCHAR(50) NULL DEFAULT 'Peruana' AFTER sexo",
+            'tipo_sangre'      => "VARCHAR(5) NULL AFTER nacionalidad",
+            'peso'             => "DECIMAL(5,2) NULL AFTER tipo_sangre",
+            'estatura'         => "DECIMAL(4,2) NULL AFTER peso",
+            'niveles_docente'  => "VARCHAR(100) NULL AFTER estatura",
         ] as $col => $def) {
             $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$extraTable' AND COLUMN_NAME = '$col'");
@@ -5144,6 +5145,7 @@ class SchoolPlugin extends Plugin
                 'tipo_sangre'     => '',
                 'peso'            => '',
                 'estatura'        => '',
+                'niveles_docente' => '',
             ];
         }
         return $row;
@@ -5184,6 +5186,7 @@ class SchoolPlugin extends Plugin
             'tipo_sangre'      => $tipoSangre ?: null,
             'peso'             => $peso,
             'estatura'         => $estatura,
+            'niveles_docente'  => Database::escape_string(implode(',', array_filter(array_map('trim', (array) ($data['niveles_docente'] ?? []))))),
             'updated_at'       => $now,
         ];
 

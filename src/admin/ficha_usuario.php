@@ -34,6 +34,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// Migración lazy: agregar columna si no existe
+$extraTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_EXTRA_PROFILE);
+$chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$extraTable' AND COLUMN_NAME = 'niveles_docente'");
+if (Database::num_rows($chk) === 0) {
+    Database::query("ALTER TABLE $extraTable ADD COLUMN niveles_docente VARCHAR(100) NULL");
+}
+
 $ficha = $plugin->getExtraProfileData($targetUserId);
 
 $tiposSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];

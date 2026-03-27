@@ -43,15 +43,31 @@ $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email,
 
 $extraTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_EXTRA_PROFILE);
 
+// Migración lazy: agregar columna si no existe
+$chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$extraTable' AND COLUMN_NAME = 'niveles_docente'");
+if (Database::num_rows($chk) === 0) {
+    Database::query("ALTER TABLE $extraTable ADD COLUMN niveles_docente VARCHAR(100) NULL");
+}
+
+$nivelesLabels = ['inicial' => 'Inicial', 'primaria' => 'Primaria', 'secundaria' => 'Secundaria'];
+
 $result = Database::query($sql);
 $users = [];
 while ($row = Database::fetch_array($result, 'ASSOC')) {
     $uInfo = api_get_user_info($row['user_id']);
     $row['avatar'] = $uInfo['avatar_small'] ?? '';
-    // Check if extra profile (ficha) exists
+    // Check if extra profile (ficha) exists and get niveles_docente
     $uid = (int) $row['user_id'];
-    $epRes = Database::query("SELECT id FROM $extraTable WHERE user_id = $uid LIMIT 1");
-    $row['has_ficha'] = Database::num_rows($epRes) > 0;
+    $epRes = Database::query("SELECT id, niveles_docente FROM $extraTable WHERE user_id = $uid LIMIT 1");
+    $epRow = Database::fetch_array($epRes, 'ASSOC');
+    $row['has_ficha'] = !empty($epRow);
+    // Format teacher levels
+    $row['niveles_docente'] = '';
+    if ((int)$row['status'] === COURSEMANAGER && !empty($epRow['niveles_docente'])) {
+        $partes = array_filter(array_map('trim', explode(',', $epRow['niveles_docente'])));
+        $row['niveles_docente'] = implode(', ', array_map(fn($v) => $nivelesLabels[$v] ?? ucfirst($v), $partes));
+    }
     $users[] = $row;
 }
 

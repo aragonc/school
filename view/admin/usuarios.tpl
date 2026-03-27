@@ -37,9 +37,9 @@
                     <tr>
                         <th style="width:56px;" class="text-center">Foto</th>
                         <th>Apellidos y nombres</th>
-                        <th>Usuario</th>
-                        <th>Correo</th>
+                        <th>Correo / Usuario</th>
                         <th>Perfil</th>
+                        <th>Nivel</th>
                         <th class="text-center" style="width:100px;">Estado</th>
                         <th class="text-center" style="width:200px;">Acciones</th>
                     </tr>
@@ -59,10 +59,18 @@
                             {% endif %}
                         </td>
                         <td class="align-middle">{{ u.lastname }}, {{ u.firstname }}</td>
-                        <td class="align-middle"><code>{{ u.username }}</code></td>
                         <td class="align-middle" style="font-size:13px;">{{ u.email }}</td>
                         <td class="align-middle">
                             <span class="badge badge-secondary">{{ u.role_label }}</span>
+                        </td>
+                        <td class="align-middle" style="font-size:12px;">
+                            {% if u.niveles_docente %}
+                                {% for nivel in u.niveles_docente|split(', ') %}
+                                <span class="badge badge-info mr-1">{{ nivel }}</span>
+                                {% endfor %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
                         </td>
                         <td class="text-center align-middle">
                             <button type="button"

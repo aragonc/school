@@ -60,22 +60,38 @@ switch ($action) {
             $cargo = 'Apoderado';
         }
 
-        // Nivel: only for teachers (COURSEMANAGER) via classrooms
+        // Nivel: solo para docentes — primero desde ficha, si no desde aulas asignadas
         $nivel = '';
         if ((int)($uRow['status'] ?? 0) === COURSEMANAGER && empty($uRow['is_admin'])) {
-            $levelTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
-            $gradeTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
-            $classroomTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+            // Fuente 1: niveles_docente guardados en la ficha
+            $extraProfile = $plugin->getExtraProfileData($staffUserId);
+            $nivelesRaw   = trim($extraProfile['niveles_docente'] ?? '');
+            if ($nivelesRaw !== '') {
+                $labels = [
+                    'inicial'    => 'Inicial',
+                    'primaria'   => 'Primaria',
+                    'secundaria' => 'Secundaria',
+                ];
+                $partes = array_filter(array_map('trim', explode(',', $nivelesRaw)));
+                $nivel  = implode(', ', array_map(fn($v) => $labels[$v] ?? ucfirst($v), $partes));
+            }
 
-            $lvlRes = Database::query(
-                "SELECT GROUP_CONCAT(DISTINCT l.name ORDER BY l.order_index SEPARATOR ', ') AS niveles
-                 FROM $levelTable l
-                 INNER JOIN $gradeTable g ON l.id = g.level_id
-                 INNER JOIN $classroomTable c ON g.id = c.grade_id
-                 WHERE c.tutor_id = $staffUserId"
-            );
-            $lvlRow = Database::fetch_array($lvlRes, 'ASSOC');
-            $nivel  = $lvlRow['niveles'] ?? '';
+            // Fuente 2: aulas asignadas (si la ficha no tiene niveles)
+            if ($nivel === '') {
+                $levelTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+                $gradeTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
+                $classroomTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+
+                $lvlRes = Database::query(
+                    "SELECT GROUP_CONCAT(DISTINCT l.name ORDER BY l.order_index SEPARATOR ', ') AS niveles
+                     FROM $levelTable l
+                     INNER JOIN $gradeTable g ON l.id = g.level_id
+                     INNER JOIN $classroomTable c ON g.id = c.grade_id
+                     WHERE c.tutor_id = $staffUserId"
+                );
+                $lvlRow = Database::fetch_array($lvlRes, 'ASSOC');
+                $nivel  = $lvlRow['niveles'] ?? '';
+            }
         }
 
         echo json_encode([

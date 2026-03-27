@@ -149,6 +149,40 @@
         </div>
     </div>
 
+    {% if target_user.status == 1 %}
+    {# === NIVELES DOCENTE (solo para profesores) === #}
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-graduation-cap mr-1"></i> Niveles de enseñanza
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Selecciona los niveles en los que el docente dicta clases. Puede seleccionar más de uno.
+            </p>
+            {% set niveles_guardados = ficha.niveles_docente|default('')|split(',') %}
+            <div class="d-flex flex-wrap" style="gap:16px;">
+                {% for nivel in [
+                    {value: 'inicial',    label: 'Inicial',    icon: 'fa-child'},
+                    {value: 'primaria',   label: 'Primaria',   icon: 'fa-book'},
+                    {value: 'secundaria', label: 'Secundaria', icon: 'fa-user-graduate'}
+                ] %}
+                <div class="custom-control custom-checkbox custom-control-inline">
+                    <input type="checkbox"
+                           class="custom-control-input"
+                           id="nivel_{{ nivel.value }}"
+                           name="niveles_docente[]"
+                           value="{{ nivel.value }}"
+                           {% if nivel.value in niveles_guardados %}checked{% endif %}>
+                    <label class="custom-control-label font-weight-bold" for="nivel_{{ nivel.value }}">
+                        <i class="fas {{ nivel.icon }} mr-1 text-primary"></i> {{ nivel.label }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="text-right mb-4">
         <a href="{{ _p.web }}admin/usuarios" class="btn btn-secondary mr-2">Cancelar</a>
         <button type="submit" class="btn btn-primary">
