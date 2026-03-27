@@ -52,15 +52,6 @@
 .btn-add-plan:hover { color: #1a4a8a; border-color: #1a4a8a; background: #f0f5ff; }
 
 /* Print styles */
-@media print {
-    .no-print, .sidebar-wrapper, nav, .btn, button { display: none !important; }
-    body { font-size: 10px; }
-    .print-header { display: block !important; margin-bottom: 8px; text-align: center; }
-    .cal-table th { background: #1a4a8a !important; -webkit-print-color-adjust: exact; }
-    .cal-table td { min-height: 60px; }
-    .plan-entry { background: #e8f0fe !important; -webkit-print-color-adjust: exact; }
-    .content-wrapper { margin: 0 !important; padding: 0 !important; }
-}
 .print-header { display: none; }
 
 /* Schedule courses in calendar */
@@ -70,10 +61,6 @@
     border-left: 2px solid #90caf9; margin-bottom: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-@media print {
-    .cal-sched-item { border-left-color: #90caf9 !important; -webkit-print-color-adjust: exact; }
-}
-
 /* Non-working days */
 .cal-holiday  { background: #fff8e1; }
 .cal-vacation { background: #e3f2fd; }
@@ -83,15 +70,10 @@
 }
 .cal-holiday  .cal-nw-label { background: #ffc107; color: #333; }
 .cal-vacation .cal-nw-label { background: #29b6f6; color: #fff; }
-@media print {
-    .cal-holiday  { background: #fff8e1 !important; -webkit-print-color-adjust: exact; }
-    .cal-vacation { background: #e3f2fd !important; -webkit-print-color-adjust: exact; }
-    .cal-holiday  .cal-nw-label { background: #ffc107 !important; -webkit-print-color-adjust: exact; }
-    .cal-vacation .cal-nw-label { background: #29b6f6 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
-}
 </style>
 
-<!-- Print-only header -->
+<!-- Área de impresión (header + calendario) -->
+<div class="cal-print-area">
 <div class="print-header">
     {% if logo %}<img src="{{ logo }}" style="max-height:50px;margin-bottom:4px;" alt=""><br>{% endif %}
     <strong>{{ institution_name }}</strong><br>
@@ -99,7 +81,7 @@
     <strong>{{ classroom.level_name }} — {{ classroom.grade_name }} "{{ classroom.section_name }}"</strong>
     &nbsp;|&nbsp; Tutor(a): {{ classroom.tutor_name|default('—') }}
     {% endif %}
-    <br>{{ month_name }} {{ current_year }}
+    <span class="mes-titulo">{{ month_name }} {{ current_year }}</span>
 </div>
 
 <!-- ===== HEADER: selector + navegación ===== -->
@@ -144,7 +126,7 @@
     </div>
 
     <div class="d-flex" style="gap:8px;">
-        <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+        <button class="btn btn-outline-secondary btn-sm" onclick="printCalendar()">
             <i class="fas fa-print"></i> Imprimir
         </button>
     </div>
@@ -252,6 +234,7 @@
     {% endif %}
 </div>
 {% endif %}
+</div>{# /cal-print-area #}
 
 <!-- ===== MODAL: Agregar / Editar Tema ===== -->
 {% if can_edit %}
@@ -432,5 +415,51 @@ function deletePlan() {
                 alert(d.message || 'Error al eliminar.');
             }
         });
+}
+
+function printCalendar() {
+    var area = document.querySelector('.cal-print-area');
+    if (!area) { window.print(); return; }
+
+    var clone = area.cloneNode(true);
+    clone.querySelectorAll('.miAulaHeader, .miAulaMeta, .no-print').forEach(function(el){ el.remove(); });
+
+    var w = window.open('', '_blank');
+    w.document.write([
+        '<!DOCTYPE html><html><head>',
+        '<meta charset="utf-8">',
+        '<title>Calendario</title>',
+        '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">',
+        '<style>',
+        '@page { size: A4 landscape; margin: 10mm; }',
+        '* { box-sizing: border-box; }',
+        'body { font-family: Arial, sans-serif; font-size: 9px; margin: 0; padding: 0; background: #fff; color: #222; }',
+        '.print-header { display: block !important; text-align: center; margin-bottom: 10px; }',
+        '.print-header .mes-titulo { font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; display: block; margin-top: 4px; }',
+        '.cal-table { width: 100%; border-collapse: collapse; table-layout: fixed; }',
+        '.cal-table th { background: #1a4a8a; color: #fff; padding: 5px 3px; text-align: center; font-size: 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+        '.cal-table td { border: 1px solid #ccc; vertical-align: top; padding: 3px; min-height: 55px; height: 55px; }',
+        '.cal-day-num { font-weight: 700; font-size: 10px; margin-bottom: 2px; }',
+        '.cal-sched-list { list-style: none; padding: 0; margin: 0; }',
+        '.cal-sched-item { font-size: 7.5px; color: #444; padding: 1px 3px; border-left: 2px solid #90caf9; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+        '.cal-holiday  { background: #fff8e1; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+        '.cal-vacation { background: #e3f2fd; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+        '.cal-nw-label { display: block; font-size: 7px; font-weight: 600; border-radius: 3px; padding: 1px 4px; margin-bottom: 2px; }',
+        '.cal-holiday  .cal-nw-label { background: #ffc107; color: #333; -webkit-print-color-adjust: exact; }',
+        '.cal-vacation .cal-nw-label { background: #29b6f6; color: #fff; -webkit-print-color-adjust: exact; }',
+        '.plan-entry { font-size: 7.5px; background: #e8f0fe; border-radius: 2px; padding: 1px 3px; margin-top: 1px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+        '.table-responsive { overflow: visible !important; }',
+        'button, .btn, a.btn { display: none !important; }',
+        '</style>',
+        '</head><body>',
+        clone.innerHTML,
+        '<script>',
+        'window.addEventListener("load", function () {',
+        '  setTimeout(function () { window.print(); window.close(); }, 400);',
+        '});',
+        '<\/script>',
+        '</body></html>'
+    ].join(''));
+    w.document.close();
 }
 </script>
