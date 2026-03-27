@@ -83,6 +83,13 @@ switch ($action) {
             }
         }
 
+        // Admin/tutor can assign a specific teacher (from the course schedule);
+        // regular teachers always save as themselves.
+        $postTeacherId = (int) ($_POST['teacher_id'] ?? 0);
+        $effectiveTeacherId = ($isAdmin || $isSecretary) && $postTeacherId > 0
+            ? $postTeacherId
+            : ($postTeacherId > 0 ? $postTeacherId : $userId);
+
         $savedId = ClassroomPlanManager::savePlan([
             'id'           => $planId,
             'classroom_id' => $classroomId,
@@ -90,7 +97,7 @@ switch ($action) {
             'subject'      => $subject,
             'topic'        => $topic,
             'notes'        => $notes ?: null,
-            'teacher_id'   => $userId,
+            'teacher_id'   => $effectiveTeacherId,
         ]);
 
         echo json_encode(['success' => $savedId > 0, 'id' => $savedId]);

@@ -215,6 +215,33 @@ $plugin->assign('next_month_url',      $baseUrl . $nextParam);
 $plugin->assign('active_year',         $activeYear);
 $plugin->assign('logo',                $logo);
 $plugin->assign('institution_name',    api_get_setting('Institution'));
+// Courses assigned to this classroom (from plugin permanent tables, with teachers)
+$classroomCourses = [];
+if ($classroomId > 0) {
+    $rawCourses = AcademicManager::getClassroomCourses($classroomId);
+    foreach ($rawCourses as $cc) {
+        if (!empty($cc['teachers'])) {
+            // One option per course-teacher combination
+            foreach ($cc['teachers'] as $t) {
+                $classroomCourses[] = [
+                    'subject'      => $cc['title'],
+                    'teacher_id'   => (int) $t['user_id'],
+                    'teacher_name' => $t['lastname'] . ', ' . $t['firstname'],
+                ];
+            }
+        } else {
+            // Course with no teacher assigned yet
+            $classroomCourses[] = [
+                'subject'      => $cc['title'],
+                'teacher_id'   => 0,
+                'teacher_name' => '',
+            ];
+        }
+    }
+}
+$plugin->assign('classroom_courses',      $classroomCourses);
+$plugin->assign('classroom_courses_json', json_encode($classroomCourses));
+
 $plugin->assign('ajax_url',            api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_classroom_plan.php');
 
 $plugin->setTitle('Mi Aula');

@@ -42,6 +42,14 @@
 .plan-entry .pe-subject { font-weight: 700; color: #1a4a8a; }
 .plan-entry .pe-topic   { color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
 .plan-entry .pe-teacher { color: #888; font-size: 0.7rem; }
+/* Tipo: Consolidado */
+.plan-entry.pe-consolidado { background: #e8f5e9; border-left-color: #388e3c; }
+.plan-entry.pe-consolidado:hover { background: #c8e6c9; }
+.plan-entry.pe-consolidado .pe-subject { color: #388e3c; }
+/* Tipo: Actividad */
+.plan-entry.pe-actividad { background: #fff3e0; border-left-color: #f57c00; }
+.plan-entry.pe-actividad:hover { background: #ffe0b2; }
+.plan-entry.pe-actividad .pe-subject { color: #e65100; }
 
 .btn-add-plan {
     display: block; width: 100%; text-align: center;
@@ -188,14 +196,17 @@
                 </ul>
                 {% endif %}
                 {% for plan in dayData.plans %}
-                <div class="plan-entry"
+                {% set pe_class = plan.subject == 'Consolidado de Aprendizajes' ? 'pe-consolidado' : (plan.subject == 'Actividad' ? 'pe-actividad' : '') %}
+                <div class="plan-entry {{ pe_class }}"
                      {% if can_edit %}
                      onclick="openEditPlan({{ plan.id }}, '{{ plan.plan_date }}', '{{ plan.subject|e('js') }}', '{{ plan.topic|e('js') }}', '{{ plan.notes|e('js') }}', {{ plan.teacher_id }}, {{ is_tutor or is_admin_or_secretary ? 'true' : 'false' }}, {{ current_user_id }})"
                      {% endif %}
                      title="{{ plan.subject }}: {{ plan.topic }}{% if plan.notes %} — {{ plan.notes }}{% endif %}">
                     <span class="pe-subject">{{ plan.subject }}</span>
                     <span class="pe-topic">{{ plan.topic }}</span>
+                    {% if plan.subject != 'Consolidado de Aprendizajes' and plan.subject != 'Actividad' %}
                     <span class="pe-teacher"><i class="fas fa-user-tie"></i> {{ plan.teacher_name|default('—') }}</span>
+                    {% endif %}
                 </div>
                 {% endfor %}
                 {% if can_edit %}
@@ -216,9 +227,11 @@
 </div>
 
 <!-- Leyenda -->
-<div class="d-flex align-items-center mt-2 no-print" style="gap:16px;font-size:0.75rem;">
+<div class="d-flex flex-wrap align-items-center mt-2 no-print" style="gap:12px;font-size:0.75rem;">
     <span><span style="display:inline-block;width:3px;height:12px;background:#90caf9;border-radius:1px;margin-right:4px;"></span>Cursos del horario</span>
-    <span><span style="display:inline-block;width:12px;height:12px;background:#e8f0fe;border:1px solid #1a4a8a;border-radius:2px;margin-right:4px;"></span>Tema planificado</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#e8f0fe;border-left:3px solid #1a4a8a;border-radius:2px;margin-right:4px;"></span>Curso</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#e8f5e9;border-left:3px solid #388e3c;border-radius:2px;margin-right:4px;"></span>Consolidado</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#fff3e0;border-left:3px solid #f57c00;border-radius:2px;margin-right:4px;"></span>Actividad</span>
     <span><span style="display:inline-block;width:12px;height:12px;background:#ffc107;border-radius:2px;margin-right:4px;"></span>Feriado</span>
     <span><span style="display:inline-block;width:12px;height:12px;background:#29b6f6;border-radius:2px;margin-right:4px;"></span>Vacaciones / Descanso</span>
 </div>
@@ -256,43 +269,39 @@
                     <input type="text" class="form-control" id="plan_date_display" readonly>
                     <input type="hidden" id="plan_date">
                 </div>
+                <input type="hidden" id="plan_teacher_id" value="0">
                 <div class="form-group">
-                    <label class="font-weight-bold">Materia *</label>
+                    <label class="font-weight-bold">Tipo *</label>
+                    <select class="form-control" id="plan_tipo" onchange="planTipoChanged()">
+                        <option value="curso">Curso</option>
+                        <option value="consolidado">Consolidado de Aprendizajes</option>
+                        <option value="actividad">Actividad</option>
+                    </select>
+                </div>
+                <div id="plan_curso_row" class="form-group">
+                    <label class="font-weight-bold">Curso *</label>
+                    {% if classroom_courses|length > 0 %}
+                    <select class="form-control" id="plan_subject" onchange="planCourseChanged()">
+                        <option value="">-- Seleccionar curso --</option>
+                        {% for c in classroom_courses %}
+                        <option value="{{ c.subject }}"
+                                data-teacher-id="{{ c.teacher_id }}"
+                                data-teacher-name="{{ c.teacher_name }}">
+                            {{ c.subject }}{% if c.teacher_name %} — {{ c.teacher_name }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
                     <input type="text" class="form-control" id="plan_subject"
-                           list="subjects_datalist" placeholder="Ej: Matemática, Ciencias, Inglés...">
-                    <datalist id="subjects_datalist">
-                        <option value="Gramática">
-                        <option value="Aritmética">
-                        <option value="Geometría">
-                        <option value="Ciencias">
-                        <option value="Historia">
-                        <option value="Geografía">
-                        <option value="Inglés">
-                        <option value="Educación Física">
-                        <option value="Arte">
-                        <option value="Música">
-                        <option value="Religión">
-                        <option value="Ed. Cívica">
-                        <option value="Computación">
-                        <option value="Razonamiento Verbal">
-                        <option value="Razonamiento Matemático">
-                        <option value="Ed. Emocional">
-                        <option value="F. Ciudadana">
-                        <option value="Ed. Financiera">
-                        <option value="Caligrafía">
-                        <option value="Baile">
-                    </datalist>
+                           placeholder="Ej: Matemática, Ciencias, Inglés...">
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Tema / Contenido *</label>
                     <textarea class="form-control" id="plan_topic" rows="3"
                               placeholder="Descripción del tema de clase..."></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Notas adicionales <small class="text-muted">(opcional)</small></label>
-                    <textarea class="form-control" id="plan_notes" rows="2"
-                              placeholder="Ej: Salida 1°-2° → 1:00 pm, Examen, etc."></textarea>
-                </div>
+                <input type="hidden" id="plan_notes" value="">
                 <div id="plan_modal_error" class="alert alert-danger" style="display:none;"></div>
             </div>
             <div class="modal-footer d-flex justify-content-between">
@@ -325,16 +334,46 @@ function formatDate(dateStr) {
     return p[2] + '/' + p[1] + '/' + p[0];
 }
 
+var TIPO_LABELS = {
+    'consolidado': 'Consolidado de Aprendizajes',
+    'actividad':   'Actividad'
+};
+
+function getTipoFromSubject(subject) {
+    if (subject === 'Consolidado de Aprendizajes') return 'consolidado';
+    if (subject === 'Actividad')                   return 'actividad';
+    return 'curso';
+}
+
+function planTipoChanged() {
+    var tipo = document.getElementById('plan_tipo').value;
+    var row  = document.getElementById('plan_curso_row');
+    row.style.display = (tipo === 'curso') ? '' : 'none';
+    if (tipo !== 'curso') {
+        document.getElementById('plan_teacher_id').value = '0';
+    }
+}
+
+function planCourseChanged() {
+    var sel = document.getElementById('plan_subject');
+    var opt = sel ? sel.options[sel.selectedIndex] : null;
+    var tid = opt ? (opt.getAttribute('data-teacher-id') || '0') : '0';
+    document.getElementById('plan_teacher_id').value = tid;
+}
+
 function openAddPlan(date) {
     document.getElementById('plan_id').value = 0;
     document.getElementById('plan_date').value = date;
     document.getElementById('plan_date_display').value = formatDate(date);
+    document.getElementById('plan_tipo').value = 'curso';
     document.getElementById('plan_subject').value = '';
+    document.getElementById('plan_teacher_id').value = '0';
     document.getElementById('plan_topic').value = '';
     document.getElementById('plan_notes').value = '';
     document.getElementById('plan_modal_error').style.display = 'none';
     document.getElementById('btn_delete_plan').style.display = 'none';
     document.getElementById('planModalTitle').innerHTML = '<i class="fas fa-book-open mr-1"></i> Agregar Tema';
+    planTipoChanged();
     $('#planModal').modal('show');
 }
 
@@ -342,10 +381,34 @@ function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myI
     document.getElementById('plan_id').value = id;
     document.getElementById('plan_date').value = date;
     document.getElementById('plan_date_display').value = formatDate(date);
-    document.getElementById('plan_subject').value = subject;
+    document.getElementById('plan_teacher_id').value = teacherId || '0';
     document.getElementById('plan_topic').value = topic;
     document.getElementById('plan_notes').value = notes;
     document.getElementById('plan_modal_error').style.display = 'none';
+
+    // Detect tipo from subject
+    var tipo = getTipoFromSubject(subject);
+    document.getElementById('plan_tipo').value = tipo;
+    planTipoChanged();
+
+    // Set subject field only for "curso" type
+    if (tipo === 'curso') {
+        var subjectEl = document.getElementById('plan_subject');
+        if (subjectEl.tagName === 'SELECT') {
+            var matched = false;
+            for (var i = 0; i < subjectEl.options.length; i++) {
+                if (subjectEl.options[i].value === subject) {
+                    subjectEl.selectedIndex = i;
+                    planCourseChanged();
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) { subjectEl.selectedIndex = 0; }
+        } else {
+            subjectEl.value = subject;
+        }
+    }
 
     // Show delete button if user is tutor/admin OR if it's their own entry
     var showDelete = canDelete || (teacherId == myId);
@@ -355,13 +418,26 @@ function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myI
 }
 
 function savePlan() {
-    var btn = document.getElementById('btn_save_plan');
-    var err = document.getElementById('plan_modal_error');
-    var subject = document.getElementById('plan_subject').value.trim();
-    var topic   = document.getElementById('plan_topic').value.trim();
+    var btn   = document.getElementById('btn_save_plan');
+    var err   = document.getElementById('plan_modal_error');
+    var tipo  = document.getElementById('plan_tipo').value;
+    var topic = document.getElementById('plan_topic').value.trim();
 
-    if (!subject || !topic) {
-        err.textContent = 'Materia y tema son obligatorios.';
+    // Determine final subject from tipo
+    var subject;
+    if (tipo === 'curso') {
+        subject = document.getElementById('plan_subject').value.trim();
+        if (!subject) {
+            err.textContent = 'Selecciona un curso.';
+            err.style.display = '';
+            return;
+        }
+    } else {
+        subject = TIPO_LABELS[tipo] || tipo;
+    }
+
+    if (!topic) {
+        err.textContent = 'El tema / contenido es obligatorio.';
         err.style.display = '';
         return;
     }
@@ -370,6 +446,8 @@ function savePlan() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     err.style.display = 'none';
 
+    var teacherId = document.getElementById('plan_teacher_id').value || '0';
+
     var fd = new FormData();
     fd.append('action',       'save_plan');
     fd.append('id',           document.getElementById('plan_id').value);
@@ -377,6 +455,7 @@ function savePlan() {
     fd.append('plan_date',    document.getElementById('plan_date').value);
     fd.append('subject',      subject);
     fd.append('topic',        topic);
+    fd.append('teacher_id',   teacherId);
     fd.append('notes',        document.getElementById('plan_notes').value.trim());
 
     fetch(ajaxUrl, { method: 'POST', body: fd })
