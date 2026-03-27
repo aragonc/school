@@ -182,7 +182,8 @@
                     <label class="small font-weight-bold mb-1">Categoría</label>
                     <select id="sp_category" class="form-control form-control-sm">
                         {% for cat in support_categories %}
-                        <option value="{{ cat.name|lower|replace({' ': '_', '/': '', 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}) }}">{{ cat.name }}</option>
+                        <option value="{{ cat.name|lower|replace({' ': '_', '/': '', 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}) }}"
+                                data-template="{{ cat.template|default('')|e }}">{{ cat.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -258,9 +259,28 @@ function spInitEditor() {
     });
 }
 
+function spLoadTemplate() {
+    var sel = document.getElementById('sp_category');
+    var opt = sel.options[sel.selectedIndex];
+    var tpl = (opt ? opt.getAttribute('data-template') : '') || '';
+    if (tpl && CKEDITOR.instances.sp_body) {
+        var current = CKEDITOR.instances.sp_body.getData().replace(/<[^>]+>/g,'').trim();
+        if (!current) CKEDITOR.instances.sp_body.setData(tpl.replace(/\n/g,'<br>'));
+    }
+}
+
 $('#supportModal').on('shown.bs.modal', function () {
     spInitEditor();
     loadCaptcha();
+    setTimeout(spLoadTemplate, 300);
+});
+
+document.getElementById('sp_category').addEventListener('change', function () {
+    if (CKEDITOR.instances.sp_body) {
+        var sel = this;
+        var tpl = (sel.options[sel.selectedIndex].getAttribute('data-template') || '').replace(/\n/g,'<br>');
+        CKEDITOR.instances.sp_body.setData(tpl);
+    }
 });
 
 $('#supportModal').on('hidden.bs.modal', function () {

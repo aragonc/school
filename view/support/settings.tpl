@@ -71,7 +71,7 @@
 
             <input type="hidden" name="support_categories_json" id="supportCategoriesJson" value="">
 
-            <div id="catList" class="mb-3" style="max-width:480px;"></div>
+            <div id="catList" class="mb-3"></div>
 
             <div class="d-flex" style="gap:8px;max-width:480px;">
                 <input type="text" id="newCatName" class="form-control form-control-sm"
@@ -102,29 +102,71 @@ function scRender() {
         return;
     }
     scCategories.forEach(function (cat, idx) {
-        var row = document.createElement('div');
-        row.className = 'd-flex align-items-center py-2 border-bottom';
-        row.style.gap = '10px';
-        row.innerHTML =
-            '<div class="custom-control custom-switch">' +
+        var tplId  = 'cat_tpl_' + idx;
+        var openId = 'cat_open_' + idx;
+        var wrap = document.createElement('div');
+        wrap.className = 'border rounded mb-2';
+
+        // Fila principal
+        var header = document.createElement('div');
+        header.className = 'd-flex align-items-center px-3 py-2';
+        header.style.gap = '10px';
+        header.innerHTML =
+            '<div class="custom-control custom-switch mb-0">' +
                 '<input type="checkbox" class="custom-control-input" id="cat_sw_' + idx + '"' +
                 (cat.active ? ' checked' : '') + '>' +
                 '<label class="custom-control-label" for="cat_sw_' + idx + '"></label>' +
             '</div>' +
-            '<span class="flex-grow-1" style="font-size:14px;">' + scEsc(cat.name) + '</span>' +
-            '<span class="badge ' + (cat.active ? 'badge-success' : 'badge-secondary') + ' mr-2" id="cat_badge_' + idx + '">' +
+            '<span class="flex-grow-1 font-weight-bold" style="font-size:14px;">' + scEsc(cat.name) + '</span>' +
+            '<span class="badge ' + (cat.active ? 'badge-success' : 'badge-secondary') + ' mr-2">' +
                 (cat.active ? 'Activa' : 'Inactiva') +
             '</span>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 mr-1" id="' + openId + '" title="Plantilla de mensaje">' +
+                '<i class="fas fa-file-alt" style="font-size:11px;"></i>' +
+            '</button>' +
             '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" title="Eliminar" onclick="scRemove(' + idx + ')">' +
                 '<i class="fas fa-trash" style="font-size:11px;"></i>' +
             '</button>';
 
-        row.querySelector('input[type=checkbox]').addEventListener('change', function () {
+        // Panel de plantilla
+        var tplPanel = document.createElement('div');
+        tplPanel.className = 'px-3 pb-3 pt-1 border-top d-none';
+        tplPanel.id = 'tpl_panel_' + idx;
+        tplPanel.innerHTML =
+            '<label class="small font-weight-bold text-muted mb-1 mt-2">' +
+                '<i class="fas fa-file-alt mr-1"></i>Plantilla de mensaje para esta categoría' +
+            '</label>' +
+            '<p class="text-muted" style="font-size:11px;margin-bottom:6px;">' +
+                'Se cargará automáticamente en el editor cuando el usuario seleccione esta categoría. ' +
+                'Usa <strong>[NOMBRE]</strong> para insertar el nombre del usuario.' +
+            '</p>' +
+            '<textarea id="' + tplId + '" style="width:100%;min-height:120px;font-size:13px;" ' +
+                'class="form-control form-control-sm" placeholder="Ej: Hola [NOMBRE],\n\nDescribe tu problema:\n- ...">' +
+                scEsc(cat.template || '') +
+            '</textarea>';
+
+        wrap.appendChild(header);
+        wrap.appendChild(tplPanel);
+        list.appendChild(wrap);
+
+        // Toggle switch
+        header.querySelector('input[type=checkbox]').addEventListener('change', function () {
             scCategories[idx].active = this.checked;
             scSync();
             scRender();
         });
-        list.appendChild(row);
+
+        // Toggle plantilla
+        document.getElementById(openId).addEventListener('click', function () {
+            var panel = document.getElementById('tpl_panel_' + idx);
+            panel.classList.toggle('d-none');
+        });
+
+        // Guardar plantilla al escribir
+        tplPanel.querySelector('textarea').addEventListener('input', function () {
+            scCategories[idx].template = this.value;
+            scSync();
+        });
     });
 }
 
@@ -136,7 +178,7 @@ function scAddCategory() {
         alert('Esa categoría ya existe.');
         return;
     }
-    scCategories.push({ name: name, active: true });
+    scCategories.push({ name: name, active: true, template: '' });
     input.value = '';
     scSync();
     scRender();
@@ -154,7 +196,7 @@ function scSync() {
 }
 
 function scEsc(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 document.getElementById('newCatName').addEventListener('keydown', function(e) {

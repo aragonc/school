@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_support_settings
             foreach ($cats as $cat) {
                 $name = trim(strip_tags($cat['name'] ?? ''));
                 if ($name !== '') {
-                    $clean[] = ['name' => $name, 'active' => !empty($cat['active'])];
+                    $clean[] = ['name' => $name, 'active' => !empty($cat['active']), 'template' => trim($cat['template'] ?? '')];
                 }
             }
             $plugin->setSchoolSetting('support_categories', json_encode($clean));

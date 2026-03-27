@@ -101,7 +101,8 @@
                     <label class="small font-weight-bold mb-1">Categoría</label>
                     <select id="sa_category" class="form-control form-control-sm">
                         {% for cat in support_categories %}
-                        <option value="{{ cat.name|lower|replace({' ': '_', '/': '', 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}) }}">{{ cat.name }}</option>
+                        <option value="{{ cat.name|lower|replace({' ': '_', '/': '', 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}) }}"
+                                data-template="{{ cat.template|default('')|e }}">{{ cat.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -170,6 +171,16 @@
 <script>
 var saAjaxUrl = '{{ support_ajax_url }}';
 
+function saLoadTemplate() {
+    var sel = document.getElementById('sa_category');
+    var opt = sel ? sel.options[sel.selectedIndex] : null;
+    var tpl = (opt ? opt.getAttribute('data-template') : '') || '';
+    if (tpl && CKEDITOR.instances.sa_body) {
+        var current = CKEDITOR.instances.sa_body.getData().replace(/<[^>]+>/g,'').trim();
+        if (!current) CKEDITOR.instances.sa_body.setData(tpl.replace(/\n/g,'<br>'));
+    }
+}
+
 $('#supportAuthModal').on('shown.bs.modal', function () {
     if (!CKEDITOR.instances.sa_body) {
         CKEDITOR.replace('sa_body', {
@@ -184,6 +195,12 @@ $('#supportAuthModal').on('shown.bs.modal', function () {
             removePlugins: 'elementspath',
         });
     }
+    setTimeout(saLoadTemplate, 300);
+});
+
+document.getElementById('sa_category').addEventListener('change', function () {
+    var tpl = (this.options[this.selectedIndex].getAttribute('data-template') || '').replace(/\n/g,'<br>');
+    if (CKEDITOR.instances.sa_body) CKEDITOR.instances.sa_body.setData(tpl);
 });
 
 $('#supportAuthModal').on('hidden.bs.modal', function () {
