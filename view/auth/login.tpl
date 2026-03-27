@@ -108,25 +108,25 @@
 <button id="btnOpenSupport" data-toggle="modal" data-target="#supportModal"
         title="¿Necesitas ayuda?"
         style="position:fixed;bottom:28px;right:28px;z-index:1050;
-               background:linear-gradient(135deg,#ff6b35,#f7931e);
-               color:#fff;border:none;border-radius:50px;
+               background:#fff;
+               color:#1a1a2e;border:none;border-radius:50px;
                padding:14px 22px;font-size:15px;font-weight:700;
-               box-shadow:0 6px 24px rgba(255,107,53,.55);
+               box-shadow:0 6px 24px rgba(0,0,0,.22);
                cursor:pointer;display:flex;align-items:center;gap:10px;
                animation:sp-pulse 2s ease-in-out infinite;">
-    <span style="font-size:22px;line-height:1;">🎧</span>
+    <i class="fas fa-headset" style="font-size:20px;color:#4e73df;"></i>
     <span>¿Necesitas ayuda?</span>
 </button>
 
 <style>
 @keyframes sp-pulse {
-    0%,100% { box-shadow: 0 6px 24px rgba(255,107,53,.55); transform: scale(1); }
-    50%      { box-shadow: 0 8px 32px rgba(255,107,53,.85); transform: scale(1.04); }
+    0%,100% { box-shadow:0 6px 24px rgba(0,0,0,.20); transform:scale(1); }
+    50%      { box-shadow:0 10px 32px rgba(0,0,0,.35); transform:scale(1.04); }
 }
 #btnOpenSupport:hover {
     animation: none;
     transform: scale(1.06);
-    box-shadow: 0 10px 36px rgba(255,107,53,.75);
+    box-shadow: 0 10px 36px rgba(0,0,0,.30);
     transition: transform .15s, box-shadow .15s;
 }
 </style>

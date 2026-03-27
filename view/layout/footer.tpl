@@ -68,7 +68,7 @@
                box-shadow:0 6px 24px rgba(255,107,53,.55);
                cursor:pointer;display:flex;align-items:center;gap:10px;
                animation:sp-pulse 2s ease-in-out infinite;">
-    <span style="font-size:22px;line-height:1;">🎧</span>
+    <i class="fas fa-headset" style="font-size:20px;"></i>
     <span>¿Necesitas ayuda?</span>
 </button>
 <style>
