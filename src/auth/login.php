@@ -150,6 +150,16 @@ $plugin->assign('google_only_login', $googleOnlyLogin);
 $loginInfoMessage = $plugin->getSchoolSetting('login_info_message') ?: '';
 $plugin->assign('login_info_message', $loginInfoMessage);
 
+$supportPublicAjaxUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_support_public.php';
+$plugin->assign('support_public_ajax_url',   $supportPublicAjaxUrl);
+$plugin->assign('support_attention_message', $plugin->getSchoolSetting('support_attention_message') ?: '');
+$plugin->assign('support_whatsapp',          $plugin->getSchoolSetting('support_whatsapp') ?: '');
+
+$defaultCats = '[{"name":"General","active":true},{"name":"Acceso / Contraseña","active":true},{"name":"Pagos","active":true},{"name":"Cursos","active":true},{"name":"Otro","active":true}]';
+$allCats     = json_decode($plugin->getSchoolSetting('support_categories') ?: $defaultCats, true) ?: [];
+$activeCats  = array_values(array_filter($allCats, function($c) { return !empty($c['active']); }));
+$plugin->assign('support_categories', $activeCats);
+
 $content = $plugin->fetch('auth/login.tpl');
 $plugin->assign('content', $content);
 $plugin->display_login_template();

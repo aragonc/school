@@ -62,6 +62,9 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_CLASSROOM_SCHEDULE         = 'plugin_school_classroom_schedule';
     const TABLE_SCHOOL_ATTENDANCE_NONWORKING      = 'plugin_school_attendance_nonworking';
     const TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER   = 'plugin_school_attendance_schedule_user';
+    const TABLE_SCHOOL_SUPPORT_TICKET             = 'plugin_school_support_ticket';
+    const TABLE_SCHOOL_SUPPORT_MESSAGE            = 'plugin_school_support_message';
+    const TABLE_SCHOOL_SUPPORT_ASSIGNEE           = 'plugin_school_support_assignee';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
@@ -1288,6 +1291,32 @@ class SchoolPlugin extends Plugin
             INDEX idx_schedule (schedule_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
+        // Support tickets
+        Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_SUPPORT_TICKET." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            user_id INT NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            category VARCHAR(100) NOT NULL DEFAULT 'general',
+            priority ENUM('low','medium','high','critical') NOT NULL DEFAULT 'medium',
+            status ENUM('open','in_progress','resolved','closed') NOT NULL DEFAULT 'open',
+            assigned_to INT NULL,
+            closed_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            INDEX idx_user (user_id),
+            INDEX idx_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+        Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_SUPPORT_MESSAGE." (
+            id INT unsigned NOT NULL auto_increment PRIMARY KEY,
+            ticket_id INT unsigned NOT NULL,
+            user_id INT NOT NULL,
+            body TEXT NOT NULL,
+            is_internal TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            INDEX idx_ticket (ticket_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
         // Add rewrite rules to .htaccess
         $this->addHtaccessRules();
     }
@@ -1295,6 +1324,9 @@ class SchoolPlugin extends Plugin
     public function uninstall()
     {
         $tablesToBeDeleted = [
+            self::TABLE_SCHOOL_SUPPORT_ASSIGNEE,
+            self::TABLE_SCHOOL_SUPPORT_MESSAGE,
+            self::TABLE_SCHOOL_SUPPORT_TICKET,
             self::TABLE_SCHOOL_ATTENDANCE_NONWORKING,
             self::TABLE_SCHOOL_CLASSROOM_PLAN,
             self::TABLE_SCHOOL_REFUND,
@@ -1398,6 +1430,9 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]\n".
             "RewriteRule ^my-aula/mis-alumnos$ plugin/school/src/classroom/mis_alumnos.php [L,QSA]\n".
             "RewriteRule ^my-aula/horario$ plugin/school/src/classroom/schedule.php [L,QSA]\n".
+            "RewriteRule ^support$ plugin/school/src/support/list.php [L]\n".
+            "RewriteRule ^support/view$ plugin/school/src/support/view.php [L,QSA]\n".
+            "RewriteRule ^support/settings$ plugin/school/src/support/settings.php [L]\n".
             "# END School Plugin";
     }
 
@@ -1679,12 +1714,36 @@ class SchoolPlugin extends Plugin
 
         $content = $this->fetch('/layout/sidebar.tpl');
         $this->assign('sidebar', $content);
+
+        // Soporte flotante para usuarios no-admin
+        $toolEnabled = $this->get('tool_enable') == 'true';
+        $isAdmin     = api_is_platform_admin();
+        if ($toolEnabled && !$isAdmin) {
+            $defaultCats = '[{"name":"General","active":true},{"name":"Acceso / Contraseña","active":true},{"name":"Pagos","active":true},{"name":"Cursos","active":true},{"name":"Otro","active":true}]';
+            $allCats     = json_decode($this->getSchoolSetting('support_categories') ?: $defaultCats, true) ?: [];
+            $activeCats  = array_values(array_filter($allCats, function($c) { return !empty($c['active']); }));
+            $this->assign('support_show_button',      true);
+            $this->assign('support_attention_message', $this->getSchoolSetting('support_attention_message') ?: '');
+            $this->assign('support_whatsapp',          $this->getSchoolSetting('support_whatsapp') ?: '');
+            $this->assign('support_categories',        $activeCats);
+            $this->assign('support_ajax_url',          api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_support.php');
+        } else {
+            $this->assign('support_show_button', false);
+        }
     }
 
     public function setNavBar()
     {
         $this->assign('show_alerts_dropdown', $this->get('show_alerts_dropdown') !== 'false');
         $this->assign('show_back_to_portal', $this->get('show_back_to_portal') !== 'false');
+
+        if (api_is_platform_admin() && $this->get('tool_enable') == 'true') {
+            require_once __DIR__ . '/src/SupportManager.php';
+            $this->assign('support_open_count', SupportManager::getUnreadCountForAdmin());
+        } else {
+            $this->assign('support_open_count', 0);
+        }
+
         $content = $this->fetch('/layout/navbar.tpl');
         $this->assign('navbar', $content);
     }
@@ -2844,6 +2903,24 @@ class SchoolPlugin extends Plugin
                 'items' => $academicItems
             ];
         }
+
+        // Soporte: visible para todos los usuarios
+        $supportActive = in_array($currentSection, ['support', 'support-settings']);
+        $supportItems  = [];
+        if ($isAdmin) {
+            $supportItems[] = ['name' => 'support-list',     'label' => 'Tickets',              'url' => '/support',          'current' => $currentSection === 'support'];
+            $supportItems[] = ['name' => 'support-settings', 'label' => 'Configuración',        'url' => '/support/settings', 'current' => $currentSection === 'support-settings'];
+        }
+        $menus[] = [
+            'id'      => 30,
+            'name'    => 'support',
+            'label'   => $this->get_lang('SupportTickets'),
+            'current' => $supportActive,
+            'icon'    => 'headset',
+            'class'   => $supportActive ? 'show' : '',
+            'url'     => '/support',
+            'items'   => $supportItems,
+        ];
 
         if (api_is_platform_admin()) {
             $menus[] = [

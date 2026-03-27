@@ -97,6 +97,18 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-headset mr-1"></i> Soporte técnico</h6>
+    </div>
+    <div class="card-body py-3">
+        <p class="text-muted small mb-2">La configuración de tickets (horario de atención, WhatsApp y categorías) se gestiona desde el módulo de Soporte.</p>
+        <a href="/support/settings" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-cog mr-1"></i> Ir a configuración de tickets
+        </a>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <h6 class="m-0 font-weight-bold text-primary">Favicon (PNG)</h6>
@@ -154,4 +166,71 @@ document.getElementById('favicon_png').addEventListener('change', function () {
     var label = this.nextElementSibling;
     label.textContent = this.files.length ? this.files[0].name : 'Seleccionar archivo PNG...';
 });
+
+// ---- Gestión de categorías de soporte ----
+var scCategories = JSON.parse(document.getElementById('supportCategoriesJson').value || '[]');
+
+function scRender() {
+    var list = document.getElementById('catList');
+    list.innerHTML = '';
+    if (!scCategories.length) {
+        list.innerHTML = '<p class="text-muted small">Sin categorías. Agrega al menos una.</p>';
+        return;
+    }
+    scCategories.forEach(function (cat, idx) {
+        var row = document.createElement('div');
+        row.className = 'd-flex align-items-center py-1 border-bottom';
+        row.style.gap = '8px';
+        row.innerHTML =
+            '<div class="custom-control custom-switch mr-1">' +
+                '<input type="checkbox" class="custom-control-input" id="cat_sw_' + idx + '"' +
+                (cat.active ? ' checked' : '') + '>' +
+                '<label class="custom-control-label" for="cat_sw_' + idx + '"></label>' +
+            '</div>' +
+            '<span class="flex-grow-1" style="font-size:13px;">' + escHtml(cat.name) + '</span>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" title="Eliminar" onclick="scRemove(' + idx + ')">' +
+                '<i class="fas fa-trash" style="font-size:11px;"></i>' +
+            '</button>';
+        row.querySelector('input[type=checkbox]').addEventListener('change', function () {
+            scCategories[idx].active = this.checked;
+            scSync();
+        });
+        list.appendChild(row);
+    });
+}
+
+function scAddCategory() {
+    var input = document.getElementById('newCatName');
+    var name  = input.value.trim();
+    if (!name) { input.focus(); return; }
+    var exists = scCategories.some(function(c) {
+        return c.name.toLowerCase() === name.toLowerCase();
+    });
+    if (exists) { alert('Esa categoría ya existe.'); return; }
+    scCategories.push({ name: name, active: true });
+    input.value = '';
+    scSync();
+    scRender();
+}
+
+function scRemove(idx) {
+    if (!confirm('¿Eliminar la categoría "' + scCategories[idx].name + '"?')) return;
+    scCategories.splice(idx, 1);
+    scSync();
+    scRender();
+}
+
+function scSync() {
+    document.getElementById('supportCategoriesJson').value = JSON.stringify(scCategories);
+}
+
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('newCatName').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); scAddCategory(); }
+});
+
+scRender();
 </script>

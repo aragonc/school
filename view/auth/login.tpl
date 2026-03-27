@@ -80,6 +80,7 @@
                                 </div>
                                 {% endif %}
                                 {% endif %}
+
                             </div>
                         </div>
                     </div>
@@ -102,6 +103,285 @@
     animation: none;
 }
 </style>
+
+{# ===== Botón flotante de soporte ===== #}
+<button id="btnOpenSupport" data-toggle="modal" data-target="#supportModal"
+        title="¿Necesitas ayuda?"
+        style="position:fixed;bottom:28px;right:28px;z-index:1050;
+               background:linear-gradient(135deg,#ff6b35,#f7931e);
+               color:#fff;border:none;border-radius:50px;
+               padding:14px 22px;font-size:15px;font-weight:700;
+               box-shadow:0 6px 24px rgba(255,107,53,.55);
+               cursor:pointer;display:flex;align-items:center;gap:10px;
+               animation:sp-pulse 2s ease-in-out infinite;">
+    <span style="font-size:22px;line-height:1;">🎧</span>
+    <span>¿Necesitas ayuda?</span>
+</button>
+
+<style>
+@keyframes sp-pulse {
+    0%,100% { box-shadow: 0 6px 24px rgba(255,107,53,.55); transform: scale(1); }
+    50%      { box-shadow: 0 8px 32px rgba(255,107,53,.85); transform: scale(1.04); }
+}
+#btnOpenSupport:hover {
+    animation: none;
+    transform: scale(1.06);
+    box-shadow: 0 10px 36px rgba(255,107,53,.75);
+    transition: transform .15s, box-shadow .15s;
+}
+</style>
+
+{# ===== Modal de Soporte Público ===== #}
+<div class="modal fade" id="supportModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white py-3">
+                <h6 class="modal-title mb-0">
+                    <i class="fas fa-headset mr-2"></i>Soporte técnico
+                </h6>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body px-4 py-3" id="supportFormWrapper">
+                {% if support_attention_message %}
+                <div class="alert mb-3 py-2 px-3 d-flex align-items-start"
+                     style="background:#fff8e1;border-left:4px solid #f7931e;font-size:13px;">
+                    <i class="fas fa-clock mr-2 mt-1" style="color:#f7931e;flex-shrink:0;"></i>
+                    <span>{{ support_attention_message }}</span>
+                </div>
+                {% endif %}
+                <p class="text-muted small mb-3">
+                    Completa el formulario y nuestro equipo se pondrá en contacto contigo.
+                </p>
+
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">Nombre completo *</label>
+                    <input type="text" id="sp_name" class="form-control form-control-sm"
+                           placeholder="Tu nombre" maxlength="150">
+                    <div class="invalid-feedback" id="sp_name_err"></div>
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">Correo electrónico *</label>
+                    <input type="email" id="sp_email" class="form-control form-control-sm"
+                           placeholder="tu@correo.com" maxlength="150">
+                    <div class="invalid-feedback" id="sp_email_err"></div>
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">
+                        <i class="fab fa-whatsapp text-success mr-1"></i>WhatsApp
+                        <span class="text-muted font-weight-normal">(opcional)</span>
+                    </label>
+                    <input type="tel" id="sp_whatsapp" class="form-control form-control-sm"
+                           placeholder="Ej: +51987654321" maxlength="20">
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">Categoría</label>
+                    <select id="sp_category" class="form-control form-control-sm">
+                        {% for cat in support_categories %}
+                        <option value="{{ cat.name|lower|replace({' ': '_', '/': '', 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'}) }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">Asunto *</label>
+                    <input type="text" id="sp_subject" class="form-control form-control-sm"
+                           placeholder="Describe brevemente el problema" maxlength="255">
+                    <div class="invalid-feedback" id="sp_subject_err"></div>
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1">Mensaje *</label>
+                    <textarea id="sp_body" name="sp_body"></textarea>
+                    <div class="text-danger small mt-1 d-none" id="sp_body_err"></div>
+                </div>
+
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold mb-1" id="sp_captcha_label">
+                        Cargando verificación...
+                    </label>
+                    <input type="number" id="sp_captcha" class="form-control form-control-sm"
+                           placeholder="Respuesta" min="0" max="99" style="max-width:110px;">
+                    <div class="invalid-feedback" id="sp_captcha_err"></div>
+                </div>
+
+                <div id="sp_global_err" class="alert alert-danger py-2 d-none small"></div>
+            </div>
+
+            <div class="modal-body text-center py-5 d-none" id="supportSuccessWrapper">
+                <i class="fas fa-check-circle fa-3x text-success mb-3 d-block"></i>
+                <h6 class="font-weight-bold">¡Ticket enviado!</h6>
+                <p class="text-muted small mb-0">
+                    Hemos recibido tu solicitud. Te responderemos al correo indicado a la brevedad.
+                </p>
+            </div>
+
+            <div class="modal-footer py-2" id="supportFooter">
+                {% if support_whatsapp %}
+                <a href="https://wa.me/{{ support_whatsapp|replace({'+': ''}) }}"
+                   target="_blank" rel="noopener"
+                   class="btn btn-sm btn-success mr-auto"
+                   style="background:#25D366;border-color:#25D366;">
+                    <i class="fab fa-whatsapp mr-1"></i>WhatsApp directo
+                </a>
+                {% endif %}
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnSubmitSupport">
+                    <i class="fas fa-paper-plane mr-1"></i>Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ web_path }}web/assets/ckeditor/ckeditor.js"></script>
+<script>
+var spAjaxUrl = '{{ support_public_ajax_url }}';
+
+function spInitEditor() {
+    if (CKEDITOR.instances.sp_body) return;
+    CKEDITOR.replace('sp_body', {
+        language: 'es',
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold','Italic','Underline','Strike','RemoveFormat'] },
+            { name: 'paragraph',   items: ['NumberedList','BulletedList','Blockquote'] },
+            { name: 'links',       items: ['Link','Unlink'] },
+            { name: 'colors',      items: ['TextColor','BGColor'] },
+        ],
+        height: 130,
+        resize_enabled: false,
+        removePlugins: 'elementspath',
+    });
+}
+
+$('#supportModal').on('shown.bs.modal', function () {
+    spInitEditor();
+    loadCaptcha();
+});
+
+$('#supportModal').on('hidden.bs.modal', function () {
+    document.getElementById('supportFormWrapper').classList.remove('d-none');
+    document.getElementById('supportSuccessWrapper').classList.add('d-none');
+    document.getElementById('supportFooter').classList.remove('d-none');
+    ['sp_name','sp_email','sp_subject','sp_captcha'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.value = ''; el.classList.remove('is-invalid'); }
+    });
+    if (CKEDITOR.instances.sp_body) CKEDITOR.instances.sp_body.setData('');
+    document.getElementById('sp_body_err').classList.add('d-none');
+    document.getElementById('sp_global_err').classList.add('d-none');
+    loadCaptcha();
+});
+
+function loadCaptcha() {
+    var lbl = document.getElementById('sp_captcha_label');
+    if (lbl) lbl.textContent = 'Cargando...';
+    document.getElementById('sp_captcha').value = '';
+    var fd = new FormData();
+    fd.append('action', 'get_captcha');
+    fetch(spAjaxUrl, { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success && lbl) lbl.textContent = d.question;
+        });
+}
+
+document.getElementById('btnSubmitSupport').addEventListener('click', function () {
+    var btn = this;
+    clearSpErrors();
+
+    var name      = document.getElementById('sp_name').value.trim();
+    var email     = document.getElementById('sp_email').value.trim();
+    var whatsapp  = document.getElementById('sp_whatsapp').value.trim();
+    var subject   = document.getElementById('sp_subject').value.trim();
+    var category  = document.getElementById('sp_category').value;
+    var body      = CKEDITOR.instances.sp_body ? CKEDITOR.instances.sp_body.getData().trim() : '';
+    var captcha   = document.getElementById('sp_captcha').value.trim();
+    var emptyBody = !body || body === '<p>&nbsp;</p>' || body === '<p></p>';
+
+    var valid = true;
+    if (!name)    { setSpError('sp_name',    'sp_name_err',    'Ingresa tu nombre.');                  valid = false; }
+    if (!email)   { setSpError('sp_email',   'sp_email_err',   'Ingresa tu correo.');                  valid = false; }
+    if (!subject) { setSpError('sp_subject', 'sp_subject_err', 'El asunto es obligatorio.');           valid = false; }
+    if (emptyBody){ setSpError('sp_body',    'sp_body_err',    'El mensaje es obligatorio.');          valid = false; }
+    if (!captcha) { setSpError('sp_captcha', 'sp_captcha_err', 'Responde la pregunta de seguridad.'); valid = false; }
+    if (!valid) return;
+
+    btn.disabled = true;
+    var fd = new FormData();
+    fd.append('action',           'submit_public_ticket');
+    fd.append('guest_name',      name);
+    fd.append('guest_email',     email);
+    fd.append('guest_whatsapp',  whatsapp);
+    fd.append('subject',         subject);
+    fd.append('category',        category);
+    fd.append('body',            body);
+    fd.append('captcha',         captcha);
+
+    fetch(spAjaxUrl, { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            btn.disabled = false;
+            if (d.success) {
+                document.getElementById('supportFormWrapper').classList.add('d-none');
+                document.getElementById('supportSuccessWrapper').classList.remove('d-none');
+                document.getElementById('supportFooter').classList.add('d-none');
+            } else {
+                var fieldMap = {
+                    captcha:      ['sp_captcha', 'sp_captcha_err'],
+                    guest_name:   ['sp_name',    'sp_name_err'],
+                    guest_email:  ['sp_email',   'sp_email_err'],
+                    subject:      ['sp_subject', 'sp_subject_err'],
+                    body:         ['sp_body',    'sp_body_err'],
+                };
+                if (d.field && fieldMap[d.field]) {
+                    setSpError(fieldMap[d.field][0], fieldMap[d.field][1], d.message);
+                    if (d.field === 'captcha') loadCaptcha();
+                } else {
+                    var gl = document.getElementById('sp_global_err');
+                    gl.textContent = d.message || 'Error al enviar. Intenta de nuevo.';
+                    gl.classList.remove('d-none');
+                }
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            var gl = document.getElementById('sp_global_err');
+            gl.textContent = 'Error de conexión. Intenta de nuevo.';
+            gl.classList.remove('d-none');
+        });
+});
+
+function setSpError(inputId, errId, msg) {
+    var el = document.getElementById(inputId);
+    if (el) el.classList.add('is-invalid');
+    var err = document.getElementById(errId);
+    if (err) { err.textContent = msg; err.classList.remove('d-none'); }
+    // Para CKEditor: borde rojo en el iframe
+    if (inputId === 'sp_body' && CKEDITOR.instances.sp_body) {
+        var ckBox = CKEDITOR.instances.sp_body.container.$;
+        if (ckBox) ckBox.style.border = '1px solid #dc3545';
+    }
+}
+
+function clearSpErrors() {
+    ['sp_name','sp_email','sp_subject','sp_captcha'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.remove('is-invalid');
+    });
+    var bodyErr = document.getElementById('sp_body_err');
+    if (bodyErr) bodyErr.classList.add('d-none');
+    if (CKEDITOR.instances.sp_body) {
+        var ckBox = CKEDITOR.instances.sp_body.container.$;
+        if (ckBox) ckBox.style.border = '';
+    }
+    document.getElementById('sp_global_err').classList.add('d-none');
+}
+</script>
 
 {% if vegas_images|length > 0 %}
 <link rel="stylesheet" href="{{ plugin_path }}js/vegas-3/src/vegas.css">

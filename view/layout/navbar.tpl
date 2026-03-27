@@ -89,6 +89,19 @@
         </li>
         <li class="topbar-divider d-none d-sm-block"></li>
         {% endif %}
+        {% if _u.is_admin and support_open_count > 0 %}
+        <li class="nav-item mr-1">
+            <a href="/support" class="nav-link px-2" title="{{ support_open_count }} ticket(s) abierto(s)">
+                <span style="position:relative;display:inline-flex;align-items:center;">
+                    <i class="fas fa-headset text-gray-600" style="font-size:18px;"></i>
+                    <span class="badge badge-danger"
+                          style="position:absolute;top:-6px;right:-8px;font-size:9px;padding:2px 4px;min-width:16px;border-radius:8px;line-height:1.2;">
+                        {{ support_open_count }}
+                    </span>
+                </span>
+            </a>
+        </li>
+        {% endif %}
         <li class="nav-item dropdown no-arrow">
                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
