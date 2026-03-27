@@ -59,6 +59,21 @@ class MatriculaManager
     public static function saveFicha(array $data): int
     {
         $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+
+        // Lazy migration: ampliar dni de CHAR(8) a VARCHAR(20)
+        $checkDni = Database::query(
+            "SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME   = 'plugin_school_ficha'
+               AND COLUMN_NAME  = 'dni'"
+        );
+        if ($checkDni) {
+            $colInfo = Database::fetch_assoc($checkDni);
+            if ($colInfo && ($colInfo['DATA_TYPE'] !== 'varchar' || (int)$colInfo['CHARACTER_MAXIMUM_LENGTH'] < 20)) {
+                Database::query("ALTER TABLE plugin_school_ficha MODIFY COLUMN dni VARCHAR(20) NULL");
+            }
+        }
         $id    = isset($data['id']) ? (int) $data['id'] : 0;
 
         $params = [
@@ -452,6 +467,22 @@ class MatriculaManager
     public static function savePadre(int $fichaId, string $parentesco, array $data): bool
     {
         $table          = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_MATRICULA_PADRE);
+
+        // Lazy migration: ampliar dni de CHAR(8) a VARCHAR(20)
+        $checkPDni = Database::query(
+            "SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME   = 'plugin_school_matricula_padre'
+               AND COLUMN_NAME  = 'dni'"
+        );
+        if ($checkPDni) {
+            $colInfo = Database::fetch_assoc($checkPDni);
+            if ($colInfo && ($colInfo['DATA_TYPE'] !== 'varchar' || (int)$colInfo['CHARACTER_MAXIMUM_LENGTH'] < 20)) {
+                Database::query("ALTER TABLE plugin_school_matricula_padre MODIFY COLUMN dni VARCHAR(20) NULL");
+            }
+        }
+
         $parentesco     = in_array($parentesco, ['MADRE', 'PADRE', 'APODERADO']) ? $parentesco : 'PADRE';
         $linkedPadreId  = isset($data['linked_padre_id']) && (int) $data['linked_padre_id'] > 0
                           ? (int) $data['linked_padre_id'] : null;

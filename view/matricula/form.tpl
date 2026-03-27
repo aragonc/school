@@ -127,8 +127,8 @@
                     <div class="input-group" style="flex-wrap:nowrap;">
                         <input type="text" name="dni" id="field-doc-nro" class="form-control" style="margin:0;"
                                value="{{ matricula.dni ?? preload.dni ?? '' }}"
-                               maxlength="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '8' : '20' }}"
-                               placeholder="{{ (matricula.nacionalidad ?? 'Peruana') == 'Peruana' ? '00000000' : '' }}">
+                               maxlength="{{ docActual == 'DNI' ? '8' : '20' }}"
+                               placeholder="{{ docActual == 'DNI' ? '00000000' : '' }}">
                         <div class="input-group-append">
                             {% if reniec_visible %}
                             <button type="button" id="btn-consultar-reniec" class="btn btn-outline-info"
@@ -816,11 +816,18 @@ function updateTipoDoc() {
         select.value = 'DNI';
     }
 
-    // Ajustar maxlength y placeholder del N° documento
-    input.maxLength  = esPe ? 8 : 20;
-    input.placeholder = esPe ? '00000000' : '';
+    // Ajustar maxlength y placeholder según tipo de documento seleccionado
+    updateDocMaxlength();
+}
+function updateDocMaxlength() {
+    var tipo  = document.getElementById('field-tipo-doc').value;
+    var input = document.getElementById('field-doc-nro');
+    var isDni = (tipo === 'DNI');
+    input.maxLength   = isDni ? 8 : 20;
+    input.placeholder = isDni ? '00000000' : '';
 }
 document.getElementById('field-nacionalidad').addEventListener('change', updateTipoDoc);
+document.getElementById('field-tipo-doc').addEventListener('change', updateDocMaxlength);
 
 {% if reniec_visible %}
 // --- Integración RENIEC ---
