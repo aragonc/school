@@ -247,8 +247,11 @@ try {
         header('Location: '.api_get_path(WEB_PLUGIN_PATH).'payments/process-check.php?item='.$item.'&type='.$type);
         exit;
     } else {
-        // Redirigir usando el método oficial de Chamilo
-        Redirect::session_request_uri(true, $userId);
+        // Redirigir a la URL guardada antes de la expiración de sesión (si existe)
+        $plugin->handleLoginRedirect();
+        // Fallback al dashboard del plugin
+        header('Location: ' . api_get_path(WEB_PATH) . 'dashboard');
+        exit;
     }
 
 } catch (Exception $e) {
