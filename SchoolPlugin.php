@@ -2320,15 +2320,11 @@ class SchoolPlugin extends Plugin
                 m.title,
                 m.msg_status,
                 m.send_date,
-                m.type,
                 m.user_sender_id,
-                m.user_receiver_id,
-                m.c_id,
-                m.session_id
+                m.user_receiver_id
             FROM $messageTable m
-            WHERE m.user_receiver_id = $userID AND m.msg_status = 1 " .
-            // Si no es necesario filtrar por otro estado, se omite la parte de "AND m.msg_status = 1"
-            "ORDER BY m.send_date DESC
+            WHERE m.user_receiver_id = $userID AND m.msg_status = 1
+            ORDER BY m.send_date DESC
             LIMIT $cant";
 
         $result = Database::query($sql);
@@ -2339,20 +2335,12 @@ class SchoolPlugin extends Plugin
             $title = Security::remove_XSS($row['title'], STUDENT, true);
             $title = cut($title, 80);
 
-            $sessionName = api_get_session_name($row['session_id']);
-            $courseName = null;
-            if(!is_null($row['c_id'])){
-                $courseInfo = api_get_course_info_by_id($row['c_id']);
-                $courseName = $courseInfo['title'];
-            }
-
             if(is_null($userInfo['avatar'])){
                 $avatar =  self::get_svg_icon('avatar', $userInfo['complete_name_with_username'] , 50);
             } else {
                 $avatar = Display::img($userInfo['avatar'],$userInfo['complete_name_with_username'],['width' => 50, 'height' => 50, 'class' => 'rounded-circle user-avatar']);
             }
 
-            //$sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
             $sendDate = api_format_date($row['send_date'], DATE_FORMAT_SHORT);
             $messageList[] = [
                 'id' => $row['id'],
@@ -2363,10 +2351,6 @@ class SchoolPlugin extends Plugin
                 'user_avatar' => $avatar,
                 'user_sender_id' => $userInfo['complete_name_with_username'],
                 'user_receiver_id' => $row['user_receiver_id'],
-                'course_id' => $row['c_id'],
-                'course_title' => $courseName,
-                'session_id' => $row['session_id'],
-                'session_title' => $sessionName
             ];
         }
 
@@ -2410,11 +2394,8 @@ class SchoolPlugin extends Plugin
                 m.title,
                 m.msg_status,
                 m.send_date,
-                m.type,
                 m.user_sender_id,
-                m.user_receiver_id,
-                m.c_id,
-                m.session_id
+                m.user_receiver_id
                 FROM $messageTable m
                 WHERE user_receiver_id = $userID ";
 
@@ -2430,7 +2411,7 @@ class SchoolPlugin extends Plugin
         while ($row = Database::fetch_array($result, 'ASSOC')) {
 
             $userInfo = api_get_user_info($row['user_sender_id']);
-            $typeMessage = $row['type'];
+            $typeMessage = $row['type'] ?? null;
             $title = Security::remove_XSS($row['title'], STUDENT, true);
             $title = cut($title, 80);
             $msgTypeLang = '';
@@ -2460,13 +2441,6 @@ class SchoolPlugin extends Plugin
                     break;
             }
 
-            $sessionName = api_get_session_name($row['session_id']);
-            $courseName = null;
-            if(!is_null($row['c_id'])){
-                $courseInfo = api_get_course_info_by_id($row['c_id']);
-                $courseName = $courseInfo['title'];
-            }
-
             if(is_null($userInfo['avatar'])){
                 $avatar =  self::get_svg_icon('avatar', $userInfo['complete_name_with_username'] , 50);
             } else {
@@ -2484,7 +2458,6 @@ class SchoolPlugin extends Plugin
 
             $inputID = '<input type="checkbox" name="id[]" value="'.$row['id'].'" />';
 
-            //$sendDate = api_convert_and_format_date($row['send_date'], DATE_TIME_FORMAT_LONG);
             $sendDate = api_format_date($row['send_date'], DATE_FORMAT_SHORT);
             $messageList[] = [
                 'id' => $row['id'],
@@ -2497,10 +2470,6 @@ class SchoolPlugin extends Plugin
                 'user_avatar' => $avatar,
                 'user_sender_id' => $userInfo['complete_name_with_username'],
                 'user_receiver_id' => $row['user_receiver_id'],
-                'course_id' => $row['c_id'],
-                'course_title' => $courseName,
-                'session_id' => $row['session_id'],
-                'session_title' => $sessionName,
                 'class' => $class,
                 'row' => $rowClass,
                 'action' => $action,
@@ -2935,6 +2904,7 @@ class SchoolPlugin extends Plugin
                 'items' => [
                     ['name' => 'admin-personalizacion', 'label' => 'Personalización', 'url' => '/school-admin'],
                     ['name' => 'admin-usuarios', 'label' => 'Usuarios', 'url' => '/admin/usuarios'],
+                    ['name' => 'admin-google-sync', 'label' => 'Google Workspace', 'url' => '/admin/google-sync'],
                     ['name' => 'admin-settings', 'label' => 'Configuración del Sistema', 'url' => '/school-admin/settings'],
                 ]
             ];

@@ -178,8 +178,14 @@ class MatriculaManager
             $est = Database::escape_string($filters['estado']);
             $where[] = "m.estado = '$est'";
         }
+        if (!empty($filters['level_id'])) {
+            $where[] = "g.level_id = " . (int) $filters['level_id'];
+        }
         if (!empty($filters['grade_id'])) {
             $where[] = "m.grade_id = " . (int) $filters['grade_id'];
+        }
+        if (!empty($filters['section_id'])) {
+            $where[] = "m.section_id = " . (int) $filters['section_id'];
         }
         if (!empty($filters['search'])) {
             $s = Database::escape_string($filters['search']);

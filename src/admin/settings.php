@@ -67,6 +67,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_login_settings']
     exit;
 }
 
+// Handle Google Workspace settings save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_google_workspace_settings'])) {
+    $googleAdminEmail = Security::remove_XSS(trim($_POST['google_admin_email'] ?? ''));
+    $googleDomain     = Security::remove_XSS(trim($_POST['google_domain'] ?? ''));
+    $plugin->setSchoolSetting('google_admin_email', $googleAdminEmail);
+    $plugin->setSchoolSetting('google_domain', $googleDomain);
+
+    // Handle SA JSON textarea content
+    $jsonContent = trim($_POST['google_sa_json_content'] ?? '');
+    if ($jsonContent !== '') {
+        $decoded = json_decode($jsonContent, true);
+        if ($decoded && !empty($decoded['private_key']) && !empty($decoded['client_email'])
+            && ($decoded['type'] ?? '') === 'service_account') {
+            $saUploadDir = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/';
+            if (!is_dir($saUploadDir)) {
+                mkdir($saUploadDir, api_get_permissions_for_new_directories(), true);
+            }
+            // Remove old file if any
+            $oldFile = $plugin->getSchoolSetting('google_sa_json') ?: '';
+            if ($oldFile && file_exists($saUploadDir . $oldFile)) {
+                unlink($saUploadDir . $oldFile);
+            }
+            $saFilename = 'google_sa_' . time() . '.json';
+            file_put_contents($saUploadDir . $saFilename, $jsonContent);
+            $plugin->setSchoolSetting('google_sa_json', $saFilename);
+        } else {
+            // Wrong type or missing fields — set error and skip redirect
+            $gwsError = 'El JSON no es una Service Account válida. Debe contener "type": "service_account", "private_key" y "client_email".';
+            $plugin->assign('gws_error', $gwsError);
+            goto render_settings;
+        }
+    }
+    header('Location: ' . api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq() . '&saved=1');
+    exit;
+}
+render_settings:
+
 // Handle favicon delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_favicon'])) {
     if (file_exists($faviconPath)) {
@@ -97,6 +134,15 @@ if ($enable) {
     $plugin->assign('login_info_message', $plugin->getSchoolSetting('login_info_message') ?: '');
     $plugin->assign('settings_saved', isset($_GET['saved']));
     $plugin->assign('settings_url', api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq());
+
+    // Google Workspace settings
+    $saFileName = $plugin->getSchoolSetting('google_sa_json') ?: '';
+    $saUploadPath = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/' . $saFileName;
+    $plugin->assign('google_sa_json_name', $saFileName ?: '');
+    $plugin->assign('google_sa_json_valid', $saFileName && file_exists($saUploadPath));
+    $plugin->assign('google_admin_email', $plugin->getSchoolSetting('google_admin_email') ?: '');
+    $plugin->assign('google_domain', $plugin->getSchoolSetting('google_domain') ?: '');
+    $plugin->assign('google_sync_url', api_get_path(WEB_PATH) . 'admin/google-sync');
 
     $content = $plugin->fetch('admin/settings.tpl');
     $plugin->assign('content', $content);

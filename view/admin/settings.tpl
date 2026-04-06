@@ -109,6 +109,76 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary"><i class="fab fa-google mr-1"></i> Google Workspace (Admin API)</h6>
+    </div>
+    <div class="card-body">
+        {% if gws_error %}
+        <div class="alert alert-danger">{{ gws_error }}</div>
+        {% endif %}
+        <p class="text-muted small mb-3">
+            Configura el acceso a la API de Google Admin Directory para verificar y crear cuentas de Google Workspace de los alumnos.
+            Requiere una <strong>Service Account</strong> con <em>Domain-wide delegation</em> habilitada y el scope
+            <code>https://www.googleapis.com/auth/admin.directory.user</code>.
+        </p>
+        <form method="post" action="{{ settings_url }}">
+            <input type="hidden" name="save_google_workspace_settings" value="1">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label class="font-weight-bold">Email del Super-Admin del dominio</label>
+                    <input type="email" class="form-control form-control-sm" name="google_admin_email"
+                           value="{{ google_admin_email }}" placeholder="admin@tudominio.edu.pe">
+                    <small class="form-text text-muted">La cuenta que impersonará la Service Account (debe ser super-admin).</small>
+                </div>
+                <div class="form-group col-md-6">
+                    <label class="font-weight-bold">Dominio de Google Workspace</label>
+                    <input type="text" class="form-control form-control-sm" name="google_domain"
+                           value="{{ google_domain }}" placeholder="tudominio.edu.pe">
+                    <small class="form-text text-muted">Dominio donde se crearán las cuentas (ej: colegio.edu.pe).</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="font-weight-bold">
+                    Credenciales Service Account (JSON)
+                    {% if google_sa_json_valid %}
+                    <span class="badge badge-success ml-2"><i class="fas fa-check mr-1"></i>Configurado</span>
+                    {% endif %}
+                </label>
+                {% if google_sa_json_valid %}
+                <div class="alert alert-success py-2 mb-2" style="font-size:13px;">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    Credenciales guardadas correctamente.
+                    <span class="text-muted ml-1">Pega un nuevo JSON solo si quieres reemplazarlas.</span>
+                </div>
+                {% elseif google_sa_json_name %}
+                <div class="alert alert-warning py-2 mb-2" style="font-size:13px;">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Credenciales configuradas pero el archivo no se encontró. Vuelve a pegar el JSON.
+                </div>
+                {% endif %}
+                <textarea class="form-control" name="google_sa_json_content" rows="6"
+                          placeholder='Pega aquí el contenido del archivo JSON de Service Account:&#10;{&#10;  "type": "service_account",&#10;  "project_id": "...",&#10;  "private_key": "-----BEGIN RSA PRIVATE KEY-----...",&#10;  "client_email": "...@....iam.gserviceaccount.com",&#10;  ...&#10;}'
+                          style="font-family:monospace;font-size:12px;"></textarea>
+                <small class="form-text text-muted">
+                    Descarga el JSON desde Google Cloud Console → IAM → <strong>Cuentas de servicio</strong> → tu cuenta → Claves → Agregar clave → JSON.
+                    Debe contener <code>"type": "service_account"</code>.
+                </small>
+            </div>
+            <div class="d-flex align-items-center" style="gap:10px;">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-save mr-1"></i> Guardar configuración de Google
+                </button>
+                {% if google_sa_json_valid and google_admin_email and google_domain %}
+                <a href="{{ google_sync_url }}" class="btn btn-sm btn-outline-success">
+                    <i class="fab fa-google mr-1"></i> Ir a sincronización de cuentas
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <h6 class="m-0 font-weight-bold text-primary">Favicon (PNG)</h6>
@@ -167,70 +237,4 @@ document.getElementById('favicon_png').addEventListener('change', function () {
     label.textContent = this.files.length ? this.files[0].name : 'Seleccionar archivo PNG...';
 });
 
-// ---- Gestión de categorías de soporte ----
-var scCategories = JSON.parse(document.getElementById('supportCategoriesJson').value || '[]');
-
-function scRender() {
-    var list = document.getElementById('catList');
-    list.innerHTML = '';
-    if (!scCategories.length) {
-        list.innerHTML = '<p class="text-muted small">Sin categorías. Agrega al menos una.</p>';
-        return;
-    }
-    scCategories.forEach(function (cat, idx) {
-        var row = document.createElement('div');
-        row.className = 'd-flex align-items-center py-1 border-bottom';
-        row.style.gap = '8px';
-        row.innerHTML =
-            '<div class="custom-control custom-switch mr-1">' +
-                '<input type="checkbox" class="custom-control-input" id="cat_sw_' + idx + '"' +
-                (cat.active ? ' checked' : '') + '>' +
-                '<label class="custom-control-label" for="cat_sw_' + idx + '"></label>' +
-            '</div>' +
-            '<span class="flex-grow-1" style="font-size:13px;">' + escHtml(cat.name) + '</span>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" title="Eliminar" onclick="scRemove(' + idx + ')">' +
-                '<i class="fas fa-trash" style="font-size:11px;"></i>' +
-            '</button>';
-        row.querySelector('input[type=checkbox]').addEventListener('change', function () {
-            scCategories[idx].active = this.checked;
-            scSync();
-        });
-        list.appendChild(row);
-    });
-}
-
-function scAddCategory() {
-    var input = document.getElementById('newCatName');
-    var name  = input.value.trim();
-    if (!name) { input.focus(); return; }
-    var exists = scCategories.some(function(c) {
-        return c.name.toLowerCase() === name.toLowerCase();
-    });
-    if (exists) { alert('Esa categoría ya existe.'); return; }
-    scCategories.push({ name: name, active: true });
-    input.value = '';
-    scSync();
-    scRender();
-}
-
-function scRemove(idx) {
-    if (!confirm('¿Eliminar la categoría "' + scCategories[idx].name + '"?')) return;
-    scCategories.splice(idx, 1);
-    scSync();
-    scRender();
-}
-
-function scSync() {
-    document.getElementById('supportCategoriesJson').value = JSON.stringify(scCategories);
-}
-
-function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-document.getElementById('newCatName').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); scAddCategory(); }
-});
-
-scRender();
 </script>
