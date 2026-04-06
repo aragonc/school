@@ -34,89 +34,183 @@ var ALL_GRADES   = {{ grades|json_encode|raw }};
 var ALL_SECTIONS = {{ sections|json_encode|raw }};
 </script>
 
-{# Filtros #}
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body py-3">
-        <div class="d-flex align-items-end flex-wrap" style="gap:12px;">
-            <div>
-                <label class="mb-1 small font-weight-bold text-muted">Nivel</label>
-                <select id="filter-level" class="form-control form-control-sm" style="min-width:150px;">
-                    <option value="">— Todos —</option>
-                    {% for l in levels %}
-                    <option value="{{ l.id }}">{{ l.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="mb-1 small font-weight-bold text-muted">Grado</label>
-                <select id="filter-grade" class="form-control form-control-sm" style="min-width:160px;">
-                    <option value="">— Todos —</option>
-                    {% for g in grades %}
-                    <option value="{{ g.id }}" data-level="{{ g.level_id }}">{{ g.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="mb-1 small font-weight-bold text-muted">Sección</label>
-                <select id="filter-section" class="form-control form-control-sm" style="min-width:130px;">
-                    <option value="">— Todas —</option>
-                    {% for s in sections %}
-                    <option value="{{ s.id }}">{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="align-self-end">
-                <button id="btn-check" class="btn btn-primary btn-sm" {% if not active_year %}disabled{% endif %}>
-                    <i class="fas fa-search mr-1"></i> Verificar cuentas
-                </button>
-            </div>
-            <div class="align-self-end">
-                <button id="btn-create-missing" class="btn btn-success btn-sm d-none">
-                    <i class="fab fa-google mr-1"></i> Crear cuentas faltantes
-                </button>
-            </div>
-            <div class="align-self-end">
-                <span id="check-spinner" class="d-none">
-                    <i class="fas fa-spinner fa-spin text-primary"></i>
-                    <span class="text-muted small ml-1">Verificando con Google...</span>
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
+{# ===== PESTAÑAS ===== #}
+<ul class="nav nav-tabs mb-0" id="gsTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="tab-alumnos-lnk" data-toggle="tab" href="#tab-alumnos" role="tab">
+            <i class="fas fa-user-graduate mr-1"></i> Alumnos
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab-personal-lnk" data-toggle="tab" href="#tab-personal" role="tab">
+            <i class="fas fa-users mr-1"></i> Personal
+        </a>
+    </li>
+</ul>
 
-{# Resultados #}
-<div id="results-area" class="d-none">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between flex-wrap" style="gap:8px;">
-            <span class="font-weight-bold text-dark">
-                <i class="fas fa-list mr-1 text-muted"></i>
-                Alumnos — <span id="total-count">0</span> en total
-            </span>
-            <div class="d-flex align-items-center" style="gap:8px; font-size:13px;">
-                <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i>Cuenta activa: <span id="cnt-yes">0</span></span>
-                <span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i>Sin cuenta: <span id="cnt-no">0</span></span>
-                <span class="badge badge-secondary px-2 py-1"><i class="fas fa-exclamation mr-1"></i>Error: <span id="cnt-err">0</span></span>
+<div class="tab-content border border-top-0 rounded-bottom bg-white p-3 mb-4" id="gsTabContent">
+
+    {# ===== TAB ALUMNOS ===== #}
+    <div class="tab-pane fade show active" id="tab-alumnos" role="tabpanel">
+
+        {# Filtros alumnos #}
+        <div class="card shadow-sm border-0 mb-3 mt-2">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-end flex-wrap" style="gap:12px;">
+                    <div>
+                        <label class="mb-1 small font-weight-bold text-muted">Nivel</label>
+                        <select id="filter-level" class="form-control form-control-sm" style="min-width:150px;">
+                            <option value="">— Todos —</option>
+                            {% for l in levels %}
+                            <option value="{{ l.id }}">{{ l.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 small font-weight-bold text-muted">Grado</label>
+                        <select id="filter-grade" class="form-control form-control-sm" style="min-width:160px;">
+                            <option value="">— Todos —</option>
+                            {% for g in grades %}
+                            <option value="{{ g.id }}" data-level="{{ g.level_id }}">{{ g.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 small font-weight-bold text-muted">Sección</label>
+                        <select id="filter-section" class="form-control form-control-sm" style="min-width:130px;">
+                            <option value="">— Todas —</option>
+                            {% for s in sections %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="align-self-end">
+                        <button id="btn-check" class="btn btn-primary btn-sm" {% if not active_year %}disabled{% endif %}>
+                            <i class="fas fa-search mr-1"></i> Verificar cuentas
+                        </button>
+                    </div>
+                    <div class="align-self-end">
+                        <button id="btn-create-missing" class="btn btn-success btn-sm d-none">
+                            <i class="fab fa-google mr-1"></i> Crear cuentas faltantes
+                        </button>
+                    </div>
+                    <div class="align-self-end">
+                        <span id="check-spinner" class="d-none">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <span class="text-muted small ml-1">Verificando...</span>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-sm align-middle mb-0" id="google-table">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>Alumno</th>
-                            <th>Grado</th>
-                            <th>Correo</th>
-                            <th class="text-center">Estado Google</th>
-                            <th class="text-center">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="google-tbody"></tbody>
-                </table>
+
+        {# Resultados alumnos #}
+        <div id="results-area" class="d-none">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between flex-wrap" style="gap:8px;">
+                    <span class="font-weight-bold text-dark small">
+                        <i class="fas fa-list mr-1 text-muted"></i>
+                        <span id="total-count">0</span> alumnos
+                    </span>
+                    <div class="d-flex align-items-center" style="gap:6px; font-size:12px;">
+                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i><span id="cnt-yes">0</span></span>
+                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i><span id="cnt-no">0</span></span>
+                        <span class="badge badge-secondary px-2 py-1"><i class="fas fa-exclamation mr-1"></i><span id="cnt-err">0</span></span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm align-middle mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Alumno</th>
+                                    <th>Grado / Sección</th>
+                                    <th>Correo</th>
+                                    <th class="text-center">Estado Google</th>
+                                    <th class="text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="google-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    {# ===== TAB PERSONAL ===== #}
+    <div class="tab-pane fade" id="tab-personal" role="tabpanel">
+
+        {# Filtro personal #}
+        <div class="card shadow-sm border-0 mb-3 mt-2">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-end flex-wrap" style="gap:12px;">
+                    <div>
+                        <label class="mb-1 small font-weight-bold text-muted">Rol</label>
+                        <select id="staff-filter-role" class="form-control form-control-sm" style="min-width:180px;">
+                            <option value="">— Todos —</option>
+                            <option value="docente">Docente</option>
+                            <option value="administrativo">Administrativo</option>
+                            <option value="secretaria">Secretaria</option>
+                            <option value="auxiliar">Auxiliar</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="align-self-end">
+                        <button id="btn-check-staff" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search mr-1"></i> Verificar cuentas
+                        </button>
+                    </div>
+                    <div class="align-self-end">
+                        <button id="btn-create-missing-staff" class="btn btn-success btn-sm d-none">
+                            <i class="fab fa-google mr-1"></i> Crear cuentas faltantes
+                        </button>
+                    </div>
+                    <div class="align-self-end">
+                        <span id="check-spinner-staff" class="d-none">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <span class="text-muted small ml-1">Verificando...</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Resultados personal #}
+        <div id="results-area-staff" class="d-none">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between flex-wrap" style="gap:8px;">
+                    <span class="font-weight-bold text-dark small">
+                        <i class="fas fa-list mr-1 text-muted"></i>
+                        <span id="staff-total-count">0</span> usuarios
+                    </span>
+                    <div class="d-flex align-items-center" style="gap:6px; font-size:12px;">
+                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i><span id="staff-cnt-yes">0</span></span>
+                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i><span id="staff-cnt-no">0</span></span>
+                        <span class="badge badge-secondary px-2 py-1"><i class="fas fa-exclamation mr-1"></i><span id="staff-cnt-err">0</span></span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm align-middle mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Rol</th>
+                                    <th>Correo</th>
+                                    <th class="text-center">Estado Google</th>
+                                    <th class="text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>{# /tab-content #}
 
 {# Modal: Crear cuenta (confirmación con opciones) #}
 <div class="modal fade" id="createConfirmModal" tabindex="-1">
@@ -418,7 +512,7 @@ function doCreateAccount(userId, password, changeAtNextLogin, btnEl, callback) {
                 '<br><small class="text-danger">' + escHtml(resp.error || 'Error') + '</small>');
         }
         updateMissingBtn();
-        if (callback) callback();
+        if (callback) callback(resp, changeAtNextLogin);
     })
     .catch(function() {
         if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fab fa-google mr-1"></i>Crear'; }
@@ -505,6 +599,159 @@ function ajaxPost(params) {
 
 function escHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ================================================================
+// TAB PERSONAL
+// ================================================================
+var staffItems = [];
+
+document.getElementById('btn-check-staff').addEventListener('click', function() {
+    loadStaffData(document.getElementById('staff-filter-role').value);
+});
+
+function loadStaffData(role) {
+    var btn = document.getElementById('btn-check-staff');
+    var spinner = document.getElementById('check-spinner-staff');
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    document.getElementById('results-area-staff').classList.add('d-none');
+    document.getElementById('btn-create-missing-staff').classList.add('d-none');
+
+    ajaxPost({ action: 'check_staff_accounts', role: role || '' })
+    .then(function(resp) {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        if (!resp.success) { alert('Error: ' + (resp.error || 'Error desconocido')); return; }
+        staffItems = resp.items || [];
+        renderStaffTable(staffItems);
+        document.getElementById('results-area-staff').classList.remove('d-none');
+        updateStaffMissingBtn();
+    })
+    .catch(function(e) {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        alert('Error de conexión: ' + e.message);
+    });
+}
+
+function renderStaffTable(items) {
+    var yes = 0, no = 0, err = 0, html = '';
+    items.forEach(function(item) {
+        var statusBadge = '', actionBtn = '';
+        if (item.google_exists === 'yes') {
+            yes++;
+            statusBadge = '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Activa</span>';
+            actionBtn = '<button class="btn btn-xs btn-sm btn-outline-warning btn-change-pw" ' +
+                'data-user-id="' + item.user_id + '" data-email="' + escHtml(item.email) + '" data-name="' + escHtml(item.full_name) + '">' +
+                '<i class="fas fa-key mr-1"></i>Contraseña</button>';
+        } else if (item.google_exists === 'no') {
+            no++;
+            statusBadge = '<span class="badge badge-danger"><i class="fas fa-times mr-1"></i>Sin cuenta</span>';
+            actionBtn = '<button class="btn btn-xs btn-sm btn-outline-success btn-create-staff" ' +
+                'data-user-id="' + item.user_id + '" data-email="' + escHtml(item.email) + '" data-name="' + escHtml(item.full_name) + '">' +
+                '<i class="fab fa-google mr-1"></i>Crear</button>';
+        } else {
+            err++;
+            statusBadge = '<span class="badge badge-secondary"><i class="fas fa-exclamation mr-1"></i>Error</span>';
+        }
+        html += '<tr id="srow-' + item.user_id + '">' +
+            '<td><div class="font-weight-bold" style="font-size:13px;">' + escHtml(item.full_name) + '</div>' +
+                '<div class="text-muted" style="font-size:11px;">' + escHtml(item.username) + '</div></td>' +
+            '<td><span class="badge badge-secondary" style="font-size:11px;">' + escHtml(item.role_label) + '</span></td>' +
+            '<td style="font-size:12px;">' + escHtml(item.email) + '</td>' +
+            '<td class="text-center" id="sstatus-' + item.user_id + '">' + statusBadge + '</td>' +
+            '<td class="text-center" id="saction-' + item.user_id + '">' + actionBtn + '</td>' +
+            '</tr>';
+    });
+    document.getElementById('staff-tbody').innerHTML = html ||
+        '<tr><td colspan="5" class="text-center text-muted py-4">Sin usuarios.</td></tr>';
+    document.getElementById('staff-total-count').textContent = items.length;
+    document.getElementById('staff-cnt-yes').textContent = yes;
+    document.getElementById('staff-cnt-no').textContent  = no;
+    document.getElementById('staff-cnt-err').textContent  = err;
+}
+
+// Click en tabla personal
+document.getElementById('staff-tbody').addEventListener('click', function(e) {
+    var btnCreate = e.target.closest('.btn-create-staff');
+    var btnPw     = e.target.closest('.btn-change-pw');
+    if (btnCreate) openCreateConfirmStaff(btnCreate);
+    if (btnPw)     openChangePw(btnPw);
+});
+
+function openCreateConfirmStaff(btnEl) {
+    var userId = btnEl.getAttribute('data-user-id');
+    var email  = btnEl.getAttribute('data-email');
+    var name   = btnEl.getAttribute('data-name');
+    document.getElementById('cc-name').textContent  = name;
+    document.getElementById('cc-email').textContent = email;
+    // Default password: play@ + username for staff
+    var item = staffItems.find(function(i) { return String(i.user_id) === String(userId); });
+    document.getElementById('cc-password').value = 'play@' + (item ? item.username : userId);
+    document.getElementById('cc-password').type  = 'text';
+    document.getElementById('cc-change-next').checked = true;
+    pendingUserId = userId;
+    pendingBtnEl  = btnEl;
+    pendingCb     = function(resp, changeNext) { onStaffCreated(userId, resp, changeNext); };
+    $('#createConfirmModal').modal('show');
+}
+
+function onStaffCreated(userId, resp, changeNext) {
+    var statusEl = document.getElementById('sstatus-' + userId);
+    var actionEl = document.getElementById('saction-' + userId);
+    if (resp.success) {
+        if (statusEl) statusEl.innerHTML = '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Activa</span>';
+        if (actionEl) {
+            var item = staffItems.find(function(i) { return String(i.user_id) === String(userId); });
+            actionEl.innerHTML = '<button class="btn btn-xs btn-sm btn-outline-warning btn-change-pw" ' +
+                'data-user-id="' + userId + '" data-email="' + escHtml(resp.email || '') + '" data-name="' + escHtml(item ? item.full_name : '') + '">' +
+                '<i class="fas fa-key mr-1"></i>Contraseña</button>';
+        }
+        staffItems.forEach(function(i) { if (String(i.user_id) === String(userId)) i.google_exists = 'yes'; });
+        document.getElementById('staff-cnt-no').textContent  = Math.max(0, parseInt(document.getElementById('staff-cnt-no').textContent) - 1);
+        document.getElementById('staff-cnt-yes').textContent = parseInt(document.getElementById('staff-cnt-yes').textContent) + 1;
+        if (resp.created) showCreateResult(resp.email, resp.password, changeNext);
+    }
+    updateStaffMissingBtn();
+}
+
+// Bulk crear faltantes personal
+document.getElementById('btn-create-missing-staff').addEventListener('click', function() {
+    var missing = staffItems.filter(function(i) { return i.google_exists === 'no'; });
+    if (!missing.length) return;
+    if (!confirm('¿Crear ' + missing.length + ' cuenta(s) para el personal faltante?')) return;
+    var btn = this; btn.disabled = true;
+    var idx = 0;
+    function next() {
+        if (idx >= missing.length) { btn.disabled = false; return; }
+        var item = missing[idx++];
+        var defPw = 'play@' + item.username;
+        var rowBtn = document.querySelector('#saction-' + item.user_id + ' .btn-create-staff');
+        doCreateAccountStaff(item.user_id, defPw, true, rowBtn, next);
+    }
+    next();
+});
+
+function doCreateAccountStaff(userId, password, changeAtNextLogin, btnEl, callback) {
+    if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    fetch(AJAX_GOOGLE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ action: 'create_account', user_id: userId,
+            password_override: password, change_at_next_login: changeAtNextLogin ? '1' : '' }).toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+        onStaffCreated(userId, resp, changeAtNextLogin);
+        if (callback) callback();
+    })
+    .catch(function() { if (callback) callback(); });
+}
+
+function updateStaffMissingBtn() {
+    var has = staffItems.some(function(i) { return i.google_exists === 'no'; });
+    document.getElementById('btn-create-missing-staff').classList.toggle('d-none', !has);
 }
 </script>
 

@@ -125,6 +125,91 @@ switch ($action) {
         echo json_encode(['success' => true, 'items' => $items]);
         break;
 
+    // ---- Verificar cuentas del personal (no alumnos) ----
+    case 'check_staff_accounts':
+        $role = trim($_POST['role'] ?? $_GET['role'] ?? '');
+
+        $userTable  = Database::get_main_table(TABLE_MAIN_USER);
+        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+
+        $roleConditions = [
+            'docente'        => 'u.status = ' . COURSEMANAGER . ' AND adm.user_id IS NULL',
+            'administrativo' => 'u.status = ' . DRH,
+            'secretaria'     => 'u.status = ' . SCHOOL_SECRETARY,
+            'auxiliar'       => 'u.status = ' . SCHOOL_AUXILIARY,
+            'admin'          => 'adm.user_id IS NOT NULL',
+        ];
+
+        $roleLabels = [
+            'docente'        => 'Docente',
+            'administrativo' => 'Administrativo',
+            'secretaria'     => 'Secretaria',
+            'auxiliar'       => 'Auxiliar',
+            'admin'          => 'Administrador',
+        ];
+
+        if ($role && isset($roleConditions[$role])) {
+            $whereCond = $roleConditions[$role];
+        } else {
+            $nonStudent = implode(',', [COURSEMANAGER, DRH, SCHOOL_SECRETARY, SCHOOL_AUXILIARY]);
+            $whereCond  = "(u.status IN ($nonStudent) OR adm.user_id IS NOT NULL)";
+        }
+
+        $staffSql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email, u.status,
+                            CASE
+                                WHEN adm.user_id IS NOT NULL THEN 'admin'
+                                WHEN u.status = ".COURSEMANAGER." THEN 'docente'
+                                WHEN u.status = ".DRH."           THEN 'administrativo'
+                                WHEN u.status = ".SCHOOL_SECRETARY." THEN 'secretaria'
+                                WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'auxiliar'
+                                ELSE 'otro'
+                            END AS role_key
+                     FROM $userTable u
+                     LEFT JOIN $adminTable adm ON adm.user_id = u.user_id
+                     WHERE $whereCond
+                     ORDER BY u.lastname, u.firstname";
+
+        $staffResult = Database::query($staffSql);
+        $staffItems  = [];
+        $emailsToCheck = [];
+
+        while ($row = Database::fetch_array($staffResult, 'ASSOC')) {
+            if (empty($row['email'])) continue;
+            $roleKey = $row['role_key'];
+            $staffItems[] = [
+                'user_id'    => (int) $row['user_id'],
+                'email'      => $row['email'],
+                'username'   => $row['username'],
+                'full_name'  => trim($row['lastname'] . ', ' . $row['firstname']),
+                'role_label' => $roleLabels[$roleKey] ?? ucfirst($roleKey),
+                'dni'        => '',
+            ];
+            $emailsToCheck[] = $row['email'];
+        }
+
+        if (empty($emailsToCheck)) {
+            echo json_encode(['success' => true, 'items' => []]);
+            break;
+        }
+
+        // Test connectivity
+        try {
+            $googleService->getUser($emailsToCheck[0]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'error' => 'Error al conectar con Google API: ' . $e->getMessage()]);
+            break;
+        }
+
+        $googleStatuses = $googleService->checkMultipleUsers($emailsToCheck);
+        foreach ($staffItems as &$item) {
+            $status = $googleStatuses[$item['email']] ?? null;
+            $item['google_exists'] = $status === true ? 'yes' : ($status === false ? 'no' : 'error');
+        }
+        unset($item);
+
+        echo json_encode(['success' => true, 'items' => $staffItems]);
+        break;
+
     // ---- Crear cuenta Google Workspace para un alumno ----
     case 'create_account':
         $userId             = (int) ($_POST['user_id'] ?? 0);
