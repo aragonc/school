@@ -13,7 +13,7 @@
  *  - Impersonation de un super-admin del dominio
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once api_get_path(SYS_PATH) . 'vendor/autoload.php';
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\RequestException;
