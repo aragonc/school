@@ -21,6 +21,20 @@ if ($action === 'scan_qr_kiosk') {
 
     $userInfo = api_get_user_info_from_username(Database::escape_string($username));
 
+    // Fallback: buscar por número de documento (DNI / carnet / pasaporte) en la ficha
+    if (!$userInfo) {
+        $fichaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_FICHA);
+        $dniEsc     = Database::escape_string($username);
+        $fichaRes   = Database::query(
+            "SELECT user_id FROM $fichaTable
+             WHERE dni = '$dniEsc' AND user_id IS NOT NULL LIMIT 1"
+        );
+        $fichaRow = Database::fetch_assoc($fichaRes);
+        if ($fichaRow && !empty($fichaRow['user_id'])) {
+            $userInfo = api_get_user_info((int) $fichaRow['user_id']);
+        }
+    }
+
     if (!$userInfo) {
         echo json_encode(['success' => false, 'message' => 'UserNotFound']);
         exit;

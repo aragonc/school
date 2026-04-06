@@ -31,6 +31,7 @@ $sql = "SELECT
             f.apellido_materno,
             f.nombres,
             COALESCE(NULLIF(TRIM(f.dni), ''), u.official_code) AS dni,
+            u.username,
             f.user_id,
             m.grade_id,
             g.name        AS grade_name,
@@ -232,6 +233,11 @@ body {
     font-weight: 500;
     color: #4a5568;
 }
+.qr-info .stu-usuario {
+    font-size: 8pt;
+    color: #718096;
+    font-weight: 500;
+}
 .qr-info .stu-grado {
     margin-top: 4px;
     font-size: 8pt;
@@ -273,6 +279,7 @@ function renderQrCard(array $u, int &$idx): void {
     $apellidos  = htmlspecialchars(trim($u['apellido_paterno'] . ' ' . $u['apellido_materno']));
     $nombres    = htmlspecialchars(trim($u['nombres']));
     $dni        = htmlspecialchars($u['dni'] ?? '');
+    $username   = htmlspecialchars($u['username'] ?? '');
     $nivel      = htmlspecialchars($u['level_name'] ?? '');
     $grado      = htmlspecialchars($u['grade_name'] ?? '');
     $seccion    = htmlspecialchars($u['section_name'] ?? '');
@@ -289,6 +296,9 @@ function renderQrCard(array $u, int &$idx): void {
     echo '<div class="qr-info">';
     echo '<div class="stu-apellidos">' . $apellidos . '</div>';
     echo '<div class="stu-nombres">' . $nombres . '</div>';
+    if ($username) {
+        echo '<div class="stu-usuario">' . $username . '</div>';
+    }
     if ($gradoLinea) {
         echo '<div class="stu-grado">' . $gradoLinea . '</div>';
     }
