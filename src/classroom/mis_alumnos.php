@@ -81,6 +81,8 @@ if ($classroomId > 0) {
     $attTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ATTENDANCE_LOG);
     $dateEsc    = Database::escape_string($selectedDate);
 
+    $loginTable = Database::get_main_table(TABLE_STATISTIC_TRACK_E_LOGIN);
+
     $sql = "SELECT
                 cs.user_id,
                 u.firstname, u.lastname, u.official_code, u.picture_uri, u.email,
@@ -90,7 +92,10 @@ if ($classroomId > 0) {
                 f.foto        AS ficha_foto,
                 al.status     AS att_status,
                 al.check_in   AS att_check_in,
-                al.method     AS att_method
+                al.method     AS att_method,
+                (SELECT MAX(tl.login_date)
+                 FROM $loginTable tl
+                 WHERE tl.login_user_id = cs.user_id) AS last_login
             FROM $csTable cs
             INNER JOIN $userTable  u  ON u.id       = cs.user_id
             LEFT  JOIN $fichaTable f  ON f.user_id  = cs.user_id
@@ -118,6 +123,13 @@ if ($classroomId > 0) {
         } else {
             $row['display_apellidos'] = trim($row['lastname']);
             $row['display_nombres']   = trim($row['firstname']);
+        }
+
+        // Format last login (stored UTC → local)
+        if (!empty($row['last_login'])) {
+            $row['last_login_local'] = api_get_local_time($row['last_login']);
+        } else {
+            $row['last_login_local'] = '';
         }
 
         // Format check-in time (stored UTC → local)
@@ -151,6 +163,8 @@ $plugin->assign('count_ausente',          $countAusente);
 $plugin->assign('count_sin_registro',     $countSinRegistro);
 $plugin->assign('total_students',         count($students));
 $plugin->assign('is_today',               $selectedDate === date('Y-m-d'));
+
+$plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_admin.php');
 
 $plugin->setTitle('Mis Alumnos');
 $content = $plugin->fetch('classroom/mis_alumnos.tpl');

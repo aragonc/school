@@ -126,9 +126,16 @@
                 <i class="fas fa-list mr-1 text-muted"></i>
                 Alumnos &mdash; {{ total_students }} en total
             </span>
-            <span class="text-muted small">
-                <i class="fas fa-calendar-alt mr-1"></i>{{ selected_date }}
-            </span>
+            <div class="d-flex align-items-center" style="gap:10px;">
+                <span class="text-muted small">
+                    <i class="fas fa-calendar-alt mr-1"></i>{{ selected_date }}
+                </span>
+                {% if students %}
+                <button class="btn btn-sm btn-outline-info" data-toggle="modal" data-target="#loginHistoryModal">
+                    <i class="fas fa-history mr-1"></i> Historial de conexiones
+                </button>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body p-0">
             {% if students %}
@@ -140,6 +147,7 @@
                             <th>Alumno</th>
                             <th>DNI</th>
                             <th>Correo</th>
+                            <th>Última conexión</th>
                             <th>Asistencia</th>
                             <th>Hora entrada</th>
                         </tr>
@@ -184,6 +192,16 @@
                                 {% endif %}
                             </td>
 
+                            {# Última conexión #}
+                            <td style="font-size:12px;white-space:nowrap;">
+                                {% if s.last_login_local %}
+                                <span class="text-dark">{{ s.last_login_local|date('d/m/Y') }}</span>
+                                <span class="text-muted d-block" style="font-size:11px;">{{ s.last_login_local|date('H:i') }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
                             {# Estado asistencia #}
                             <td>
                                 {% if s.att_status == 'on_time' %}
@@ -213,6 +231,7 @@
                                 &mdash;
                                 {% endif %}
                             </td>
+
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -230,3 +249,110 @@
     {% endif %}
 
 </div>
+
+{# ===== Modal: Historial de Conexiones (todos los alumnos) ===== #}
+{% if students %}
+<div class="modal fade" id="loginHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-history mr-2 text-info"></i>
+                    Historial de conexiones
+                    {% if classroom %}
+                    <small class="text-muted font-weight-normal ml-2">
+                        {{ classroom.level_name }} — {{ classroom.grade_name }}
+                        {% if classroom.section_name %} Sec. {{ classroom.section_name }}{% endif %}
+                    </small>
+                    {% endif %}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="px-3 pt-3 pb-2">
+                    <input type="text" id="lhSearch" class="form-control form-control-sm"
+                           placeholder="Buscar alumno..." oninput="lhFilter()">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" id="lhTable">
+                        <thead class="thead-light sticky-top">
+                            <tr>
+                                <th style="width:38px;" class="pl-3"></th>
+                                <th>Alumno</th>
+                                <th style="white-space:nowrap;">
+                                    <i class="fas fa-sign-in-alt mr-1 text-info"></i>Última conexión
+                                </th>
+                                <th style="white-space:nowrap;">Hace</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in students %}
+                            <tr class="lh-row">
+                                <td class="pl-3">
+                                    {% if s.foto_url %}
+                                    <img src="{{ s.foto_url }}" class="rounded-circle"
+                                         style="width:30px;height:30px;object-fit:cover;" alt="">
+                                    {% else %}
+                                    <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center"
+                                         style="width:30px;height:30px;">
+                                        <i class="fas fa-user text-secondary" style="font-size:12px;"></i>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="font-weight-bold lh-name" style="font-size:13px;">
+                                        {{ s.display_apellidos }}
+                                    </div>
+                                    <div class="text-muted" style="font-size:11px;">{{ s.display_nombres }}</div>
+                                </td>
+                                <td style="white-space:nowrap;">
+                                    {% if s.last_login_local %}
+                                    <span class="text-dark" style="font-size:13px;">
+                                        {{ s.last_login_local|date('d/m/Y H:i') }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-secondary">Sin conexión</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-size:12px;">
+                                    {% if s.last_login_local %}
+                                    <span class="text-muted lh-ago"
+                                          data-ts="{{ s.last_login_local|date('U') }}"></span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function lhFilter() {
+    var q = document.getElementById('lhSearch').value.toLowerCase();
+    document.querySelectorAll('#lhTable .lh-row').forEach(function(tr) {
+        var name = (tr.querySelector('.lh-name') || {}).textContent || '';
+        tr.style.display = name.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+    });
+}
+
+// Calcular "hace X días/horas"
+function lhTimeAgo(ts) {
+    var diff = Math.floor(Date.now() / 1000) - parseInt(ts);
+    if (diff < 60)         return 'Hace un momento';
+    if (diff < 3600)       return 'Hace ' + Math.floor(diff / 60) + ' min';
+    if (diff < 86400)      return 'Hace ' + Math.floor(diff / 3600) + ' h';
+    if (diff < 86400 * 30) return 'Hace ' + Math.floor(diff / 86400) + ' días';
+    return 'Hace ' + Math.floor(diff / (86400 * 30)) + ' meses';
+}
+
+document.querySelectorAll('.lh-ago').forEach(function(el) {
+    el.textContent = lhTimeAgo(el.getAttribute('data-ts'));
+});
+</script>
+{% endif %}

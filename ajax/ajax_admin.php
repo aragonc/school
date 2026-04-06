@@ -105,6 +105,41 @@ switch ($action) {
         ]);
         break;
 
+    case 'get_login_history':
+        $targetUserId = (int) ($_POST['user_id'] ?? 0);
+        if ($targetUserId <= 0) {
+            echo json_encode(['success' => false, 'error' => 'ID inválido']);
+            break;
+        }
+
+        // Only admin or teacher (tutor) can view — teacher can only view students from their classroom
+        $isTeacher = (int) api_get_user_info($currentUserId)['status'] === COURSEMANAGER;
+        if (!$isAdmin && !$isTeacher) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            break;
+        }
+
+        $loginTable = Database::get_main_table(TABLE_STATISTIC_TRACK_E_LOGIN);
+        $result = Database::query(
+            "SELECT login_date, logout_date, user_ip
+             FROM $loginTable
+             WHERE login_user_id = $targetUserId
+             ORDER BY login_date DESC
+             LIMIT 30"
+        );
+
+        $records = [];
+        while ($row = Database::fetch_assoc($result)) {
+            $records[] = [
+                'login_date'  => !empty($row['login_date'])  ? api_get_local_time($row['login_date'])  : null,
+                'logout_date' => !empty($row['logout_date']) ? api_get_local_time($row['logout_date']) : null,
+                'user_ip'     => $row['user_ip'] ?? '',
+            ];
+        }
+
+        echo json_encode(['success' => true, 'records' => $records]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'error' => 'Acción no reconocida']);
         break;
