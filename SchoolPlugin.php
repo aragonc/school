@@ -4964,7 +4964,7 @@ class SchoolPlugin extends Plugin
                 ORDER BY al.date DESC, u.lastname ASC";
         $result = Database::query($sql);
 
-        $headers = ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Turno', 'Notas'];
+        $headers = ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Observaciones'];
         if ($isStudentExport) {
             $headers = array_merge($headers, ['Nivel', 'Grado', 'Sección']);
         }
@@ -5003,7 +5003,6 @@ class SchoolPlugin extends Plugin
                 $checkIn,
                 $statusLabels[$row['status']] ?? $row['status'],
                 ($row['status'] === 'absent') ? '-' : (!empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-'),
-                $row['schedule_name'] ?? '-',
                 $row['notes'] ?? '',
             ];
             if ($isStudentExport) {
