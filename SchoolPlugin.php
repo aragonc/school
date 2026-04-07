@@ -4173,6 +4173,134 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Get distinct dates that have any attendance log record in a date range.
+     */
+    private function getActiveDatesInRange(?string $startDate, ?string $endDate): array
+    {
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $where = "WHERE 1=1";
+        if ($startDate) $where .= " AND date >= '" . Database::escape_string($startDate) . "'";
+        if ($endDate)   $where .= " AND date <= '" . Database::escape_string($endDate) . "'";
+        $result = Database::query("SELECT DISTINCT date FROM $logTable $where ORDER BY date DESC");
+        $dates = [];
+        while ($r = Database::fetch_array($result, 'ASSOC')) {
+            $dates[] = $r['date'];
+        }
+        return $dates;
+    }
+
+    /**
+     * Get all active users matching a user-type filter, with role label and (for students) academic info.
+     */
+    private function getAllUsersForReport(?string $userType, int $levelId, int $gradeId, int $sectionId): array
+    {
+        $userTable    = Database::get_main_table(TABLE_MAIN_USER);
+        $adminTable   = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $fichaTable   = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $matTable     = Database::get_main_table(self::TABLE_SCHOOL_MATRICULA);
+        $gradeTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
+        $levelTable   = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_LEVEL);
+        $sectionTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_SECTION);
+        $yearTable    = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
+
+        $isStudents  = ($userType === 'students');
+        $extraJoins  = '';
+        $extraSelect = '';
+
+        if (empty($userType)) {
+            $allStatuses = implode(',', [COURSEMANAGER, STUDENT, DRH, SCHOOL_PARENT, SCHOOL_GUARDIAN, SCHOOL_SECRETARY, SCHOOL_AUXILIARY]);
+            $where = "WHERE u.active = 1 AND (u.status IN ($allStatuses) OR adm.user_id IS NOT NULL)";
+        } else {
+            $where = "WHERE u.active = 1" . $this->getUserTypeFilter($userType);
+        }
+
+        if ($isStudents) {
+            $yr = Database::fetch_array(
+                Database::query("SELECT id FROM $yearTable WHERE active = 1 LIMIT 1"), 'ASSOC'
+            );
+            $activeYearId = $yr ? (int) $yr['id'] : 0;
+
+            $extraJoins  = " LEFT JOIN $fichaTable sf ON sf.user_id = u.id";
+            $extraJoins .= " LEFT JOIN $matTable sm ON sm.ficha_id = sf.id AND sm.estado = 'ACTIVO'";
+            if ($activeYearId) $extraJoins .= " AND sm.academic_year_id = $activeYearId";
+            $extraJoins .= " LEFT JOIN $gradeTable sg ON sg.id = sm.grade_id";
+            $extraJoins .= " LEFT JOIN $levelTable slv ON slv.id = sg.level_id";
+            $extraJoins .= " LEFT JOIN $sectionTable ssc ON ssc.id = sm.section_id";
+            $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+
+            if ($levelId)   $where .= " AND sg.level_id = $levelId";
+            if ($gradeId)   $where .= " AND sm.grade_id = $gradeId";
+            if ($sectionId) $where .= " AND sm.section_id = $sectionId";
+            $where .= " AND sm.id IS NOT NULL";
+        }
+
+        $sql = "SELECT DISTINCT u.id, u.firstname, u.lastname, u.username,
+                       CASE
+                           WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
+                           WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
+                           WHEN u.status = ".DRH." THEN 'Administrativo'
+                           WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
+                           WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
+                           WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
+                           ELSE 'Alumno'
+                       END as role
+                       $extraSelect
+                FROM $userTable u
+                LEFT JOIN $adminTable adm ON u.id = adm.user_id
+                $extraJoins
+                $where
+                ORDER BY u.lastname ASC, u.firstname ASC";
+
+        $result = Database::query($sql);
+        $users = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $users[] = $row;
+        }
+        return $users;
+    }
+
+    /**
+     * Build synthetic absent rows for users with no log entry on the given active dates.
+     */
+    private function buildAbsentRows(array $activeDates, array $existingKeys, ?string $userType, int $levelId, int $gradeId, int $sectionId): array
+    {
+        if (empty($activeDates)) return [];
+
+        $isStudents = ($userType === 'students');
+        $users = $this->getAllUsersForReport($userType, $levelId, $gradeId, $sectionId);
+        $absent = [];
+
+        foreach ($activeDates as $date) {
+            foreach ($users as $user) {
+                $key = $date . '|' . $user['id'];
+                if (isset($existingKeys[$key])) continue;
+                $row = [
+                    'id'            => null,
+                    'date'          => $date,
+                    'user_id'       => $user['id'],
+                    'lastname'      => $user['lastname'],
+                    'firstname'     => $user['firstname'],
+                    'username'      => $user['username'],
+                    'role'          => $user['role'],
+                    'check_in'      => null,
+                    'status'        => 'absent',
+                    'method'        => null,
+                    'schedule_name' => null,
+                    'notes'         => null,
+                ];
+                if ($isStudents) {
+                    $row['nivel_name']   = $user['nivel_name'] ?? null;
+                    $row['grado_name']   = $user['grado_name'] ?? null;
+                    $row['seccion_name'] = $user['seccion_name'] ?? null;
+                }
+                $absent[] = $row;
+            }
+        }
+        return $absent;
+    }
+
+    /**
      * Get attendance statistics for a date range.
      */
     public function getAttendanceStats(
@@ -4206,7 +4334,21 @@ class SchoolPlugin extends Plugin
                 $extraJoins
                 $where";
         $result = Database::query($sql);
-        return Database::fetch_array($result, 'ASSOC') ?: ['total' => 0, 'on_time' => 0, 'late' => 0, 'absent' => 0];
+        $stats = Database::fetch_array($result, 'ASSOC') ?: ['total' => 0, 'on_time' => 0, 'late' => 0, 'absent' => 0];
+
+        // Add synthetic absents: users with no log entry on active school days
+        $activeDates = $this->getActiveDatesInRange($startDate, $endDate);
+        if (!empty($activeDates)) {
+            $users = $this->getAllUsersForReport($userType, $levelId, $gradeId, $sectionId);
+            $totalPossible = count($activeDates) * count($users);
+            $missing = $totalPossible - (int) $stats['total'];
+            if ($missing > 0) {
+                $stats['absent'] += $missing;
+                $stats['total']  += $missing;
+            }
+        }
+
+        return $stats;
     }
 
     /**
@@ -4612,7 +4754,7 @@ class SchoolPlugin extends Plugin
 
         $limitSql = $limit > 0 ? "LIMIT $limit" : '';
 
-        $sql = "SELECT al.id, al.date, u.lastname, u.firstname, u.username,
+        $sql = "SELECT al.id, al.date, al.user_id, u.lastname, u.firstname, u.username,
                        CASE
                            WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
                            WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
@@ -4631,17 +4773,34 @@ class SchoolPlugin extends Plugin
                 LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
                 $extraJoins
                 $where
-                ORDER BY al.date DESC, u.lastname ASC
-                $limitSql";
+                ORDER BY al.date DESC, u.lastname ASC";
 
-        $result  = Database::query($sql);
-        $records = [];
+        $result       = Database::query($sql);
+        $records      = [];
+        $existingKeys = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             if (!empty($row['check_in'])) {
                 $row['check_in'] = api_get_local_time($row['check_in']);
             }
+            $existingKeys[$row['date'] . '|' . $row['user_id']] = true;
             $records[] = $row;
         }
+
+        // Add synthetic absent rows for users with no log entry on active school days
+        $activeDates  = $this->getActiveDatesInRange($startDate, $endDate);
+        $absentRows   = $this->buildAbsentRows($activeDates, $existingKeys, $userType, $levelId, $gradeId, $sectionId);
+        if (!empty($absentRows)) {
+            $records = array_merge($records, $absentRows);
+            usort($records, function ($a, $b) {
+                $d = strcmp($b['date'], $a['date']);
+                return $d !== 0 ? $d : strcasecmp($a['lastname'] ?? '', $b['lastname'] ?? '');
+            });
+        }
+
+        if ($limit > 0 && count($records) > $limit) {
+            $records = array_slice($records, 0, $limit);
+        }
+
         return $records;
     }
 
@@ -4674,7 +4833,7 @@ class SchoolPlugin extends Plugin
             $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
         }
 
-        $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
+        $sql = "SELECT al.date, al.user_id, u.lastname, u.firstname, u.username,
                        CASE
                            WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
                            WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
@@ -4696,31 +4855,50 @@ class SchoolPlugin extends Plugin
                 ORDER BY al.date DESC, u.lastname ASC";
         $result = Database::query($sql);
 
+        $csvRows      = [];
+        $existingKeys = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $existingKeys[$row['date'] . '|' . $row['user_id']] = true;
+            $csvRows[] = $row;
+        }
+
+        // Add synthetic absent rows
+        $activeDates = $this->getActiveDatesInRange($startDate, $endDate);
+        $absentRows  = $this->buildAbsentRows($activeDates, $existingKeys, $userType, $levelId, $gradeId, $sectionId);
+        if (!empty($absentRows)) {
+            $csvRows = array_merge($csvRows, $absentRows);
+            usort($csvRows, function ($a, $b) {
+                $d = strcmp($b['date'], $a['date']);
+                return $d !== 0 ? $d : strcasecmp($a['lastname'] ?? '', $b['lastname'] ?? '');
+            });
+        }
+
         $filename = 'asistencia_' . date('Y-m-d_His') . '.csv';
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 
         $output = fopen('php://output', 'w');
         fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
-        $headers = ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Turno', 'Notas'];
+        $csvHeaders = ['Fecha', 'Apellidos', 'Nombres', 'Usuario', 'Rol', 'Hora Ingreso', 'Estado', 'Metodo', 'Turno', 'Notas'];
         if ($isStudentExport) {
-            $headers = array_merge($headers, ['Nivel', 'Grado', 'Sección']);
+            $csvHeaders = array_merge($csvHeaders, ['Nivel', 'Grado', 'Sección']);
         }
-        fputcsv($output, $headers, ';');
+        fputcsv($output, $csvHeaders, ';');
 
         $statusLabels = ['on_time' => 'Asistio puntualmente', 'late' => 'Asistio con tardanza', 'absent' => 'No asistio'];
         $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
 
-        while ($row = Database::fetch_array($result, 'ASSOC')) {
+        foreach ($csvRows as $row) {
+            $checkIn = !empty($row['check_in']) ? date('H:i:s', strtotime(api_get_local_time($row['check_in']))) : '-';
             $line = [
                 $row['date'],
                 $row['lastname'],
                 $row['firstname'],
                 $row['username'],
                 $row['role'],
-                date('H:i:s', strtotime(api_get_local_time($row['check_in']))),
+                $checkIn,
                 $statusLabels[$row['status']] ?? $row['status'],
-                $methodLabels[$row['method']] ?? $row['method'],
+                !empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-',
                 $row['schedule_name'] ?? '-',
                 $row['notes'] ?? '',
             ];
@@ -4764,7 +4942,7 @@ class SchoolPlugin extends Plugin
             $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
         }
 
-        $sql = "SELECT al.date, u.lastname, u.firstname, u.username,
+        $sql = "SELECT al.date, al.user_id, u.lastname, u.firstname, u.username,
                        CASE
                            WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
                            WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
@@ -4795,17 +4973,36 @@ class SchoolPlugin extends Plugin
         $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
 
         // --- Build rows array ---
-        $rows = [];
+        $rawRows      = [];
+        $existingKeys = [];
         while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $existingKeys[$row['date'] . '|' . $row['user_id']] = true;
+            $rawRows[] = $row;
+        }
+
+        // Add synthetic absent rows
+        $activeDates = $this->getActiveDatesInRange($startDate, $endDate);
+        $absentRows  = $this->buildAbsentRows($activeDates, $existingKeys, $userType, $levelId, $gradeId, $sectionId);
+        if (!empty($absentRows)) {
+            $rawRows = array_merge($rawRows, $absentRows);
+            usort($rawRows, function ($a, $b) {
+                $d = strcmp($b['date'], $a['date']);
+                return $d !== 0 ? $d : strcasecmp($a['lastname'] ?? '', $b['lastname'] ?? '');
+            });
+        }
+
+        $rows = [];
+        foreach ($rawRows as $row) {
+            $checkIn = !empty($row['check_in']) ? date('H:i:s', strtotime(api_get_local_time($row['check_in']))) : '-';
             $line = [
                 $row['date'],
                 $row['lastname'],
                 $row['firstname'],
                 $row['username'],
                 $row['role'],
-                date('H:i:s', strtotime(api_get_local_time($row['check_in']))),
+                $checkIn,
                 $statusLabels[$row['status']] ?? $row['status'],
-                $methodLabels[$row['method']] ?? $row['method'],
+                !empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-',
                 $row['schedule_name'] ?? '-',
                 $row['notes'] ?? '',
             ];

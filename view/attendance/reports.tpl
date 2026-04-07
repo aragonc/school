@@ -211,7 +211,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         {% else %}
                         <td>{{ rec.role }}</td>
                         {% endif %}
-                        <td>{{ rec.check_in|slice(11,8) }}</td>
+                        <td>{{ rec.check_in ? rec.check_in|slice(11,8) : '-' }}</td>
                         <td>
                             {% if rec.status == 'on_time' %}
                                 <span class="badge badge-success">Puntual</span>
