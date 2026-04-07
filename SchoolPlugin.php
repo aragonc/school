@@ -4898,7 +4898,7 @@ class SchoolPlugin extends Plugin
                 $row['role'],
                 $checkIn,
                 $statusLabels[$row['status']] ?? $row['status'],
-                !empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-',
+                ($row['status'] === 'absent') ? '-' : (!empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-'),
                 $row['schedule_name'] ?? '-',
                 $row['notes'] ?? '',
             ];
@@ -5002,7 +5002,7 @@ class SchoolPlugin extends Plugin
                 $row['role'],
                 $checkIn,
                 $statusLabels[$row['status']] ?? $row['status'],
-                !empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-',
+                ($row['status'] === 'absent') ? '-' : (!empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-'),
                 $row['schedule_name'] ?? '-',
                 $row['notes'] ?? '',
             ];

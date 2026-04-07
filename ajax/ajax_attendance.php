@@ -279,6 +279,65 @@ switch ($action) {
         echo json_encode(['success' => true, 'message' => 'AttendanceDeleted']);
         break;
 
+    case 'report_register_manual':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $userId      = isset($_POST['user_id'])       ? (int) $_POST['user_id']                        : 0;
+        $date        = isset($_POST['date'])          ? trim($_POST['date'])                            : '';
+        $status      = isset($_POST['status'])        ? trim($_POST['status'])                         : '';
+        $checkInTime = isset($_POST['check_in_time']) ? trim($_POST['check_in_time'])                  : '';
+        $notes       = isset($_POST['notes'])         ? trim($_POST['notes'])                          : null;
+        $registeredBy = api_get_user_id();
+
+        if ($userId <= 0 || empty($date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)
+            || !in_array($status, ['on_time', 'late', 'absent'])
+        ) {
+            echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
+            exit;
+        }
+
+        // Build check_in datetime (store as UTC)
+        if ($status !== 'absent' && preg_match('/^\d{2}:\d{2}$/', $checkInTime)) {
+            $localDatetime = $date . ' ' . $checkInTime . ':00';
+            $checkIn = api_get_utc_datetime($localDatetime);
+        } else {
+            $checkIn = $date . ' 00:00:00';
+        }
+
+        $logTable = Database::get_main_table('plugin_school_attendance_log');
+        $safeDate = Database::escape_string($date);
+
+        $existingResult = Database::query(
+            "SELECT id FROM $logTable WHERE user_id = $userId AND date = '$safeDate' LIMIT 1"
+        );
+        $existing = Database::fetch_array($existingResult, 'ASSOC');
+
+        if ($existing) {
+            Database::update($logTable, [
+                'status'        => $status,
+                'check_in'      => $checkIn,
+                'method'        => 'manual',
+                'registered_by' => $registeredBy,
+                'notes'         => $notes ? Database::escape_string($notes) : null,
+            ], ['id = ?' => (int) $existing['id']]);
+        } else {
+            Database::insert($logTable, [
+                'user_id'       => $userId,
+                'date'          => $date,
+                'status'        => $status,
+                'check_in'      => $checkIn,
+                'method'        => 'manual',
+                'registered_by' => $registeredBy,
+                'notes'         => $notes ? Database::escape_string($notes) : null,
+                'created_at'    => api_get_utc_datetime(),
+            ]);
+        }
+
+        echo json_encode(['success' => true, 'status' => $status]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;

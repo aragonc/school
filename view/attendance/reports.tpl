@@ -196,12 +196,12 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         <th class="sortable" data-col="{{ report_is_students ? 7 : 5 }}" style="cursor:pointer;white-space:nowrap;">Hora <span class="sort-icon">↕</span></th>
                         <th>Estado</th>
                         <th>Método</th>
-                        <th>Turno</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for rec in report_records %}
-                    <tr>
+                    <tr data-record-id="{{ loop.index }}">
                         <td>{{ loop.index }}</td>
                         <td>{{ rec.lastname }}</td>
                         <td>{{ rec.firstname }}</td>
@@ -213,8 +213,8 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         <td>{{ rec.role }}</td>
                         {% endif %}
                         <td>{{ rec.date }}</td>
-                        <td>{{ rec.check_in ? rec.check_in|slice(11,8) : '-' }}</td>
-                        <td>
+                        <td class="td-hora">{{ rec.check_in ? rec.check_in|slice(11,8) : '-' }}</td>
+                        <td class="td-estado">
                             {% if rec.status == 'on_time' %}
                                 <span class="badge badge-success">Puntual</span>
                             {% elseif rec.status == 'late' %}
@@ -223,8 +223,21 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                                 <span class="badge badge-danger">Ausente</span>
                             {% endif %}
                         </td>
-                        <td>{{ rec.method == 'qr' ? 'QR' : 'Manual' }}</td>
-                        <td>{{ rec.schedule_name ?: '-' }}</td>
+                        <td class="td-metodo">{{ rec.status == 'absent' ? '-' : (rec.method == 'qr' ? 'QR' : (rec.method == 'manual' ? 'Manual' : '-')) }}</td>
+                        <td class="td-acciones">
+                            {% if rec.status == 'absent' %}
+                            <button class="btn btn-primary btn-registrar-asistencia"
+                                style="font-size:11px;padding:2px 7px;line-height:1.5;"
+                                data-user-id="{{ rec.user_id }}"
+                                data-date="{{ rec.date }}"
+                                data-name="{{ rec.lastname }}, {{ rec.firstname }}"
+                                title="Registrar asistencia manual">
+                                <i class="fas fa-pencil-alt"></i> Registrar asistencia
+                            </button>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -237,6 +250,50 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
 {% endif %}
 
 {% endif %}
+
+<!-- Modal: Registrar Asistencia Manual -->
+<div class="modal fade" id="modalRegistrarAsistencia" tabindex="-1" role="dialog" aria-labelledby="modalRegistrarLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRegistrarLabel"><i class="fas fa-pencil-alt"></i> Registrar Asistencia Manual</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong id="modalNombreAlumno"></strong> — <span id="modalFechaTexto" class="text-muted"></span></p>
+                <input type="hidden" id="modalUserId">
+                <input type="hidden" id="modalFecha">
+
+                <div class="form-group">
+                    <label class="font-weight-bold">Estado <span class="text-danger">*</span></label>
+                    <select class="form-control" id="modalEstado">
+                        <option value="on_time">Asistió (Puntual)</option>
+                        <option value="late">Tardanza</option>
+                        <option value="absent">Ausente</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="modalHoraGroup">
+                    <label class="font-weight-bold">Hora de ingreso <span class="text-danger">*</span></label>
+                    <input type="time" class="form-control" id="modalHora">
+                </div>
+
+                <div class="form-group">
+                    <label class="font-weight-bold">Motivo / Observación</label>
+                    <textarea class="form-control" id="modalMotivo" rows="3" placeholder="Ej: El alumno olvidó su QR pero asistió..."></textarea>
+                </div>
+
+                <div id="modalError" class="alert alert-danger d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarRegistro">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 (function () {
@@ -285,6 +342,97 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
         th.addEventListener('click', function () {
             sortTable(parseInt(th.getAttribute('data-col')));
         });
+    });
+
+    // --- Modal: Registrar Asistencia Manual ---
+    var activeBtn = null;
+
+    function padTime(d) { return d < 10 ? '0' + d : '' + d; }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-registrar-asistencia');
+        if (!btn) return;
+        activeBtn = btn;
+
+        var now = new Date();
+        var horaActual = padTime(now.getHours()) + ':' + padTime(now.getMinutes());
+
+        document.getElementById('modalUserId').value      = btn.dataset.userId;
+        document.getElementById('modalFecha').value       = btn.dataset.date;
+        document.getElementById('modalNombreAlumno').textContent = btn.dataset.name;
+        document.getElementById('modalFechaTexto').textContent   = btn.dataset.date;
+        document.getElementById('modalEstado').value      = 'on_time';
+        document.getElementById('modalHora').value        = horaActual;
+        document.getElementById('modalMotivo').value      = '';
+        document.getElementById('modalError').classList.add('d-none');
+        document.getElementById('modalHoraGroup').style.display = '';
+
+        $('#modalRegistrarAsistencia').modal('show');
+    });
+
+    document.getElementById('modalEstado').addEventListener('change', function () {
+        document.getElementById('modalHoraGroup').style.display = this.value === 'absent' ? 'none' : '';
+    });
+
+    document.getElementById('btnConfirmarRegistro').addEventListener('click', function () {
+        var userId  = document.getElementById('modalUserId').value;
+        var fecha   = document.getElementById('modalFecha').value;
+        var estado  = document.getElementById('modalEstado').value;
+        var hora    = document.getElementById('modalHora').value;
+        var motivo  = document.getElementById('modalMotivo').value.trim();
+        var errEl   = document.getElementById('modalError');
+
+        if (estado !== 'absent' && !hora) {
+            errEl.textContent = 'La hora de ingreso es obligatoria.';
+            errEl.classList.remove('d-none');
+            return;
+        }
+
+        var btn = document.getElementById('btnConfirmarRegistro');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        errEl.classList.add('d-none');
+
+        var data = new URLSearchParams();
+        data.append('action',        'report_register_manual');
+        data.append('user_id',       userId);
+        data.append('date',          fecha);
+        data.append('status',        estado);
+        data.append('check_in_time', hora);
+        data.append('notes',         motivo);
+
+        fetch(rptAjaxUrl, { method: 'POST', body: data })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+
+                if (!res.success) {
+                    errEl.textContent = res.message || 'Error al guardar.';
+                    errEl.classList.remove('d-none');
+                    return;
+                }
+
+                // Update row in place
+                var row = activeBtn.closest('tr');
+                var statusLabels = { on_time: 'Puntual', late: 'Tardanza', absent: 'Ausente' };
+                var statusClasses = { on_time: 'badge-success', late: 'badge-warning', absent: 'badge-danger' };
+                var s = res.status;
+
+                row.querySelector('.td-estado').innerHTML =
+                    '<span class="badge ' + (statusClasses[s] || 'badge-secondary') + '">' + (statusLabels[s] || s) + '</span>';
+                row.querySelector('.td-metodo').textContent = s === 'absent' ? '-' : 'Manual';
+                row.querySelector('.td-hora').textContent   = s === 'absent' ? '-' : hora + ':00';
+                row.querySelector('.td-acciones').innerHTML = '-';
+
+                $('#modalRegistrarAsistencia').modal('hide');
+            })
+            .catch(function () {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+                errEl.textContent = 'Error de conexión. Intenta nuevamente.';
+                errEl.classList.remove('d-none');
+            });
     });
 })();
 </script>
