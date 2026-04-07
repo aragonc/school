@@ -182,7 +182,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
             <table class="table table-sm table-hover table-bordered mb-0" id="reportTable">
                 <thead class="thead-dark">
                     <tr>
-                        <th class="sortable" data-col="0" style="cursor:pointer;white-space:nowrap;">Fecha <span class="sort-icon">↕</span></th>
+                        <th style="white-space:nowrap;">N°</th>
                         <th class="sortable" data-col="1" style="cursor:pointer;white-space:nowrap;">Apellidos <span class="sort-icon">↕</span></th>
                         <th class="sortable" data-col="2" style="cursor:pointer;white-space:nowrap;">Nombres <span class="sort-icon">↕</span></th>
                         {% if report_is_students %}
@@ -192,7 +192,8 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         {% else %}
                         <th>Rol</th>
                         {% endif %}
-                        <th class="sortable" data-col="{{ report_is_students ? 5 : 3 }}" style="cursor:pointer;white-space:nowrap;">Hora <span class="sort-icon">↕</span></th>
+                        <th class="sortable" data-col="{{ report_is_students ? 6 : 4 }}" style="cursor:pointer;white-space:nowrap;">Fecha <span class="sort-icon">↕</span></th>
+                        <th class="sortable" data-col="{{ report_is_students ? 7 : 5 }}" style="cursor:pointer;white-space:nowrap;">Hora <span class="sort-icon">↕</span></th>
                         <th>Estado</th>
                         <th>Método</th>
                         <th>Turno</th>
@@ -201,7 +202,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                 <tbody>
                     {% for rec in report_records %}
                     <tr>
-                        <td>{{ rec.date }}</td>
+                        <td>{{ loop.index }}</td>
                         <td>{{ rec.lastname }}</td>
                         <td>{{ rec.firstname }}</td>
                         {% if report_is_students %}
@@ -211,6 +212,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         {% else %}
                         <td>{{ rec.role }}</td>
                         {% endif %}
+                        <td>{{ rec.date }}</td>
                         <td>{{ rec.check_in ? rec.check_in|slice(11,8) : '-' }}</td>
                         <td>
                             {% if rec.status == 'on_time' %}
