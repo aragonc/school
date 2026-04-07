@@ -196,6 +196,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         <th class="sortable" data-col="{{ report_is_students ? 7 : 5 }}" style="cursor:pointer;white-space:nowrap;">Hora <span class="sort-icon">↕</span></th>
                         <th>Estado</th>
                         <th>Método</th>
+                        <th>Observaciones</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -224,6 +225,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                             {% endif %}
                         </td>
                         <td class="td-metodo">{{ rec.status == 'absent' ? '-' : (rec.method == 'qr' ? 'QR' : (rec.method == 'manual' ? 'Manual' : '-')) }}</td>
+                        <td class="td-observaciones">{{ rec.notes ?: '-' }}</td>
                         <td class="td-acciones">
                             {% if rec.status == 'absent' %}
                             <button class="btn btn-primary btn-registrar-asistencia"
@@ -421,9 +423,10 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
 
                 row.querySelector('.td-estado').innerHTML =
                     '<span class="badge ' + (statusClasses[s] || 'badge-secondary') + '">' + (statusLabels[s] || s) + '</span>';
-                row.querySelector('.td-metodo').textContent = s === 'absent' ? '-' : 'Manual';
-                row.querySelector('.td-hora').textContent   = s === 'absent' ? '-' : hora + ':00';
-                row.querySelector('.td-acciones').innerHTML = '-';
+                row.querySelector('.td-metodo').textContent        = s === 'absent' ? '-' : 'Manual';
+                row.querySelector('.td-hora').textContent          = s === 'absent' ? '-' : hora + ':00';
+                row.querySelector('.td-observaciones').textContent = motivo || '-';
+                row.querySelector('.td-acciones').innerHTML        = '-';
 
                 $('#modalRegistrarAsistencia').modal('hide');
             })
