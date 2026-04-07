@@ -84,6 +84,10 @@ var ALL_SECTIONS = {{ sections|json_encode|raw }};
                             {% endfor %}
                         </select>
                     </div>
+                    <div>
+                        <label class="mb-1 small font-weight-bold text-muted">Buscar DNI / Nombre</label>
+                        <input type="text" id="filter-dni" class="form-control form-control-sm" style="min-width:170px;" placeholder="DNI o nombre...">
+                    </div>
                     <div class="align-self-end">
                         <button id="btn-check" class="btn btn-primary btn-sm" {% if not active_year %}disabled{% endif %}>
                             <i class="fas fa-search mr-1"></i> Verificar cuentas
@@ -155,6 +159,10 @@ var ALL_SECTIONS = {{ sections|json_encode|raw }};
                             <option value="auxiliar">Auxiliar</option>
                             <option value="admin">Administrador</option>
                         </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 small font-weight-bold text-muted">Buscar DNI / Nombre</label>
+                        <input type="text" id="filter-staff-dni" class="form-control form-control-sm" style="min-width:170px;" placeholder="DNI o nombre...">
                     </div>
                     <div class="align-self-end">
                         <button id="btn-check-staff" class="btn btn-primary btn-sm">
@@ -601,6 +609,19 @@ function escHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ---- Filtro DNI / nombre alumnos (sobre datos ya cargados) ----
+document.getElementById('filter-dni').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    var filtered = q
+        ? allItems.filter(function(i) {
+            var dni = (i.username || '').split('@')[0].toLowerCase();
+            return dni.indexOf(q) !== -1 ||
+                   (i.full_name || '').toLowerCase().indexOf(q) !== -1;
+          })
+        : allItems;
+    renderTable(filtered);
+});
+
 // ================================================================
 // TAB PERSONAL
 // ================================================================
@@ -671,6 +692,19 @@ function renderStaffTable(items) {
     document.getElementById('staff-cnt-no').textContent  = no;
     document.getElementById('staff-cnt-err').textContent  = err;
 }
+
+// ---- Filtro DNI / nombre personal (sobre datos ya cargados) ----
+document.getElementById('filter-staff-dni').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    var filtered = q
+        ? staffItems.filter(function(i) {
+            var dni = (i.username || '').split('@')[0].toLowerCase();
+            return dni.indexOf(q) !== -1 ||
+                   (i.full_name || '').toLowerCase().indexOf(q) !== -1;
+          })
+        : staffItems;
+    renderStaffTable(filtered);
+});
 
 // Click en tabla personal
 document.getElementById('staff-tbody').addEventListener('click', function(e) {
