@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../config.php';
 
 $plugin = SchoolPlugin::create();
 $plugin->requireLogin();
+$plugin->requireModule('courses');
 
 $enable = $plugin->get('tool_enable') == 'true';
 $enableCompleteProfile = $plugin->get('enable_complete_profile') == 'true';

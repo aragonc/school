@@ -6,6 +6,7 @@ require_once __DIR__ . '/../MatriculaManager.php';
 api_protect_admin_script();
 
 $plugin = SchoolPlugin::create();
+$plugin->requireModule('matricula');
 $enable = $plugin->get('tool_enable') == 'true';
 if (!$enable) {
     api_not_allowed(true);

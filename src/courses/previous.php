@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../config.php';
 $plugin = SchoolPlugin::create();
 // Simplemente llama la función
 $plugin->requireLogin();
+$plugin->requireModule('courses');
 
 $enable = $plugin->get('tool_enable') == 'true';
 $nameTools = $plugin->get_lang('DashboardSchool');

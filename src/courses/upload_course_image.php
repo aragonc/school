@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../config.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $plugin = SchoolPlugin::create();
+$plugin->requireModule('courses');
 api_block_anonymous_users();
 
 $currentUserId = api_get_user_id();

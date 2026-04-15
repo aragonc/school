@@ -13,6 +13,51 @@
 
 <div class="card mb-4">
     <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-th-large mr-1"></i> Módulos del sistema</h6>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Activa o desactiva los módulos que estarán disponibles para los usuarios en el menú lateral.
+            Por defecto todos los módulos están activos.
+        </p>
+        <form method="post" action="{{ settings_url }}">
+            <input type="hidden" name="save_modules_settings" value="1">
+            <div class="row">
+                {% set module_list = [
+                    {key: 'courses',   icon: 'book-open',        label: 'Mis Cursos'},
+                    {key: 'my_aula',   icon: 'chalkboard-teacher',label: 'Mi Aula'},
+                    {key: 'attendance',icon: 'clipboard-check',   label: 'Asistencia'},
+                    {key: 'payments',  icon: 'money-bill-wave',   label: 'Pagos'},
+                    {key: 'products',  icon: 'box-open',          label: 'Productos'},
+                    {key: 'matricula', icon: 'user-plus',         label: 'Matrículas'},
+                    {key: 'academic',  icon: 'school',            label: 'Académico'},
+                    {key: 'support',   icon: 'headset',           label: 'Soporte'}
+                ] %}
+                {% for mod in module_list %}
+                <div class="col-md-6 mb-2">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input"
+                               id="module_{{ mod.key }}"
+                               name="module_{{ mod.key }}"
+                               value="1"
+                               {{ modules_enabled[mod.key] ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="module_{{ mod.key }}">
+                            <i class="fas fa-{{ mod.icon }} mr-1 text-secondary"></i>
+                            <strong>{{ mod.label }}</strong>
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm mt-3">
+                <i class="fas fa-save mr-1"></i> Guardar módulos
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
         <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-id-card mr-1"></i> Configuración de Matrículas</h6>
     </div>
     <div class="card-body">

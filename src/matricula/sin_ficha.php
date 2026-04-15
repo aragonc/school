@@ -4,6 +4,7 @@ require_once __DIR__ . '/../MatriculaManager.php';
 
 $plugin = SchoolPlugin::create();
 $plugin->requireLogin();
+$plugin->requireModule('matricula');
 
 $enable = $plugin->get('tool_enable') == 'true';
 if (!$enable) {

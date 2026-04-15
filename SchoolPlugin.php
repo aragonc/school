@@ -2627,7 +2627,7 @@ class SchoolPlugin extends Plugin
         ];
 
         // Courses: not shown to secretary
-        if (!$isSecretary) {
+        if (!$isSecretary && $this->getSchoolSetting('module_courses') !== '0') {
             $menus[] = [
                 'id' => 1,
                 'name' => 'courses',
@@ -2641,7 +2641,7 @@ class SchoolPlugin extends Plugin
         }
 
         // Mi Aula: visible for teachers, students and admin (NOT secretary)
-        if ($this->get('show_my_aula') !== 'false' && !$isSecretary && ($isAdmin || $isTeacherUser || $isStudent)) {
+        if ($this->get('show_my_aula') !== 'false' && !$isSecretary && ($isAdmin || $isTeacherUser || $isStudent) && $this->getSchoolSetting('module_my_aula') !== '0') {
             $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos', 'my-classroom-schedule']);
 
             $myAulaItems = [
@@ -2786,42 +2786,46 @@ class SchoolPlugin extends Plugin
                 ];
             }
 
-            $menus[] = [
-                'id' => 6,
-                'name' => 'attendance',
-                'label' => $this->get_lang('Attendance'),
-                'current' => $currentSection === 'attendance',
-                'icon' => 'clipboard-check',
-                'class' => $currentSection === 'attendance' ? 'show' : '',
-                'url' => '/attendance',
-                'items' => $attendanceItems
-            ];
+            if ($this->getSchoolSetting('module_attendance') !== '0') {
+                $menus[] = [
+                    'id' => 6,
+                    'name' => 'attendance',
+                    'label' => $this->get_lang('Attendance'),
+                    'current' => $currentSection === 'attendance',
+                    'icon' => 'clipboard-check',
+                    'class' => $currentSection === 'attendance' ? 'show' : '',
+                    'url' => '/attendance',
+                    'items' => $attendanceItems
+                ];
+            }
         }
 
         // Payments & Products: only admin, secretary and student
 
         if ($canAccessPayments) {
-            $paymentItems = [];
-            if ($isAdminOrSecretary) {
-                $paymentItems = [
-                    ['name' => 'payments-periods', 'label' => $this->get_lang('PaymentPeriods'), 'url' => '/payments'],
-                    ['name' => 'payments-pricing', 'label' => $this->get_lang('Pricing'), 'url' => '/payments/pricing'],
-                    ['name' => 'payments-discounts', 'label' => $this->get_lang('Discounts'), 'url' => '/payments/discounts'],
-                    ['name' => 'payments-reports', 'label' => $this->get_lang('PaymentReports'), 'url' => '/payments/reports'],
+            if ($this->getSchoolSetting('module_payments') !== '0') {
+                $paymentItems = [];
+                if ($isAdminOrSecretary) {
+                    $paymentItems = [
+                        ['name' => 'payments-periods', 'label' => $this->get_lang('PaymentPeriods'), 'url' => '/payments'],
+                        ['name' => 'payments-pricing', 'label' => $this->get_lang('Pricing'), 'url' => '/payments/pricing'],
+                        ['name' => 'payments-discounts', 'label' => $this->get_lang('Discounts'), 'url' => '/payments/discounts'],
+                        ['name' => 'payments-reports', 'label' => $this->get_lang('PaymentReports'), 'url' => '/payments/reports'],
+                    ];
+                }
+                $menus[] = [
+                    'id' => 7,
+                    'name' => 'payments',
+                    'label' => $this->get_lang('Payments'),
+                    'current' => $currentSection === 'payments',
+                    'icon' => 'money-bill-wave',
+                    'class' => $currentSection === 'payments' ? 'show' : '',
+                    'url' => $isAdminOrSecretary ? '/payments' : '/payments/my',
+                    'items' => $paymentItems
                 ];
             }
-            $menus[] = [
-                'id' => 7,
-                'name' => 'payments',
-                'label' => $this->get_lang('Payments'),
-                'current' => $currentSection === 'payments',
-                'icon' => 'money-bill-wave',
-                'class' => $currentSection === 'payments' ? 'show' : '',
-                'url' => $isAdminOrSecretary ? '/payments' : '/payments/my',
-                'items' => $paymentItems
-            ];
 
-            if ($isAdminOrSecretary) {
+            if ($isAdminOrSecretary && $this->getSchoolSetting('module_products') !== '0') {
                 $menus[] = [
                     'id' => 8,
                     'name' => 'products',
@@ -2841,7 +2845,7 @@ class SchoolPlugin extends Plugin
         }
 
         // Matricula menu (admin and secretary only)
-        if ($isAdminOrSecretary) {
+        if ($isAdminOrSecretary && $this->getSchoolSetting('module_matricula') !== '0') {
             $menus[] = [
                 'id' => 11,
                 'name' => 'matricula',
@@ -2858,7 +2862,7 @@ class SchoolPlugin extends Plugin
         }
 
         // Academic menu: admin only (secretary excluded)
-        if ($isAdmin) {
+        if ($isAdmin && $this->getSchoolSetting('module_academic') !== '0') {
             $academicItems = [
                 ['name' => 'academic-classrooms', 'label' => $this->get_lang('Classrooms'), 'url' => '/academic'],
                 ['name' => 'academic-settings',   'label' => $this->get_lang('AcademicSettings'), 'url' => '/academic/settings'],
@@ -2876,22 +2880,24 @@ class SchoolPlugin extends Plugin
         }
 
         // Soporte: visible para todos los usuarios
-        $supportActive = in_array($currentSection, ['support', 'support-settings']);
-        $supportItems  = [];
-        if ($isAdmin) {
-            $supportItems[] = ['name' => 'support-list',     'label' => 'Tickets',              'url' => '/support',          'current' => $currentSection === 'support'];
-            $supportItems[] = ['name' => 'support-settings', 'label' => 'Configuración',        'url' => '/support/settings', 'current' => $currentSection === 'support-settings'];
+        if ($this->getSchoolSetting('module_support') !== '0') {
+            $supportActive = in_array($currentSection, ['support', 'support-settings']);
+            $supportItems  = [];
+            if ($isAdmin) {
+                $supportItems[] = ['name' => 'support-list',     'label' => 'Tickets',              'url' => '/support',          'current' => $currentSection === 'support'];
+                $supportItems[] = ['name' => 'support-settings', 'label' => 'Configuración',        'url' => '/support/settings', 'current' => $currentSection === 'support-settings'];
+            }
+            $menus[] = [
+                'id'      => 30,
+                'name'    => 'support',
+                'label'   => $this->get_lang('SupportTickets'),
+                'current' => $supportActive,
+                'icon'    => 'headset',
+                'class'   => $supportActive ? 'show' : '',
+                'url'     => '/support',
+                'items'   => $supportItems,
+            ];
         }
-        $menus[] = [
-            'id'      => 30,
-            'name'    => 'support',
-            'label'   => $this->get_lang('SupportTickets'),
-            'current' => $supportActive,
-            'icon'    => 'headset',
-            'class'   => $supportActive ? 'show' : '',
-            'url'     => '/support',
-            'items'   => $supportItems,
-        ];
 
         if (api_is_platform_admin()) {
             $menus[] = [
@@ -3549,6 +3555,19 @@ class SchoolPlugin extends Plugin
             ['country' => $idCountry],
             ['id = ?' => (int)$idUser]
         );
+    }
+
+    /**
+     * Block access if a module is disabled in system settings.
+     * Redirects to dashboard. All modules are active by default.
+     */
+    public function requireModule(string $moduleKey): void
+    {
+        if ($this->getSchoolSetting('module_' . $moduleKey) === '0') {
+            $dashboardUrl = api_get_path(WEB_PATH) . 'dashboard';
+            header('Location: ' . $dashboardUrl);
+            exit;
+        }
     }
 
     public function requireLogin()

@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../config.php';
 
 $plugin = SchoolPlugin::create();
 $plugin->requireLogin();
+$plugin->requireModule('attendance');
 
 $enable = $plugin->get('tool_enable') == 'true';
 if (!$enable) {

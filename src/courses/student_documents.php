@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../lib/DocumentHelper.php';
 
 $plugin = SchoolPlugin::create();
+$plugin->requireModule('courses');
 $plugin->setCurrentSection('dashboard');
 $plugin->setSidebar('dashboard');
 // Verificar acceso

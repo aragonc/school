@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../config.php';
 $plugin = SchoolPlugin::create();
 // Simplemente llama la función
 $plugin->requireLogin();
+$plugin->requireModule('courses');
 
 $buyCourse = BuyCoursesPlugin::create();
 $enable = $plugin->get('tool_enable') == 'true';

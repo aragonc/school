@@ -49,6 +49,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_matricula_settin
     exit;
 }
 
+// Handle basic system configuration save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_basic_settings'])) {
+    $institution = Security::remove_XSS(trim($_POST['Institution'] ?? ''));
+    $institutionUrl = Security::remove_XSS(trim($_POST['InstitutionUrl'] ?? ''));
+    $siteName = Security::remove_XSS(trim($_POST['siteName'] ?? ''));
+    $emailAdmin = Security::remove_XSS(trim($_POST['emailAdministrator'] ?? ''));
+    api_set_setting('Institution', $institution);
+    api_set_setting('InstitutionUrl', $institutionUrl);
+    api_set_setting('siteName', $siteName);
+    api_set_setting('emailAdministrator', $emailAdmin);
+    header('Location: ' . api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq() . '&saved=1');
+    exit;
+}
+
+// Handle modules settings save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_modules_settings'])) {
+    $moduleKeys = ['courses', 'my_aula', 'attendance', 'payments', 'products', 'matricula', 'academic', 'support'];
+    foreach ($moduleKeys as $key) {
+        $value = !empty($_POST['module_' . $key]) ? '1' : '0';
+        $plugin->setSchoolSetting('module_' . $key, $value);
+    }
+    header('Location: ' . api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq() . '&saved=1');
+    exit;
+}
+
 // Handle attendance settings save
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_attendance_settings'])) {
     $showCheckin = !empty($_POST['attendance_show_checkin_time']) ? '1' : '0';
@@ -118,16 +143,32 @@ if ($enable) {
         'post',
         api_get_self().'?action='.Security::remove_XSS($action).'&'.api_get_cidreq()
     );
-    $form->addText('Institution',[$plugin->get_lang('InstitutionTitle'), $plugin->get_lang('InstitutionComment')]);
-    $form->addText('InstitutionUrl',[$plugin->get_lang('InstitutionUrlTitle'), $plugin->get_lang('InstitutionUrlComment')]);
-    $form->addText('siteName',[$plugin->get_lang('SiteNameTitle'), $plugin->get_lang('SiteNameComment')]);
-    $form->addText('emailAdministrator',[$plugin->get_lang('emailAdministratorTitle'), $plugin->get_lang('emailAdministratorComment')]);
+    $form->addHidden('save_basic_settings', '1');
+    $form->addText('Institution', [$plugin->get_lang('InstitutionTitle'), $plugin->get_lang('InstitutionComment')]);
+    $form->addText('InstitutionUrl', [$plugin->get_lang('InstitutionUrlTitle'), $plugin->get_lang('InstitutionUrlComment')]);
+    $form->addText('siteName', [$plugin->get_lang('SiteNameTitle'), $plugin->get_lang('SiteNameComment')]);
+    $form->addText('emailAdministrator', [$plugin->get_lang('emailAdministratorTitle'), $plugin->get_lang('emailAdministratorComment')]);
+    $form->addButtonSave($plugin->get_lang('Save'));
+    $form->setDefaults([
+        'Institution'       => api_get_setting('Institution'),
+        'InstitutionUrl'    => api_get_setting('InstitutionUrl'),
+        'siteName'          => api_get_setting('siteName'),
+        'emailAdministrator'=> api_get_setting('emailAdministrator'),
+    ]);
     $plugin->setTitle($plugin->get_lang('BasicSystemConfiguration'));
     $plugin->assign('form', $form->returnForm());
 
     $plugin->assign('favicon_exists', file_exists($faviconPath));
     $plugin->assign('favicon_web_url', $faviconWebUrl);
     $plugin->assign('favicon_msg', $faviconMsg);
+    // Modules active/inactive settings (default: active if not set)
+    $moduleKeys = ['courses', 'my_aula', 'attendance', 'payments', 'products', 'matricula', 'academic', 'support'];
+    $modulesEnabled = [];
+    foreach ($moduleKeys as $key) {
+        $modulesEnabled[$key] = $plugin->getSchoolSetting('module_' . $key) !== '0';
+    }
+    $plugin->assign('modules_enabled', $modulesEnabled);
+
     $plugin->assign('reniec_visible', $plugin->getSchoolSetting('reniec_visible') !== '0');
     $plugin->assign('attendance_show_checkin_time', $plugin->getSchoolSetting('attendance_show_checkin_time') === '1');
     $plugin->assign('google_only_login', $plugin->getSchoolSetting('google_only_login') === '1');

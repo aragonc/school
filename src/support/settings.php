@@ -5,6 +5,7 @@ require_once __DIR__ . '/../SupportManager.php';
 
 $plugin = SchoolPlugin::create();
 $plugin->requireLogin();
+$plugin->requireModule('support');
 
 $enable = $plugin->get('tool_enable') == 'true';
 if (!$enable) {
