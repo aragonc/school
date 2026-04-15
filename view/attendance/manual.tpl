@@ -8,7 +8,7 @@
         <!-- Search and filters -->
         <div class="mb-3">
             <div class="row align-items-center">
-                <div class="col-md-5 mb-2">
+                <div class="col-md-4 mb-2">
                     <div class="input-group input-group-sm">
                         <div class="input-group-prepend">
                             <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -16,8 +16,8 @@
                         <input type="text" class="form-control" id="searchUser" placeholder="{{ 'SearchByName'|get_plugin_lang('SchoolPlugin') }}">
                     </div>
                 </div>
-                <div class="col-md-7 mb-2">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div class="col-md-8 mb-2">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:6px;">
                         <div class="btn-group mr-2 mb-1" role="group">
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users active" data-filter="all">{{ 'AllUsers'|get_plugin_lang('SchoolPlugin') }}</button>
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="teacher">{{ 'RoleTeacher'|get_plugin_lang('SchoolPlugin') }}</button>
@@ -25,12 +25,19 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="auxiliary">{{ 'RoleAuxiliary'|get_plugin_lang('SchoolPlugin') }}</button>
                             <button type="button" class="btn btn-outline-secondary btn-sm filter-users" data-filter="admin">{{ 'RoleAdmin'|get_plugin_lang('SchoolPlugin') }}</button>
                         </div>
-                        <div class="d-flex align-items-center mb-1">
-                            <select id="bulkStatus" class="form-control form-control-sm mr-2" style="width: auto;">
+                        <!-- Bulk actions -->
+                        <div class="d-flex align-items-center flex-wrap mb-1" style="gap:6px;">
+                            <select id="bulkStatus" class="form-control form-control-sm" style="width:auto;">
                                 <option value="on_time">{{ 'OnTime'|get_plugin_lang('SchoolPlugin') }}</option>
                                 <option value="late">{{ 'Late'|get_plugin_lang('SchoolPlugin') }}</option>
                                 <option value="absent">{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}</option>
                             </select>
+                            <div class="input-group input-group-sm" style="width:130px;" id="bulkTimeGroup">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" title="Hora de ingreso masiva"><i class="fas fa-clock"></i></span>
+                                </div>
+                                <input type="time" class="form-control" id="bulkCheckInTime" title="Hora de ingreso (dejar vacío para usar hora actual)">
+                            </div>
                             <button type="button" class="btn btn-primary btn-sm" id="btnRegisterSelected">
                                 <i class="fas fa-check-double"></i> {{ 'RegisterSelected'|get_plugin_lang('SchoolPlugin') }}
                             </button>
@@ -42,16 +49,16 @@
 
         <form id="manualAttendanceForm">
             <div class="table-responsive">
-                <table class="table table-striped table-hover" id="usersTable">
+                <table class="table table-striped table-hover table-sm" id="usersTable">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 40px;">
+                            <th style="width:36px;">
                                 <input type="checkbox" id="selectAll">
                             </th>
                             <th>{{ 'FullName'|get_plugin_lang('SchoolPlugin') }}</th>
                             <th>{{ 'Role'|get_plugin_lang('SchoolPlugin') }}</th>
                             <th>{{ 'Status'|get_plugin_lang('SchoolPlugin') }}</th>
-                            <th>{{ 'Actions'|get_plugin_lang('SchoolPlugin') }}</th>
+                            <th style="min-width:260px;">{{ 'Actions'|get_plugin_lang('SchoolPlugin') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -90,21 +97,30 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-success btn-mark-single" data-user-id="{{ user.id }}" data-status="on_time" title="{{ 'OnTime'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-warning btn-mark-single" data-user-id="{{ user.id }}" data-status="late" title="{{ 'Late'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-clock"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-mark-single" data-user-id="{{ user.id }}" data-status="absent" title="{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                    {% if user.attendance_id %}
-                                    <button type="button" class="btn btn-outline-danger btn-delete-attendance" data-attendance-id="{{ user.attendance_id }}" data-user-name="{{ user.lastname }}, {{ user.firstname }}" title="{{ 'DeleteAttendance'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    {% endif %}
+                                <div class="d-flex align-items-center" style="gap:4px; flex-wrap:wrap;">
+                                    <!-- Hora de ingreso individual -->
+                                    <input type="time"
+                                           class="form-control form-control-sm row-check-in-time"
+                                           style="width:100px;"
+                                           title="Hora de ingreso (dejar vacío para usar hora actual)"
+                                           data-user-id="{{ user.id }}">
+                                    <!-- Botones de estado -->
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-success btn-mark-single" data-user-id="{{ user.id }}" data-status="on_time" title="{{ 'OnTime'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-warning btn-mark-single" data-user-id="{{ user.id }}" data-status="late" title="{{ 'Late'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-clock"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-mark-single" data-user-id="{{ user.id }}" data-status="absent" title="{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        {% if user.attendance_id %}
+                                        <button type="button" class="btn btn-outline-danger btn-delete-attendance" data-attendance-id="{{ user.attendance_id }}" data-user-name="{{ user.lastname }}, {{ user.firstname }}" title="{{ 'DeleteAttendance'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -120,6 +136,11 @@
 var ajaxUrl = '{{ ajax_url }}';
 var currentFilter = 'all';
 var currentSearch = '';
+
+/* Ocultar/mostrar campo hora bulk según estado seleccionado */
+document.getElementById('bulkStatus').addEventListener('change', function() {
+    document.getElementById('bulkTimeGroup').style.display = (this.value === 'absent') ? 'none' : '';
+});
 
 function applyFilters() {
     var rows = document.querySelectorAll('.user-row');
@@ -162,7 +183,7 @@ document.querySelectorAll('.filter-users').forEach(function(btn) {
     });
 });
 
-// Register selected users with chosen status
+// Register selected users (bulk) with chosen status and optional time
 document.getElementById('btnRegisterSelected').addEventListener('click', function() {
     var selected = [];
     document.querySelectorAll('.user-checkbox:checked').forEach(function(cb) {
@@ -174,9 +195,14 @@ document.getElementById('btnRegisterSelected').addEventListener('click', functio
     }
 
     var status = document.getElementById('bulkStatus').value;
+    var checkInTime = document.getElementById('bulkCheckInTime').value; // HH:MM or ''
+
     var formData = new FormData();
     formData.append('action', 'mark_attendance');
     formData.append('status', status);
+    if (checkInTime && status !== 'absent') {
+        formData.append('check_in_time', checkInTime);
+    }
     selected.forEach(function(uid) {
         formData.append('user_ids[]', uid);
     });
@@ -192,15 +218,22 @@ document.getElementById('btnRegisterSelected').addEventListener('click', functio
         });
 });
 
-// Individual status buttons (on_time, late, absent)
+// Individual status buttons — read time from same row input
 document.querySelectorAll('.btn-mark-single').forEach(function(btn) {
     btn.addEventListener('click', function() {
         var userId = this.getAttribute('data-user-id');
         var status = this.getAttribute('data-status');
+        var row    = this.closest('.user-row');
+        var timeInput = row ? row.querySelector('.row-check-in-time') : null;
+        var checkInTime = (timeInput && timeInput.value) ? timeInput.value : '';
+
         var formData = new FormData();
         formData.append('action', 'mark_attendance');
         formData.append('user_id', userId);
         formData.append('status', status);
+        if (checkInTime && status !== 'absent') {
+            formData.append('check_in_time', checkInTime);
+        }
 
         fetch(ajaxUrl, { method: 'POST', body: formData })
             .then(function(r) { return r.json(); })

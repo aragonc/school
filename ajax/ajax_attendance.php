@@ -99,15 +99,21 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Not authorized']);
             exit;
         }
-        $userIds = isset($_POST['user_ids']) ? $_POST['user_ids'] : [];
-        $notes = isset($_POST['notes']) ? trim($_POST['notes']) : null;
-        $status = isset($_POST['status']) ? $_POST['status'] : null;
+        $userIds      = isset($_POST['user_ids']) ? $_POST['user_ids'] : [];
+        $notes        = isset($_POST['notes']) ? trim($_POST['notes']) : null;
+        $status       = isset($_POST['status']) ? $_POST['status'] : null;
+        $checkInTime  = isset($_POST['check_in_time']) ? trim($_POST['check_in_time']) : null;
         $registeredBy = api_get_user_id();
 
         // Validate status if provided
         if ($status && !in_array($status, ['on_time', 'late', 'absent'])) {
             echo json_encode(['success' => false, 'message' => 'Invalid status']);
             exit;
+        }
+
+        // Validate check_in_time format HH:MM
+        if ($checkInTime && !preg_match('/^\d{2}:\d{2}$/', $checkInTime)) {
+            $checkInTime = null;
         }
 
         // Support single user_id or array of user_ids
@@ -127,7 +133,7 @@ switch ($action) {
         foreach ($userIds as $uid) {
             $uid = (int) $uid;
             if ($uid > 0) {
-                $results[] = $plugin->markAttendance($uid, 'manual', $registeredBy, $notes, $status);
+                $results[] = $plugin->markAttendance($uid, 'manual', $registeredBy, $notes, $status, $checkInTime);
             }
         }
         echo json_encode(['success' => true, 'results' => $results]);

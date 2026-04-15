@@ -3916,11 +3916,19 @@ class SchoolPlugin extends Plugin
         string $method = 'manual',
         ?int $registeredBy = null,
         ?string $notes = null,
-        ?string $forcedStatus = null
+        ?string $forcedStatus = null,
+        ?string $checkInTime = null
     ): array {
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
         $today = date('Y-m-d');
         $now = api_get_utc_datetime();
+
+        // Resolve custom check-in UTC datetime from local HH:MM if provided
+        $customCheckIn = null;
+        if ($checkInTime && preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $checkInTime)) {
+            $localDatetime = $today . ' ' . $checkInTime . (strlen($checkInTime) === 5 ? ':00' : '');
+            $customCheckIn = api_get_utc_datetime($localDatetime);
+        }
 
         // Check if already registered today
         $existingSQL = "SELECT id, status FROM $table WHERE user_id = $userId AND date = '$today' LIMIT 1";
@@ -3928,22 +3936,22 @@ class SchoolPlugin extends Plugin
         $existing = Database::fetch_array($existingResult, 'ASSOC');
 
         if ($existing) {
-            // If manual and forcing a different status, update the existing record
-            if ($method === 'manual' && $forcedStatus && $existing['status'] !== $forcedStatus) {
-                Database::update(
-                    $table,
-                    [
-                        'status' => $forcedStatus,
-                        'registered_by' => $registeredBy,
-                        'notes' => $notes ? Database::escape_string($notes) : null,
-                    ],
-                    ['id = ?' => (int) $existing['id']]
-                );
+            // If manual and forcing a different status (or same status with new time), update
+            if ($method === 'manual' && $forcedStatus) {
+                $updateData = [
+                    'status'        => $forcedStatus,
+                    'registered_by' => $registeredBy,
+                    'notes'         => $notes ? Database::escape_string($notes) : null,
+                ];
+                if ($forcedStatus !== 'absent') {
+                    $updateData['check_in'] = $customCheckIn ?? $now;
+                }
+                Database::update($table, $updateData, ['id = ?' => (int) $existing['id']]);
                 return [
                     'success' => true,
                     'message' => 'AttendanceUpdated',
-                    'status' => $forcedStatus,
-                    'id' => (int) $existing['id'],
+                    'status'  => $forcedStatus,
+                    'id'      => (int) $existing['id'],
                 ];
             }
 
@@ -3990,18 +3998,22 @@ class SchoolPlugin extends Plugin
             $status = $this->calculateAttendanceStatus($now, $scheduleId);
         }
 
-        $checkIn = $status === 'absent' ? $today . ' 00:00:00' : $now;
+        if ($status === 'absent') {
+            $checkIn = $today . ' 00:00:00';
+        } else {
+            $checkIn = $customCheckIn ?? $now;
+        }
 
         $params = [
-            'user_id' => $userId,
-            'schedule_id' => $scheduleId,
-            'check_in' => $checkIn,
-            'status' => $status,
-            'method' => $method,
+            'user_id'       => $userId,
+            'schedule_id'   => $scheduleId,
+            'check_in'      => $checkIn,
+            'status'        => $status,
+            'method'        => $method,
             'registered_by' => $registeredBy,
-            'date' => $today,
-            'notes' => $notes ? Database::escape_string($notes) : null,
-            'created_at' => $now,
+            'date'          => $today,
+            'notes'         => $notes ? Database::escape_string($notes) : null,
+            'created_at'    => $now,
         ];
 
         $id = Database::insert($table, $params);

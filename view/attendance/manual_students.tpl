@@ -54,6 +54,12 @@
                 <option value="late">{{ 'Late'|get_plugin_lang('SchoolPlugin') }}</option>
                 <option value="absent">{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}</option>
             </select>
+            <div class="input-group input-group-sm" style="width:130px;" id="bulkTimeGroup">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" title="Hora de ingreso masiva"><i class="fas fa-clock"></i></span>
+                </div>
+                <input type="time" class="form-control" id="bulkCheckInTime" title="Hora de ingreso (dejar vacío para usar hora actual)">
+            </div>
             <button type="button" class="btn btn-primary btn-sm" id="btnRegisterSelected">
                 <i class="fas fa-check-double"></i> {{ 'RegisterSelected'|get_plugin_lang('SchoolPlugin') }}
             </button>
@@ -108,24 +114,31 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-success btn-mark-single" data-user-id="{{ st.id }}" data-status="on_time" title="{{ 'OnTime'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-warning btn-mark-single" data-user-id="{{ st.id }}" data-status="late" title="{{ 'Late'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-clock"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-mark-single" data-user-id="{{ st.id }}" data-status="absent" title="{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                    {% if st.attendance_id %}
-                                    <button type="button" class="btn btn-outline-danger btn-delete-attendance"
-                                            data-attendance-id="{{ st.attendance_id }}"
-                                            data-user-name="{{ st.lastname }}, {{ st.firstname }}"
-                                            title="{{ 'DeleteAttendance'|get_plugin_lang('SchoolPlugin') }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    {% endif %}
+                                <div class="d-flex align-items-center" style="gap:4px; flex-wrap:wrap;">
+                                    <input type="time"
+                                           class="form-control form-control-sm row-check-in-time"
+                                           style="width:100px;"
+                                           title="Hora de ingreso (dejar vacío para usar hora actual)"
+                                           data-user-id="{{ st.id }}">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-success btn-mark-single" data-user-id="{{ st.id }}" data-status="on_time" title="{{ 'OnTime'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-warning btn-mark-single" data-user-id="{{ st.id }}" data-status="late" title="{{ 'Late'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-clock"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-mark-single" data-user-id="{{ st.id }}" data-status="absent" title="{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        {% if st.attendance_id %}
+                                        <button type="button" class="btn btn-outline-danger btn-delete-attendance"
+                                                data-attendance-id="{{ st.attendance_id }}"
+                                                data-user-name="{{ st.lastname }}, {{ st.firstname }}"
+                                                title="{{ 'DeleteAttendance'|get_plugin_lang('SchoolPlugin') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -198,29 +211,44 @@ function updateSelectedCount() {
     document.getElementById('selectedCount').textContent = n > 0 ? n + ' seleccionados' : '';
 }
 
+/* Ocultar campo hora bulk cuando status = ausente */
+document.getElementById('bulkStatus').addEventListener('change', function() {
+    document.getElementById('bulkTimeGroup').style.display = (this.value === 'absent') ? 'none' : '';
+});
+
 // Bulk register
 document.getElementById('btnRegisterSelected').addEventListener('click', function() {
     var selected = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(function(cb){ return cb.value; });
     if (selected.length === 0) { alert('Seleccione al menos un alumno'); return; }
     var status = document.getElementById('bulkStatus').value;
+    var checkInTime = document.getElementById('bulkCheckInTime').value;
     var fd = new FormData();
     fd.append('action', 'mark_attendance');
     fd.append('status', status);
+    if (checkInTime && status !== 'absent') {
+        fd.append('check_in_time', checkInTime);
+    }
     selected.forEach(function(uid){ fd.append('user_ids[]', uid); });
     fetch(ajaxUrl, { method: 'POST', body: fd })
         .then(function(r){ return r.json(); })
         .then(function(d){ if (d.success) location.reload(); else alert(d.message || 'Error'); });
 });
 
-// Individual mark
+// Individual mark — toma la hora del input de la misma fila
 document.querySelectorAll('.btn-mark-single').forEach(function(btn) {
     btn.addEventListener('click', function() {
         var userId = this.getAttribute('data-user-id');
         var status = this.getAttribute('data-status');
+        var row    = this.closest('.student-row');
+        var timeInput = row ? row.querySelector('.row-check-in-time') : null;
+        var checkInTime = (timeInput && timeInput.value) ? timeInput.value : '';
         var fd = new FormData();
         fd.append('action', 'mark_attendance');
         fd.append('user_id', userId);
         fd.append('status', status);
+        if (checkInTime && status !== 'absent') {
+            fd.append('check_in_time', checkInTime);
+        }
         fetch(ajaxUrl, { method: 'POST', body: fd })
             .then(function(r){ return r.json(); })
             .then(function(d){ if (d.success) location.reload(); else alert(d.message || 'Error'); });
