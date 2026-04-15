@@ -135,6 +135,19 @@
                     Cuando está desactivado, el alumno solo verá su estado (Puntual / Tarde / Ausente) sin la hora exacta de registro.
                 </small>
             </div>
+            <div class="form-group mb-3">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="attendance_manual_tutor"
+                           name="attendance_manual_tutor" value="1" {{ attendance_manual_tutor ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="attendance_manual_tutor">
+                        Permitir <strong>asistencia manual</strong> desde "Mis Alumnos" al tutor/docente
+                    </label>
+                </div>
+                <small class="form-text text-muted ml-4">
+                    Cuando está activo, el tutor o administrador puede registrar y modificar la asistencia de cada alumno directamente
+                    desde la vista <em>Mi Aula → Mis Alumnos</em>, sin necesidad de acceder al módulo de Asistencia.
+                </small>
+            </div>
             <button type="submit" class="btn btn-primary btn-sm">
                 <i class="fas fa-save mr-1"></i> Guardar configuración
             </button>

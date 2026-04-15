@@ -165,6 +165,11 @@ $plugin->assign('count_sin_registro',     $countSinRegistro);
 $plugin->assign('total_students',         count($students));
 $plugin->assign('is_today',               $selectedDate === date('Y-m-d'));
 
+// Manual attendance: enabled for admin always, for teacher only if setting is ON
+$manualTutorSetting = $plugin->getSchoolSetting('attendance_manual_tutor') === '1';
+$enableManualAttendance = $isAdmin || ($isTeacher && $manualTutorSetting);
+
+$plugin->assign('enable_manual_attendance', $enableManualAttendance);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_admin.php');
 
 $plugin->setTitle('Mis Alumnos');

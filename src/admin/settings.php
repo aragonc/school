@@ -78,6 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_modules_settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_attendance_settings'])) {
     $showCheckin = !empty($_POST['attendance_show_checkin_time']) ? '1' : '0';
     $plugin->setSchoolSetting('attendance_show_checkin_time', $showCheckin);
+    $manualTutor = !empty($_POST['attendance_manual_tutor']) ? '1' : '0';
+    $plugin->setSchoolSetting('attendance_manual_tutor', $manualTutor);
     header('Location: ' . api_get_self() . '?action=' . Security::remove_XSS($action) . '&' . api_get_cidreq() . '&saved=1');
     exit;
 }
@@ -171,6 +173,7 @@ if ($enable) {
 
     $plugin->assign('reniec_visible', $plugin->getSchoolSetting('reniec_visible') !== '0');
     $plugin->assign('attendance_show_checkin_time', $plugin->getSchoolSetting('attendance_show_checkin_time') === '1');
+    $plugin->assign('attendance_manual_tutor', $plugin->getSchoolSetting('attendance_manual_tutor') === '1');
     $plugin->assign('google_only_login', $plugin->getSchoolSetting('google_only_login') === '1');
     $plugin->assign('login_info_message', $plugin->getSchoolSetting('login_info_message') ?: '');
     $plugin->assign('settings_saved', isset($_GET['saved']));

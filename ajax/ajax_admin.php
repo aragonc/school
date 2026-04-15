@@ -140,6 +140,104 @@ switch ($action) {
         echo json_encode(['success' => true, 'records' => $records]);
         break;
 
+    case 'mark_student_attendance':
+        // Feature gate: admins always allowed; teachers only when setting is enabled
+        $manualTutorEnabled = $plugin->getSchoolSetting('attendance_manual_tutor') === '1';
+        $isTeacher = (int)(api_get_user_info($currentUserId)['status'] ?? 0) === COURSEMANAGER;
+
+        if (!$isAdmin && !($isTeacher && $manualTutorEnabled)) {
+            echo json_encode(['success' => false, 'error' => 'Función no habilitada o sin permisos']);
+            break;
+        }
+
+        $studentUserId = (int)($_POST['user_id'] ?? 0);
+        $classroomId   = (int)($_POST['classroom_id'] ?? 0);
+        $status        = trim($_POST['status'] ?? '');
+        $checkInTime   = trim($_POST['check_in_time'] ?? '');
+        $date          = trim($_POST['date'] ?? date('Y-m-d'));
+
+        // Validaciones básicas
+        if ($studentUserId <= 0 || !in_array($status, ['on_time', 'late', 'absent'])) {
+            echo json_encode(['success' => false, 'error' => 'Datos inválidos']);
+            break;
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            echo json_encode(['success' => false, 'error' => 'Fecha inválida']);
+            break;
+        }
+
+        // Si es docente (no admin), verificar que sea tutor del aula y que el alumno pertenezca a ella
+        if (!$isAdmin) {
+            if ($classroomId <= 0) {
+                echo json_encode(['success' => false, 'error' => 'Aula no especificada']);
+                break;
+            }
+            $classroomTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+            $csTable        = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+
+            $clsRow = Database::fetch_array(
+                Database::query(
+                    "SELECT id FROM $classroomTable
+                     WHERE id = $classroomId AND tutor_id = $currentUserId LIMIT 1"
+                ),
+                'ASSOC'
+            );
+            if (!$clsRow) {
+                echo json_encode(['success' => false, 'error' => 'No eres tutor de esta aula']);
+                break;
+            }
+            $stuRow = Database::fetch_array(
+                Database::query(
+                    "SELECT id FROM $csTable
+                     WHERE classroom_id = $classroomId AND user_id = $studentUserId LIMIT 1"
+                ),
+                'ASSOC'
+            );
+            if (!$stuRow) {
+                echo json_encode(['success' => false, 'error' => 'El alumno no pertenece a tu aula']);
+                break;
+            }
+        }
+
+        // Construir datetime de check_in (guardar en UTC)
+        if ($status !== 'absent' && preg_match('/^\d{2}:\d{2}$/', $checkInTime)) {
+            $localDatetime = $date . ' ' . $checkInTime . ':00';
+            $checkIn = api_get_utc_datetime($localDatetime);
+        } else {
+            $checkIn = $date . ' 00:00:00';
+        }
+
+        $logTable = Database::get_main_table('plugin_school_attendance_log');
+        $safeDate = Database::escape_string($date);
+
+        $existingResult = Database::query(
+            "SELECT id FROM $logTable WHERE user_id = $studentUserId AND date = '$safeDate' LIMIT 1"
+        );
+        $existing = Database::fetch_array($existingResult, 'ASSOC');
+
+        if ($existing) {
+            Database::update($logTable, [
+                'status'        => $status,
+                'check_in'      => $checkIn,
+                'method'        => 'manual',
+                'registered_by' => $currentUserId,
+            ], ['id = ?' => (int)$existing['id']]);
+        } else {
+            Database::insert($logTable, [
+                'user_id'       => $studentUserId,
+                'date'          => $date,
+                'status'        => $status,
+                'check_in'      => $checkIn,
+                'method'        => 'manual',
+                'registered_by' => $currentUserId,
+                'created_at'    => api_get_utc_datetime(),
+            ]);
+        }
+
+        $attTime = ($status !== 'absent' && preg_match('/^\d{2}:\d{2}$/', $checkInTime)) ? $checkInTime : '';
+        echo json_encode(['success' => true, 'status' => $status, 'att_time' => $attTime]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'error' => 'Acción no reconocida']);
         break;
