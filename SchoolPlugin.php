@@ -1398,6 +1398,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^shopping$ plugin/school/src/shopping/shopping.php [L]\n".
             "RewriteRule ^school-admin$ plugin/school/src/admin/admin.php [L]\n".
             "RewriteRule ^school-admin/settings$ plugin/school/src/admin/settings.php [L]\n".
+            "RewriteRule ^admin/reglamento$ plugin/school/src/admin/reglamento.php [L]\n".
             "RewriteRule ^reset/token/([^/]+)$ plugin/school/src/auth/reset.php?token=$1 [L]\n".
             "RewriteRule ^certified$ plugin/school/src/misc/certificates.php [L]\n".
             "RewriteRule ^documents$ plugin/school/src/misc/student_documents.php?%{QUERY_STRING} [L,QSA]\n".
@@ -2906,6 +2907,7 @@ class SchoolPlugin extends Plugin
                     ['name' => 'admin-usuarios', 'label' => 'Usuarios', 'url' => '/admin/usuarios'],
                     ['name' => 'admin-google-sync', 'label' => 'Google Workspace', 'url' => '/admin/google-sync'],
                     ['name' => 'admin-settings', 'label' => 'Configuración del Sistema', 'url' => '/school-admin/settings'],
+                    ['name' => 'admin-reglamento', 'label' => $this->get_lang('ReglamentoInterno'), 'url' => '/admin/reglamento', 'current' => $currentSection === 'admin-reglamento'],
                 ]
             ];
         }

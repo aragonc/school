@@ -56,6 +56,37 @@ if ($enable) {
     $plugin->assign('today_attendance', $todayAttendance);
     $plugin->assign('show_certificates', $plugin->get('show_certificates') == 'true');
 
+    // Documentos de Reglamento Interno
+    $uploadDir = api_get_path(SYS_UPLOAD_PATH).'plugins/school/reglamento/';
+    $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    $reglamentoDocs = [];
+    $docsConfig = [
+        'reglamento_interno'  => ['label' => $plugin->get_lang('DocReglamentoInterno'),  'icon' => 'fa-file-contract',  'color' => 'primary'],
+        'boletin_informativo' => ['label' => $plugin->get_lang('DocBoletinInformativo'),  'icon' => 'fa-newspaper',       'color' => 'info'],
+        'reglas_generales'    => ['label' => $plugin->get_lang('DocReglasGenerales'),     'icon' => 'fa-list-alt',        'color' => 'warning'],
+    ];
+    foreach ($docsConfig as $key => $cfg) {
+        $filename = $plugin->getSchoolSetting('reglamento_file_'.$key);
+        if ($filename && file_exists($uploadDir.$filename)) {
+            $rawDate = $plugin->getSchoolSetting('reglamento_date_'.$key) ?: '';
+            $friendlyDate = '';
+            if ($rawDate) {
+                $parts = explode('-', $rawDate);
+                if (count($parts) === 3) {
+                    $friendlyDate = (int)$parts[2].' de '.$meses[(int)$parts[1] - 1].' de '.$parts[0];
+                }
+            }
+            $reglamentoDocs[] = [
+                'label'   => $cfg['label'],
+                'icon'    => $cfg['icon'],
+                'color'   => $cfg['color'],
+                'url'     => api_get_path(WEB_UPLOAD_PATH).'plugins/school/reglamento/'.$filename,
+                'date'    => $friendlyDate,
+            ];
+        }
+    }
+    $plugin->assign('reglamento_docs', $reglamentoDocs);
+
     if ($enableCompleteProfile) {
         $plugin->assign('show_profile_completion_modal', $showProfileCompletionModal);
         $plugin->assign('current_profile_data', $currentProfileData);

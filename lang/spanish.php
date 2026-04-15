@@ -740,3 +740,18 @@ $strings['PriorityMedium']              = 'Media';
 $strings['PriorityHigh']                = 'Alta';
 $strings['PriorityCritical']            = 'Crítica';
 $strings['ErrorGeneric']                = 'Ocurrió un error. Intenta de nuevo.';
+
+// Reglamento Interno
+$strings['ReglamentoInterno']           = 'Reglamento Interno';
+$strings['ReglamentoInternoDesc']       = 'Gestión de documentos oficiales del colegio';
+$strings['DocReglamentoInterno']        = 'Reglamento Interno';
+$strings['DocBoletinInformativo']       = 'Boletín Informativo';
+$strings['DocReglasGenerales']          = 'Reglas Generales';
+$strings['DocPublicationDate']          = 'Fecha de publicación';
+$strings['DocUploadPdf']                = 'Subir PDF';
+$strings['DocCurrentFile']              = 'Archivo actual';
+$strings['DocRemove']                   = 'Eliminar documento';
+$strings['DocSaved']                    = 'Documentos guardados correctamente.';
+$strings['DocNoFile']                   = 'Sin documento';
+$strings['DocDownload']                 = 'Descargar';
+$strings['DocView']                     = 'Ver documento';
