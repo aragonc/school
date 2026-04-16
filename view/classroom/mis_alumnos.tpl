@@ -148,7 +148,8 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width:48px;" class="pl-3"></th>
+                            <th class="pl-3 text-center" style="width:40px;">#</th>
+                            <th style="width:48px;"></th>
                             <th>Alumno</th>
                             <th>DNI</th>
                             <th>Correo</th>
@@ -163,8 +164,12 @@
                     <tbody>
                         {% for s in students %}
                         <tr data-user-id="{{ s.user_id }}">
+                            {# Número #}
+                            <td class="pl-3 text-center text-muted" style="font-size:12px;font-weight:600;">
+                                {{ loop.index }}
+                            </td>
                             {# Foto #}
-                            <td class="pl-3 pr-0">
+                            <td class="pr-0">
                                 {% if s.foto_url %}
                                 <img src="{{ s.foto_url }}"
                                      class="rounded-circle"
