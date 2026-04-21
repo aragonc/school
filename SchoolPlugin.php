@@ -755,7 +755,7 @@ class SchoolPlugin extends Plugin
         if($history){
             $sql .= " AND s.access_end_date <= CURDATE();";
         } else {
-            $sql .= " AND s.access_end_date >= CURDATE();";
+            $sql .= " AND (s.access_end_date >= CURDATE() OR s.access_end_date IS NULL);";
         }
         $result = Database::query($sql);
 
@@ -875,7 +875,7 @@ class SchoolPlugin extends Plugin
             if($history){
                 $sql .= " AND s.access_end_date <= CURDATE();";
             } else {
-                $sql .= " AND s.access_end_date >= CURDATE();";
+                $sql .= " AND (s.access_end_date >= CURDATE() OR s.access_end_date IS NULL);";
             }
         }
 
@@ -2046,11 +2046,17 @@ class SchoolPlugin extends Plugin
     {
         $session = $this->getInfoSession($sessionId);
         $cidReq = api_get_cidreq();
+
+        // Forzar vista estudiante para que las reglas de visibilidad de toolscourses
+        // apliquen igual para cualquier rol (alumno, profesor, admin).
+        $previousStudentView = $_SESSION['studentview'] ?? null;
+        $_SESSION['studentview'] = 'studentview';
         $tools = CourseHome::get_tools_category(
             TOOL_STUDENT_VIEW,
             $courseId,
             $sessionId
         );
+        $_SESSION['studentview'] = $previousStudentView;
 
         $course = api_get_course_info_by_id($courseId);
         $textCalendar = self::getDescriptionCourse($sessionId, $courseId,8,'Calendario');

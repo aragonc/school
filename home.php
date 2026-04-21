@@ -1,6 +1,22 @@
 <?php
 
 require_once __DIR__.'/config.php';
+
+// Aplicar reglas de visibilidad del plugin toolscourses automáticamente al cargar el curso
+$_tcPluginPath = api_get_path(SYS_PLUGIN_PATH).'toolscourses/ToolsCourses.php';
+if (file_exists($_tcPluginPath)) {
+    $_tcTable = 'plugin_toolscourses_schedule';
+    $_tcCheck = Database::query("SHOW TABLES LIKE '$_tcTable'");
+    if (Database::num_rows($_tcCheck) > 0) {
+        require_once $_tcPluginPath;
+        if (ToolsCourses::create()->isEnabled()) {
+            ToolsCourses::create()->applyVisibilityRules();
+            ToolsCourses::create()->applyLessonVisibilityRules();
+        }
+    }
+}
+unset($_tcPluginPath, $_tcTable, $_tcCheck);
+
 $plugin = SchoolPlugin::create();
 // Simplemente llama la función
 $plugin->requireLogin();
