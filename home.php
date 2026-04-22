@@ -12,6 +12,9 @@ if (file_exists($_tcPluginPath)) {
         if (ToolsCourses::create()->isEnabled()) {
             ToolsCourses::create()->applyVisibilityRules();
             ToolsCourses::create()->applyLessonVisibilityRules();
+            // Las actualizaciones se hacen vía SQL directo; limpiar la caché de Doctrine
+            // para que findOneBy() en get_tools_category lea la visibilidad recién actualizada.
+            Database::getManager()->clear('ChamiloCourseBundle:CTool');
         }
     }
 }
