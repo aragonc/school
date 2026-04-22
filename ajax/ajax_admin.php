@@ -54,6 +54,8 @@ switch ($action) {
             $cargo = 'Secretaria';
         } elseif ((int)($uRow['status'] ?? 0) === SCHOOL_AUXILIARY) {
             $cargo = 'Auxiliar';
+        } elseif ((int)($uRow['status'] ?? 0) === SCHOOL_DIRECTOR) {
+            $cargo = 'Director(a)';
         } elseif ((int)($uRow['status'] ?? 0) === SCHOOL_PARENT) {
             $cargo = 'Padre de familia';
         } elseif ((int)($uRow['status'] ?? 0) === SCHOOL_GUARDIAN) {

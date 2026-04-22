@@ -13,7 +13,7 @@ if (!$enable) {
 $userTable  = Database::get_main_table(TABLE_MAIN_USER);
 $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
 
-$nonStudentStatuses = implode(',', [COURSEMANAGER, DRH, SCHOOL_SECRETARY, SCHOOL_AUXILIARY, SCHOOL_PARENT, SCHOOL_GUARDIAN]);
+$nonStudentStatuses = implode(',', [COURSEMANAGER, DRH, SCHOOL_SECRETARY, SCHOOL_AUXILIARY, SCHOOL_DIRECTOR, SCHOOL_PARENT, SCHOOL_GUARDIAN]);
 
 $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email, u.status,
                CASE
@@ -22,6 +22,7 @@ $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email, u.status
                    WHEN u.status = ".DRH."           THEN 'Administrativo'
                    WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
                    WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                   WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
                    WHEN u.status = ".SCHOOL_PARENT."    THEN 'Padre de familia'
                    WHEN u.status = ".SCHOOL_GUARDIAN."  THEN 'Apoderado'
                    ELSE 'Otro'

@@ -338,6 +338,7 @@ $strings['RoleSecretary'] = 'Secretaria';
 $strings['RoleAuxiliary'] = 'Auxiliar';
 $strings['RoleParent'] = 'Padre de familia';
 $strings['RoleGuardian'] = 'Apoderado';
+$strings['RoleDirector'] = 'Director(a)';
 $strings['HoldCtrlToSelectMultiple'] = 'Mantén presionado Ctrl para seleccionar varios roles';
 
 // Login

@@ -137,6 +137,7 @@ switch ($action) {
             'administrativo' => 'u.status = ' . DRH,
             'secretaria'     => 'u.status = ' . SCHOOL_SECRETARY,
             'auxiliar'       => 'u.status = ' . SCHOOL_AUXILIARY,
+            'director'       => 'u.status = ' . SCHOOL_DIRECTOR,
             'admin'          => 'adm.user_id IS NOT NULL',
         ];
 
@@ -145,13 +146,14 @@ switch ($action) {
             'administrativo' => 'Administrativo',
             'secretaria'     => 'Secretaria',
             'auxiliar'       => 'Auxiliar',
+            'director'       => 'Director(a)',
             'admin'          => 'Administrador',
         ];
 
         if ($role && isset($roleConditions[$role])) {
             $whereCond = $roleConditions[$role];
         } else {
-            $nonStudent = implode(',', [COURSEMANAGER, DRH, SCHOOL_SECRETARY, SCHOOL_AUXILIARY]);
+            $nonStudent = implode(',', [COURSEMANAGER, DRH, SCHOOL_SECRETARY, SCHOOL_AUXILIARY, SCHOOL_DIRECTOR]);
             $whereCond  = "(u.status IN ($nonStudent) OR adm.user_id IS NOT NULL)";
         }
 
@@ -162,6 +164,7 @@ switch ($action) {
                                 WHEN u.status = ".DRH."           THEN 'administrativo'
                                 WHEN u.status = ".SCHOOL_SECRETARY." THEN 'secretaria'
                                 WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'auxiliar'
+                                WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'director'
                                 ELSE 'otro'
                             END AS role_key
                      FROM $userTable u

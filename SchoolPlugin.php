@@ -3811,6 +3811,8 @@ class SchoolPlugin extends Plugin
                 $userRole = 'secretary';
             } elseif ($user['status'] == SCHOOL_AUXILIARY) {
                 $userRole = 'auxiliary';
+            } elseif ($user['status'] == SCHOOL_DIRECTOR) {
+                $userRole = 'director';
             } elseif (in_array($user['status'], [SCHOOL_PARENT, SCHOOL_GUARDIAN])) {
                 $userRole = 'parent';
             } elseif ($user['status'] == DRH) {
@@ -4128,11 +4130,12 @@ class SchoolPlugin extends Plugin
             return '';
         }
         $filterMap = [
-            'staff' => " AND (u.status IN (".COURSEMANAGER.", ".DRH.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY."))",
+            'staff' => " AND (u.status IN (".COURSEMANAGER.", ".DRH.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY.", ".SCHOOL_DIRECTOR."))",
             'students' => " AND u.status = ".STUDENT,
             'teacher' => " AND u.status = ".COURSEMANAGER,
             'secretary' => " AND u.status = ".SCHOOL_SECRETARY,
             'auxiliary' => " AND u.status = ".SCHOOL_AUXILIARY,
+            'director' => " AND u.status = ".SCHOOL_DIRECTOR,
             'parent' => " AND u.status = ".SCHOOL_PARENT,
             'guardian' => " AND u.status = ".SCHOOL_GUARDIAN,
         ];
@@ -4241,7 +4244,7 @@ class SchoolPlugin extends Plugin
         $extraSelect = '';
 
         if (empty($userType)) {
-            $allStatuses = implode(',', [COURSEMANAGER, STUDENT, DRH, SCHOOL_PARENT, SCHOOL_GUARDIAN, SCHOOL_SECRETARY, SCHOOL_AUXILIARY]);
+            $allStatuses = implode(',', [COURSEMANAGER, STUDENT, DRH, SCHOOL_PARENT, SCHOOL_GUARDIAN, SCHOOL_SECRETARY, SCHOOL_AUXILIARY, SCHOOL_DIRECTOR]);
             $where = "WHERE u.active = 1 AND (u.status IN ($allStatuses) OR adm.user_id IS NOT NULL)";
         } else {
             $where = "WHERE u.active = 1" . $this->getUserTypeFilter($userType);
@@ -4274,6 +4277,7 @@ class SchoolPlugin extends Plugin
                            WHEN u.status = ".DRH." THEN 'Administrativo'
                            WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
                            WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
                            WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
                            WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
                            ELSE 'Alumno'
@@ -4462,8 +4466,8 @@ class SchoolPlugin extends Plugin
         $today = date('Y-m-d');
 
         // Include teachers (COURSEMANAGER), DRH, students, school roles, and platform admins
-        $allStatuses = COURSEMANAGER.", ".STUDENT.", ".DRH.", ".SCHOOL_PARENT.", ".SCHOOL_GUARDIAN.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY;
-        $staffStatuses = COURSEMANAGER.", ".DRH.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY;
+        $allStatuses = COURSEMANAGER.", ".STUDENT.", ".DRH.", ".SCHOOL_PARENT.", ".SCHOOL_GUARDIAN.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY.", ".SCHOOL_DIRECTOR;
+        $staffStatuses = COURSEMANAGER.", ".DRH.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY.", ".SCHOOL_DIRECTOR;
         $where = "WHERE u.active = 1 AND (u.status IN ($allStatuses) OR a.user_id IS NOT NULL)";
         if ($type === 'staff') {
             $where = "WHERE u.active = 1 AND (u.status IN ($staffStatuses) OR a.user_id IS NOT NULL)";
@@ -4491,6 +4495,9 @@ class SchoolPlugin extends Plugin
             } elseif ($row['status'] == SCHOOL_AUXILIARY) {
                 $row['role_label'] = $this->get_lang('RoleAuxiliary');
                 $row['role_type'] = 'auxiliary';
+            } elseif ($row['status'] == SCHOOL_DIRECTOR) {
+                $row['role_label'] = $this->get_lang('RoleDirector');
+                $row['role_type'] = 'director';
             } elseif ($row['is_admin'] || $row['status'] == DRH) {
                 $row['role_label'] = $this->get_lang('RoleAdmin');
                 $row['role_type'] = 'admin';
@@ -4649,7 +4656,7 @@ class SchoolPlugin extends Plugin
         $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
         $logTable   = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
 
-        $allStatuses = COURSEMANAGER.", ".STUDENT.", ".DRH.", ".SCHOOL_PARENT.", ".SCHOOL_GUARDIAN.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY;
+        $allStatuses = COURSEMANAGER.", ".STUDENT.", ".DRH.", ".SCHOOL_PARENT.", ".SCHOOL_GUARDIAN.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY.", ".SCHOOL_DIRECTOR;
 
         $sql = "SELECT DISTINCT u.id
                 FROM $userTable u
@@ -4794,6 +4801,7 @@ class SchoolPlugin extends Plugin
                            WHEN u.status = ".DRH." THEN 'Administrativo'
                            WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
                            WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
                            WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
                            WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
                            ELSE 'Alumno'
@@ -4873,6 +4881,7 @@ class SchoolPlugin extends Plugin
                            WHEN u.status = ".DRH." THEN 'Administrativo'
                            WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
                            WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
                            WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
                            WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
                            ELSE 'Alumno'
@@ -4982,6 +4991,7 @@ class SchoolPlugin extends Plugin
                            WHEN u.status = ".DRH." THEN 'Administrativo'
                            WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
                            WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
                            WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
                            WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
                            ELSE 'Alumno'
@@ -5249,6 +5259,7 @@ class SchoolPlugin extends Plugin
                            WHEN u.status = ".DRH." THEN 'Administrativo'
                            WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
                            WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
                            WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
                            WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
                            ELSE 'Alumno'
