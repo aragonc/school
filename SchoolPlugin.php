@@ -973,6 +973,7 @@ class SchoolPlugin extends Plugin
         $sql = "SELECT DISTINCT
                     c.title,
                     sc.visibility,
+                    sc.access_start_date,
                     c.id as real_id,
                     c.code as course_code,
                     sc.id as insertion_order,
@@ -1000,7 +1001,11 @@ class SchoolPlugin extends Plugin
             foreach ($rows as $result_row) {
                 $count++;
                 $result_row['status'] = 5;
-                $result_row['visible'] = boolval($result_row['visibility'] ?? true);
+                // Si el curso tiene fecha efectiva asignada, siempre es visible
+                // (coherente con el admin que muestra el ojo como visible cuando hay fecha efectiva)
+                $result_row['visible'] = !empty($result_row['access_start_date'])
+                    ? true
+                    : boolval($result_row['visibility'] ?? true);
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
