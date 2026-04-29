@@ -615,3 +615,19 @@ $strings['PriorityMedium']              = 'Medium';
 $strings['PriorityHigh']                = 'High';
 $strings['PriorityCritical']            = 'Critical';
 $strings['ErrorGeneric']                = 'An error occurred. Please try again.';
+
+// Quizzes
+$strings['QuizzesTitle']          = 'Exercises';
+$strings['QuizzesEmpty']          = 'No exercises available in this course.';
+$strings['QuizQuestions']         = 'Questions';
+$strings['QuizTimeLimit']         = 'Time limit';
+$strings['QuizAttempts']          = 'Attempts';
+$strings['QuizBestScore']         = 'Best score:';
+$strings['QuizStart']             = 'Start';
+$strings['QuizReview']            = 'View result';
+$strings['QuizNotYet']            = 'Not yet available';
+$strings['QuizClosed']            = 'Closed';
+$strings['QuizStatusAvailable']   = 'Available';
+$strings['QuizStatusPending']     = 'Coming soon';
+$strings['QuizStatusExpired']     = 'Closed';
+$strings['QuizStatusDone']        = 'Completed';

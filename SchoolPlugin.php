@@ -1435,6 +1435,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^support$ plugin/school/src/support/list.php [L]\n".
             "RewriteRule ^support/view$ plugin/school/src/support/view.php [L,QSA]\n".
             "RewriteRule ^support/settings$ plugin/school/src/support/settings.php [L]\n".
+            "RewriteRule ^course/quizzes$ plugin/school/src/courses/quizzes.php [L,QSA]\n".
             "# END School Plugin";
     }
 
@@ -3489,7 +3490,14 @@ class SchoolPlugin extends Plugin
                     $results['home'][] = $tool;
                     break;
 
+                case 'quiz':
+                    $tool['link'] = api_get_path(WEB_PATH).'course/quizzes?'.$cidReq;
+                    $tool['icon'] = self::get_svg_icon('quiz', self::get_lang('QuizzesTitle'), 64);
+                    $results['tools'][] = $tool;
+                    break;
+
                 case 'info':
+                case 'tracking':
                     // No hacer nada, se excluye
                     break;
 

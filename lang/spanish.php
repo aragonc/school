@@ -766,3 +766,19 @@ $strings['SiteNameTitle']              = 'Nombre del sitio web';
 $strings['SiteNameComment']            = 'Nombre del sitio que aparece en la cabecera';
 $strings['emailAdministratorTitle']    = 'E-mail del administrador';
 $strings['emailAdministratorComment']  = 'Correo del administrador (aparece en el pie de página)';
+
+// Quizzes
+$strings['QuizzesTitle']          = 'Ejercicios';
+$strings['QuizzesEmpty']          = 'No hay ejercicios disponibles en este curso.';
+$strings['QuizQuestions']         = 'Preguntas';
+$strings['QuizTimeLimit']         = 'Tiempo límite';
+$strings['QuizAttempts']          = 'Intentos';
+$strings['QuizBestScore']         = 'Mejor nota:';
+$strings['QuizStart']             = 'Iniciar';
+$strings['QuizReview']            = 'Ver resultado';
+$strings['QuizNotYet']            = 'Aún no disponible';
+$strings['QuizClosed']            = 'Cerrado';
+$strings['QuizStatusAvailable']   = 'Disponible';
+$strings['QuizStatusPending']     = 'Próximamente';
+$strings['QuizStatusExpired']     = 'Cerrado';
+$strings['QuizStatusDone']        = 'Completado';
