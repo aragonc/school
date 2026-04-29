@@ -130,8 +130,8 @@
                 <span class="text-muted small">
                     <i class="fas fa-calendar-alt mr-1"></i>{{ selected_date }}
                 </span>
-                {% if enable_manual_attendance and students %}
-                <button class="btn btn-sm btn-primary" onclick="openAttModal(null, null)" title="Registrar asistencia manual a varios alumnos">
+                {% if enable_manual_attendance and students and is_admin_or_secretary %}
+                <button class="btn btn-sm btn-primary" onclick="openAttModal(null, null, null, null, null, null)" title="Registrar asistencia manual a varios alumnos">
                     <i class="fas fa-clipboard-check mr-1"></i> Asistencia manual
                 </button>
                 {% endif %}
@@ -153,7 +153,7 @@
                             <th>Alumno</th>
                             <th>DNI</th>
                             <th>Correo</th>
-                            <th>Última conexión</th>
+                            <th>Última conexión en la plataforma</th>
                             <th>Asistencia</th>
                             <th>Hora entrada</th>
                             {% if enable_manual_attendance %}
@@ -248,29 +248,42 @@
                             {# Acción manual de asistencia #}
                             {% if enable_manual_attendance %}
                             <td>
+                                {% if is_admin_or_secretary %}
+                                {# Admin: botones para todos los estados #}
                                 <div class="btn-group btn-group-sm att-action-group" role="group">
                                     <button type="button"
                                             class="btn btn-att {% if s.att_status == 'on_time' %}btn-success{% else %}btn-outline-success{% endif %}"
                                             data-status="on_time"
                                             title="Puntual"
-                                            onclick="openAttModal('{{ s.user_id }}', 'on_time')">
+                                            onclick="openAttModal('{{ s.user_id }}', 'on_time', '{{ (s.display_apellidos ~ ' ' ~ s.display_nombres)|e('js') }}', '{{ s.foto_url|e('js') }}', '{{ s.att_status }}', '{{ s.att_time }}')">
                                         <i class="fas fa-check"></i>
                                     </button>
                                     <button type="button"
                                             class="btn btn-att {% if s.att_status == 'late' %}btn-warning{% else %}btn-outline-warning{% endif %}"
                                             data-status="late"
                                             title="Tardanza"
-                                            onclick="openAttModal('{{ s.user_id }}', 'late')">
+                                            onclick="openAttModal('{{ s.user_id }}', 'late', '{{ (s.display_apellidos ~ ' ' ~ s.display_nombres)|e('js') }}', '{{ s.foto_url|e('js') }}', '{{ s.att_status }}', '{{ s.att_time }}')">
                                         <i class="fas fa-clock"></i>
                                     </button>
                                     <button type="button"
                                             class="btn btn-att {% if s.att_status == 'absent' or not s.att_status %}btn-danger{% else %}btn-outline-danger{% endif %}"
                                             data-status="absent"
                                             title="Ausente"
-                                            onclick="openAttModal('{{ s.user_id }}', 'absent')">
+                                            onclick="openAttModal('{{ s.user_id }}', 'absent', '{{ (s.display_apellidos ~ ' ' ~ s.display_nombres)|e('js') }}', '{{ s.foto_url|e('js') }}', '{{ s.att_status }}', '{{ s.att_time }}')">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
+                                {% elseif not s.att_status or s.att_status == 'absent' %}
+                                {# Tutor: solo puede modificar ausentes o sin registro #}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary"
+                                        title="Modificar asistencia"
+                                        onclick="openAttModal('{{ s.user_id }}', '{{ s.att_status ?: 'absent' }}', '{{ (s.display_apellidos ~ ' ' ~ s.display_nombres)|e('js') }}', '{{ s.foto_url|e('js') }}', '{{ s.att_status }}', '{{ s.att_time }}')">
+                                    <i class="fas fa-edit mr-1"></i> Modificar
+                                </button>
+                                {% else %}
+                                <span class="text-muted" style="font-size:11px;">—</span>
+                                {% endif %}
                             </td>
                             {% endif %}
 
@@ -408,7 +421,7 @@ document.querySelectorAll('.lh-ago').forEach(function(el) {
             <div class="modal-header">
                 <h5 class="modal-title" id="attManualModalLabel">
                     <i class="fas fa-clipboard-check mr-2 text-primary"></i>
-                    Registrar Asistencia Manual
+                    <span id="attModalTitle">Registrar Asistencia Manual</span>
                     <small class="text-muted font-weight-normal ml-2" style="font-size:13px;">
                         {{ selected_date }}
                     </small>
@@ -417,8 +430,19 @@ document.querySelectorAll('.lh-ago').forEach(function(el) {
             </div>
             <div class="modal-body">
 
+                {# Alumno destacado (modo individual) #}
+                <div id="attSingleStudentInfo" class="d-none mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                    <div class="d-flex align-items-center">
+                        <div id="attSinglePhoto" class="mr-3 flex-shrink-0"></div>
+                        <div>
+                            <div id="attSingleName" class="font-weight-bold text-dark" style="font-size:15px;"></div>
+                            <div id="attSingleCurrentStatus" class="mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+
                 {# Estado + Hora #}
-                <div class="row mb-4">
+                <div class="row mb-3">
                     <div class="col-md-7 mb-3 mb-md-0">
                         <label class="font-weight-bold mb-2 d-block">Estado de asistencia</label>
                         <div class="btn-group btn-group-toggle d-flex" data-toggle="buttons" id="attStatusGroup">
@@ -443,29 +467,43 @@ document.querySelectorAll('.lh-ago').forEach(function(el) {
                     </div>
                 </div>
 
-                {# Lista de alumnos con checkboxes #}
-                <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap" style="gap:8px;">
-                    <label class="font-weight-bold mb-0">Alumnos</label>
-                    <div class="d-flex align-items-center" style="gap:8px;" id="attSelectAllBar">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="attSelectAll(true)">
-                            <i class="fas fa-check-square mr-1"></i> Todos
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="attSelectAll(false)">
-                            <i class="far fa-square mr-1"></i> Ninguno
-                        </button>
-                        <span class="text-muted small" id="attSelectedCount"></span>
-                    </div>
+                {# Comentario / observación #}
+                <div class="mb-3">
+                    <label class="font-weight-bold mb-1 d-block" for="attNotesInput">
+                        <i class="fas fa-comment-alt mr-1 text-muted"></i> Comentario u observación
+                        <span class="text-muted font-weight-normal" style="font-size:12px;">(opcional)</span>
+                    </label>
+                    <textarea id="attNotesInput" class="form-control" rows="2"
+                              placeholder="Ej: El alumno llegó tarde por motivos de salud…"
+                              maxlength="500" style="resize:vertical;"></textarea>
+                    <small class="form-text text-muted text-right" id="attNotesCount">0/500</small>
                 </div>
-                <div id="attStudentList"
-                     style="max-height:340px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;">
-                    {# Llenado dinámico por JS #}
+
+                {# Lista de alumnos con checkboxes (modo bulk, solo admins) #}
+                <div id="attBulkSection">
+                    <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap" style="gap:8px;">
+                        <label class="font-weight-bold mb-0">Alumnos</label>
+                        <div class="d-flex align-items-center" style="gap:8px;" id="attSelectAllBar">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="attSelectAll(true)">
+                                <i class="fas fa-check-square mr-1"></i> Todos
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="attSelectAll(false)">
+                                <i class="far fa-square mr-1"></i> Ninguno
+                            </button>
+                            <span class="text-muted small" id="attSelectedCount"></span>
+                        </div>
+                    </div>
+                    <div id="attStudentList"
+                         style="max-height:300px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;">
+                        {# Llenado dinámico por JS #}
+                    </div>
                 </div>
 
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="attSaveBtn" onclick="saveAttManual()">
-                    <i class="fas fa-save mr-1"></i> Registrar
+                    <i class="fas fa-save mr-1"></i> Guardar
                 </button>
             </div>
         </div>
@@ -476,6 +514,7 @@ document.querySelectorAll('.lh-ago').forEach(function(el) {
 var AJAX_URL       = '{{ ajax_url }}';
 var ATT_CLASSROOM  = {{ classroom_id }};
 var ATT_DATE       = '{{ selected_date }}';
+var ATT_IS_ADMIN   = {{ is_admin_or_secretary ? 'true' : 'false' }};
 
 // Datos de alumnos serializados desde Twig
 var ATT_STUDENTS = [
@@ -503,27 +542,62 @@ function attBadgeFull(status) {
     return '<span class="badge badge-secondary px-2 py-1"><i class="fas fa-minus mr-1"></i>Sin registro</span>';
 }
 
+function attPhotoHtml(foto, size) {
+    size = size || 34;
+    if (foto) {
+        return '<img src="'+foto+'" class="rounded-circle flex-shrink-0" style="width:'+size+'px;height:'+size+'px;object-fit:cover;" alt="">';
+    }
+    return '<div class="rounded-circle bg-light border d-flex align-items-center justify-content-center flex-shrink-0" style="width:'+size+'px;height:'+size+'px;"><i class="fas fa-user text-secondary" style="font-size:'+(size/2.5|0)+'px;"></i></div>';
+}
+
 // ---- Abrir modal ----
-// userId: ID del alumno al abrir desde fila (null = todos)
-// defaultStatus: estado pre-seleccionado (null = ninguno)
-function openAttModal(userId, defaultStatus) {
-    // Construir lista de alumnos
-    var html = '';
-    ATT_STUDENTS.forEach(function(s) {
-        var checked = (userId === null || userId == s.userId) ? 'checked' : '';
-        var foto = s.foto
-            ? '<img src="'+s.foto+'" class="rounded-circle mr-2 flex-shrink-0" style="width:34px;height:34px;object-fit:cover;" alt="">'
-            : '<div class="rounded-circle bg-light border d-flex align-items-center justify-content-center mr-2 flex-shrink-0" style="width:34px;height:34px;"><i class="fas fa-user text-secondary" style="font-size:13px;"></i></div>';
-        html += '<label class="d-flex align-items-center px-3 py-2 att-student-item mb-0"'
-              + ' style="cursor:pointer;border-bottom:1px solid #f3f4f6;">'
-              + '<input type="checkbox" class="mr-3 att-cb" value="'+s.userId+'" '+checked
-              + ' onchange="updateAttCount()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">'
-              + foto
-              + '<span class="flex-grow-1 font-weight-500" style="font-size:13px;">'+s.name+'</span>'
-              + attBadgeSmall(s.currentStatus)
-              + '</label>';
-    });
-    document.getElementById('attStudentList').innerHTML = html;
+// userId      : ID del alumno (null = modo bulk para admin)
+// defaultStatus: estado pre-seleccionado
+// name, foto  : datos del alumno (para modo individual)
+// currentStatus: estado actual del alumno
+// currentTime : hora de entrada actual del alumno
+function openAttModal(userId, defaultStatus, name, foto, currentStatus, currentTime) {
+    var isSingle = (userId !== null);
+    var isBulk   = !isSingle;
+
+    // Título
+    document.getElementById('attModalTitle').textContent = isSingle
+        ? 'Modificar Asistencia'
+        : 'Registrar Asistencia Manual';
+
+    // Info alumno individual
+    var singleInfo = document.getElementById('attSingleStudentInfo');
+    if (isSingle) {
+        document.getElementById('attSinglePhoto').innerHTML = attPhotoHtml(foto, 44);
+        document.getElementById('attSingleName').textContent = name || '';
+        document.getElementById('attSingleCurrentStatus').innerHTML =
+            '<span class="text-muted small">Estado actual: </span>' + attBadgeFull(currentStatus || '');
+        singleInfo.classList.remove('d-none');
+    } else {
+        singleInfo.classList.add('d-none');
+    }
+
+    // Sección bulk (lista de alumnos con checkboxes)
+    var bulkSection = document.getElementById('attBulkSection');
+    if (isBulk && ATT_IS_ADMIN) {
+        bulkSection.style.display = '';
+        var html = '';
+        ATT_STUDENTS.forEach(function(s) {
+            var foto2 = '<span class="mr-2">' + attPhotoHtml(s.foto, 34) + '</span>';
+            html += '<label class="d-flex align-items-center px-3 py-2 att-student-item mb-0"'
+                  + ' style="cursor:pointer;border-bottom:1px solid #f3f4f6;">'
+                  + '<input type="checkbox" class="mr-3 att-cb" value="'+s.userId+'" checked'
+                  + ' onchange="updateAttCount()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">'
+                  + foto2
+                  + '<span class="flex-grow-1 font-weight-500" style="font-size:13px;">'+s.name+'</span>'
+                  + attBadgeSmall(s.currentStatus)
+                  + '</label>';
+        });
+        document.getElementById('attStudentList').innerHTML = html;
+        updateAttCount();
+    } else {
+        bulkSection.style.display = 'none';
+    }
 
     // Estado
     document.querySelectorAll('input[name="att_status"]').forEach(function(r) {
@@ -538,13 +612,21 @@ function openAttModal(userId, defaultStatus) {
         }
     }
 
-    // Hora actual
+    // Hora: usar la existente si hay, si no la hora actual
     var now = new Date();
-    document.getElementById('attTimeInput').value =
-        String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    var timeVal = currentTime
+        ? currentTime
+        : String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('attTimeInput').value = timeVal;
+
+    // Limpiar comentario
+    document.getElementById('attNotesInput').value = '';
+    document.getElementById('attNotesCount').textContent = '0/500';
+
+    // Guardar userId en el botón save para modo individual
+    document.getElementById('attSaveBtn').setAttribute('data-single-user', userId || '');
 
     toggleTimeInput(defaultStatus);
-    updateAttCount();
     $('#attManualModal').modal('show');
 }
 
@@ -587,7 +669,7 @@ function updateRowUI(userId, status, attTime) {
             : '&mdash;';
     }
 
-    // Botones de la fila
+    // Botones de la fila (admin: btn-group; tutor: botón Modificar)
     row.querySelectorAll('.btn-att').forEach(function(btn) {
         var s = btn.getAttribute('data-status');
         if (s === 'on_time') {
@@ -601,6 +683,15 @@ function updateRowUI(userId, status, attTime) {
             btn.classList.toggle('btn-outline-danger', status !== 'absent');
         }
     });
+
+    // Si el tutor cambió el estado a algo distinto de ausente/sin registro, ocultar el botón Modificar
+    if (!ATT_IS_ADMIN) {
+        var modBtn = row.querySelector('.btn-outline-primary');
+        if (modBtn && status !== 'absent') {
+            modBtn.style.display = 'none';
+            row.querySelector('td:last-child').innerHTML = '<span class="text-muted" style="font-size:11px;">—</span>';
+        }
+    }
 
     // Mini-badge dentro del modal (si está abierto)
     var cb = document.querySelector('.att-cb[value="'+userId+'"]');
@@ -622,17 +713,27 @@ async function saveAttManual() {
     var status = statusInput.value;
 
     var checkInTime = (status !== 'absent') ? document.getElementById('attTimeInput').value : '';
+    var notes       = document.getElementById('attNotesInput').value.trim();
 
-    var selected = Array.from(document.querySelectorAll('.att-cb:checked'));
-    if (selected.length === 0) { alert('Selecciona al menos un alumno.'); return; }
+    var saveBtn    = document.getElementById('attSaveBtn');
+    var singleUser = saveBtn.getAttribute('data-single-user');
 
-    var btn = document.getElementById('attSaveBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando ' + selected.length + '…';
+    // Determinar lista de usuarios a guardar
+    var userIds = [];
+    if (singleUser) {
+        userIds = [singleUser];
+    } else {
+        userIds = Array.from(document.querySelectorAll('.att-cb:checked')).map(function(cb) { return cb.value; });
+    }
+
+    if (userIds.length === 0) { alert('Selecciona al menos un alumno.'); return; }
+
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando…';
 
     var errors = 0;
-    for (var i = 0; i < selected.length; i++) {
-        var uid = selected[i].value;
+    for (var i = 0; i < userIds.length; i++) {
+        var uid = userIds[i];
         try {
             var params = new URLSearchParams({
                 action:        'mark_student_attendance',
@@ -640,7 +741,8 @@ async function saveAttManual() {
                 classroom_id:  ATT_CLASSROOM,
                 date:          ATT_DATE,
                 status:        status,
-                check_in_time: checkInTime
+                check_in_time: checkInTime,
+                notes:         notes
             });
             var resp = await fetch(AJAX_URL, {
                 method:  'POST',
@@ -652,14 +754,15 @@ async function saveAttManual() {
                 updateRowUI(uid, status, data.att_time || '');
             } else {
                 errors++;
+                console.warn('Error al guardar alumno '+uid+':', data.error);
             }
         } catch(e) {
             errors++;
         }
     }
 
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-save mr-1"></i> Registrar';
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar';
 
     if (errors > 0) {
         alert('No se pudo registrar ' + errors + ' alumno(s). Intenta de nuevo.');
@@ -671,6 +774,11 @@ async function saveAttManual() {
 // Escuchar cambio de estado para toggle de hora
 document.querySelectorAll('input[name="att_status"]').forEach(function(radio) {
     radio.addEventListener('change', function() { toggleTimeInput(this.value); });
+});
+
+// Contador de caracteres del comentario
+document.getElementById('attNotesInput').addEventListener('input', function() {
+    document.getElementById('attNotesCount').textContent = this.value.length + '/500';
 });
 </script>
 {% endif %}
