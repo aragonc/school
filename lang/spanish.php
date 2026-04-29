@@ -782,3 +782,14 @@ $strings['QuizStatusAvailable']   = 'Disponible';
 $strings['QuizStatusPending']     = 'Próximamente';
 $strings['QuizStatusExpired']     = 'Cerrado';
 $strings['QuizStatusDone']        = 'Completado';
+
+// Quiz overview
+$strings['QuizContinue']           = 'Continuar ejercicio';
+$strings['QuizPreviousAttempts']   = 'Mis intentos anteriores';
+$strings['QuizAttemptDate']        = 'Fecha';
+$strings['QuizAttemptScore']       = 'Nota';
+$strings['QuizAttemptStatus']      = 'Estado';
+$strings['QuizValidated']          = 'Revisado';
+$strings['QuizNotValidated']       = 'Pendiente';
+$strings['QuizAttemptsExhausted']  = 'Has alcanzado el número máximo de intentos.';
+$strings['QuizTimeRemaining']      = 'Tiempo restante';

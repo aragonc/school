@@ -631,3 +631,14 @@ $strings['QuizStatusAvailable']   = 'Available';
 $strings['QuizStatusPending']     = 'Coming soon';
 $strings['QuizStatusExpired']     = 'Closed';
 $strings['QuizStatusDone']        = 'Completed';
+
+// Quiz overview
+$strings['QuizContinue']           = 'Continue exercise';
+$strings['QuizPreviousAttempts']   = 'My previous attempts';
+$strings['QuizAttemptDate']        = 'Date';
+$strings['QuizAttemptScore']       = 'Score';
+$strings['QuizAttemptStatus']      = 'Status';
+$strings['QuizValidated']          = 'Reviewed';
+$strings['QuizNotValidated']       = 'Pending';
+$strings['QuizAttemptsExhausted']  = 'You have reached the maximum number of attempts.';
+$strings['QuizTimeRemaining']      = 'Time remaining';

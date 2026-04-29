@@ -86,7 +86,7 @@ foreach ($exercises as $ex) {
         'start_time'    => !empty($ex['start_time']) ? api_convert_and_format_date($ex['start_time'], DATE_TIME_FORMAT_SHORT) : '',
         'end_time'      => !empty($ex['end_time'])   ? api_convert_and_format_date($ex['end_time'],   DATE_TIME_FORMAT_SHORT) : '',
         'status'        => $status,
-        'link'          => api_get_path(WEB_CODE_PATH) . 'exercise/overview.php?exerciseId=' . $exId . '&' . $cidReq,
+        'link'          => api_get_path(WEB_PATH) . 'course/quiz?exerciseId=' . $exId . '&' . $cidReq,
     ];
 }
 

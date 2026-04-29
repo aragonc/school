@@ -1436,6 +1436,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^support/view$ plugin/school/src/support/view.php [L,QSA]\n".
             "RewriteRule ^support/settings$ plugin/school/src/support/settings.php [L]\n".
             "RewriteRule ^course/quizzes$ plugin/school/src/courses/quizzes.php [L,QSA]\n".
+            "RewriteRule ^course/quiz$ plugin/school/src/courses/quiz_overview.php [L,QSA]\n".
             "# END School Plugin";
     }
 
