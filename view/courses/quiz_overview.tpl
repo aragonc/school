@@ -193,6 +193,11 @@
 .overview-description .card-body {
     font-size: .92rem; color: #555; line-height: 1.6;
 }
+.overview-description .card-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
 
 /* Pills */
 .overview-pills { display: flex; flex-wrap: wrap; gap: 10px; }
