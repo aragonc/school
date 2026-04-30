@@ -5119,17 +5119,24 @@ class SchoolPlugin extends Plugin
             exit;
         }
 
-        // 2. Generate every calendar date in the range
+        // 2. Generate weekday dates only (Mon–Fri) in the range
         $today = date('Y-m-d');
         $start = $startDate ?: $today;
         $end   = $endDate   ?: $today;
         if ($start > $end) [$start, $end] = [$end, $start];
 
-        $allDates = [];
-        $cur = new DateTime($start);
+        $dayAbbr = [1 => 'L', 2 => 'M', 3 => 'W', 4 => 'J', 5 => 'V'];
+
+        $allDates    = [];
+        $allDayNames = [];
+        $cur  = new DateTime($start);
         $last = new DateTime($end);
         while ($cur <= $last) {
-            $allDates[] = $cur->format('Y-m-d');
+            $dow = (int) $cur->format('N'); // 1=Mon … 7=Sun
+            if ($dow <= 5) {
+                $allDates[]    = $cur->format('Y-m-d');
+                $allDayNames[] = $dayAbbr[$dow];
+            }
             $cur->modify('+1 day');
         }
 
@@ -5152,12 +5159,11 @@ class SchoolPlugin extends Plugin
         $statusLabel = ['on_time' => 'P', 'late' => 'T', 'absent' => 'A'];
         $statusStyle = ['on_time' => 2,   'late' => 3,   'absent' => 4];
 
-        $fixedHeaders = ['N°', 'Apellidos', 'Nombres', 'DNI', 'Correo'];
-        $dateHeaders  = array_map(function($d) {
-            // Format as dd/mm to keep columns narrow
-            return date('d/m', strtotime($d));
-        }, $allDates);
-        $headers = array_merge($fixedHeaders, $dateHeaders);
+        $fixedHeaders  = ['N°', 'Apellidos', 'Nombres', 'DNI', 'Correo'];
+        $dateHeaders   = array_map(fn($d) => date('d/m', strtotime($d)), $allDates);
+        $headers       = array_merge($fixedHeaders, $dateHeaders);
+        // Sub-header row: empty for fixed cols, day abbr (L/M/W/J/V) for date cols
+        $subHeaders    = array_merge(['', '', '', '', ''], $allDayNames);
 
         $rows = [];
         foreach ($students as $idx => $s) {
@@ -5185,7 +5191,7 @@ class SchoolPlugin extends Plugin
             ];
         }
 
-        $xlsx     = $this->buildXlsxPivot($headers, $rows);
+        $xlsx     = $this->buildXlsxPivot($headers, $subHeaders, $rows);
         $filename = 'asistencia_aula_' . date('Y-m-d_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -5196,10 +5202,10 @@ class SchoolPlugin extends Plugin
     }
 
     /**
-     * Build pivot XLSX with per-cell style support.
+     * Build pivot XLSX with per-cell style support and optional sub-header row.
      * rows = [['data' => [...], 'cellStyles' => [styleIdx per cell]]]
      */
-    private function buildXlsxPivot(array $headers, array $rows): string
+    private function buildXlsxPivot(array $headers, array $subHeaders, array $rows): string
     {
         $strings  = [];
         $strIndex = [];
@@ -5215,18 +5221,28 @@ class SchoolPlugin extends Plugin
         $sheetXml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
         $sheetXml .= '<sheetData>';
 
-        // Header row (style 1 = bold dark-blue)
+        // Row 1: day-of-week (L/M/W/J/V) — light-blue bold
         $sheetXml .= '<row r="1">';
-        foreach ($headers as $ci => $h) {
+        foreach ($subHeaders as $ci => $h) {
+            if ($h === '') continue;
             $col = $this->xlsxColName($ci) . '1';
+            $si  = $addStr((string) $h);
+            $sheetXml .= '<c r="' . $col . '" t="s" s="5"><v>' . $si . '</v></c>';
+        }
+        $sheetXml .= '</row>';
+
+        // Row 2: date headers (dd/mm) — bold dark-blue
+        $sheetXml .= '<row r="2">';
+        foreach ($headers as $ci => $h) {
+            $col = $this->xlsxColName($ci) . '2';
             $si  = $addStr((string) $h);
             $sheetXml .= '<c r="' . $col . '" t="s" s="1"><v>' . $si . '</v></c>';
         }
         $sheetXml .= '</row>';
 
-        // Data rows with per-cell styles
+        // Data rows start at row 3
         foreach ($rows as $ri => $rowInfo) {
-            $rn = $ri + 2;
+            $rn = $ri + 3;
             $sheetXml .= '<row r="' . $rn . '">';
             foreach ($rowInfo['data'] as $ci => $val) {
                 $col   = $this->xlsxColName($ci) . $rn;
@@ -5238,7 +5254,7 @@ class SchoolPlugin extends Plugin
         }
 
         // Legend rows (2 blank rows gap, then leyenda)
-        $legendStartRow = count($rows) + 4;
+        $legendStartRow = count($rows) + 6;
 
         // Title row
         $sheetXml .= '<row r="' . $legendStartRow . '">';
@@ -5268,7 +5284,7 @@ class SchoolPlugin extends Plugin
         }
         $ssXml .= '</sst>';
 
-        // Styles: 0=normal, 1=header bold blue, 2=green, 3=orange, 4=red
+        // Styles: 0=normal, 1=header bold blue, 2=green, 3=orange, 4=red, 5=day-row (light blue bold)
         $stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <fonts>
@@ -5277,6 +5293,7 @@ class SchoolPlugin extends Plugin
     <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF1A4A1A"/></font>
     <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF5A3A00"/></font>
     <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF5A0000"/></font>
+    <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF1A3A5A"/></font>
   </fonts>
   <fills>
     <fill><patternFill patternType="none"/></fill>
@@ -5285,6 +5302,7 @@ class SchoolPlugin extends Plugin
     <fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/></patternFill></fill>
     <fill><patternFill patternType="solid"><fgColor rgb="FFFFEB9C"/></patternFill></fill>
     <fill><patternFill patternType="solid"><fgColor rgb="FFFFC7CE"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F1"/></patternFill></fill>
   </fills>
   <borders><border><left/><right/><top/><bottom/><diagonal/></border></borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
@@ -5294,6 +5312,7 @@ class SchoolPlugin extends Plugin
     <xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
     <xf numFmtId="0" fontId="3" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
     <xf numFmtId="0" fontId="4" fillId="5" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="5" fillId="6" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
   </cellXfs>
 </styleSheet>';
 
