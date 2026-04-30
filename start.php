@@ -53,9 +53,20 @@ if ($enable) {
     // Estadísticas de conexiones
     $loginStats = $plugin->getUserLoginStats($userId);
 
-    // Asistencia mensual para gráfico
+    // Asistencia mensual para gráfico (solo días que labora)
     $currentYearMonth = date('Y-m');
     $monthlyAttendance = $plugin->getMonthlyAttendanceSummary($userId, $currentYearMonth);
+
+    $wdMap      = ['lunes'=>1,'martes'=>2,'miercoles'=>3,'jueves'=>4,'viernes'=>5];
+    $extraProf  = $plugin->getExtraProfileData($userId);
+    $rawWd      = trim($extraProf['working_days'] ?? '');
+    $allowedDow = $rawWd !== ''
+        ? array_values(array_filter(array_map(fn($d) => $wdMap[trim($d)] ?? null, explode(',', $rawWd)), fn($v) => $v !== null))
+        : [1, 2, 3, 4, 5];
+    $monthlyAttendance = array_values(array_filter(
+        $monthlyAttendance,
+        fn($r) => in_array((int) date('N', strtotime($r['date'])), $allowedDow)
+    ));
 
     $plugin->assign('user_info', $userInfo);
     $plugin->assign('total_courses', $countCourses + $totalBaseCourses);
