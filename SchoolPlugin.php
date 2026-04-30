@@ -5079,25 +5079,26 @@ class SchoolPlugin extends Plugin
     }
 
     /**
-     * Export attendance Excel filtered by classroom (for tutors and admins from /my-aula/mis-alumnos).
+     * Export attendance pivot Excel by classroom: rows = students, columns = dates.
+     * Headers: N°, Apellidos, Nombres, DNI, Correo, [date1], [date2], ...
      */
     public function exportAttendanceExcelClassroom(
         ?string $startDate,
         ?string $endDate,
         int $classroomId
     ): void {
-        $logTable     = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
-        $userTable    = Database::get_main_table(TABLE_MAIN_USER);
-        $csTable      = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
-        $fichaTable   = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+        $logTable   = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable  = Database::get_main_table(TABLE_MAIN_USER);
+        $csTable    = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $fichaTable = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
 
-        // Get all students in this classroom
+        // 1. Get all students in this classroom ordered by lastname
         $sql = "SELECT cs.user_id,
                        COALESCE(NULLIF(TRIM(f.apellido_paterno),''), u.lastname)  AS lastname,
                        COALESCE(NULLIF(TRIM(f.apellido_materno),''), '')           AS lastname2,
                        COALESCE(NULLIF(TRIM(f.nombres),''), u.firstname)           AS firstname,
-                       u.username,
-                       COALESCE(NULLIF(TRIM(f.dni),''), u.official_code)           AS dni
+                       COALESCE(NULLIF(TRIM(f.dni),''), u.official_code)           AS dni,
+                       u.email
                 FROM $csTable cs
                 INNER JOIN $userTable  u ON u.id      = cs.user_id
                 LEFT  JOIN $fichaTable f ON f.user_id = cs.user_id
@@ -5105,10 +5106,10 @@ class SchoolPlugin extends Plugin
                 ORDER BY lastname ASC, lastname2 ASC, firstname ASC";
 
         $res = Database::query($sql);
-        $students = [];
+        $students   = [];
         $studentIds = [];
         while ($row = Database::fetch_array($res, 'ASSOC')) {
-            $students[$row['user_id']] = $row;
+            $students[]   = $row;
             $studentIds[] = (int) $row['user_id'];
         }
 
@@ -5118,79 +5119,73 @@ class SchoolPlugin extends Plugin
             exit;
         }
 
-        $idList = implode(',', $studentIds);
-        $where  = "WHERE al.user_id IN ($idList)";
-        if ($startDate) $where .= " AND al.date >= '" . Database::escape_string($startDate) . "'";
-        if ($endDate)   $where .= " AND al.date <= '" . Database::escape_string($endDate)   . "'";
+        // 2. Generate every calendar date in the range
+        $today = date('Y-m-d');
+        $start = $startDate ?: $today;
+        $end   = $endDate   ?: $today;
+        if ($start > $end) [$start, $end] = [$end, $start];
 
-        $attSql = "SELECT al.date, al.user_id, al.check_in, al.status, al.method, al.notes
-                   FROM $logTable al
-                   $where
-                   ORDER BY al.date DESC";
-        $attRes = Database::query($attSql);
-
-        $statusLabels = ['on_time' => 'Puntual', 'late' => 'Tardanza', 'absent' => 'Ausente'];
-        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
-
-        $rawRows      = [];
-        $existingKeys = [];
-        while ($row = Database::fetch_array($attRes, 'ASSOC')) {
-            $existingKeys[$row['date'] . '|' . $row['user_id']] = true;
-            $s = $students[$row['user_id']] ?? [];
-            $rawRows[] = array_merge($row, [
-                'lastname'  => $s['lastname']  ?? '',
-                'firstname' => $s['firstname'] ?? '',
-                'username'  => $s['username']  ?? '',
-                'dni'       => $s['dni']        ?? '',
-            ]);
+        $allDates = [];
+        $cur = new DateTime($start);
+        $last = new DateTime($end);
+        while ($cur <= $last) {
+            $allDates[] = $cur->format('Y-m-d');
+            $cur->modify('+1 day');
         }
 
-        // Synthetic absent rows for active school days
-        $activeDates = $this->getActiveDatesInRange($startDate, $endDate);
-        foreach ($activeDates as $date) {
-            foreach ($students as $uid => $s) {
-                if (isset($existingKeys[$date . '|' . $uid])) continue;
-                $rawRows[] = [
-                    'date'      => $date,
-                    'user_id'   => $uid,
-                    'lastname'  => $s['lastname'],
-                    'firstname' => $s['firstname'],
-                    'username'  => $s['username'],
-                    'dni'       => $s['dni'],
-                    'check_in'  => null,
-                    'status'    => 'absent',
-                    'method'    => null,
-                    'notes'     => null,
-                ];
-            }
+        // 3. Fetch attendance records indexed by [user_id][date]
+        $idList  = implode(',', $studentIds);
+        $startE  = Database::escape_string($start);
+        $endE    = Database::escape_string($end);
+        $attSql  = "SELECT al.user_id, al.date, al.status
+                    FROM $logTable al
+                    WHERE al.user_id IN ($idList)
+                      AND al.date >= '$startE' AND al.date <= '$endE'";
+        $attRes  = Database::query($attSql);
+        $attMap  = [];
+        while ($r = Database::fetch_array($attRes, 'ASSOC')) {
+            $attMap[$r['user_id']][$r['date']] = $r['status'];
         }
 
-        usort($rawRows, function ($a, $b) {
-            $d = strcmp($b['date'], $a['date']);
-            return $d !== 0 ? $d : strcasecmp($a['lastname'] ?? '', $b['lastname'] ?? '');
-        });
+        // 4. Build pivot headers and rows
+        // Style indices: 0=normal, 1=header, 2=green(on_time), 3=orange(late), 4=red(absent)
+        $statusLabel = ['on_time' => 'P', 'late' => 'T', 'absent' => 'A'];
+        $statusStyle = ['on_time' => 2,   'late' => 3,   'absent' => 4];
 
-        $headers = ['Fecha', 'Apellidos', 'Nombres', 'DNI', 'Usuario', 'Hora Ingreso', 'Estado', 'Metodo', 'Observaciones'];
+        $fixedHeaders = ['N°', 'Apellidos', 'Nombres', 'DNI', 'Correo'];
+        $dateHeaders  = array_map(function($d) {
+            // Format as dd/mm to keep columns narrow
+            return date('d/m', strtotime($d));
+        }, $allDates);
+        $headers = array_merge($fixedHeaders, $dateHeaders);
+
         $rows = [];
-        foreach ($rawRows as $row) {
-            $checkIn = !empty($row['check_in']) ? date('H:i:s', strtotime(api_get_local_time($row['check_in']))) : '-';
+        foreach ($students as $idx => $s) {
+            $uid        = (int) $s['user_id'];
+            $fixedCells = [
+                (string)($idx + 1),
+                $s['lastname'],
+                $s['firstname'],
+                $s['dni'] ?? '',
+                $s['email'] ?? '',
+            ];
+            $fixedStyles = [0, 0, 0, 0, 0];
+
+            $dateCells  = [];
+            $dateStyles = [];
+            foreach ($allDates as $date) {
+                $status = $attMap[$uid][$date] ?? 'absent';
+                $dateCells[]  = $statusLabel[$status] ?? 'A';
+                $dateStyles[] = $statusStyle[$status] ?? 4;
+            }
+
             $rows[] = [
-                'data' => [
-                    $row['date'],
-                    $row['lastname'],
-                    $row['firstname'],
-                    $row['dni'],
-                    $row['username'],
-                    $checkIn,
-                    $statusLabels[$row['status']] ?? $row['status'],
-                    ($row['status'] === 'absent') ? '-' : (!empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-'),
-                    $row['notes'] ?? '',
-                ],
-                'status' => $row['status'],
+                'data'       => array_merge($fixedCells, $dateCells),
+                'cellStyles' => array_merge($fixedStyles, $dateStyles),
             ];
         }
 
-        $xlsx     = $this->buildXlsx($headers, $rows);
+        $xlsx     = $this->buildXlsxPivot($headers, $rows);
         $filename = 'asistencia_aula_' . date('Y-m-d_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -5198,6 +5193,151 @@ class SchoolPlugin extends Plugin
         header('Cache-Control: max-age=0');
         echo $xlsx;
         exit;
+    }
+
+    /**
+     * Build pivot XLSX with per-cell style support.
+     * rows = [['data' => [...], 'cellStyles' => [styleIdx per cell]]]
+     */
+    private function buildXlsxPivot(array $headers, array $rows): string
+    {
+        $strings  = [];
+        $strIndex = [];
+        $addStr = function(string $val) use (&$strings, &$strIndex): int {
+            if (!isset($strIndex[$val])) {
+                $strIndex[$val] = count($strings);
+                $strings[] = $val;
+            }
+            return $strIndex[$val];
+        };
+
+        $sheetXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $sheetXml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $sheetXml .= '<sheetData>';
+
+        // Header row (style 1 = bold dark-blue)
+        $sheetXml .= '<row r="1">';
+        foreach ($headers as $ci => $h) {
+            $col = $this->xlsxColName($ci) . '1';
+            $si  = $addStr((string) $h);
+            $sheetXml .= '<c r="' . $col . '" t="s" s="1"><v>' . $si . '</v></c>';
+        }
+        $sheetXml .= '</row>';
+
+        // Data rows with per-cell styles
+        foreach ($rows as $ri => $rowInfo) {
+            $rn = $ri + 2;
+            $sheetXml .= '<row r="' . $rn . '">';
+            foreach ($rowInfo['data'] as $ci => $val) {
+                $col   = $this->xlsxColName($ci) . $rn;
+                $st    = $rowInfo['cellStyles'][$ci] ?? 0;
+                $si    = $addStr((string) $val);
+                $sheetXml .= '<c r="' . $col . '" t="s" s="' . $st . '"><v>' . $si . '</v></c>';
+            }
+            $sheetXml .= '</row>';
+        }
+
+        // Legend rows (2 blank rows gap, then leyenda)
+        $legendStartRow = count($rows) + 4;
+
+        // Title row
+        $sheetXml .= '<row r="' . $legendStartRow . '">';
+        $sheetXml .= '<c r="A' . $legendStartRow . '" t="s" s="1"><v>' . $addStr('LEYENDA') . '</v></c>';
+        $sheetXml .= '</row>';
+
+        $legend = [
+            ['P', 2, 'Puntual — asistió a tiempo'],
+            ['T', 3, 'Tardanza — asistió con retraso'],
+            ['A', 4, 'Ausente — no asistió o sin registro'],
+        ];
+        foreach ($legend as $li => [$symbol, $style, $desc]) {
+            $rn = $legendStartRow + 1 + $li;
+            $sheetXml .= '<row r="' . $rn . '">';
+            $sheetXml .= '<c r="A' . $rn . '" t="s" s="' . $style . '"><v>' . $addStr($symbol) . '</v></c>';
+            $sheetXml .= '<c r="B' . $rn . '" t="s" s="0"><v>' . $addStr($desc) . '</v></c>';
+            $sheetXml .= '</row>';
+        }
+
+        $sheetXml .= '</sheetData></worksheet>';
+
+        // Shared strings
+        $ssXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $ssXml .= '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' . count($strings) . '" uniqueCount="' . count($strings) . '">';
+        foreach ($strings as $s) {
+            $ssXml .= '<si><t xml:space="preserve">' . htmlspecialchars($s, ENT_XML1, 'UTF-8') . '</t></si>';
+        }
+        $ssXml .= '</sst>';
+
+        // Styles: 0=normal, 1=header bold blue, 2=green, 3=orange, 4=red
+        $stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts>
+    <font><sz val="11"/><name val="Calibri"/></font>
+    <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FFFFFFFF"/></font>
+    <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF1A4A1A"/></font>
+    <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF5A3A00"/></font>
+    <font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF5A0000"/></font>
+  </fonts>
+  <fills>
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF1F4E79"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFFEB9C"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFFC7CE"/></patternFill></fill>
+  </fills>
+  <borders><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="3" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="4" fillId="5" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+  </cellXfs>
+</styleSheet>';
+
+        $wbXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $wbXml .= '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+        $wbXml .= '<sheets><sheet name="Asistencia" sheetId="1" r:id="rId1"/></sheets></workbook>';
+
+        $wbRels  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $wbRels .= '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        $wbRels .= '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>';
+        $wbRels .= '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>';
+        $wbRels .= '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+        $wbRels .= '</Relationships>';
+
+        $rootRels  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $rootRels .= '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        $rootRels .= '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>';
+        $rootRels .= '</Relationships>';
+
+        $contentTypes  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $contentTypes .= '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
+        $contentTypes .= '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>';
+        $contentTypes .= '<Default Extension="xml" ContentType="application/xml"/>';
+        $contentTypes .= '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
+        $contentTypes .= '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        $contentTypes .= '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>';
+        $contentTypes .= '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+        $contentTypes .= '</Types>';
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'xlsx_');
+        $zip = new ZipArchive();
+        $zip->open($tmpFile, ZipArchive::OVERWRITE);
+        $zip->addFromString('[Content_Types].xml',        $contentTypes);
+        $zip->addFromString('_rels/.rels',                $rootRels);
+        $zip->addFromString('xl/workbook.xml',            $wbXml);
+        $zip->addFromString('xl/_rels/workbook.xml.rels', $wbRels);
+        $zip->addFromString('xl/worksheets/sheet1.xml',   $sheetXml);
+        $zip->addFromString('xl/sharedStrings.xml',       $ssXml);
+        $zip->addFromString('xl/styles.xml',              $stylesXml);
+        $zip->close();
+
+        $data = file_get_contents($tmpFile);
+        unlink($tmpFile);
+        return $data;
     }
 
     /**
