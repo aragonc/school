@@ -840,6 +840,13 @@ class SchoolPlugin extends Plugin
         $sql9 = "UPDATE $scheduleTable SET applies_to = 'student' WHERE applies_to = 'students'";
         @Database::query($sql9);
 
+        // Migration: add attachment column to attendance_log if not exists
+        $attLogTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $colAttach = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$attLogTable' AND COLUMN_NAME = 'attachment'");
+        if (Database::num_rows($colAttach) === 0) {
+            Database::query("ALTER TABLE $attLogTable ADD COLUMN attachment VARCHAR(255) NULL AFTER notes");
+        }
+
         // Academic tables
         $sqlAcad1 = "CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ACADEMIC_YEAR." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,

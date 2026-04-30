@@ -273,6 +273,58 @@ switch ($action) {
         echo json_encode(['success' => true, 'status' => $status, 'att_time' => $attTime, 'attachment_url' => $attachmentUrl]);
         break;
 
+    case 'delete_attendance_attachment':
+        $manualTutorEnabled = $plugin->getSchoolSetting('attendance_manual_tutor') === '1';
+        $isTeacher = (int)(api_get_user_info($currentUserId)['status'] ?? 0) === COURSEMANAGER;
+
+        if (!$isAdmin && !($isTeacher && $manualTutorEnabled)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            break;
+        }
+
+        $studentUserId = (int)($_POST['user_id'] ?? 0);
+        $date          = trim($_POST['date'] ?? '');
+        $classroomId   = (int)($_POST['classroom_id'] ?? 0);
+
+        if ($studentUserId <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            echo json_encode(['success' => false, 'error' => 'Datos inválidos']);
+            break;
+        }
+
+        // Tutor: verificar que sea tutor del aula
+        if (!$isAdmin) {
+            $classroomTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+            $clsRow = Database::fetch_array(
+                Database::query("SELECT id FROM $classroomTable WHERE id = $classroomId AND tutor_id = $currentUserId LIMIT 1"),
+                'ASSOC'
+            );
+            if (!$clsRow) {
+                echo json_encode(['success' => false, 'error' => 'Sin permisos sobre esta aula']);
+                break;
+            }
+        }
+
+        $logTable  = Database::get_main_table('plugin_school_attendance_log');
+        $safeDate  = Database::escape_string($date);
+        $row = Database::fetch_array(
+            Database::query("SELECT id, attachment FROM $logTable WHERE user_id = $studentUserId AND date = '$safeDate' LIMIT 1"),
+            'ASSOC'
+        );
+
+        if (!$row || empty($row['attachment'])) {
+            echo json_encode(['success' => false, 'error' => 'No hay adjunto para eliminar']);
+            break;
+        }
+
+        $filePath = api_get_path(SYS_PLUGIN_PATH) . 'school/uploads/attendance/' . $row['attachment'];
+        if (is_file($filePath)) {
+            @unlink($filePath);
+        }
+
+        Database::update($logTable, ['attachment' => null], ['id = ?' => (int)$row['id']]);
+        echo json_encode(['success' => true]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'error' => 'Acción no reconocida']);
         break;

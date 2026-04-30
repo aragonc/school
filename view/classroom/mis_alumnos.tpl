@@ -260,11 +260,20 @@
                                 </span>
                                 {% endif %}
                                 {% if s.att_attachment %}
-                                <a href="{{ s.att_attachment_url }}" download
-                                   class="d-inline-flex align-items-center mt-1 small text-secondary"
-                                   title="Descargar sustento">
-                                    <i class="fas fa-paperclip mr-1"></i>Sustento adjunto
-                                </a>
+                                <div class="d-flex align-items-center mt-1" style="gap:6px;">
+                                    <a href="{{ s.att_attachment_url }}" download
+                                       class="d-inline-flex align-items-center small text-secondary"
+                                       title="Descargar sustento">
+                                        <i class="fas fa-paperclip mr-1"></i>Sustento adjunto
+                                    </a>
+                                    <button type="button"
+                                            class="btn btn-link p-0 text-danger"
+                                            style="font-size:11px;line-height:1;"
+                                            title="Eliminar adjunto"
+                                            onclick="deleteAttachment('{{ s.user_id }}', this)">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </div>
                                 {% endif %}
                                 {% if not s.att_notes and not s.att_attachment %}
                                 <span class="text-muted">&mdash;</span>
@@ -755,7 +764,10 @@ function updateRowUI(userId, status, attTime, notes, attachmentUrl) {
             html += '<span class="text-dark d-block" title="'+escaped+'" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+escaped+'</span>';
         }
         if (attachmentUrl) {
-            html += '<a href="'+attachmentUrl+'" download class="d-inline-flex align-items-center mt-1 small text-secondary" title="Descargar sustento"><i class="fas fa-paperclip mr-1"></i>Sustento adjunto</a>';
+            html += '<div class="d-flex align-items-center mt-1" style="gap:6px;">'
+                  + '<a href="'+attachmentUrl+'" download class="d-inline-flex align-items-center small text-secondary" title="Descargar sustento"><i class="fas fa-paperclip mr-1"></i>Sustento adjunto</a>'
+                  + '<button type="button" class="btn btn-link p-0 text-danger" style="font-size:11px;line-height:1;" title="Eliminar adjunto" onclick="deleteAttachment(\''+userId+'\', this)"><i class="fas fa-times-circle"></i></button>'
+                  + '</div>';
         }
         notesCell.innerHTML = html || '<span class="text-muted">&mdash;</span>';
     }
@@ -863,6 +875,43 @@ document.querySelectorAll('input[name="att_status"]').forEach(function(radio) {
 document.getElementById('attNotesInput').addEventListener('input', function() {
     document.getElementById('attNotesCount').textContent = this.value.length + '/500';
 });
+
+// ---- Eliminar adjunto ----
+async function deleteAttachment(userId, btn) {
+    if (!confirm('¿Eliminar el documento adjunto de este registro?')) return;
+
+    btn.disabled = true;
+    try {
+        var fd = new FormData();
+        fd.append('action',       'delete_attendance_attachment');
+        fd.append('user_id',      userId);
+        fd.append('date',         ATT_DATE);
+        fd.append('classroom_id', ATT_CLASSROOM);
+        var resp = await fetch(AJAX_URL, { method: 'POST', body: fd });
+        var data = await resp.json();
+        if (data.success) {
+            // Eliminar el bloque del adjunto de la celda
+            var row = document.querySelector('tr[data-user-id="'+userId+'"]');
+            if (row) {
+                var cell = row.querySelector('.att-notes-cell');
+                if (cell) {
+                    var attachDiv = cell.querySelector('.d-flex');
+                    if (attachDiv) attachDiv.remove();
+                    // Si la celda quedó vacía, mostrar guión
+                    if (!cell.textContent.trim()) {
+                        cell.innerHTML = '<span class="text-muted">&mdash;</span>';
+                    }
+                }
+            }
+        } else {
+            alert(data.error || 'No se pudo eliminar el adjunto.');
+            btn.disabled = false;
+        }
+    } catch(e) {
+        alert('Error al eliminar el adjunto.');
+        btn.disabled = false;
+    }
+}
 </script>
 {% endif %}
 
