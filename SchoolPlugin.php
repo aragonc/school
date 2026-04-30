@@ -4138,6 +4138,46 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Get login/connection stats for a user: total count and last login date.
+     */
+    public function getUserLoginStats(int $userId): array
+    {
+        $loginTable = Database::get_main_table(TABLE_STATISTIC_TRACK_E_LOGIN);
+        $sql = "SELECT COUNT(*) as total, MAX(login_date) as last_login
+                FROM $loginTable
+                WHERE login_user_id = $userId";
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+        return [
+            'total'      => (int) ($row['total'] ?? 0),
+            'last_login' => $row['last_login'] ?? null,
+        ];
+    }
+
+    /**
+     * Get monthly attendance summary for a user grouped by day.
+     * Returns array of ['date' => ..., 'status' => ...] for the given month.
+     */
+    public function getMonthlyAttendanceSummary(int $userId, string $yearMonth): array
+    {
+        $logTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $startDate = $yearMonth . '-01';
+        $endDate   = date('Y-m-t', strtotime($startDate));
+        $sql = "SELECT date, status
+                FROM $logTable
+                WHERE user_id = $userId
+                  AND date >= '$startDate'
+                  AND date <= '$endDate'
+                ORDER BY date ASC";
+        $result = Database::query($sql);
+        $records = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $records[] = $row;
+        }
+        return $records;
+    }
+
+    /**
      * Build SQL WHERE clause fragment to filter by user type/role.
      */
     private function getUserTypeFilter(?string $userType): string

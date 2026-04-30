@@ -4,7 +4,7 @@
 
 <div class="row">
     <!-- Cursos activos -->
-    <div class="col-md-4 col-sm-6 mb-4">
+    <div class="col-md-3 col-sm-6 mb-4">
         <a href="/courses" class="text-decoration-none">
             <div class="card border-left-primary shadow h-100">
                 <div class="card-body">
@@ -25,7 +25,7 @@
     </div>
 
     <!-- Cursos anteriores -->
-    <div class="col-md-4 col-sm-6 mb-4">
+    <div class="col-md-3 col-sm-6 mb-4">
         <a href="/previous" class="text-decoration-none">
             <div class="card border-left-success shadow h-100">
                 <div class="card-body">
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Asistencia hoy -->
-    <div class="col-md-4 col-sm-6 mb-4">
+    <div class="col-md-3 col-sm-6 mb-4">
         <a href="/attendance/my" class="text-decoration-none">
             <div class="card border-left-info shadow h-100">
                 <div class="card-body">
@@ -78,7 +78,122 @@
             </div>
         </a>
     </div>
+
+    <!-- Conexiones a la plataforma -->
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-left-secondary shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                            Conexiones a la plataforma
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ login_stats.total }}</div>
+                        {% if login_stats.last_login %}
+                        <div class="text-xs text-muted mt-1">
+                            <i class="fas fa-clock"></i>
+                            Última: {{ login_stats.last_login|date('d/m/Y H:i') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-sign-in-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Gráfico de asistencia mensual -->
+{% if monthly_attendance|length > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar mr-2"></i>Asistencia del mes
+                </h6>
+                <a href="/attendance/my" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+            </div>
+            <div class="card-body">
+                <canvas id="attendanceChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var rawData = {{ monthly_attendance|json_encode }};
+    var labels = [], onTime = [], late = [], absent = [];
+    var byDate = {};
+    rawData.forEach(function(r) {
+        byDate[r.date] = r.status;
+    });
+    Object.keys(byDate).sort().forEach(function(d) {
+        var day = d.split('-')[2];
+        labels.push(day);
+        onTime.push(byDate[d] === 'on_time' ? 1 : 0);
+        late.push(byDate[d] === 'late' ? 1 : 0);
+        absent.push(byDate[d] === 'absent' ? 1 : 0);
+    });
+
+    var ctx = document.getElementById('attendanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'A tiempo',
+                    data: onTime,
+                    backgroundColor: 'rgba(28,200,138,0.7)',
+                    borderColor: '#1cc88a',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Tardanza',
+                    data: late,
+                    backgroundColor: 'rgba(246,194,62,0.7)',
+                    borderColor: '#f6c23e',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Ausente',
+                    data: absent,
+                    backgroundColor: 'rgba(231,74,59,0.7)',
+                    borderColor: '#e74a3b',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { stacked: true, grid: { display: false } },
+                y: {
+                    stacked: true,
+                    ticks: { stepSize: 1, precision: 0 },
+                    max: 1
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + (ctx.raw === 1 ? 'Sí' : 'No');
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endif %}
 
 {% if show_certificates %}
 <div class="row">
@@ -147,10 +262,11 @@
 
 <style>
 /* ── Stats cards ── */
-.border-left-primary { border-left: 4px solid #4e73df !important; }
-.border-left-success { border-left: 4px solid #1cc88a !important; }
-.border-left-info    { border-left: 4px solid #36b9cc !important; }
-.border-left-warning { border-left: 4px solid #f6c23e !important; }
+.border-left-primary   { border-left: 4px solid #4e73df !important; }
+.border-left-success   { border-left: 4px solid #1cc88a !important; }
+.border-left-info      { border-left: 4px solid #36b9cc !important; }
+.border-left-warning   { border-left: 4px solid #f6c23e !important; }
+.border-left-secondary { border-left: 4px solid #858796 !important; }
 .text-xs { font-size: .7rem; }
 a.text-decoration-none:hover { text-decoration: none; }
 a.text-decoration-none .card { transition: transform 0.15s ease-in-out; }

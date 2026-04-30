@@ -50,10 +50,19 @@ if ($enable) {
     $todayDate = date('Y-m-d');
     $todayAttendance = $plugin->getAttendanceByUser($userId, $todayDate, $todayDate);
 
+    // Estadísticas de conexiones
+    $loginStats = $plugin->getUserLoginStats($userId);
+
+    // Asistencia mensual para gráfico
+    $currentYearMonth = date('Y-m');
+    $monthlyAttendance = $plugin->getMonthlyAttendanceSummary($userId, $currentYearMonth);
+
     $plugin->assign('user_info', $userInfo);
     $plugin->assign('total_courses', $countCourses + $totalBaseCourses);
     $plugin->assign('total_history', $countHistory);
     $plugin->assign('today_attendance', $todayAttendance);
+    $plugin->assign('login_stats', $loginStats);
+    $plugin->assign('monthly_attendance', $monthlyAttendance);
     $plugin->assign('show_certificates', $plugin->get('show_certificates') == 'true');
 
     // Documentos de Reglamento Interno
