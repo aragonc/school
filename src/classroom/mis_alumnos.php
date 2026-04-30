@@ -95,6 +95,7 @@ if ($classroomId > 0) {
                 al.check_in   AS att_check_in,
                 al.method     AS att_method,
                 al.notes      AS att_notes,
+                al.attachment AS att_attachment,
                 (SELECT MAX(tl.login_date)
                  FROM $loginTable tl
                  WHERE tl.login_user_id = cs.user_id) AS last_login
@@ -139,6 +140,13 @@ if ($classroomId > 0) {
             $row['att_time'] = date('H:i', strtotime(api_get_local_time($row['att_check_in'])));
         } else {
             $row['att_time'] = '';
+        }
+
+        // Attachment URL
+        if (!empty($row['att_attachment'])) {
+            $row['att_attachment_url'] = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/attendance/' . $row['att_attachment'];
+        } else {
+            $row['att_attachment_url'] = '';
         }
 
         // Attendance counts

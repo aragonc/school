@@ -252,13 +252,28 @@
                             </td>
 
                             {# Observaciones #}
-                            <td class="att-notes-cell" style="font-size:12px;max-width:180px;">
+                            <td class="att-notes-cell" style="font-size:12px;max-width:200px;">
                                 {% if s.att_notes %}
-                                <span class="text-dark" title="{{ s.att_notes }}"
+                                <span class="text-dark d-block" title="{{ s.att_notes }}"
                                       style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
                                     {{ s.att_notes }}
                                 </span>
-                                {% else %}
+                                {% endif %}
+                                {% if s.att_attachment %}
+                                    {% if s.att_attachment|lower ends with '.pdf' %}
+                                    <a href="{{ s.att_attachment_url }}" target="_blank"
+                                       class="d-inline-flex align-items-center mt-1 small text-danger">
+                                        <i class="fas fa-file-pdf mr-1"></i>Ver PDF
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ s.att_attachment_url }}" target="_blank" class="d-block mt-1">
+                                        <img src="{{ s.att_attachment_url }}"
+                                             style="max-height:48px;max-width:80px;border-radius:4px;border:1px solid #e2e8f0;"
+                                             alt="sustento">
+                                    </a>
+                                    {% endif %}
+                                {% endif %}
+                                {% if not s.att_notes and not s.att_attachment %}
                                 <span class="text-muted">&mdash;</span>
                                 {% endif %}
                             </td>
@@ -484,6 +499,24 @@ document.querySelectorAll('.lh-ago').forEach(function(el) {
                     <small class="form-text text-muted text-right" id="attNotesCount">0/500</small>
                 </div>
 
+                {# Adjunto (solo tardanza / ausente) #}
+                <div class="mb-1" id="attAttachmentGroup" style="display:none;">
+                    <label class="font-weight-bold mb-1 d-block" for="attFileInput">
+                        <i class="fas fa-paperclip mr-1 text-muted"></i> Documento sustento
+                        <span class="text-muted font-weight-normal" style="font-size:12px;">(opcional — imagen o PDF)</span>
+                    </label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="attFileInput"
+                               accept="image/jpeg,image/png,image/gif,application/pdf"
+                               onchange="attFileChanged(this)">
+                        <label class="custom-file-label text-muted" for="attFileInput" id="attFileLabel">
+                            Seleccionar archivo…
+                        </label>
+                    </div>
+                    <small class="form-text text-muted">Máximo 5 MB. Formatos: JPG, PNG, GIF, PDF.</small>
+                    <div id="attFilePreview" class="mt-2" style="display:none;"></div>
+                </div>
+
                 {# Lista de alumnos con checkboxes (modo bulk, solo admins) #}
                 <div id="attBulkSection">
                     <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap" style="gap:8px;">
@@ -628,6 +661,16 @@ function openAttModal(userId, defaultStatus, name, foto, currentStatus, currentT
     document.getElementById('attNotesInput').value = '';
     document.getElementById('attNotesCount').textContent = '0/500';
 
+    // Limpiar adjunto
+    var fileInput = document.getElementById('attFileInput');
+    if (fileInput) {
+        fileInput.value = '';
+        document.getElementById('attFileLabel').textContent = 'Seleccionar archivo…';
+        var prev = document.getElementById('attFilePreview');
+        prev.style.display = 'none';
+        prev.innerHTML = '';
+    }
+
     // Guardar userId en el botón save para modo individual
     document.getElementById('attSaveBtn').setAttribute('data-single-user', userId || '');
 
@@ -646,6 +689,43 @@ function toggleTimeInput(status) {
         grp.style.opacity = '1';
         inp.disabled = false;
     }
+    // Mostrar adjunto solo para tardanza/ausente
+    var attachGroup = document.getElementById('attAttachmentGroup');
+    if (attachGroup) {
+        attachGroup.style.display = (status === 'late' || status === 'absent') ? '' : 'none';
+    }
+}
+
+// ---- Preview del archivo adjunto ----
+function attFileChanged(input) {
+    var label   = document.getElementById('attFileLabel');
+    var preview = document.getElementById('attFilePreview');
+    if (!input.files || !input.files[0]) {
+        label.textContent = 'Seleccionar archivo…';
+        preview.style.display = 'none';
+        preview.innerHTML = '';
+        return;
+    }
+    var file = input.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+        alert('El archivo supera los 5 MB.');
+        input.value = '';
+        label.textContent = 'Seleccionar archivo…';
+        preview.style.display = 'none';
+        preview.innerHTML = '';
+        return;
+    }
+    label.textContent = file.name;
+    preview.style.display = '';
+    if (file.type.startsWith('image/')) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = '<img src="'+e.target.result+'" style="max-height:120px;max-width:100%;border-radius:6px;border:1px solid #e2e8f0;" alt="">';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.innerHTML = '<span class="badge badge-light border"><i class="fas fa-file-pdf text-danger mr-1"></i>' + file.name + '</span>';
+    }
 }
 
 // ---- Contador seleccionados ----
@@ -660,7 +740,7 @@ function attSelectAll(val) {
 }
 
 // ---- Actualizar fila tras guardar ----
-function updateRowUI(userId, status, attTime, notes) {
+function updateRowUI(userId, status, attTime, notes, attachmentUrl) {
     var row = document.querySelector('tr[data-user-id="'+userId+'"]');
     if (!row) return;
 
@@ -676,12 +756,18 @@ function updateRowUI(userId, status, attTime, notes) {
 
     var notesCell = row.querySelector('.att-notes-cell');
     if (notesCell) {
+        var html = '';
         if (notes) {
             var escaped = notes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-            notesCell.innerHTML = '<span class="text-dark" title="'+escaped+'" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+escaped+'</span>';
-        } else {
-            notesCell.innerHTML = '<span class="text-muted">&mdash;</span>';
+            html += '<span class="text-dark d-block" title="'+escaped+'" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+escaped+'</span>';
         }
+        if (attachmentUrl) {
+            var isPdf = attachmentUrl.toLowerCase().indexOf('.pdf') >= 0;
+            html += isPdf
+                ? '<a href="'+attachmentUrl+'" target="_blank" class="d-inline-flex align-items-center mt-1 small text-danger"><i class="fas fa-file-pdf mr-1"></i>Ver PDF</a>'
+                : '<a href="'+attachmentUrl+'" target="_blank" class="d-block mt-1"><img src="'+attachmentUrl+'" style="max-height:48px;max-width:80px;border-radius:4px;border:1px solid #e2e8f0;" alt="sustento"></a>';
+        }
+        notesCell.innerHTML = html || '<span class="text-muted">&mdash;</span>';
     }
 
     // Botones de la fila (admin: btn-group; tutor: botón Modificar)
@@ -737,27 +823,28 @@ async function saveAttManual() {
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando…';
 
+    var fileInput  = document.getElementById('attFileInput');
+    var fileToSend = (fileInput && fileInput.files && fileInput.files[0]) ? fileInput.files[0] : null;
+
     var errors = 0;
     for (var i = 0; i < userIds.length; i++) {
         var uid = userIds[i];
         try {
-            var params = new URLSearchParams({
-                action:        'mark_student_attendance',
-                user_id:       uid,
-                classroom_id:  ATT_CLASSROOM,
-                date:          ATT_DATE,
-                status:        status,
-                check_in_time: checkInTime,
-                notes:         notes
-            });
-            var resp = await fetch(AJAX_URL, {
-                method:  'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body:    params.toString()
-            });
+            var fd = new FormData();
+            fd.append('action',        'mark_student_attendance');
+            fd.append('user_id',       uid);
+            fd.append('classroom_id',  ATT_CLASSROOM);
+            fd.append('date',          ATT_DATE);
+            fd.append('status',        status);
+            fd.append('check_in_time', checkInTime);
+            fd.append('notes',         notes);
+            if (fileToSend && (status === 'late' || status === 'absent')) {
+                fd.append('attachment', fileToSend, fileToSend.name);
+            }
+            var resp = await fetch(AJAX_URL, { method: 'POST', body: fd });
             var data = await resp.json();
             if (data.success) {
-                updateRowUI(uid, status, data.att_time || '', notes);
+                updateRowUI(uid, status, data.att_time || '', notes, data.attachment_url || '');
             } else {
                 errors++;
                 console.warn('Error al guardar alumno '+uid+':', data.error);

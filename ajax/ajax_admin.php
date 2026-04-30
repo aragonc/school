@@ -201,21 +201,6 @@ switch ($action) {
                 break;
             }
 
-            // Tutores solo pueden modificar alumnos ausentes o sin registro
-            $logTableCheck = Database::get_main_table('plugin_school_attendance_log');
-            $safeDateCheck = Database::escape_string($date);
-            $existingCheck = Database::fetch_array(
-                Database::query(
-                    "SELECT status FROM $logTableCheck
-                     WHERE user_id = $studentUserId AND date = '$safeDateCheck' LIMIT 1"
-                ),
-                'ASSOC'
-            );
-            $currentStatus = $existingCheck ? $existingCheck['status'] : null;
-            if ($currentStatus !== null && $currentStatus !== 'absent') {
-                echo json_encode(['success' => false, 'error' => 'Solo puedes modificar alumnos ausentes o sin registro']);
-                break;
-            }
         }
 
         // Construir datetime de check_in (guardar en UTC)
@@ -226,37 +211,66 @@ switch ($action) {
             $checkIn = $date . ' 00:00:00';
         }
 
+        // Procesar archivo adjunto (solo para tardanza/ausente)
+        $attachmentFilename = null;
+        $attachmentUrl      = null;
+        if (in_array($status, ['late', 'absent']) && isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+            $file     = $_FILES['attachment'];
+            $maxBytes = 5 * 1024 * 1024;
+            $allowed  = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+            $finfo    = new finfo(FILEINFO_MIME_TYPE);
+            $mime     = $finfo->file($file['tmp_name']);
+
+            if ($file['size'] <= $maxBytes && in_array($mime, $allowed)) {
+                $ext              = $mime === 'application/pdf' ? 'pdf' : pathinfo($file['name'], PATHINFO_EXTENSION);
+                $ext              = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $ext));
+                $attachmentFilename = 'att_' . $studentUserId . '_' . date('Ymd') . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                $destDir  = api_get_path(SYS_PLUGIN_PATH) . 'school/uploads/attendance/';
+                if (move_uploaded_file($file['tmp_name'], $destDir . $attachmentFilename)) {
+                    $attachmentUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/uploads/attendance/' . $attachmentFilename;
+                } else {
+                    $attachmentFilename = null;
+                }
+            }
+        }
+
         $logTable = Database::get_main_table('plugin_school_attendance_log');
         $safeDate = Database::escape_string($date);
 
         $existingResult = Database::query(
-            "SELECT id FROM $logTable WHERE user_id = $studentUserId AND date = '$safeDate' LIMIT 1"
+            "SELECT id, attachment FROM $logTable WHERE user_id = $studentUserId AND date = '$safeDate' LIMIT 1"
         );
         $existing = Database::fetch_array($existingResult, 'ASSOC');
 
+        $rowData = [
+            'status'        => $status,
+            'check_in'      => $checkIn,
+            'method'        => 'manual',
+            'registered_by' => $currentUserId,
+            'notes'         => $notes !== '' ? $notes : null,
+        ];
+        if ($attachmentFilename !== null) {
+            // Eliminar archivo anterior si existe
+            if ($existing && !empty($existing['attachment'])) {
+                $oldPath = api_get_path(SYS_PLUGIN_PATH) . 'school/uploads/attendance/' . $existing['attachment'];
+                if (is_file($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+            $rowData['attachment'] = $attachmentFilename;
+        }
+
         if ($existing) {
-            Database::update($logTable, [
-                'status'        => $status,
-                'check_in'      => $checkIn,
-                'method'        => 'manual',
-                'registered_by' => $currentUserId,
-                'notes'         => $notes !== '' ? $notes : null,
-            ], ['id = ?' => (int)$existing['id']]);
+            Database::update($logTable, $rowData, ['id = ?' => (int)$existing['id']]);
         } else {
-            Database::insert($logTable, [
-                'user_id'       => $studentUserId,
-                'date'          => $date,
-                'status'        => $status,
-                'check_in'      => $checkIn,
-                'method'        => 'manual',
-                'registered_by' => $currentUserId,
-                'notes'         => $notes !== '' ? $notes : null,
-                'created_at'    => api_get_utc_datetime(),
-            ]);
+            $rowData['user_id']    = $studentUserId;
+            $rowData['date']       = $date;
+            $rowData['created_at'] = api_get_utc_datetime();
+            Database::insert($logTable, $rowData);
         }
 
         $attTime = ($status !== 'absent' && preg_match('/^\d{2}:\d{2}$/', $checkInTime)) ? $checkInTime : '';
-        echo json_encode(['success' => true, 'status' => $status, 'att_time' => $attTime]);
+        echo json_encode(['success' => true, 'status' => $status, 'att_time' => $attTime, 'attachment_url' => $attachmentUrl]);
         break;
 
     default:
