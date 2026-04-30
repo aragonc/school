@@ -5204,6 +5204,98 @@ class SchoolPlugin extends Plugin
         exit;
     }
 
+    public function exportAttendanceExcelSimple(
+        ?string $startDate = null,
+        ?string $endDate   = null,
+        ?string $userType  = null,
+        int $levelId = 0, int $gradeId = 0, int $sectionId = 0
+    ): void {
+        $logTable      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable     = Database::get_main_table(TABLE_MAIN_USER);
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $adminTable    = Database::get_main_table(TABLE_MAIN_ADMIN);
+
+        $where = "WHERE 1=1";
+        if ($startDate) $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+        $where .= $this->getUserTypeFilter($userType);
+
+        $isStudents  = ($userType === 'students');
+        $extraJoins  = '';
+        $extraSelect = '';
+        if ($isStudents) {
+            $af          = $this->getStudentAcademicFilter($levelId, $gradeId, $sectionId);
+            $where      .= $af['where'];
+            $extraJoins  = $this->getStudentAcademicDisplayJoins($levelId, $gradeId);
+            $extraSelect = ", slv.name AS nivel_name, sg.name AS grado_name, ssc.name AS seccion_name";
+        }
+
+        $sql = "SELECT al.date, al.user_id, u.lastname, u.firstname, u.username,
+                       al.check_in, al.status, al.method, al.notes
+                       $extraSelect
+                FROM $logTable al
+                INNER JOIN $userTable u ON al.user_id = u.id
+                LEFT JOIN $adminTable adm ON u.id = adm.user_id
+                LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $extraJoins
+                $where
+                ORDER BY al.date DESC, u.lastname ASC";
+        $result = Database::query($sql);
+
+        $headers      = ['Apellidos y Nombres', 'Usuario', 'Fecha', 'Hora de entrada', 'Estado', 'Metodo', 'Observaciones'];
+        if ($isStudents) {
+            $headers = array_merge($headers, ['Nivel', 'Grado', 'Sección']);
+        }
+        $statusLabels = ['on_time' => 'Asistio puntualmente', 'late' => 'Asistio con tardanza', 'absent' => 'No asistio'];
+        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
+
+        $rawRows      = [];
+        $existingKeys = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $existingKeys[$row['date'] . '|' . $row['user_id']] = true;
+            $rawRows[] = $row;
+        }
+
+        $activeDates = $this->getActiveDatesInRange($startDate, $endDate);
+        $absentRows  = $this->buildAbsentRows($activeDates, $existingKeys, $userType, $levelId, $gradeId, $sectionId);
+        if (!empty($absentRows)) {
+            $rawRows = array_merge($rawRows, $absentRows);
+            usort($rawRows, function ($a, $b) {
+                $d = strcmp($b['date'], $a['date']);
+                return $d !== 0 ? $d : strcasecmp($a['lastname'] ?? '', $b['lastname'] ?? '');
+            });
+        }
+
+        $rows = [];
+        foreach ($rawRows as $row) {
+            $checkIn = !empty($row['check_in']) ? date('H:i:s', strtotime(api_get_local_time($row['check_in']))) : '-';
+            $line    = [
+                trim(($row['lastname'] ?? '') . ', ' . ($row['firstname'] ?? '')),
+                $row['username'] ?? '',
+                $row['date'],
+                $checkIn,
+                $statusLabels[$row['status']] ?? $row['status'],
+                ($row['status'] === 'absent') ? '-' : (!empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-'),
+                $row['notes'] ?? '',
+            ];
+            if ($isStudents) {
+                $line[] = $row['nivel_name']   ?? '-';
+                $line[] = $row['grado_name']   ?? '-';
+                $line[] = $row['seccion_name'] ?? '-';
+            }
+            $rows[] = ['data' => $line, 'status' => $row['status']];
+        }
+
+        $xlsx     = $this->buildXlsx($headers, $rows, 4);
+        $filename = 'asistencia_simple_' . date('Y-m-d_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($xlsx));
+        header('Cache-Control: max-age=0');
+        echo $xlsx;
+        exit;
+    }
+
     /**
      * Export attendance pivot Excel with same filters as reports page.
      * Rows = users, columns = weekday dates. Same pivot format as classroom export.
@@ -5621,7 +5713,7 @@ class SchoolPlugin extends Plugin
      * Build a minimal XLSX binary string using ZipArchive.
      * Supports bold headers and per-row fill colors.
      */
-    private function buildXlsx(array $headers, array $rows): string
+    private function buildXlsx(array $headers, array $rows, int $statusColIndex = 6): string
     {
         // Shared strings table
         $strings  = [];
@@ -5669,7 +5761,7 @@ class SchoolPlugin extends Plugin
             $sheetXml .= '<row r="'.$rn.'">';
             foreach ($rowInfo['data'] as $ci => $val) {
                 $col    = $this->xlsxColName($ci) . $rn;
-                $cellSt = ($ci === 6) ? ($statusStyle[$st] ?? $styleNormal) : $styleNormal;
+                $cellSt = ($ci === $statusColIndex) ? ($statusStyle[$st] ?? $styleNormal) : $styleNormal;
                 $si     = $addStr((string) $val);
                 $sheetXml .= '<c r="'.$col.'" t="s" s="'.$cellSt.'"><v>'.$si.'</v></c>';
             }

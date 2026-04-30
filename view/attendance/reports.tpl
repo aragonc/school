@@ -71,6 +71,9 @@
                     <a id="btnExportPdf" href="#" class="btn btn-danger btn-sm">
                         <i class="fas fa-file-pdf"></i> PDF
                     </a>
+                    <a id="btnExportExcelSimple" href="#" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-file-excel"></i> Excel simple
+                    </a>
                 </div>
             </div>
         </form>
@@ -118,8 +121,9 @@ function updateExportLinks() {
     params.set('grade_id',   document.getElementById('rptGrade').value   || '0');
     params.set('section_id', document.getElementById('rptSection').value || '0');
 
-    document.getElementById('btnExportExcelPivot').href = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_excel_pivot');
-    document.getElementById('btnExportPdf').href        = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_pdf');
+    document.getElementById('btnExportExcelPivot').href  = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_excel_pivot');
+    document.getElementById('btnExportPdf').href         = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_pdf');
+    document.getElementById('btnExportExcelSimple').href = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_excel_simple');
 }
 
 // Init on load
