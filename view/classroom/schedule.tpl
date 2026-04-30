@@ -165,6 +165,34 @@
                             </td>
                             {% else %}
                                 {% if entry %}
+                                {% if entry.style == 'activity' %}
+                                <td class="schedule-activity-cell text-center align-middle{% if is_fullday_col %} col-fullday{% endif %}" style="background:#d4edda; color:#155724; font-size:11px; font-style:italic;">
+                                    <i class="fas fa-star mr-1"></i>{{ entry.subject ?: 'Actividad' }}
+                                    {% if can_edit %}
+                                    <div class="entry-actions mt-1" style="display:none;">
+                                        <button class="btn btn-xs btn-outline-success btn-edit-entry py-0 px-1"
+                                                data-id="{{ entry.id }}"
+                                                data-classroom="{{ classroom_id }}"
+                                                data-day="{{ day_num }}"
+                                                data-time-start="{{ entry.time_start }}"
+                                                data-time-end="{{ entry.time_end }}"
+                                                data-subject="{{ entry.subject }}"
+                                                data-teacher-id="{{ entry.teacher_id }}"
+                                                data-teacher-name="{{ entry.teacher_name }}"
+                                                data-style="{{ entry.style }}"
+                                                data-sort-order="{{ entry.sort_order }}"
+                                                style="font-size:10px;">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                        <button class="btn btn-xs btn-outline-danger btn-delete-entry py-0 px-1"
+                                                data-id="{{ entry.id }}"
+                                                style="font-size:10px;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                {% else %}
                                 <td class="schedule-subject-cell align-middle px-2 py-2{% if is_fullday_col %} col-fullday schedule-fullday-cell{% endif %}"
                                     data-entry-id="{{ entry.id }}"
                                     data-day="{{ day_num }}"
@@ -201,6 +229,7 @@
                                     </div>
                                     {% endif %}
                                 </td>
+                                {% endif %}
                                 {% else %}
                                 <td class="schedule-empty-cell align-middle text-center{% if is_fullday_col %} col-fullday schedule-fullday-cell{% endif %}"
                                     style="color:#ccc; font-size:20px; min-width:130px;">

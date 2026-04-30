@@ -140,8 +140,9 @@ foreach ($scheduleEntries as $entry) {
             'days'       => [], // day => entry data
         ];
     }
-    // Merge style (break/pause/exit/fullday entries may apply to all days)
-    if (!empty($entry['style'])) {
+    // Only row-wide styles propagate to the slot; 'activity' is per-cell
+    $rowWideStyles = ['break', 'brk', 'pause', 'exit'];
+    if (!empty($entry['style']) && in_array($entry['style'], $rowWideStyles)) {
         $timeSlotsMap[$key]['style'] = $entry['style'];
     }
     $day = (int) $entry['day_of_week'];
