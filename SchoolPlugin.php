@@ -4808,6 +4808,26 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Update a non-working day entry.
+     */
+    public function updateNonWorkingDay(int $id, string $type, string $startDate, string $endDate, string $description): bool
+    {
+        $this->ensureNonWorkingTable();
+        if (!in_array($type, ['holiday', 'vacation'])) $type = 'holiday';
+        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
+        return (bool) Database::update(
+            $table,
+            [
+                'type'        => $type,
+                'start_date'  => Database::escape_string($startDate),
+                'end_date'    => Database::escape_string($endDate),
+                'description' => Database::escape_string($description),
+            ],
+            ['id = ?' => $id]
+        );
+    }
+
+    /**
      * Delete a non-working day entry.
      */
     public function deleteNonWorkingDay(int $id): bool

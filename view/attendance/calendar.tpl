@@ -24,7 +24,7 @@
                             <th>{{ 'StartDateLabel'|get_plugin_lang('SchoolPlugin') }}</th>
                             <th>{{ 'EndDateLabel'|get_plugin_lang('SchoolPlugin') }}</th>
                             <th>{{ 'DescriptionLabel'|get_plugin_lang('SchoolPlugin') }}</th>
-                            <th style="width:60px;"></th>
+                            <th style="width:90px;"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -40,7 +40,16 @@
                             <td>{{ nw.start_date }}</td>
                             <td>{{ nw.end_date }}</td>
                             <td>{{ nw.description }}</td>
-                            <td>
+                            <td class="text-nowrap">
+                                <button type="button" class="btn btn-outline-primary btn-sm btn-edit-nw"
+                                        data-id="{{ nw.id }}"
+                                        data-type="{{ nw.type }}"
+                                        data-start="{{ nw.start_date }}"
+                                        data-end="{{ nw.end_date }}"
+                                        data-desc="{{ nw.description }}"
+                                        title="{{ 'EditNonWorkingDay'|get_plugin_lang('SchoolPlugin') }}">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
                                 <button type="button" class="btn btn-outline-danger btn-sm btn-delete-nw"
                                         data-id="{{ nw.id }}"
                                         data-desc="{{ nw.description }}"
@@ -136,6 +145,54 @@
     </div>
 </div>
 
+<!-- Edit modal -->
+<div class="modal fade" id="editNwModal" tabindex="-1" role="dialog" aria-labelledby="editNwModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editNwModalLabel">
+                    <i class="fas fa-pencil-alt"></i> {{ 'EditNonWorkingDay'|get_plugin_lang('SchoolPlugin') }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editNwForm">
+                    <input type="hidden" id="editNwId">
+                    <div class="form-group">
+                        <label class="small font-weight-bold">{{ 'NonWorkingType'|get_plugin_lang('SchoolPlugin') }}</label>
+                        <select class="form-control form-control-sm" id="editNwType">
+                            <option value="holiday">{{ 'Holiday'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="vacation">{{ 'Vacation'|get_plugin_lang('SchoolPlugin') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">{{ 'StartDateLabel'|get_plugin_lang('SchoolPlugin') }}</label>
+                        <input type="date" class="form-control form-control-sm" id="editNwStart" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">{{ 'EndDateLabel'|get_plugin_lang('SchoolPlugin') }}</label>
+                        <input type="date" class="form-control form-control-sm" id="editNwEnd" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">{{ 'DescriptionLabel'|get_plugin_lang('SchoolPlugin') }}</label>
+                        <input type="text" class="form-control form-control-sm" id="editNwDesc" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                    <i class="fas fa-times"></i> {{ 'Cancel'|get_plugin_lang('SchoolPlugin') }}
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnSaveEdit">
+                    <i class="fas fa-save"></i> {{ 'SaveChanges'|get_plugin_lang('SchoolPlugin') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 var calAjaxUrl = '{{ ajax_url }}';
 
@@ -166,6 +223,64 @@ document.getElementById('addNwForm').addEventListener('submit', function(e) {
                 location.reload();
             } else {
                 alert(d.message || 'Error');
+            }
+        });
+});
+
+// Open edit modal
+document.querySelectorAll('.btn-edit-nw').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.getElementById('editNwId').value   = this.getAttribute('data-id');
+        document.getElementById('editNwType').value = this.getAttribute('data-type');
+        document.getElementById('editNwStart').value = this.getAttribute('data-start');
+        document.getElementById('editNwEnd').value   = this.getAttribute('data-end');
+        document.getElementById('editNwDesc').value  = this.getAttribute('data-desc');
+        $('#editNwModal').modal('show');
+    });
+});
+
+// Auto-sync end date when type changes inside modal
+document.getElementById('editNwType').addEventListener('change', function() {
+    if (this.value === 'holiday') {
+        document.getElementById('editNwEnd').value = document.getElementById('editNwStart').value;
+    }
+});
+document.getElementById('editNwStart').addEventListener('change', function() {
+    if (document.getElementById('editNwType').value === 'holiday') {
+        document.getElementById('editNwEnd').value = this.value;
+    }
+});
+
+// Save edit
+document.getElementById('btnSaveEdit').addEventListener('click', function() {
+    var id    = document.getElementById('editNwId').value;
+    var type  = document.getElementById('editNwType').value;
+    var start = document.getElementById('editNwStart').value;
+    var end   = document.getElementById('editNwEnd').value;
+    var desc  = document.getElementById('editNwDesc').value.trim();
+
+    if (!start || !end || !desc) { alert('Complete todos los campos'); return; }
+    if (end < start) { alert('La fecha de fin debe ser igual o posterior a la de inicio'); return; }
+
+    var btn = this;
+    btn.disabled = true;
+    var fd = new FormData();
+    fd.append('action', 'update');
+    fd.append('id', id);
+    fd.append('type', type);
+    fd.append('start_date', start);
+    fd.append('end_date', end);
+    fd.append('description', desc);
+
+    fetch(calAjaxUrl, { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            btn.disabled = false;
+            if (d.success) {
+                $('#editNwModal').modal('hide');
+                location.reload();
+            } else {
+                alert(d.message || 'Error al actualizar');
             }
         });
 });

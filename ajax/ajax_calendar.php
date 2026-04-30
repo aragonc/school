@@ -44,6 +44,32 @@ switch ($action) {
         echo json_encode(['success' => $id > 0, 'id' => $id]);
         break;
 
+    case 'update':
+        $id          = isset($_POST['id'])          ? (int) $_POST['id']              : 0;
+        $type        = isset($_POST['type'])        ? trim($_POST['type'])             : 'holiday';
+        $startDate   = isset($_POST['start_date'])  ? trim($_POST['start_date'])       : '';
+        $endDate     = isset($_POST['end_date'])     ? trim($_POST['end_date'])         : '';
+        $description = isset($_POST['description']) ? trim($_POST['description'])      : '';
+
+        if (!$id || empty($startDate) || empty($endDate) || empty($description)) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+            exit;
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid date format']);
+            exit;
+        }
+
+        if ($endDate < $startDate) {
+            echo json_encode(['success' => false, 'message' => 'End date must be >= start date']);
+            exit;
+        }
+
+        $ok = $plugin->updateNonWorkingDay($id, $type, $startDate, $endDate, $description);
+        echo json_encode(['success' => $ok]);
+        break;
+
     case 'delete':
         $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
         if (!$id) {
