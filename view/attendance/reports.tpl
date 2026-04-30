@@ -65,11 +65,8 @@
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fas fa-search"></i> {{ 'Filter'|get_plugin_lang('SchoolPlugin') }}
                     </button>
-                    <a id="btnExportExcel" href="#" class="btn btn-success btn-sm" title="Exportar listado (una fila por registro)">
-                        <i class="fas fa-file-excel"></i> Excel
-                    </a>
-                    <a id="btnExportExcelPivot" href="#" class="btn btn-outline-success btn-sm" title="Exportar tabla pivote (una fila por usuario, columnas por fecha)">
-                        <i class="fas fa-table"></i> Excel Pivote
+                    <a id="btnExportExcelPivot" href="#" class="btn btn-success btn-sm">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
                     </a>
                     <a id="btnExportPdf" href="#" class="btn btn-danger btn-sm">
                         <i class="fas fa-file-pdf"></i> PDF
@@ -121,8 +118,6 @@ function updateExportLinks() {
     params.set('grade_id',   document.getElementById('rptGrade').value   || '0');
     params.set('section_id', document.getElementById('rptSection').value || '0');
 
-    var base = rptAjaxUrl + '?' + params.toString().replace('action=PLACEHOLDER', 'action=');
-    document.getElementById('btnExportExcel').href      = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_excel');
     document.getElementById('btnExportExcelPivot').href = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_excel_pivot');
     document.getElementById('btnExportPdf').href        = rptAjaxUrl + '?' + params.toString().replace('PLACEHOLDER', 'export_pdf');
 }
