@@ -94,6 +94,7 @@ if ($classroomId > 0) {
                 al.status     AS att_status,
                 al.check_in   AS att_check_in,
                 al.method     AS att_method,
+                al.notes      AS att_notes,
                 (SELECT MAX(tl.login_date)
                  FROM $loginTable tl
                  WHERE tl.login_user_id = cs.user_id) AS last_login

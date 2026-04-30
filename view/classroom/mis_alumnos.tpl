@@ -161,6 +161,7 @@
                             <th>Última conexión en la plataforma</th>
                             <th>Asistencia</th>
                             <th>Hora entrada</th>
+                            <th>Observaciones</th>
                             {% if enable_manual_attendance %}
                             <th style="width:110px;">Acción</th>
                             {% endif %}
@@ -247,6 +248,18 @@
                                 <i class="fas fa-clock mr-1 text-muted" style="font-size:10px;"></i>{{ s.att_time }}
                                 {% else %}
                                 &mdash;
+                                {% endif %}
+                            </td>
+
+                            {# Observaciones #}
+                            <td class="att-notes-cell" style="font-size:12px;max-width:180px;">
+                                {% if s.att_notes %}
+                                <span class="text-dark" title="{{ s.att_notes }}"
+                                      style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                                    {{ s.att_notes }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">&mdash;</span>
                                 {% endif %}
                             </td>
 
@@ -647,7 +660,7 @@ function attSelectAll(val) {
 }
 
 // ---- Actualizar fila tras guardar ----
-function updateRowUI(userId, status, attTime) {
+function updateRowUI(userId, status, attTime, notes) {
     var row = document.querySelector('tr[data-user-id="'+userId+'"]');
     if (!row) return;
 
@@ -659,6 +672,16 @@ function updateRowUI(userId, status, attTime) {
         timeCell.innerHTML = attTime
             ? '<i class="fas fa-clock mr-1 text-muted" style="font-size:10px;"></i>' + attTime
             : '&mdash;';
+    }
+
+    var notesCell = row.querySelector('.att-notes-cell');
+    if (notesCell) {
+        if (notes) {
+            var escaped = notes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            notesCell.innerHTML = '<span class="text-dark" title="'+escaped+'" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+escaped+'</span>';
+        } else {
+            notesCell.innerHTML = '<span class="text-muted">&mdash;</span>';
+        }
     }
 
     // Botones de la fila (admin: btn-group; tutor: botón Modificar)
@@ -734,7 +757,7 @@ async function saveAttManual() {
             });
             var data = await resp.json();
             if (data.success) {
-                updateRowUI(uid, status, data.att_time || '');
+                updateRowUI(uid, status, data.att_time || '', notes);
             } else {
                 errors++;
                 console.warn('Error al guardar alumno '+uid+':', data.error);
