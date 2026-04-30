@@ -253,8 +253,6 @@
                             {# Acción manual de asistencia #}
                             {% if enable_manual_attendance %}
                             <td>
-                                {% if is_admin_or_secretary %}
-                                {# Admin: botones para todos los estados #}
                                 <div class="btn-group btn-group-sm att-action-group" role="group">
                                     <button type="button"
                                             class="btn btn-att {% if s.att_status == 'on_time' %}btn-success{% else %}btn-outline-success{% endif %}"
@@ -278,17 +276,6 @@
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
-                                {% elseif not s.att_status or s.att_status == 'absent' %}
-                                {# Tutor: solo puede modificar ausentes o sin registro #}
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-primary"
-                                        title="Modificar asistencia"
-                                        onclick="openAttModal('{{ s.user_id }}', '{{ s.att_status ?: 'absent' }}', '{{ (s.display_apellidos ~ ' ' ~ s.display_nombres)|e('js') }}', '{{ s.foto_url|e('js') }}', '{{ s.att_status }}', '{{ s.att_time }}')">
-                                    <i class="fas fa-edit mr-1"></i> Modificar
-                                </button>
-                                {% else %}
-                                <span class="text-muted" style="font-size:11px;">—</span>
-                                {% endif %}
                             </td>
                             {% endif %}
 
@@ -688,15 +675,6 @@ function updateRowUI(userId, status, attTime) {
             btn.classList.toggle('btn-outline-danger', status !== 'absent');
         }
     });
-
-    // Si el tutor cambió el estado a algo distinto de ausente/sin registro, ocultar el botón Modificar
-    if (!ATT_IS_ADMIN) {
-        var modBtn = row.querySelector('.btn-outline-primary');
-        if (modBtn && status !== 'absent') {
-            modBtn.style.display = 'none';
-            row.querySelector('td:last-child').innerHTML = '<span class="text-muted" style="font-size:11px;">—</span>';
-        }
-    }
 
     // Mini-badge dentro del modal (si está abierto)
     var cb = document.querySelector('.att-cb[value="'+userId+'"]');
