@@ -34,12 +34,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Migración lazy: agregar columna si no existe
+// Migración lazy: agregar columnas si no existen
 $extraTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_EXTRA_PROFILE);
-$chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$extraTable' AND COLUMN_NAME = 'niveles_docente'");
-if (Database::num_rows($chk) === 0) {
-    Database::query("ALTER TABLE $extraTable ADD COLUMN niveles_docente VARCHAR(100) NULL");
+foreach ([
+    'niveles_docente' => "VARCHAR(100) NULL",
+    'working_days'    => "VARCHAR(50) NULL",
+] as $col => $def) {
+    $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$extraTable' AND COLUMN_NAME = '$col'");
+    if (Database::num_rows($chk) === 0) {
+        Database::query("ALTER TABLE $extraTable ADD COLUMN $col $def");
+    }
 }
 
 $ficha = $plugin->getExtraProfileData($targetUserId);

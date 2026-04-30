@@ -149,6 +149,40 @@
         </div>
     </div>
 
+    {# === DÍAS QUE LABORA === #}
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-calendar-check mr-1"></i> Días que labora
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Marca los días en que este usuario asiste a laborar. Solo se considerará ausente en los días marcados.
+            </p>
+            {% set dias_guardados = ficha.working_days|default('')|split(',') %}
+            <div class="d-flex flex-wrap" style="gap:16px;">
+                {% for dia in [
+                    {value: 'lunes',      label: 'Lunes'},
+                    {value: 'martes',     label: 'Martes'},
+                    {value: 'miercoles',  label: 'Miércoles'},
+                    {value: 'jueves',     label: 'Jueves'},
+                    {value: 'viernes',    label: 'Viernes'}
+                ] %}
+                <div class="custom-control custom-checkbox custom-control-inline">
+                    <input type="checkbox"
+                           class="custom-control-input"
+                           id="wd_{{ dia.value }}"
+                           name="working_days[]"
+                           value="{{ dia.value }}"
+                           {% if dia.value in dias_guardados %}checked{% endif %}>
+                    <label class="custom-control-label font-weight-bold" for="wd_{{ dia.value }}">
+                        {{ dia.label }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
     {% if target_user.status == 1 %}
     {# === NIVELES DOCENTE (solo para profesores) === #}
     <div class="card mb-4">

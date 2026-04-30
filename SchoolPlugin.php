@@ -693,6 +693,7 @@ class SchoolPlugin extends Plugin
             'peso'             => "DECIMAL(5,2) NULL AFTER tipo_sangre",
             'estatura'         => "DECIMAL(4,2) NULL AFTER peso",
             'niveles_docente'  => "VARCHAR(100) NULL AFTER estatura",
+            'working_days'     => "VARCHAR(50) NULL AFTER niveles_docente",
         ] as $col => $def) {
             $chk = Database::query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$extraTable' AND COLUMN_NAME = '$col'");
@@ -4708,15 +4709,21 @@ class SchoolPlugin extends Plugin
             return ['skipped' => true, 'reason' => 'nonworking', 'count' => 0];
         }
 
-        $userTable  = Database::get_main_table(TABLE_MAIN_USER);
-        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
-        $logTable   = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable    = Database::get_main_table(TABLE_MAIN_USER);
+        $adminTable   = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $logTable     = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $profileTable = Database::get_main_table(self::TABLE_SCHOOL_EXTRA_PROFILE);
+
+        // Map PHP date('N') weekday number to Spanish working_days value
+        $dowNames = [1 => 'lunes', 2 => 'martes', 3 => 'miercoles', 4 => 'jueves', 5 => 'viernes'];
+        $todayName = $dowNames[$dow] ?? '';
 
         $allStatuses = COURSEMANAGER.", ".STUDENT.", ".DRH.", ".SCHOOL_PARENT.", ".SCHOOL_GUARDIAN.", ".SCHOOL_SECRETARY.", ".SCHOOL_AUXILIARY.", ".SCHOOL_DIRECTOR;
 
-        $sql = "SELECT DISTINCT u.id
+        $sql = "SELECT DISTINCT u.id, ep.working_days
                 FROM $userTable u
                 LEFT JOIN $adminTable a ON u.id = a.user_id
+                LEFT JOIN $profileTable ep ON u.id = ep.user_id
                 WHERE u.active = 1
                   AND (u.status IN ($allStatuses) OR a.user_id IS NOT NULL)";
         $result = Database::query($sql);
@@ -4728,6 +4735,15 @@ class SchoolPlugin extends Plugin
 
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             $userId = (int) $row['id'];
+
+            // If the user has working_days configured, skip days not included
+            $workingDays = trim($row['working_days'] ?? '');
+            if ($workingDays !== '') {
+                $days = array_map('trim', explode(',', $workingDays));
+                if (!in_array($todayName, $days)) {
+                    continue;
+                }
+            }
 
             // Skip if already has a record for this date
             $chk = Database::query(
@@ -5825,6 +5841,7 @@ class SchoolPlugin extends Plugin
                 'peso'            => '',
                 'estatura'        => '',
                 'niveles_docente' => '',
+                'working_days'    => '',
             ];
         }
         return $row;
@@ -5866,6 +5883,7 @@ class SchoolPlugin extends Plugin
             'peso'             => $peso,
             'estatura'         => $estatura,
             'niveles_docente'  => Database::escape_string(implode(',', array_filter(array_map('trim', (array) ($data['niveles_docente'] ?? []))))),
+            'working_days'     => Database::escape_string(implode(',', array_filter(array_map('trim', (array) ($data['working_days'] ?? []))))),
             'updated_at'       => $now,
         ];
 
