@@ -130,7 +130,7 @@
                 <span class="text-muted small">
                     <i class="fas fa-calendar-alt mr-1"></i>{{ selected_date }}
                 </span>
-                {% if enable_manual_attendance and students and is_admin_or_secretary %}
+                {% if enable_manual_attendance and students %}
                 <button class="btn btn-sm btn-primary" onclick="openAttModal(null, null, null, null, null, null)" title="Registrar asistencia manual a varios alumnos">
                     <i class="fas fa-clipboard-check mr-1"></i> Asistencia manual
                 </button>
@@ -554,7 +554,7 @@ document.querySelectorAll('.lh-ago').forEach(function(el) {
 var AJAX_URL       = '{{ ajax_url }}';
 var ATT_CLASSROOM  = {{ classroom_id }};
 var ATT_DATE       = '{{ selected_date }}';
-var ATT_IS_ADMIN   = {{ is_admin_or_secretary ? 'true' : 'false' }};
+var ATT_IS_ADMIN   = {{ enable_manual_attendance ? 'true' : 'false' }};
 
 // Datos de alumnos serializados desde Twig
 var ATT_STUDENTS = [
