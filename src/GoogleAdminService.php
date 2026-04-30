@@ -171,6 +171,35 @@ class GoogleAdminService
     // Verificar una lista de emails — retorna ['email' => true/false]
     // ----------------------------------------------------------------
     // ----------------------------------------------------------------
+    // Cambiar nombre y apellido de un usuario en Google Workspace
+    // ----------------------------------------------------------------
+    public function updateUserName(string $email, string $firstName, string $lastName): void
+    {
+        $token = $this->getAccessToken();
+        $url   = self::DIRECTORY_URI . '/users/' . urlencode($email);
+        $body  = [
+            'name' => [
+                'givenName'  => $firstName,
+                'familyName' => $lastName,
+            ],
+        ];
+
+        $resp = $this->http->patch($url, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'application/json',
+            ],
+            'body' => json_encode($body),
+        ]);
+
+        if ($resp->getStatusCode() !== 200) {
+            $result = json_decode((string) $resp->getBody(), true);
+            throw new \RuntimeException('Error al actualizar nombre: ' .
+                ($result['error']['message'] ?? $resp->getStatusCode()));
+        }
+    }
+
+    // ----------------------------------------------------------------
     // Cambiar contraseña de un usuario en Google Workspace
     // ----------------------------------------------------------------
     public function updateUserPassword(string $email, string $newPassword, bool $changeAtNextLogin = true): void

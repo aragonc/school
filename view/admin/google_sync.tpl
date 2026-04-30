@@ -321,6 +321,39 @@ var ALL_SECTIONS = {{ sections|json_encode|raw }};
     </div>
 </div>
 
+{# Modal: Cambiar nombre Google #}
+<div class="modal fade" id="renameModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title font-weight-bold"><i class="fas fa-user-edit mr-1 text-info"></i> Cambiar nombre en Google</h6>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light py-2 mb-3">
+                    <strong id="rnm-fullname"></strong><br>
+                    <span class="text-muted" id="rnm-email" style="font-size:13px;"></span>
+                </div>
+                <div class="form-group mb-2">
+                    <label class="font-weight-bold">Nombres</label>
+                    <input type="text" class="form-control form-control-sm" id="rnm-firstname" placeholder="Nombres">
+                </div>
+                <div class="form-group mb-2">
+                    <label class="font-weight-bold">Apellidos</label>
+                    <input type="text" class="form-control form-control-sm" id="rnm-lastname" placeholder="Apellidos">
+                </div>
+                <div id="rnm-result" class="mt-3 d-none"></div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-sm btn-info" id="rnm-confirm-btn">
+                    <i class="fas fa-save mr-1"></i> Guardar nombre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 var AJAX_GOOGLE  = '{{ ajax_google_url }}';
 var YEAR_ID      = {{ year_id }};
@@ -383,11 +416,20 @@ function renderTable(items) {
         if (item.google_exists === 'yes') {
             cntYes++;
             statusBadge = '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Activa</span>';
-            actionBtn = '<button class="btn btn-xs btn-sm btn-outline-warning btn-change-pw" ' +
+            actionBtn = '<div class="d-flex flex-wrap justify-content-center" style="gap:3px;">' +
+                        '<button class="btn btn-xs btn-sm btn-outline-warning btn-change-pw" ' +
                         'data-user-id="' + item.user_id + '" ' +
                         'data-email="' + escHtml(item.email) + '" ' +
                         'data-name="' + escHtml(item.full_name) + '">' +
-                        '<i class="fas fa-key mr-1"></i>Contraseña</button>';
+                        '<i class="fas fa-key mr-1"></i>Contraseña</button>' +
+                        '<button class="btn btn-xs btn-sm btn-outline-info btn-rename" ' +
+                        'data-user-id="' + item.user_id + '" ' +
+                        'data-email="' + escHtml(item.email) + '" ' +
+                        'data-name="' + escHtml(item.full_name) + '" ' +
+                        'data-firstname="' + escHtml(item.firstname || '') + '" ' +
+                        'data-lastname="' + escHtml(item.lastname || '') + '">' +
+                        '<i class="fas fa-user-edit mr-1"></i>Nombre</button>' +
+                        '</div>';
         } else if (item.google_exists === 'no') {
             cntNo++;
             statusBadge = '<span class="badge badge-danger"><i class="fas fa-times mr-1"></i>Sin cuenta</span>';
@@ -423,8 +465,10 @@ function renderTable(items) {
 document.getElementById('google-tbody').addEventListener('click', function(e) {
     var btnCreate = e.target.closest('.btn-create-one');
     var btnPw     = e.target.closest('.btn-change-pw');
+    var btnRename = e.target.closest('.btn-rename');
     if (btnCreate) openCreateConfirm(btnCreate);
     if (btnPw)     openChangePw(btnPw);
+    if (btnRename) openRename(btnRename);
 });
 
 // ---- Modal confirmar creación ----
@@ -591,6 +635,51 @@ document.getElementById('cpw-confirm-btn').addEventListener('click', function() 
     });
 });
 
+// ---- Modal cambiar nombre ----
+function openRename(btnEl) {
+    var userId    = btnEl.getAttribute('data-user-id');
+    var email     = btnEl.getAttribute('data-email');
+    var name      = btnEl.getAttribute('data-name');
+    var firstname = btnEl.getAttribute('data-firstname') || '';
+    var lastname  = btnEl.getAttribute('data-lastname')  || '';
+    document.getElementById('rnm-fullname').textContent  = name;
+    document.getElementById('rnm-email').textContent     = email;
+    document.getElementById('rnm-firstname').value       = firstname;
+    document.getElementById('rnm-lastname').value        = lastname;
+    document.getElementById('rnm-result').classList.add('d-none');
+    document.getElementById('rnm-confirm-btn').disabled  = false;
+    document.getElementById('rnm-confirm-btn').dataset.userId = userId;
+    $('#renameModal').modal('show');
+}
+
+document.getElementById('rnm-confirm-btn').addEventListener('click', function() {
+    var btn       = this;
+    var userId    = btn.dataset.userId;
+    var firstname = document.getElementById('rnm-firstname').value.trim();
+    var lastname  = document.getElementById('rnm-lastname').value.trim();
+    if (!firstname || !lastname) { alert('Ingresa nombres y apellidos.'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Guardando...';
+    ajaxPost({ action: 'update_name', user_id: userId, firstname: firstname, lastname: lastname })
+    .then(function(resp) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar nombre';
+        var resultEl = document.getElementById('rnm-result');
+        resultEl.classList.remove('d-none');
+        if (resp.success) {
+            resultEl.className = 'mt-3 alert alert-success py-2';
+            resultEl.innerHTML = '<i class="fas fa-check mr-1"></i>' + (resp.message || 'Nombre actualizado.');
+        } else {
+            resultEl.className = 'mt-3 alert alert-danger py-2';
+            resultEl.innerHTML = '<i class="fas fa-times mr-1"></i>' + escHtml(resp.error || 'Error');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar nombre';
+    });
+});
+
 // ---- Helpers ----
 function updateMissingBtn() {
     var has = allItems.some(function(i) { return i.google_exists === 'no'; });
@@ -663,9 +752,15 @@ function renderStaffTable(items) {
         if (item.google_exists === 'yes') {
             yes++;
             statusBadge = '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Activa</span>';
-            actionBtn = '<button class="btn btn-xs btn-sm btn-outline-warning btn-change-pw" ' +
+            actionBtn = '<div class="d-flex flex-wrap justify-content-center" style="gap:3px;">' +
+                '<button class="btn btn-xs btn-sm btn-outline-warning btn-change-pw" ' +
                 'data-user-id="' + item.user_id + '" data-email="' + escHtml(item.email) + '" data-name="' + escHtml(item.full_name) + '">' +
-                '<i class="fas fa-key mr-1"></i>Contraseña</button>';
+                '<i class="fas fa-key mr-1"></i>Contraseña</button>' +
+                '<button class="btn btn-xs btn-sm btn-outline-info btn-rename" ' +
+                'data-user-id="' + item.user_id + '" data-email="' + escHtml(item.email) + '" data-name="' + escHtml(item.full_name) + '" ' +
+                'data-firstname="' + escHtml(item.firstname || '') + '" data-lastname="' + escHtml(item.lastname || '') + '">' +
+                '<i class="fas fa-user-edit mr-1"></i>Nombre</button>' +
+                '</div>';
         } else if (item.google_exists === 'no') {
             no++;
             statusBadge = '<span class="badge badge-danger"><i class="fas fa-times mr-1"></i>Sin cuenta</span>';
@@ -710,8 +805,10 @@ document.getElementById('filter-staff-dni').addEventListener('input', function()
 document.getElementById('staff-tbody').addEventListener('click', function(e) {
     var btnCreate = e.target.closest('.btn-create-staff');
     var btnPw     = e.target.closest('.btn-change-pw');
+    var btnRename = e.target.closest('.btn-rename');
     if (btnCreate) openCreateConfirmStaff(btnCreate);
     if (btnPw)     openChangePw(btnPw);
+    if (btnRename) openRename(btnRename);
 });
 
 function openCreateConfirmStaff(btnEl) {

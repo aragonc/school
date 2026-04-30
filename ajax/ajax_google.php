@@ -183,6 +183,8 @@ switch ($action) {
                 'user_id'    => (int) $row['user_id'],
                 'email'      => $row['email'],
                 'username'   => $row['username'],
+                'firstname'  => $row['firstname'],
+                'lastname'   => $row['lastname'],
                 'full_name'  => trim($row['lastname'] . ', ' . $row['firstname']),
                 'role_label' => $roleLabels[$roleKey] ?? ucfirst($roleKey),
                 'dni'        => '',
@@ -308,6 +310,35 @@ switch ($action) {
             echo json_encode(['success' => true, 'message' => 'Contraseña actualizada correctamente.']);
         } catch (\Exception $e) {
             echo json_encode(['success' => false, 'error' => 'Error al cambiar contraseña: ' . $e->getMessage()]);
+        }
+        break;
+
+    // ---- Cambiar nombre y apellido en Google Workspace ----
+    case 'update_name':
+        $userId    = (int) ($_POST['user_id'] ?? 0);
+        $firstName = trim($_POST['firstname'] ?? '');
+        $lastName  = trim($_POST['lastname']  ?? '');
+
+        if ($userId <= 0 || $firstName === '' || $lastName === '') {
+            echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
+            break;
+        }
+
+        $userTable = Database::get_main_table(TABLE_MAIN_USER);
+        $uRow = Database::fetch_array(
+            Database::query("SELECT email FROM $userTable WHERE user_id = $userId LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$uRow || empty($uRow['email'])) {
+            echo json_encode(['success' => false, 'error' => 'Usuario no encontrado']);
+            break;
+        }
+
+        try {
+            $googleService->updateUserName($uRow['email'], $firstName, $lastName);
+            echo json_encode(['success' => true, 'message' => 'Nombre actualizado correctamente.']);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'error' => 'Error al actualizar nombre: ' . $e->getMessage()]);
         }
         break;
 

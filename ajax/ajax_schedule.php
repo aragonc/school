@@ -29,16 +29,25 @@ $action     = $_REQUEST['action'] ?? '';
 
 /**
  * Verify the requesting user has edit rights on the given classroom.
- * Admin: always yes. Teacher: only if they are the tutor of that classroom.
+ * Admin: always yes. Teacher: only if they are the tutor or supervisor of that classroom.
  */
 function canEditClassroom(int $classroomId, int $userId, bool $isAdmin): bool
 {
     if ($isAdmin) return true;
+    if ($classroomId <= 0 || $userId <= 0) return false;
+    $cTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
     $activeYear = MatriculaManager::getActiveYear();
     $yearId = $activeYear ? (int) $activeYear['id'] : 0;
     if ($yearId === 0) return false;
-    $tutorClassroom = ClassroomPlanManager::getTutorClassroom($userId, $yearId);
-    return $tutorClassroom && (int) $tutorClassroom['id'] === $classroomId;
+    $row = Database::fetch_array(
+        Database::query("SELECT id FROM $cTable
+                         WHERE id = $classroomId
+                           AND academic_year_id = $yearId
+                           AND (tutor_id = $userId OR supervisor_id = $userId)
+                         LIMIT 1"),
+        'ASSOC'
+    );
+    return !empty($row);
 }
 
 switch ($action) {
