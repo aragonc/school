@@ -5079,6 +5079,138 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Export attendance pivot Excel with same filters as reports page.
+     * Rows = users, columns = weekday dates. Same pivot format as classroom export.
+     */
+    public function exportAttendancePivotExcel(
+        ?string $startDate,
+        ?string $endDate,
+        ?string $userType  = null,
+        int $levelId = 0, int $gradeId = 0, int $sectionId = 0
+    ): void {
+        $logTable  = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+
+        // 1. Get users using existing helper (respects all filters)
+        $users = $this->getAllUsersForReport($userType, $levelId, $gradeId, $sectionId);
+        if (empty($users)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'No hay usuarios para el filtro seleccionado']);
+            exit;
+        }
+
+        // Enrich students with DNI and email when filtering students
+        $isStudents = ($userType === 'students');
+        if ($isStudents) {
+            $fichaTable = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+            $userTable  = Database::get_main_table(TABLE_MAIN_USER);
+            $ids        = implode(',', array_map(fn($u) => (int)$u['id'], $users));
+            $enrichSql  = "SELECT u.id,
+                                  COALESCE(NULLIF(TRIM(f.apellido_paterno),''), u.lastname)  AS lastname,
+                                  COALESCE(NULLIF(TRIM(f.apellido_materno),''), '')           AS lastname2,
+                                  COALESCE(NULLIF(TRIM(f.nombres),''), u.firstname)           AS firstname,
+                                  COALESCE(NULLIF(TRIM(f.dni),''), u.official_code)           AS dni,
+                                  u.email
+                           FROM $userTable u
+                           LEFT JOIN $fichaTable f ON f.user_id = u.id
+                           WHERE u.id IN ($ids)";
+            $eRes  = Database::query($enrichSql);
+            $extra = [];
+            while ($r = Database::fetch_array($eRes, 'ASSOC')) {
+                $extra[$r['id']] = $r;
+            }
+            foreach ($users as &$u) {
+                if (isset($extra[$u['id']])) {
+                    $u['lastname']  = $extra[$u['id']]['lastname'];
+                    $u['firstname'] = $extra[$u['id']]['firstname'];
+                    $u['dni']       = $extra[$u['id']]['dni']   ?? '';
+                    $u['email']     = $extra[$u['id']]['email'] ?? '';
+                }
+            }
+            unset($u);
+        }
+
+        // 2. Generate weekday dates only (Mon–Fri)
+        $today = date('Y-m-d');
+        $start = $startDate ?: $today;
+        $end   = $endDate   ?: $today;
+        if ($start > $end) [$start, $end] = [$end, $start];
+
+        $dayAbbr  = [1 => 'L', 2 => 'M', 3 => 'W', 4 => 'J', 5 => 'V'];
+        $allDates = [];
+        $allDayNames = [];
+        $cur  = new DateTime($start);
+        $last = new DateTime($end);
+        while ($cur <= $last) {
+            $dow = (int) $cur->format('N');
+            if ($dow <= 5) {
+                $allDates[]    = $cur->format('Y-m-d');
+                $allDayNames[] = $dayAbbr[$dow];
+            }
+            $cur->modify('+1 day');
+        }
+
+        // 3. Fetch attendance indexed by [user_id][date]
+        $ids    = implode(',', array_map(fn($u) => (int)$u['id'], $users));
+        $startE = Database::escape_string($start);
+        $endE   = Database::escape_string($end);
+        $attSql = "SELECT al.user_id, al.date, al.status
+                   FROM $logTable al
+                   WHERE al.user_id IN ($ids)
+                     AND al.date >= '$startE' AND al.date <= '$endE'";
+        $attRes = Database::query($attSql);
+        $attMap = [];
+        while ($r = Database::fetch_array($attRes, 'ASSOC')) {
+            $attMap[$r['user_id']][$r['date']] = $r['status'];
+        }
+
+        // 4. Build headers and rows
+        $statusLabel = ['on_time' => 'P', 'late' => 'T', 'absent' => 'A'];
+        $statusStyle = ['on_time' => 2,   'late' => 3,   'absent' => 4];
+
+        if ($isStudents) {
+            $fixedHeaders = ['N°', 'Apellidos', 'Nombres', 'DNI', 'Correo'];
+        } else {
+            $fixedHeaders = ['N°', 'Apellidos', 'Nombres', 'Rol'];
+        }
+        $dateHeaders = array_map(fn($d) => date('d/m', strtotime($d)), $allDates);
+        $headers     = array_merge($fixedHeaders, $dateHeaders);
+        $subHeaders  = array_merge(array_fill(0, count($fixedHeaders), ''), $allDayNames);
+
+        $rows = [];
+        foreach ($users as $idx => $u) {
+            $uid = (int) $u['id'];
+            if ($isStudents) {
+                $fixedCells  = [(string)($idx+1), $u['lastname'], $u['firstname'], $u['dni'] ?? '', $u['email'] ?? ''];
+            } else {
+                $fixedCells  = [(string)($idx+1), $u['lastname'], $u['firstname'], $u['role'] ?? ''];
+            }
+            $fixedStyles = array_fill(0, count($fixedHeaders), 0);
+
+            $dateCells  = [];
+            $dateStyles = [];
+            foreach ($allDates as $date) {
+                $status = $attMap[$uid][$date] ?? 'absent';
+                $dateCells[]  = $statusLabel[$status] ?? 'A';
+                $dateStyles[] = $statusStyle[$status] ?? 4;
+            }
+
+            $rows[] = [
+                'data'       => array_merge($fixedCells, $dateCells),
+                'cellStyles' => array_merge($fixedStyles, $dateStyles),
+            ];
+        }
+
+        $xlsx     = $this->buildXlsxPivot($headers, $subHeaders, $rows);
+        $filename = 'asistencia_reporte_' . date('Y-m-d_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($xlsx));
+        header('Cache-Control: max-age=0');
+        echo $xlsx;
+        exit;
+    }
+
+    /**
      * Export attendance pivot Excel by classroom: rows = students, columns = dates.
      * Headers: N°, Apellidos, Nombres, DNI, Correo, [date1], [date2], ...
      */

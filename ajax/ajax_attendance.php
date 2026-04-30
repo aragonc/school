@@ -241,6 +241,20 @@ switch ($action) {
         echo json_encode(['success' => true, 'message' => 'Assignment removed']);
         break;
 
+    case 'export_excel_pivot':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $startDate = isset($_GET['start_date']) ? $_GET['start_date'] : null;
+        $endDate   = isset($_GET['end_date'])   ? $_GET['end_date']   : null;
+        $userType  = isset($_GET['user_type'])  ? $_GET['user_type']  : null;
+        $levelId   = isset($_GET['level_id'])   ? (int) $_GET['level_id']   : 0;
+        $gradeId   = isset($_GET['grade_id'])   ? (int) $_GET['grade_id']   : 0;
+        $sectionId = isset($_GET['section_id']) ? (int) $_GET['section_id'] : 0;
+        $plugin->exportAttendancePivotExcel($startDate, $endDate, $userType, $levelId, $gradeId, $sectionId);
+        break;
+
     case 'export_excel':
         if (!$isAdmin) {
             echo json_encode(['success' => false, 'message' => 'Not authorized']);
