@@ -260,18 +260,11 @@
                                 </span>
                                 {% endif %}
                                 {% if s.att_attachment %}
-                                    {% if s.att_attachment|lower ends with '.pdf' %}
-                                    <a href="{{ s.att_attachment_url }}" target="_blank"
-                                       class="d-inline-flex align-items-center mt-1 small text-danger">
-                                        <i class="fas fa-file-pdf mr-1"></i>Ver PDF
-                                    </a>
-                                    {% else %}
-                                    <a href="{{ s.att_attachment_url }}" target="_blank" class="d-block mt-1">
-                                        <img src="{{ s.att_attachment_url }}"
-                                             style="max-height:48px;max-width:80px;border-radius:4px;border:1px solid #e2e8f0;"
-                                             alt="sustento">
-                                    </a>
-                                    {% endif %}
+                                <a href="{{ s.att_attachment_url }}" download
+                                   class="d-inline-flex align-items-center mt-1 small text-secondary"
+                                   title="Descargar sustento">
+                                    <i class="fas fa-paperclip mr-1"></i>Sustento adjunto
+                                </a>
                                 {% endif %}
                                 {% if not s.att_notes and not s.att_attachment %}
                                 <span class="text-muted">&mdash;</span>
@@ -762,10 +755,7 @@ function updateRowUI(userId, status, attTime, notes, attachmentUrl) {
             html += '<span class="text-dark d-block" title="'+escaped+'" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+escaped+'</span>';
         }
         if (attachmentUrl) {
-            var isPdf = attachmentUrl.toLowerCase().indexOf('.pdf') >= 0;
-            html += isPdf
-                ? '<a href="'+attachmentUrl+'" target="_blank" class="d-inline-flex align-items-center mt-1 small text-danger"><i class="fas fa-file-pdf mr-1"></i>Ver PDF</a>'
-                : '<a href="'+attachmentUrl+'" target="_blank" class="d-block mt-1"><img src="'+attachmentUrl+'" style="max-height:48px;max-width:80px;border-radius:4px;border:1px solid #e2e8f0;" alt="sustento"></a>';
+            html += '<a href="'+attachmentUrl+'" download class="d-inline-flex align-items-center mt-1 small text-secondary" title="Descargar sustento"><i class="fas fa-paperclip mr-1"></i>Sustento adjunto</a>';
         }
         notesCell.innerHTML = html || '<span class="text-muted">&mdash;</span>';
     }
