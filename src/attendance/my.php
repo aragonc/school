@@ -29,7 +29,21 @@ $months_es = [
     7=>'Julio',8=>'Agosto',9=>'Septiembre',10=>'Octubre',11=>'Noviembre',12=>'Diciembre'
 ];
 
-// Agrupar por mes, filtrar sábado (6) y domingo (0)
+// Días laborales configurados para el usuario (date('w'): 0=dom,1=lun,...,6=sab)
+$workingDaysMap = ['lunes'=>1,'martes'=>2,'miercoles'=>3,'jueves'=>4,'viernes'=>5];
+$extraProfile   = $plugin->getExtraProfileData($userId);
+$rawDays        = trim($extraProfile['working_days'] ?? '');
+if ($rawDays !== '') {
+    $allowedDows = array_values(array_filter(array_map(
+        fn($d) => $workingDaysMap[trim($d)] ?? null,
+        explode(',', $rawDays)
+    ), fn($v) => $v !== null));
+} else {
+    // Sin configuración: mostrar todos los días hábiles (lun-vie)
+    $allowedDows = [1, 2, 3, 4, 5];
+}
+
+// Agrupar por mes, filtrar solo los días que labora
 $byMonth = [];
 foreach ($myAttendance as $record) {
     if (!empty($record['check_in'])) {
@@ -37,7 +51,7 @@ foreach ($myAttendance as $record) {
     }
     $ts      = strtotime($record['date']);
     $dow     = (int) date('w', $ts); // 0=dom, 6=sab
-    if ($dow === 0 || $dow === 6) continue;
+    if (!in_array($dow, $allowedDows)) continue;
 
     $record['day_name']   = $days_es[$dow];
     $monthNum             = (int) date('n', $ts);
