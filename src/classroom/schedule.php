@@ -201,6 +201,9 @@ if (!$isAdmin && !$isTutor) {
     $classroomCourses = [];
 }
 
+// Full-day columns config
+$fullDaysSet = $classroomId > 0 ? $plugin->getFullDays($classroomId) : [];
+
 // Day names
 $dayNames = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes'];
 
@@ -215,6 +218,7 @@ $plugin->assign('schedule_grid',       $scheduleGrid);
 $plugin->assign('teachers_list',       $teachersList);
 $plugin->assign('classroom_courses',   $classroomCourses);
 $plugin->assign('day_names',           $dayNames);
+$plugin->assign('full_days_set',       $fullDaysSet);
 $plugin->assign('active_year',         $activeYear);
 $plugin->assign('ajax_url',            api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_schedule.php');
 

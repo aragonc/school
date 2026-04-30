@@ -79,6 +79,9 @@
 
     {% else %}
 
+    {# Build a JS-safe set of full-day days #}
+    {% set full_days_js = full_days_set|join(',') %}
+
     {# ---- Schedule grid ---- #}
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
@@ -89,9 +92,23 @@
                         <tr>
                             <th class="text-center align-middle" style="width:110px; background:#4e73df; color:#fff; font-size:12px;">Hora</th>
                             {% for day_num, day_label in day_names %}
-                            <th class="text-center align-middle" style="background:#4e73df; color:#fff; font-size:12px; {% if day_num == 4 %}border-left:3px solid #2653d4;{% endif %}">
+                            {% set is_fullday = day_num in full_days_set %}
+                            <th class="text-center align-middle schedule-th-day{% if is_fullday %} th-fullday{% endif %}"
+                                data-day="{{ day_num }}"
+                                style="background:{% if is_fullday %}#3d5fc4{% else %}#4e73df{% endif %}; color:#fff; font-size:12px; position:relative;">
                                 {{ day_label }}
-                                {% if day_num == 4 %}<br><small style="font-size:10px; opacity:.8;">Full Day</small>{% endif %}
+                                {% if is_fullday %}
+                                <br><small style="font-size:10px; opacity:.85;"><i class="fas fa-sun mr-1"></i>Full Day</small>
+                                {% endif %}
+                                {% if can_edit %}
+                                <button class="btn-toggle-fullday"
+                                        data-day="{{ day_num }}"
+                                        data-classroom="{{ classroom_id }}"
+                                        title="{% if is_fullday %}Quitar Full Day{% else %}Marcar como Full Day{% endif %}"
+                                        style="position:absolute; top:4px; right:4px; background:{% if is_fullday %}rgba(255,200,0,.3){% else %}rgba(255,255,255,.15){% endif %}; border:none; border-radius:3px; color:#fff; font-size:9px; padding:2px 4px; cursor:pointer; line-height:1;">
+                                    {% if is_fullday %}<i class="fas fa-sun"></i>{% else %}<i class="far fa-sun"></i>{% endif %}
+                                </button>
+                                {% endif %}
                             </th>
                             {% endfor %}
                             {% if can_edit %}<th style="width:40px; background:#4e73df;"></th>{% endif %}
@@ -101,9 +118,10 @@
                         {% for slot in schedule_grid %}
                         {% set rowStyle = slot.style %}
 
-                        {# Row style classes #}
                         {% if rowStyle == 'break' %}
                         <tr class="schedule-break" data-slot="{{ slot.time_start }}|{{ slot.time_end }}|{{ slot.sort_order }}">
+                        {% elseif rowStyle == 'brk' %}
+                        <tr class="schedule-brk" data-slot="{{ slot.time_start }}|{{ slot.time_end }}|{{ slot.sort_order }}">
                         {% elseif rowStyle == 'pause' %}
                         <tr class="schedule-pause" data-slot="{{ slot.time_start }}|{{ slot.time_end }}|{{ slot.sort_order }}">
                         {% elseif rowStyle == 'exit' %}
@@ -123,29 +141,34 @@
                             {# Day columns 1-5 #}
                             {% for day_num in 1..5 %}
                             {% set entry = slot.days[day_num] ?? slot.days[0] ?? null %}
+                            {% set is_fullday_col = day_num in full_days_set %}
 
                             {% if rowStyle == 'break' %}
-                            <td class="schedule-break-cell text-center align-middle" style="background:#fff3cd; color:#856404; font-size:11px; font-style:italic;">
-                                {% if entry %}<i class="fas fa-coffee mr-1"></i>{{ entry.subject ?: 'Recreo' }}{% else %}<i class="fas fa-coffee mr-1"></i>Recreo{% endif %}
+                            <td class="schedule-break-cell text-center align-middle{% if is_fullday_col %} col-fullday{% endif %}" style="background:#fff3cd; color:#856404; font-size:11px; font-style:italic;">
+                                {% if entry %}<i class="fas fa-coffee mr-1"></i>{{ entry.subject ?: 'RECESS' }}{% else %}<i class="fas fa-coffee mr-1"></i>RECESS{% endif %}
+                            </td>
+                            {% elseif rowStyle == 'brk' %}
+                            <td class="schedule-brk-cell text-center align-middle{% if is_fullday_col %} col-fullday{% endif %}" style="background:#ffe4cc; color:#7a3300; font-size:11px; font-style:italic;">
+                                {% if entry %}<i class="fas fa-pause mr-1"></i>{{ entry.subject ?: 'BREAK' }}{% else %}<i class="fas fa-pause mr-1"></i>BREAK{% endif %}
                             </td>
                             {% elseif rowStyle == 'pause' %}
-                            <td class="schedule-pause-cell text-center align-middle" style="background:#e2e3e5; color:#6c757d; font-size:11px; font-style:italic;">
-                                {% if entry %}<i class="fas fa-pause-circle mr-1"></i>{{ entry.subject ?: 'Pausa' }}{% else %}<i class="fas fa-pause-circle mr-1"></i>Pausa{% endif %}
+                            <td class="schedule-pause-cell text-center align-middle{% if is_fullday_col %} col-fullday{% endif %}" style="background:#e2e3e5; color:#6c757d; font-size:11px; font-style:italic;">
+                                {% if entry %}<i class="fas fa-walking mr-1"></i>{{ entry.subject ?: 'Active Pause' }}{% else %}<i class="fas fa-walking mr-1"></i>Active Pause{% endif %}
                             </td>
                             {% elseif rowStyle == 'exit' %}
-                            <td class="schedule-exit-cell text-center align-middle" style="background:#d1ecf1; color:#0c5460; font-size:11px; font-style:italic;">
+                            <td class="schedule-exit-cell text-center align-middle{% if is_fullday_col %} col-fullday{% endif %}" style="background:#d1ecf1; color:#0c5460; font-size:11px; font-style:italic;">
                                 {% if entry %}<i class="fas fa-door-open mr-1"></i>{{ entry.subject ?: 'Salida' }}{% else %}<i class="fas fa-door-open mr-1"></i>Salida{% endif %}
                             </td>
                             {% elseif rowStyle == 'activity' %}
-                            <td class="schedule-activity-cell text-center align-middle" style="background:#d4edda; color:#155724; font-size:11px; font-style:italic;">
+                            <td class="schedule-activity-cell text-center align-middle{% if is_fullday_col %} col-fullday{% endif %}" style="background:#d4edda; color:#155724; font-size:11px; font-style:italic;">
                                 <i class="fas fa-star mr-1"></i>{% if entry %}{{ entry.subject ?: 'Actividad' }}{% else %}Actividad{% endif %}
                             </td>
                             {% else %}
                                 {% if entry %}
-                                <td class="schedule-subject-cell align-middle px-2 py-2{% if day_num == 4 %} schedule-fullday-cell{% endif %}"
+                                <td class="schedule-subject-cell align-middle px-2 py-2{% if is_fullday_col %} col-fullday schedule-fullday-cell{% endif %}"
                                     data-entry-id="{{ entry.id }}"
                                     data-day="{{ day_num }}"
-                                    style="{% if day_num == 4 %}border-left:3px solid #2653d4;{% endif %} min-width:130px;">
+                                    style="min-width:130px;">
                                     <div class="subject-name font-weight-bold" style="font-size:12px; color:#2e3a4e; line-height:1.3;">
                                         {{ entry.subject }}
                                     </div>
@@ -179,8 +202,8 @@
                                     {% endif %}
                                 </td>
                                 {% else %}
-                                <td class="schedule-empty-cell align-middle text-center{% if day_num == 4 %} schedule-fullday-cell{% endif %}"
-                                    style="{% if day_num == 4 %}border-left:3px solid #2653d4;{% endif %} color:#ccc; font-size:20px; min-width:130px;">
+                                <td class="schedule-empty-cell align-middle text-center{% if is_fullday_col %} col-fullday schedule-fullday-cell{% endif %}"
+                                    style="color:#ccc; font-size:20px; min-width:130px;">
                                     {% if can_edit %}
                                     <button class="btn btn-sm btn-link text-muted btn-add-day-entry p-0"
                                             data-classroom="{{ classroom_id }}"
@@ -271,8 +294,9 @@
                         <label class="small font-weight-bold">Tipo de fila</label>
                         <select class="form-control form-control-sm" id="entryStyle" name="style">
                             <option value="">Clase normal</option>
-                            <option value="break">Recreo / Descanso</option>
-                            <option value="pause">Pausa</option>
+                            <option value="break">RECESS (Receso)</option>
+                            <option value="brk">BREAK</option>
+                            <option value="pause">Active Pause</option>
                             <option value="exit">Salida</option>
                             <option value="activity">Actividad extra</option>
                         </select>
@@ -340,14 +364,23 @@
 <style>
 .schedule-table th, .schedule-table td { vertical-align: middle !important; }
 .schedule-subject-cell:hover .entry-actions { display: block !important; }
-.schedule-break-cell, .schedule-pause-cell, .schedule-exit-cell { font-size: 11px; }
-.schedule-fullday-cell { background: #f0f4ff !important; }
-.schedule-table .schedule-break tr, tr.schedule-break td { background: #fff3cd !important; }
-tr.schedule-pause td { background: #f2f2f2 !important; }
-tr.schedule-exit td { background: #d1ecf1 !important; }
-.btn-xs { padding: 0.1rem 0.3rem; font-size: 0.7rem; line-height: 1.2; }
-tr.schedule-activity td { background: #d4edda !important; }
+.schedule-break-cell, .schedule-brk-cell, .schedule-pause-cell, .schedule-exit-cell { font-size: 11px; }
+.schedule-fullday-cell { background: #dce7ff !important; }
+.col-fullday { background: #dce7ff !important; }
+tr.schedule-break td.schedule-break-cell { background: #fff3cd !important; }
+tr.schedule-break td.col-fullday { background: #f0e0a0 !important; }
+tr.schedule-brk td.schedule-brk-cell { background: #ffe4cc !important; }
+tr.schedule-brk td.col-fullday { background: #f0c8a0 !important; }
+tr.schedule-pause td.schedule-pause-cell { background: #e2e3e5 !important; }
+tr.schedule-pause td.col-fullday { background: #c8c9cc !important; }
+tr.schedule-exit td.schedule-exit-cell { background: #d1ecf1 !important; }
+tr.schedule-exit td.col-fullday { background: #b0d8e4 !important; }
+tr.schedule-activity td.schedule-activity-cell { background: #d4edda !important; }
+tr.schedule-activity td.col-fullday { background: #b0d8bc !important; }
 .schedule-activity-cell { font-size: 11px; }
+.btn-toggle-fullday:hover { background: rgba(255,200,0,.5) !important; }
+.th-fullday { border-bottom: 3px solid #ffd700 !important; }
+.btn-xs { padding: 0.1rem 0.3rem; font-size: 0.7rem; line-height: 1.2; }
 </style>
 
 {% if can_edit %}
@@ -368,16 +401,11 @@ tr.schedule-activity td { background: #d4edda !important; }
         $('#entryActivityName').val((data.style === 'activity') ? (data.subject || '') : '');
         $('#entryTeacherId').val(data.teacher_id || '');
 
-        // Days
         $('input[name="days[]"]').prop('checked', false);
         if (data.day != null && data.day !== undefined) {
             $('input[name="days[]"][value="' + data.day + '"]').prop('checked', true);
         }
-        if (data.id) {
-            $('#modalEntryTitle').text('Editar hora');
-        } else {
-            $('#modalEntryTitle').text('Nueva hora');
-        }
+        $('#modalEntryTitle').text(data.id ? 'Editar hora' : 'Nueva hora');
         toggleSubjectGroup($('#entryStyle').val());
         $('#modalScheduleEntry').modal('show');
     }
@@ -388,7 +416,7 @@ tr.schedule-activity td { background: #d4edda !important; }
     }
 
     function toggleSubjectGroup(style) {
-        if (style === 'break' || style === 'pause' || style === 'exit') {
+        if (style === 'break' || style === 'brk' || style === 'pause' || style === 'exit') {
             $('#entryDayGroup').hide();
             $('#entrySubjectGroup').show();
             $('#entryActivityGroup').hide();
@@ -411,7 +439,6 @@ tr.schedule-activity td { background: #d4edda !important; }
         toggleSubjectGroup($(this).val());
     });
 
-    // "All days" checkbox logic
     $('#dayAll').on('change', function () {
         if ($(this).is(':checked')) {
             $('.day-check').prop('checked', false);
@@ -423,12 +450,10 @@ tr.schedule-activity td { background: #d4edda !important; }
         }
     });
 
-    // Open modal for new slot
     $(document).on('click', '#btnAddSlot, #btnAddSlotEmpty', function () {
         openModal({});
     });
 
-    // Open modal pre-filled for a specific day/time
     $(document).on('click', '.btn-add-day-entry', function () {
         var btn = $(this);
         openModal({
@@ -439,7 +464,6 @@ tr.schedule-activity td { background: #d4edda !important; }
         });
     });
 
-    // Open modal for editing existing entry
     $(document).on('click', '.btn-edit-entry', function () {
         var btn = $(this);
         openModal({
@@ -454,10 +478,7 @@ tr.schedule-activity td { background: #d4edda !important; }
         });
     });
 
-    // Save entry
     $('#btnSaveEntry').on('click', function () {
-        var form = $('#formScheduleEntry');
-
         var timeStart = $('#entryTimeStart').val().trim();
         var timeEnd   = $('#entryTimeEnd').val().trim();
         var style     = $('#entryStyle').val();
@@ -471,7 +492,6 @@ tr.schedule-activity td { background: #d4edda !important; }
             return;
         }
 
-        // Collect selected days
         var days = [];
         $('input[name="days[]"]:checked').each(function () {
             days.push($(this).val());
@@ -514,7 +534,6 @@ tr.schedule-activity td { background: #d4edda !important; }
         });
     });
 
-    // Delete single entry
     $(document).on('click', '.btn-delete-entry', function () {
         if (!confirm('¿Eliminar esta entrada del horario?')) return;
         var id = $(this).data('id');
@@ -527,7 +546,6 @@ tr.schedule-activity td { background: #d4edda !important; }
         }, 'json');
     });
 
-    // Delete full time-slot row
     $(document).on('click', '.btn-delete-slot', function () {
         if (!confirm('¿Eliminar toda la fila de este horario?')) return;
         var btn = $(this);
@@ -543,6 +561,25 @@ tr.schedule-activity td { background: #d4edda !important; }
                 alert((resp && resp.error) ? resp.error : 'Error al eliminar.');
             }
         }, 'json');
+    });
+
+    // Toggle Full Day column
+    $(document).on('click', '.btn-toggle-fullday', function () {
+        var btn = $(this);
+        var day = parseInt(btn.data('day'));
+        $.post(ajaxUrl, {
+            action:       'toggle_full_day',
+            classroom_id: classroomId,
+            day:          day
+        }, function (resp) {
+            if (resp && resp.success) {
+                location.reload();
+            } else {
+                alert((resp && resp.error) ? resp.error : 'Error al cambiar Full Day.');
+            }
+        }, 'json').fail(function () {
+            alert('Error de conexión.');
+        });
     });
 
 }());

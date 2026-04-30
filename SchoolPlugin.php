@@ -60,6 +60,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_REFUND                   = 'plugin_school_refund';
     const TABLE_SCHOOL_CLASSROOM_PLAN             = 'plugin_school_classroom_plan';
     const TABLE_SCHOOL_CLASSROOM_SCHEDULE         = 'plugin_school_classroom_schedule';
+    const TABLE_SCHOOL_CLASSROOM_FULLDAY          = 'plugin_school_classroom_fullday';
     const TABLE_SCHOOL_ATTENDANCE_NONWORKING      = 'plugin_school_attendance_nonworking';
     const TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER   = 'plugin_school_attendance_schedule_user';
     const TABLE_SCHOOL_SUPPORT_TICKET             = 'plugin_school_support_ticket';
@@ -4835,6 +4836,48 @@ class SchoolPlugin extends Plugin
         $this->ensureNonWorkingTable();
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
         return (bool) Database::delete($table, ['id = ?' => $id]);
+    }
+
+    /**
+     * Get full-day days for a classroom (returns array of day ints, e.g. [1,3]).
+     */
+    public function getFullDays(int $classroomId): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_CLASSROOM_FULLDAY);
+        Database::query("CREATE TABLE IF NOT EXISTS $table (
+            classroom_id INT NOT NULL PRIMARY KEY,
+            full_days    VARCHAR(20) NOT NULL DEFAULT ''
+        )");
+        $row = Database::fetch_array(
+            Database::query("SELECT full_days FROM $table WHERE classroom_id = $classroomId LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$row || $row['full_days'] === '') return [];
+        return array_map('intval', explode(',', $row['full_days']));
+    }
+
+    /**
+     * Toggle a day as full-day for a classroom.
+     */
+    public function toggleFullDay(int $classroomId, int $day): array
+    {
+        $table = Database::get_main_table(self::TABLE_SCHOOL_CLASSROOM_FULLDAY);
+        Database::query("CREATE TABLE IF NOT EXISTS $table (
+            classroom_id INT NOT NULL PRIMARY KEY,
+            full_days    VARCHAR(20) NOT NULL DEFAULT ''
+        )");
+        $current = $this->getFullDays($classroomId);
+        if (in_array($day, $current)) {
+            $current = array_values(array_diff($current, [$day]));
+        } else {
+            $current[] = $day;
+            sort($current);
+        }
+        $val = implode(',', $current);
+        $valE = Database::escape_string($val);
+        Database::query("INSERT INTO $table (classroom_id, full_days) VALUES ($classroomId, '$valE')
+                         ON DUPLICATE KEY UPDATE full_days = '$valE'");
+        return $current;
     }
 
     /**

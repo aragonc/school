@@ -116,7 +116,7 @@ switch ($action) {
         }
 
         // Insert new entries: one per selected day (or day_of_week=0 for special rows)
-        if ($style && in_array($style, ['break', 'pause', 'exit'])) {
+        if ($style && in_array($style, ['break', 'brk', 'pause', 'exit'])) {
             // Special rows apply to all days (day_of_week = 0)
             Database::query("INSERT INTO $schedTable
                 (classroom_id, day_of_week, time_start, time_end, subject, teacher_id, teacher_name, style, sort_order)
@@ -214,6 +214,25 @@ switch ($action) {
         Database::query("DELETE FROM $schedTable
                          WHERE classroom_id=$classroomId AND time_start='$tsEsc' AND time_end='$teEsc'");
         echo json_encode(['success' => true]);
+        break;
+
+    case 'toggle_full_day':
+        if (!$canEdit) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            exit;
+        }
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $day         = (int) ($_POST['day'] ?? 0);
+        if (!$classroomId || $day < 1 || $day > 5) {
+            echo json_encode(['success' => false, 'error' => 'Datos inválidos']);
+            exit;
+        }
+        if (!canEditClassroom($classroomId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos para este aula']);
+            exit;
+        }
+        $newDays = $plugin->toggleFullDay($classroomId, $day);
+        echo json_encode(['success' => true, 'full_days' => $newDays]);
         break;
 
     default:
