@@ -135,6 +135,11 @@
                     <i class="fas fa-clipboard-check mr-1"></i> Asistencia manual
                 </button>
                 {% endif %}
+                {% if classroom %}
+                <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#exportExcelModal">
+                    <i class="fas fa-file-excel mr-1"></i> Exportar Excel
+                </button>
+                {% endif %}
                 {% if students %}
                 <button class="btn btn-sm btn-outline-info" data-toggle="modal" data-target="#loginHistoryModal">
                     <i class="fas fa-history mr-1"></i> Historial de conexiones
@@ -780,5 +785,105 @@ document.querySelectorAll('input[name="att_status"]').forEach(function(radio) {
 document.getElementById('attNotesInput').addEventListener('input', function() {
     document.getElementById('attNotesCount').textContent = this.value.length + '/500';
 });
+</script>
+{% endif %}
+
+{# ===== Modal: Exportar Excel de Asistencias ===== #}
+{% if classroom %}
+<div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportExcelModalLabel">
+                    <i class="fas fa-file-excel mr-2 text-success"></i>Exportar Asistencias a Excel
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    Selecciona el rango de fechas para exportar las asistencias del aula
+                    <strong>{{ classroom.grade_name }}{% if classroom.section_name %} Sec. {{ classroom.section_name }}{% endif %}</strong>.
+                </p>
+                <div class="form-group">
+                    <label class="font-weight-bold small">Fecha inicial</label>
+                    <input type="date" id="exportStartDate" class="form-control"
+                           max="{{ "now"|date("Y-m-d") }}">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold small">Fecha final</label>
+                    <input type="date" id="exportEndDate" class="form-control"
+                           value="{{ "now"|date("Y-m-d") }}"
+                           max="{{ "now"|date("Y-m-d") }}">
+                </div>
+                <div id="exportExcelError" class="alert alert-danger mt-3 d-none small py-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success btn-sm" id="exportExcelBtn" onclick="doExportExcel()">
+                    <i class="fas fa-download mr-1"></i> Descargar Excel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Set default start date to first day of current month
+    var now = new Date();
+    var firstDay = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-01';
+    document.getElementById('exportStartDate').value = firstDay;
+})();
+
+function doExportExcel() {
+    var start = document.getElementById('exportStartDate').value;
+    var end   = document.getElementById('exportEndDate').value;
+    var errEl = document.getElementById('exportExcelError');
+    errEl.classList.add('d-none');
+    errEl.textContent = '';
+
+    if (!start) {
+        errEl.textContent = 'Por favor selecciona la fecha inicial.';
+        errEl.classList.remove('d-none');
+        return;
+    }
+    if (!end) {
+        errEl.textContent = 'Por favor selecciona la fecha final.';
+        errEl.classList.remove('d-none');
+        return;
+    }
+    if (start > end) {
+        errEl.textContent = 'La fecha inicial no puede ser mayor que la fecha final.';
+        errEl.classList.remove('d-none');
+        return;
+    }
+
+    var classroomId = {{ classroom_id }};
+    var ajaxBase = '{{ ajax_attendance_url }}';
+    var url = ajaxBase + '?action=export_excel_classroom'
+            + '&classroom_id=' + classroomId
+            + '&start_date='   + encodeURIComponent(start)
+            + '&end_date='     + encodeURIComponent(end);
+
+    document.getElementById('exportExcelBtn').innerHTML =
+        '<i class="fas fa-spinner fa-spin mr-1"></i> Generando...';
+    document.getElementById('exportExcelBtn').disabled = true;
+
+    // Trigger download via hidden link
+    var a = document.createElement('a');
+    a.href = url;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(function() {
+        document.getElementById('exportExcelBtn').innerHTML =
+            '<i class="fas fa-download mr-1"></i> Descargar Excel';
+        document.getElementById('exportExcelBtn').disabled = false;
+        $('#exportExcelModal').modal('hide');
+    }, 1500);
+}
 </script>
 {% endif %}

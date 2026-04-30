@@ -5079,6 +5079,128 @@ class SchoolPlugin extends Plugin
     }
 
     /**
+     * Export attendance Excel filtered by classroom (for tutors and admins from /my-aula/mis-alumnos).
+     */
+    public function exportAttendanceExcelClassroom(
+        ?string $startDate,
+        ?string $endDate,
+        int $classroomId
+    ): void {
+        $logTable     = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable    = Database::get_main_table(TABLE_MAIN_USER);
+        $csTable      = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_CLASSROOM_STUDENT);
+        $fichaTable   = Database::get_main_table(self::TABLE_SCHOOL_FICHA);
+
+        // Get all students in this classroom
+        $sql = "SELECT cs.user_id,
+                       COALESCE(NULLIF(TRIM(f.apellido_paterno),''), u.lastname)  AS lastname,
+                       COALESCE(NULLIF(TRIM(f.apellido_materno),''), '')           AS lastname2,
+                       COALESCE(NULLIF(TRIM(f.nombres),''), u.firstname)           AS firstname,
+                       u.username,
+                       COALESCE(NULLIF(TRIM(f.dni),''), u.official_code)           AS dni
+                FROM $csTable cs
+                INNER JOIN $userTable  u ON u.id      = cs.user_id
+                LEFT  JOIN $fichaTable f ON f.user_id = cs.user_id
+                WHERE cs.classroom_id = " . (int) $classroomId . "
+                ORDER BY lastname ASC, lastname2 ASC, firstname ASC";
+
+        $res = Database::query($sql);
+        $students = [];
+        $studentIds = [];
+        while ($row = Database::fetch_array($res, 'ASSOC')) {
+            $students[$row['user_id']] = $row;
+            $studentIds[] = (int) $row['user_id'];
+        }
+
+        if (empty($studentIds)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'No hay alumnos en el aula']);
+            exit;
+        }
+
+        $idList = implode(',', $studentIds);
+        $where  = "WHERE al.user_id IN ($idList)";
+        if ($startDate) $where .= " AND al.date >= '" . Database::escape_string($startDate) . "'";
+        if ($endDate)   $where .= " AND al.date <= '" . Database::escape_string($endDate)   . "'";
+
+        $attSql = "SELECT al.date, al.user_id, al.check_in, al.status, al.method, al.notes
+                   FROM $logTable al
+                   $where
+                   ORDER BY al.date DESC";
+        $attRes = Database::query($attSql);
+
+        $statusLabels = ['on_time' => 'Puntual', 'late' => 'Tardanza', 'absent' => 'Ausente'];
+        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
+
+        $rawRows      = [];
+        $existingKeys = [];
+        while ($row = Database::fetch_array($attRes, 'ASSOC')) {
+            $existingKeys[$row['date'] . '|' . $row['user_id']] = true;
+            $s = $students[$row['user_id']] ?? [];
+            $rawRows[] = array_merge($row, [
+                'lastname'  => $s['lastname']  ?? '',
+                'firstname' => $s['firstname'] ?? '',
+                'username'  => $s['username']  ?? '',
+                'dni'       => $s['dni']        ?? '',
+            ]);
+        }
+
+        // Synthetic absent rows for active school days
+        $activeDates = $this->getActiveDatesInRange($startDate, $endDate);
+        foreach ($activeDates as $date) {
+            foreach ($students as $uid => $s) {
+                if (isset($existingKeys[$date . '|' . $uid])) continue;
+                $rawRows[] = [
+                    'date'      => $date,
+                    'user_id'   => $uid,
+                    'lastname'  => $s['lastname'],
+                    'firstname' => $s['firstname'],
+                    'username'  => $s['username'],
+                    'dni'       => $s['dni'],
+                    'check_in'  => null,
+                    'status'    => 'absent',
+                    'method'    => null,
+                    'notes'     => null,
+                ];
+            }
+        }
+
+        usort($rawRows, function ($a, $b) {
+            $d = strcmp($b['date'], $a['date']);
+            return $d !== 0 ? $d : strcasecmp($a['lastname'] ?? '', $b['lastname'] ?? '');
+        });
+
+        $headers = ['Fecha', 'Apellidos', 'Nombres', 'DNI', 'Usuario', 'Hora Ingreso', 'Estado', 'Metodo', 'Observaciones'];
+        $rows = [];
+        foreach ($rawRows as $row) {
+            $checkIn = !empty($row['check_in']) ? date('H:i:s', strtotime(api_get_local_time($row['check_in']))) : '-';
+            $rows[] = [
+                'data' => [
+                    $row['date'],
+                    $row['lastname'],
+                    $row['firstname'],
+                    $row['dni'],
+                    $row['username'],
+                    $checkIn,
+                    $statusLabels[$row['status']] ?? $row['status'],
+                    ($row['status'] === 'absent') ? '-' : (!empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-'),
+                    $row['notes'] ?? '',
+                ],
+                'status' => $row['status'],
+            ];
+        }
+
+        $xlsx     = $this->buildXlsx($headers, $rows);
+        $filename = 'asistencia_aula_' . date('Y-m-d_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($xlsx));
+        header('Cache-Control: max-age=0');
+        echo $xlsx;
+        exit;
+    }
+
+    /**
      * Build a minimal XLSX binary string using ZipArchive.
      * Supports bold headers and per-row fill colors.
      */

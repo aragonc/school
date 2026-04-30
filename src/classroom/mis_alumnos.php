@@ -171,6 +171,7 @@ $enableManualAttendance = $isAdmin || ($isTeacher && $manualTutorSetting);
 
 $plugin->assign('enable_manual_attendance', $enableManualAttendance);
 $plugin->assign('ajax_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_admin.php');
+$plugin->assign('ajax_attendance_url', api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_attendance.php');
 
 $plugin->setTitle('Mis Alumnos');
 $content = $plugin->fetch('classroom/mis_alumnos.tpl');

@@ -255,6 +255,38 @@ switch ($action) {
         $plugin->exportAttendanceExcel($startDate, $endDate, $userType, $levelId, $gradeId, $sectionId);
         break;
 
+    case 'export_excel_classroom':
+        $currentUserId   = api_get_user_id();
+        $currentUserInfo = api_get_user_info($currentUserId);
+        $isTeacher       = $currentUserInfo && (int) $currentUserInfo['status'] === COURSEMANAGER;
+        if (!$isAdmin && !$isTeacher) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $classroomId = isset($_GET['classroom_id']) ? (int) $_GET['classroom_id'] : 0;
+        $startDate   = isset($_GET['start_date'])   ? trim($_GET['start_date'])   : null;
+        $endDate     = isset($_GET['end_date'])     ? trim($_GET['end_date'])     : null;
+        if ($classroomId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid classroom']);
+            exit;
+        }
+        // Teacher can only export their own assigned classroom
+        if (!$isAdmin && $isTeacher) {
+            require_once __DIR__ . '/../src/ClassroomPlanManager.php';
+            require_once __DIR__ . '/../src/MatriculaManager.php';
+            $activeYear   = MatriculaManager::getActiveYear();
+            $yearId       = $activeYear ? (int) $activeYear['id'] : 0;
+            $tutorCls     = $yearId > 0 ? ClassroomPlanManager::getTutorClassroom($currentUserId, $yearId) : null;
+            if (!$tutorCls || (int) $tutorCls['id'] !== $classroomId) {
+                echo json_encode(['success' => false, 'message' => 'Not authorized for this classroom']);
+                exit;
+            }
+        }
+        if (!$startDate || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) $startDate = null;
+        if (!$endDate   || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate))   $endDate   = null;
+        $plugin->exportAttendanceExcelClassroom($startDate, $endDate, $classroomId);
+        break;
+
     case 'export_pdf':
         if (!$isAdmin) {
             echo json_encode(['success' => false, 'message' => 'Not authorized']);
