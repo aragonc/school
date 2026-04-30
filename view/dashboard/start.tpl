@@ -117,8 +117,10 @@
                 </h6>
                 <a href="/attendance/my" class="btn btn-sm btn-outline-primary">Ver detalle</a>
             </div>
-            <div class="card-body">
-                <canvas id="attendanceChart" height="80"></canvas>
+            <div class="card-body d-flex justify-content-center">
+                <div style="max-width:320px; width:100%;">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -127,64 +129,35 @@
 <script>
 (function() {
     var rawData = {{ monthly_attendance|json_encode }};
-    var labels = [], onTime = [], late = [], absent = [];
-    var byDate = {};
+    var onTime = 0, late = 0, absent = 0;
     rawData.forEach(function(r) {
-        byDate[r.date] = r.status;
-    });
-    Object.keys(byDate).sort().forEach(function(d) {
-        var day = d.split('-')[2];
-        labels.push(day);
-        onTime.push(byDate[d] === 'on_time' ? 1 : 0);
-        late.push(byDate[d] === 'late' ? 1 : 0);
-        absent.push(byDate[d] === 'absent' ? 1 : 0);
+        if (r.status === 'on_time') onTime++;
+        else if (r.status === 'late') late++;
+        else if (r.status === 'absent') absent++;
     });
 
     var ctx = document.getElementById('attendanceChart').getContext('2d');
     new Chart(ctx, {
-        type: 'bar',
+        type: 'pie',
         data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'A tiempo',
-                    data: onTime,
-                    backgroundColor: 'rgba(28,200,138,0.7)',
-                    borderColor: '#1cc88a',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Tardanza',
-                    data: late,
-                    backgroundColor: 'rgba(246,194,62,0.7)',
-                    borderColor: '#f6c23e',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Ausente',
-                    data: absent,
-                    backgroundColor: 'rgba(231,74,59,0.7)',
-                    borderColor: '#e74a3b',
-                    borderWidth: 1
-                }
-            ]
+            labels: ['Puntual', 'Tardanza', 'Ausente'],
+            datasets: [{
+                data: [onTime, late, absent],
+                backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b'],
+                borderColor: ['#17a673', '#dda20a', '#c0392b'],
+                borderWidth: 2
+            }]
         },
         options: {
             responsive: true,
-            scales: {
-                x: { stacked: true, grid: { display: false } },
-                y: {
-                    stacked: true,
-                    ticks: { stepSize: 1, precision: 0 },
-                    max: 1
-                }
-            },
             plugins: {
                 legend: { position: 'bottom' },
                 tooltip: {
                     callbacks: {
                         label: function(ctx) {
-                            return ctx.dataset.label + ': ' + (ctx.raw === 1 ? 'Sí' : 'No');
+                            var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                            var pct = total > 0 ? Math.round(ctx.raw / total * 100) : 0;
+                            return ctx.label + ': ' + ctx.raw + ' día(s) (' + pct + '%)';
                         }
                     }
                 }
