@@ -187,7 +187,7 @@
                 <span class="cal-nw-label">
                     <i class="fas fa-{% if dayData.nonworking.type == 'vacation' %}umbrella-beach{% else %}flag{% endif %} mr-1"></i>{{ dayData.nonworking.description }}
                 </span>
-                {% endif %}
+                {% else %}
                 {% if dayData.schedule %}
                 <ul class="cal-sched-list">
                     {% for subject in dayData.schedule %}
@@ -214,6 +214,7 @@
                         onclick="openAddPlan('{{ dayData.date }}')">
                     <i class="fas fa-plus"></i> Agregar
                 </button>
+                {% endif %}
                 {% endif %}
             </td>
             {% else %}
