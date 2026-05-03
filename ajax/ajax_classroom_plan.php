@@ -137,6 +137,79 @@ switch ($action) {
         echo json_encode(['success' => $result, 'message' => $result ? '' : 'Sin permisos para eliminar']);
         break;
 
+    // -------------------------------------------------------------------------
+    // POST: save cropped image for a calendar day
+    // -------------------------------------------------------------------------
+    case 'save_day_image':
+        if (!$isAdmin && !$isSecretary && !$isTeacher) {
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            break;
+        }
+
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $dayDate     = trim($_POST['day_date'] ?? '');
+        $imageData   = $_POST['image_data'] ?? '';
+
+        if (!$classroomId || !$dayDate || !$imageData) {
+            echo json_encode(['success' => false, 'message' => 'Faltan datos']);
+            break;
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dayDate)) {
+            echo json_encode(['success' => false, 'message' => 'Fecha inválida']);
+            break;
+        }
+
+        // Decode base64 image (data:image/jpeg;base64,...)
+        if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $m)) {
+            $imageData = substr($imageData, strpos($imageData, ',') + 1);
+        }
+        $imageData = base64_decode($imageData);
+        if (!$imageData) {
+            echo json_encode(['success' => false, 'message' => 'Imagen inválida']);
+            break;
+        }
+
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/day_images/';
+        $filename  = 'day_' . $classroomId . '_' . $dayDate . '.jpg';
+        $filepath  = $uploadDir . $filename;
+
+        if (file_put_contents($filepath, $imageData) === false) {
+            echo json_encode(['success' => false, 'message' => 'Error al guardar imagen']);
+            break;
+        }
+
+        $webUrl = api_get_path(WEB_UPLOAD_PATH) . 'plugins/school/day_images/' . $filename . '?t=' . time();
+        echo json_encode(['success' => true, 'url' => $webUrl]);
+        break;
+
+    // -------------------------------------------------------------------------
+    // POST: delete image for a calendar day
+    // -------------------------------------------------------------------------
+    case 'delete_day_image':
+        if (!$isAdmin && !$isSecretary && !$isTeacher) {
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            break;
+        }
+
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $dayDate     = trim($_POST['day_date'] ?? '');
+
+        if (!$classroomId || !$dayDate) {
+            echo json_encode(['success' => false, 'message' => 'Faltan datos']);
+            break;
+        }
+
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/day_images/';
+        $filename  = 'day_' . $classroomId . '_' . $dayDate . '.jpg';
+        $filepath  = $uploadDir . $filename;
+
+        if (file_exists($filepath)) {
+            unlink($filepath);
+        }
+        echo json_encode(['success' => true]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Acción no reconocida']);
         break;

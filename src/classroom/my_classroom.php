@@ -243,6 +243,24 @@ if ($classroomId > 0) {
 $plugin->assign('classroom_courses',      $classroomCourses);
 $plugin->assign('classroom_courses_json', json_encode($classroomCourses));
 
+// Build map of existing day images for this classroom/month
+$dayImagesMap = [];
+if ($classroomId > 0) {
+    $imgDir    = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/day_images/';
+    $imgWebDir = api_get_path(WEB_UPLOAD_PATH)  . 'plugins/school/day_images/';
+    $prefix    = 'day_' . $classroomId . '_' . $currentYear . '-' . sprintf('%02d', $currentMonth);
+    foreach (glob($imgDir . $prefix . '*.jpg') as $file) {
+        $base = basename($file, '.jpg');
+        // filename: day_{classroomId}_{date}
+        $parts = explode('_', $base, 3);
+        if (isset($parts[2])) {
+            $dayImagesMap[$parts[2]] = $imgWebDir . basename($file);
+        }
+    }
+}
+$plugin->assign('day_images_map',     $dayImagesMap);
+$plugin->assign('day_images_map_json', json_encode($dayImagesMap));
+
 $plugin->assign('ajax_url',            api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_classroom_plan.php');
 
 $plugin->setTitle('Mi Aula');
