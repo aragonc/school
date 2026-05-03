@@ -351,7 +351,7 @@
 
 <!-- ===== MODAL: Imagen del día ===== -->
 {% if can_edit %}
-<link rel="stylesheet" href="{{ _p.web }}assets/cropper/dist/cropper.min.css">
+<link rel="stylesheet" href="{{ _p.web }}web/assets/cropper/dist/cropper.min.css">
 <div class="modal fade no-print" id="dayImageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -409,7 +409,7 @@
 </div>
 {% endif %}
 
-<script src="{{ _p.web }}assets/cropper/dist/cropper.min.js"></script>
+<script src="{{ _p.web }}web/assets/cropper/dist/cropper.min.js"></script>
 <script>
 var ajaxUrl              = '{{ ajax_url }}';
 var isTutorOrAdmin       = {{ (is_tutor or is_admin_or_secretary) ? 'true' : 'false' }};
