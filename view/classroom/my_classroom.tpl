@@ -245,7 +245,8 @@
                 <button class="btn-add-plan no-print"
                         data-date="{{ dayData.date }}"
                         data-schedule="{{ dayData.schedule|json_encode|e('html_attr') }}"
-                        onclick="openAddPlan(this.dataset.date, JSON.parse(this.dataset.schedule))">
+                        data-plans="{{ dayData.plans|json_encode|e('html_attr') }}"
+                        onclick="openAddPlanBtn(this)">
                     <i class="fas fa-plus"></i> Agregar
                 </button>
                 {% endif %}
@@ -507,7 +508,7 @@ function getTipoFromSubject(subject) {
     return 'curso';
 }
 
-function rebuildCourseSelect(schedSubjects) {
+function rebuildCourseSelect(schedSubjects, usedSubjects) {
     var sel = document.getElementById('plan_subject');
     if (!sel || sel.tagName !== 'SELECT') return;
 
@@ -523,6 +524,15 @@ function rebuildCourseSelect(schedSubjects) {
         coursesToShow = allClassroomCourses;
     }
 
+    // Exclude courses already added for this day
+    if (usedSubjects && usedSubjects.length > 0) {
+        var specialSubjects = ['Consolidado de Aprendizajes', 'Actividad'];
+        coursesToShow = coursesToShow.filter(function(c) {
+            if (specialSubjects.indexOf(c.subject) !== -1) return true;
+            return usedSubjects.indexOf(c.subject) === -1;
+        });
+    }
+
     sel.innerHTML = '<option value="">-- Seleccionar curso --</option>';
     coursesToShow.forEach(function(c) {
         var opt = document.createElement('option');
@@ -532,6 +542,14 @@ function rebuildCourseSelect(schedSubjects) {
         opt.textContent = c.subject + (c.teacher_name ? ' — ' + c.teacher_name : '');
         sel.appendChild(opt);
     });
+}
+
+function openAddPlanBtn(btn) {
+    var date         = btn.dataset.date;
+    var schedule     = JSON.parse(btn.dataset.schedule);
+    var plans        = JSON.parse(btn.dataset.plans);
+    var usedSubjects = plans.map(function(p) { return p.subject; });
+    openAddPlan(date, schedule, usedSubjects);
 }
 
 function planTipoChanged() {
@@ -550,7 +568,7 @@ function planCourseChanged() {
     document.getElementById('plan_teacher_id').value = tid;
 }
 
-function openAddPlan(date, scheduleSubjects) {
+function openAddPlan(date, scheduleSubjects, usedSubjects) {
     currentDaySchedule = scheduleSubjects || [];
     document.getElementById('plan_id').value = 0;
     document.getElementById('plan_date').value = date;
@@ -562,7 +580,7 @@ function openAddPlan(date, scheduleSubjects) {
     document.getElementById('plan_modal_error').style.display = 'none';
     document.getElementById('btn_delete_plan').style.display = 'none';
     document.getElementById('planModalTitle').innerHTML = '<i class="fas fa-book-open mr-1"></i> Agregar Tema';
-    rebuildCourseSelect(currentDaySchedule);
+    rebuildCourseSelect(currentDaySchedule, usedSubjects || []);
     planTipoChanged();
     $('#planModal').modal('show');
 }
@@ -583,6 +601,7 @@ function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myI
 
     // Set subject field only for "curso" type
     if (tipo === 'curso') {
+        rebuildCourseSelect([], []); // Show all courses when editing
         var subjectEl = document.getElementById('plan_subject');
         if (subjectEl.tagName === 'SELECT') {
             var matched = false;
