@@ -244,7 +244,8 @@ $plugin->assign('classroom_courses',      $classroomCourses);
 $plugin->assign('classroom_courses_json', json_encode($classroomCourses));
 
 // Build map of existing day images for this classroom/month
-$dayImagesMap = [];
+$dayImagesMap  = [];
+$dayImagesMeta = [];
 if ($classroomId > 0) {
     $imgDir    = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/day_images/';
     $imgWebDir = api_get_path(WEB_UPLOAD_PATH)  . 'plugins/school/day_images/';
@@ -256,9 +257,16 @@ if ($classroomId > 0) {
             $dayImagesMap[$parts[2]] = $imgWebDir . basename($file);
         }
     }
+    // Load per-classroom image metadata (width, align)
+    $metaFile = $imgDir . 'meta_' . $classroomId . '.json';
+    if (file_exists($metaFile)) {
+        $dayImagesMeta = json_decode(file_get_contents($metaFile), true) ?: [];
+    }
 }
-$plugin->assign('day_images_map',     $dayImagesMap);
-$plugin->assign('day_images_map_json', json_encode($dayImagesMap));
+$plugin->assign('day_images_map',       $dayImagesMap);
+$plugin->assign('day_images_map_json',  json_encode($dayImagesMap));
+$plugin->assign('day_images_meta',      $dayImagesMeta);
+$plugin->assign('day_images_meta_json', json_encode($dayImagesMeta));
 
 $plugin->assign('ajax_url',            api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_classroom_plan.php');
 

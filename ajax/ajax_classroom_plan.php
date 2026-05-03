@@ -207,6 +207,48 @@ switch ($action) {
         if (file_exists($filepath)) {
             unlink($filepath);
         }
+        // Also remove metadata entry
+        $metaFile = $uploadDir . 'meta_' . $classroomId . '.json';
+        if (file_exists($metaFile)) {
+            $meta = json_decode(file_get_contents($metaFile), true) ?: [];
+            unset($meta[$dayDate]);
+            file_put_contents($metaFile, json_encode($meta));
+        }
+        echo json_encode(['success' => true]);
+        break;
+
+    // -------------------------------------------------------------------------
+    // POST: save image display metadata (width, align)
+    // -------------------------------------------------------------------------
+    case 'save_day_image_meta':
+        if (!$isAdmin && !$isSecretary && !$isTeacher) {
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            break;
+        }
+
+        $classroomId = (int) ($_POST['classroom_id'] ?? 0);
+        $dayDate     = trim($_POST['day_date'] ?? '');
+        $width       = (int) ($_POST['width'] ?? 150);
+        $align       = trim($_POST['align'] ?? 'left');
+
+        if (!$classroomId || !$dayDate) {
+            echo json_encode(['success' => false, 'message' => 'Faltan datos']);
+            break;
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dayDate)) {
+            echo json_encode(['success' => false, 'message' => 'Fecha inválida']);
+            break;
+        }
+        if (!in_array($align, ['left', 'center', 'right'])) {
+            $align = 'left';
+        }
+        $width = max(50, min(800, $width));
+
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/day_images/';
+        $metaFile  = $uploadDir . 'meta_' . $classroomId . '.json';
+        $meta      = file_exists($metaFile) ? (json_decode(file_get_contents($metaFile), true) ?: []) : [];
+        $meta[$dayDate] = ['width' => $width, 'align' => $align];
+        file_put_contents($metaFile, json_encode($meta));
         echo json_encode(['success' => true]);
         break;
 

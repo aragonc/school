@@ -199,9 +199,15 @@
                 </span>
                 {% set dayImg = day_images_map[dayData.date] ?? null %}
                 {% if dayImg %}
+                {% set imgMeta = day_images_meta[dayData.date] ?? {} %}
+                {% set imgW = imgMeta.width ?? 150 %}
+                {% set imgA = imgMeta.align ?? 'left' %}
+                <div style="text-align:{{ imgA }};">
                 <img src="{{ dayImg }}" class="cal-day-img no-print"
-                     title="Ver imagen del día"
-                     onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}')" alt="">
+                     title="Clic para ajustar tamaño y alineación"
+                     style="width:{{ imgW }}px;height:auto;object-fit:contain;"
+                     onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
+                </div>
                 {% endif %}
                 {% if can_edit %}
                 <button class="btn-add-img no-print"
@@ -244,9 +250,15 @@
                 {% endif %}
                 {% set dayImg = day_images_map[dayData.date] ?? null %}
                 {% if dayImg %}
+                {% set imgMeta = day_images_meta[dayData.date] ?? {} %}
+                {% set imgW = imgMeta.width ?? 150 %}
+                {% set imgA = imgMeta.align ?? 'left' %}
+                <div style="text-align:{{ imgA }};">
                 <img src="{{ dayImg }}" class="cal-day-img no-print"
-                     title="Ver imagen del día"
-                     onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}')" alt="">
+                     title="Clic para ajustar tamaño y alineación"
+                     style="width:{{ imgW }}px;height:auto;object-fit:contain;"
+                     onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
+                </div>
                 {% endif %}
                 {% if can_edit %}
                 <button class="btn-add-img no-print"
@@ -418,16 +430,51 @@
     </div>
 </div>
 
-{# Modal solo visualizar #}
-<div class="modal fade no-print" id="dayImageViewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+{# Modal estilo de imagen (ancho + alineación) #}
+<div class="modal fade no-print" id="dayImgStyleModal" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-image mr-1"></i> Imagen del día</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <div class="modal-header" style="background:linear-gradient(135deg,#1a3558 0%,#2563aa 100%);color:#fff;">
+                <h5 class="modal-title"><i class="fas fa-sliders-h mr-2"></i> Ajustar imagen</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
-            <div class="modal-body text-center p-2">
-                <img id="dayImgView_img" src="" alt="" style="max-width:100%;border-radius:6px;">
+            <div class="modal-body">
+                <input type="hidden" id="dayImgStyle_date">
+                <input type="hidden" id="dayImgStyle_classroom">
+
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Ancho: <span id="dayImgStyle_widthVal">150px</span></label>
+                    <input type="range" id="dayImgStyle_width" class="form-control-range"
+                           min="50" max="600" step="10" value="150">
+                    <div class="d-flex justify-content-between" style="font-size:0.75rem;color:#888;">
+                        <span>50px</span><span>600px</span>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold d-block mb-1">Alineación</label>
+                    <div class="btn-group w-100">
+                        <button class="btn btn-outline-secondary btn-img-align active" data-align="left">
+                            <i class="fas fa-align-left"></i> Izquierda
+                        </button>
+                        <button class="btn btn-outline-secondary btn-img-align" data-align="center">
+                            <i class="fas fa-align-center"></i> Centro
+                        </button>
+                        <button class="btn btn-outline-secondary btn-img-align" data-align="right">
+                            <i class="fas fa-align-right"></i> Derecha
+                        </button>
+                    </div>
+                </div>
+
+                <div id="dayImgStyle_previewWrap" style="border:1px dashed #ccc;border-radius:6px;padding:8px;min-height:80px;background:#f8f8f8;">
+                    <img id="dayImgStyle_preview" src="" alt="" style="width:150px;height:auto;border-radius:4px;display:inline-block;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="dayImgStyle_btnSave">
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
             </div>
         </div>
     </div>
@@ -641,6 +688,7 @@ function deletePlan() {
 // ===== Day Image Modal =====
 var dayImgCropper  = null;
 var dayImagesMap   = {{ day_images_map_json|raw }};
+var dayImagesMeta  = {{ day_images_meta_json|raw }};
 var _dayImgDate    = '';
 var _dayImgClass   = '';
 
@@ -666,9 +714,26 @@ function openDayImageModal(date, classroomId) {
     _dayImgFileInput.click();
 }
 
-function openDayImageView(date, url) {
-    document.getElementById('dayImgView_img').src = url;
-    $('#dayImageViewModal').modal('show');
+function openDayImageView(date, url, classroomId) {
+    var meta  = dayImagesMeta[date] || {};
+    var w     = meta.width || 150;
+    var align = meta.align || 'left';
+    document.getElementById('dayImgStyle_date').value      = date;
+    document.getElementById('dayImgStyle_classroom').value = classroomId;
+    document.getElementById('dayImgStyle_width').value     = w;
+    document.getElementById('dayImgStyle_widthVal').textContent = w + 'px';
+    document.getElementById('dayImgStyle_preview').src     = url;
+    document.getElementById('dayImgStyle_preview').style.width = w + 'px';
+    applyImgStylePreviewAlign(align);
+    document.querySelectorAll('.btn-img-align').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.align === align);
+    });
+    $('#dayImgStyleModal').modal('show');
+}
+
+function applyImgStylePreviewAlign(align) {
+    var wrap = document.getElementById('dayImgStyle_previewWrap');
+    wrap.style.textAlign = align;
 }
 
 // File selected → read → open crop modal
@@ -790,6 +855,55 @@ if (_dayImgBtnDel) {
             });
     });
 }
+
+// ===== Image style modal logic =====
+(function() {
+    var widthInput = document.getElementById('dayImgStyle_width');
+    var widthVal   = document.getElementById('dayImgStyle_widthVal');
+    var preview    = document.getElementById('dayImgStyle_preview');
+
+    if (widthInput) {
+        widthInput.addEventListener('input', function() {
+            widthVal.textContent = this.value + 'px';
+            preview.style.width  = this.value + 'px';
+        });
+    }
+
+    document.querySelectorAll('.btn-img-align').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.btn-img-align').forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            applyImgStylePreviewAlign(this.dataset.align);
+        });
+    });
+
+    var saveBtn = document.getElementById('dayImgStyle_btnSave');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            var date        = document.getElementById('dayImgStyle_date').value;
+            var classroomId = document.getElementById('dayImgStyle_classroom').value;
+            var width       = document.getElementById('dayImgStyle_width').value;
+            var activeAlign = document.querySelector('.btn-img-align.active');
+            var align       = activeAlign ? activeAlign.dataset.align : 'left';
+
+            saveBtn.disabled = true;
+            var fd = new FormData();
+            fd.append('action',       'save_day_image_meta');
+            fd.append('classroom_id', classroomId);
+            fd.append('day_date',     date);
+            fd.append('width',        width);
+            fd.append('align',        align);
+            fetch(ajaxUrl, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    saveBtn.disabled = false;
+                    if (d.success) { $('#dayImgStyleModal').modal('hide'); location.reload(); }
+                    else { alert(d.message || 'Error al guardar.'); }
+                })
+                .catch(function() { saveBtn.disabled = false; alert('Error de conexión.'); });
+        });
+    }
+})();
 
 function deleteDayImage(dayDate, classroomId) {
     if (!confirm('¿Eliminar la imagen de este día?')) return;
