@@ -211,7 +211,9 @@
                 {% endfor %}
                 {% if can_edit %}
                 <button class="btn-add-plan no-print"
-                        onclick="openAddPlan('{{ dayData.date }}', {{ dayData.schedule|json_encode }})">
+                        data-date="{{ dayData.date }}"
+                        data-schedule="{{ dayData.schedule|json_encode|e('html_attr') }}"
+                        onclick="openAddPlan(this.dataset.date, JSON.parse(this.dataset.schedule))">
                     <i class="fas fa-plus"></i> Agregar
                 </button>
                 {% endif %}
