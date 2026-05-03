@@ -250,8 +250,7 @@ if ($classroomId > 0) {
     $imgWebDir = api_get_path(WEB_UPLOAD_PATH)  . 'plugins/school/day_images/';
     $prefix    = 'day_' . $classroomId . '_' . $currentYear . '-' . sprintf('%02d', $currentMonth);
     foreach (glob($imgDir . $prefix . '*.jpg') as $file) {
-        $base = basename($file, '.jpg');
-        // filename: day_{classroomId}_{date}
+        $base  = basename($file, '.jpg');
         $parts = explode('_', $base, 3);
         if (isset($parts[2])) {
             $dayImagesMap[$parts[2]] = $imgWebDir . basename($file);
