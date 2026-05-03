@@ -207,7 +207,7 @@
                 {% set imgW = imgMeta.width ?? 150 %}
                 {% set imgA = imgMeta.align ?? 'left' %}
                 <div class="cal-day-img-wrap align-{{ imgA }}">
-                    <img src="{{ dayImg }}" class="cal-day-img no-print"
+                    <img src="{{ dayImg }}" class="cal-day-img"
                          title="Clic para ajustar tamaño y alineación"
                          style="width:{{ imgW }}px;"
                          onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
@@ -255,7 +255,7 @@
                 {% set imgW = imgMeta.width ?? 150 %}
                 {% set imgA = imgMeta.align ?? 'left' %}
                 <div class="cal-day-img-wrap align-{{ imgA }}">
-                    <img src="{{ dayImg }}" class="cal-day-img no-print"
+                    <img src="{{ dayImg }}" class="cal-day-img"
                          title="Clic para ajustar tamaño y alineación"
                          style="width:{{ imgW }}px;"
                          onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
@@ -951,7 +951,11 @@ function printCalendar() {
         '.cal-nw-label { display: block; font-size: 7px; font-weight: 600; border-radius: 3px; padding: 1px 4px; margin-bottom: 2px; }',
         '.cal-holiday  .cal-nw-label { background: #ffc107; color: #333; -webkit-print-color-adjust: exact; }',
         '.cal-vacation .cal-nw-label { background: #29b6f6; color: #fff; -webkit-print-color-adjust: exact; }',
-        '.plan-entry { font-size: 7.5px; background: #e8f0fe; border-radius: 2px; padding: 1px 3px; margin-top: 1px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+        '.plan-entry { font-size: 7.5px; background: none; border: none; border-radius: 0; padding: 1px 0; margin-top: 2px; }',
+        '.plan-entry .pe-subject { font-weight: 700; color: #000; display: block; }',
+        '.plan-entry .pe-topic   { font-weight: 400; color: #333; display: block; font-size: 7px; }',
+        '.cal-day-img { max-width: 100%; height: auto; display: block; }',
+        '.cal-day-img-wrap { display: block; margin-bottom: 3px; }',
         '.table-responsive { overflow: visible !important; }',
         'button, .btn, a.btn { display: none !important; }',
         '</style>',
