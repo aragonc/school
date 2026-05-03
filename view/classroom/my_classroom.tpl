@@ -351,41 +351,43 @@
 
 <!-- ===== MODAL: Imagen del día ===== -->
 {% if can_edit %}
-<link rel="stylesheet" href="{{ _p.web }}web/assets/cropper/dist/cropper.min.css">
-<div class="modal fade no-print" id="dayImageModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+
+{# Modal recortador #}
+<div class="modal fade no-print" id="dayImageModal" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-image mr-1"></i> Imagen del día — <span id="dayImgDateLabel"></span></h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <div class="modal-header" style="background:linear-gradient(135deg,#1a3558 0%,#2563aa 100%);color:#fff;">
+                <h5 class="modal-title">
+                    <i class="fas fa-crop-alt mr-2"></i> Imagen del día — <span id="dayImgDateLabel"></span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="dayImg_date" value="">
-                <input type="hidden" id="dayImg_classroom" value="{{ classroom_id }}">
-
-                <div class="form-group">
-                    <label class="font-weight-bold">Seleccionar imagen</label>
-                    <input type="file" class="form-control-file" id="dayImg_file" accept="image/*">
+            <div class="modal-body p-0" style="background:#1a1a2e;min-height:300px;">
+                <div style="max-height:420px;">
+                    <img id="dayImg_cropperImg" src="" alt="" style="max-width:100%;display:block;">
                 </div>
-
-                <div id="dayImg_crop_wrap" style="display:none; max-height:400px; overflow:hidden; background:#222; border-radius:6px;">
-                    <img id="dayImg_preview" src="" alt="" style="max-width:100%;">
-                </div>
-
-                <div id="dayImg_error" class="alert alert-danger mt-2" style="display:none;"></div>
             </div>
-            <div class="modal-footer d-flex justify-content-between">
-                <div>
-                    <button type="button" class="btn btn-danger btn-sm" id="dayImg_btn_delete"
-                            style="display:none;" onclick="deleteDayImage()">
-                        <i class="fas fa-trash"></i> Eliminar imagen
+            <div class="modal-footer d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
+                <div class="d-flex align-items-center flex-wrap" style="gap:6px;">
+                    <small class="text-muted mr-1">Proporción:</small>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary btn-dayimg-ratio active" data-ratio="free">Libre</button>
+                        <button class="btn btn-outline-secondary btn-dayimg-ratio" data-ratio="1">1:1</button>
+                        <button class="btn btn-outline-secondary btn-dayimg-ratio" data-ratio="1.7778">16:9</button>
+                    </div>
+                    <div class="btn-group btn-group-sm ml-1">
+                        <button class="btn btn-outline-secondary" id="dayImg_rotateL" title="Rotar -90°"><i class="fas fa-undo"></i></button>
+                        <button class="btn btn-outline-secondary" id="dayImg_rotateR" title="Rotar +90°"><i class="fas fa-redo"></i></button>
+                    </div>
+                </div>
+                <div class="d-flex" style="gap:6px;">
+                    <button type="button" class="btn btn-danger btn-sm" id="dayImg_btn_delete" style="display:none;">
+                        <i class="fas fa-trash"></i> Eliminar
                     </button>
-                </div>
-                <div>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="dayImg_btn_save"
-                            style="display:none;" onclick="saveDayImage()">
-                        <i class="fas fa-save"></i> Guardar imagen
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="dayImg_btn_save">
+                        <i class="fas fa-check mr-1"></i> Recortar y guardar
                     </button>
                 </div>
             </div>
@@ -393,23 +395,23 @@
     </div>
 </div>
 
-<!-- Modal: solo visualizar imagen existente -->
+{# Modal solo visualizar #}
 <div class="modal fade no-print" id="dayImageViewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title"><i class="fas fa-image mr-1"></i> Imagen del día</h5>
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
-            <div class="modal-body text-center">
-                <img id="dayImgView_img" src="" alt="" style="max-width:100%; border-radius:6px;">
+            <div class="modal-body text-center p-2">
+                <img id="dayImgView_img" src="" alt="" style="max-width:100%;border-radius:6px;">
             </div>
         </div>
     </div>
 </div>
 {% endif %}
 
-<script src="{{ _p.web }}web/assets/cropper/dist/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
 var ajaxUrl              = '{{ ajax_url }}';
 var isTutorOrAdmin       = {{ (is_tutor or is_admin_or_secretary) ? 'true' : 'false' }};
@@ -614,25 +616,31 @@ function deletePlan() {
 }
 
 // ===== Day Image Modal =====
-var dayImgCropper    = null;
-var dayImagesMap     = {{ day_images_map_json|raw }};
+var dayImgCropper  = null;
+var dayImagesMap   = {{ day_images_map_json|raw }};
+var _dayImgDate    = '';
+var _dayImgClass   = '';
+
+// Hidden file input (same pattern as courses.tpl)
+var _dayImgFileInput = document.createElement('input');
+_dayImgFileInput.type    = 'file';
+_dayImgFileInput.accept  = 'image/jpeg,image/png,image/gif,image/webp';
+_dayImgFileInput.style.display = 'none';
+document.body.appendChild(_dayImgFileInput);
+
+var _dayImgCropModal = document.getElementById('dayImageModal');
+var _dayImgCropImg   = document.getElementById('dayImg_cropperImg');
+var _dayImgBtnSave   = document.getElementById('dayImg_btn_save');
+var _dayImgBtnDel    = document.getElementById('dayImg_btn_delete');
 
 function openDayImageModal(date, classroomId) {
-    document.getElementById('dayImg_date').value      = date;
-    document.getElementById('dayImg_classroom').value = classroomId;
+    _dayImgDate  = date;
+    _dayImgClass = classroomId;
     document.getElementById('dayImgDateLabel').textContent = formatDate(date);
-    document.getElementById('dayImg_file').value      = '';
-    document.getElementById('dayImg_error').style.display = 'none';
-    document.getElementById('dayImg_btn_save').style.display   = 'none';
-    document.getElementById('dayImg_crop_wrap').style.display  = 'none';
-
     var hasImg = dayImagesMap.hasOwnProperty(date);
-    document.getElementById('dayImg_btn_delete').style.display = hasImg ? 'inline-block' : 'none';
-
-    if (dayImgCropper) { dayImgCropper.destroy(); dayImgCropper = null; }
-    document.getElementById('dayImg_preview').src = '';
-
-    $('#dayImageModal').modal('show');
+    if (_dayImgBtnDel) _dayImgBtnDel.style.display = hasImg ? 'inline-block' : 'none';
+    _dayImgFileInput.value = '';
+    _dayImgFileInput.click();
 }
 
 function openDayImageView(date, url) {
@@ -640,92 +648,124 @@ function openDayImageView(date, url) {
     $('#dayImageViewModal').modal('show');
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    var fileInput = document.getElementById('dayImg_file');
-    if (!fileInput) return;
-    fileInput.addEventListener('change', function() {
-        var file = this.files[0];
-        if (!file) return;
-        if (!file.type.match(/^image\//)) {
-            document.getElementById('dayImg_error').textContent = 'Solo se permiten imágenes.';
-            document.getElementById('dayImg_error').style.display = '';
-            return;
-        }
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var preview = document.getElementById('dayImg_preview');
-            preview.src = e.target.result;
-            document.getElementById('dayImg_crop_wrap').style.display = '';
-            document.getElementById('dayImg_btn_save').style.display  = 'inline-block';
-            document.getElementById('dayImg_error').style.display     = 'none';
-            if (dayImgCropper) { dayImgCropper.destroy(); }
-            dayImgCropper = new Cropper(preview, {
-                aspectRatio: NaN,
-                viewMode: 1,
-                autoCropArea: 1,
-                movable: true,
-                zoomable: true,
-                rotatable: false,
-            });
-        };
-        reader.readAsDataURL(file);
+// File selected → read → open crop modal
+_dayImgFileInput.addEventListener('change', function() {
+    if (!_dayImgFileInput.files.length) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        _dayImgCropImg.src = ev.target.result;
+        $('#dayImageModal').modal('show');
+    };
+    reader.readAsDataURL(_dayImgFileInput.files[0]);
+});
+
+// Init Cropper when modal shown
+$(_dayImgCropModal).on('shown.bs.modal', function() {
+    if (dayImgCropper) { dayImgCropper.destroy(); dayImgCropper = null; }
+    dayImgCropper = new Cropper(_dayImgCropImg, {
+        aspectRatio: NaN,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.9,
+        restore: false,
+        guides: true,
+        center: true,
+        highlight: false,
+        cropBoxMovable: true,
+        cropBoxResizable: true,
+        toggleDragModeOnDblclick: false
+    });
+    if (_dayImgBtnSave) {
+        _dayImgBtnSave.disabled = false;
+        _dayImgBtnSave.innerHTML = '<i class="fas fa-check mr-1"></i> Recortar y guardar';
+    }
+    document.querySelectorAll('.btn-dayimg-ratio').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-ratio') === 'free');
     });
 });
 
-function saveDayImage() {
-    if (!dayImgCropper) return;
-    var btn = document.getElementById('dayImg_btn_save');
-    var err = document.getElementById('dayImg_error');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    err.style.display = 'none';
+// Destroy Cropper when modal hidden
+$(_dayImgCropModal).on('hidden.bs.modal', function() {
+    if (dayImgCropper) { dayImgCropper.destroy(); dayImgCropper = null; }
+    _dayImgCropImg.src = '';
+});
 
-    var canvas   = dayImgCropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200 });
-    var imageData = canvas.toDataURL('image/jpeg', 0.88);
+// Ratio buttons
+document.querySelectorAll('.btn-dayimg-ratio').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.btn-dayimg-ratio').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        if (dayImgCropper) {
+            var r = btn.getAttribute('data-ratio');
+            dayImgCropper.setAspectRatio(r === 'free' ? NaN : parseFloat(r));
+        }
+    });
+});
 
-    var fd = new FormData();
-    fd.append('action',       'save_day_image');
-    fd.append('classroom_id', document.getElementById('dayImg_classroom').value);
-    fd.append('day_date',     document.getElementById('dayImg_date').value);
-    fd.append('image_data',   imageData);
+// Rotate buttons
+document.getElementById('dayImg_rotateL').addEventListener('click', function() {
+    if (dayImgCropper) dayImgCropper.rotate(-90);
+});
+document.getElementById('dayImg_rotateR').addEventListener('click', function() {
+    if (dayImgCropper) dayImgCropper.rotate(90);
+});
 
-    fetch(ajaxUrl, { method: 'POST', body: fd })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-            if (d.success) {
-                $('#dayImageModal').modal('hide');
-                location.reload();
-            } else {
-                err.textContent = d.message || 'Error al guardar.';
-                err.style.display = '';
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> Guardar imagen';
-            }
-        })
-        .catch(function() {
-            err.textContent = 'Error de conexión.';
-            err.style.display = '';
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-save"></i> Guardar imagen';
+// Confirm: crop → toBlob → upload
+if (_dayImgBtnSave) {
+    _dayImgBtnSave.addEventListener('click', function() {
+        if (!dayImgCropper) return;
+        _dayImgBtnSave.disabled = true;
+        _dayImgBtnSave.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+
+        var canvas = dayImgCropper.getCroppedCanvas({
+            maxWidth: 1200, maxHeight: 1200,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
         });
+
+        canvas.toBlob(function(blob) {
+            var fd = new FormData();
+            fd.append('action',       'save_day_image');
+            fd.append('classroom_id', _dayImgClass);
+            fd.append('day_date',     _dayImgDate);
+            fd.append('file',         blob, 'day-image.jpg');
+
+            fetch(ajaxUrl, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    _dayImgBtnSave.disabled = false;
+                    _dayImgBtnSave.innerHTML = '<i class="fas fa-check mr-1"></i> Recortar y guardar';
+                    if (d.success) {
+                        $('#dayImageModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(d.message || 'Error al guardar.');
+                    }
+                })
+                .catch(function() {
+                    _dayImgBtnSave.disabled = false;
+                    _dayImgBtnSave.innerHTML = '<i class="fas fa-check mr-1"></i> Recortar y guardar';
+                    alert('Error de conexión.');
+                });
+        }, 'image/jpeg', 0.88);
+    });
 }
 
-function deleteDayImage() {
-    if (!confirm('¿Eliminar la imagen de este día?')) return;
-    var fd = new FormData();
-    fd.append('action',       'delete_day_image');
-    fd.append('classroom_id', document.getElementById('dayImg_classroom').value);
-    fd.append('day_date',     document.getElementById('dayImg_date').value);
-    fetch(ajaxUrl, { method: 'POST', body: fd })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-            if (d.success) {
-                $('#dayImageModal').modal('hide');
-                location.reload();
-            } else {
-                alert(d.message || 'Error al eliminar.');
-            }
-        });
+// Delete button
+if (_dayImgBtnDel) {
+    _dayImgBtnDel.addEventListener('click', function() {
+        if (!confirm('¿Eliminar la imagen de este día?')) return;
+        var fd = new FormData();
+        fd.append('action',       'delete_day_image');
+        fd.append('classroom_id', _dayImgClass);
+        fd.append('day_date',     _dayImgDate);
+        fetch(ajaxUrl, { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.success) { $('#dayImageModal').modal('hide'); location.reload(); }
+                else { alert(d.message || 'Error al eliminar.'); }
+            });
+    });
 }
 
 function printCalendar() {

@@ -148,9 +148,8 @@ switch ($action) {
 
         $classroomId = (int) ($_POST['classroom_id'] ?? 0);
         $dayDate     = trim($_POST['day_date'] ?? '');
-        $imageData   = $_POST['image_data'] ?? '';
 
-        if (!$classroomId || !$dayDate || !$imageData) {
+        if (!$classroomId || !$dayDate) {
             echo json_encode(['success' => false, 'message' => 'Faltan datos']);
             break;
         }
@@ -160,13 +159,14 @@ switch ($action) {
             break;
         }
 
-        // Decode base64 image (data:image/jpeg;base64,...)
-        if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $m)) {
-            $imageData = substr($imageData, strpos($imageData, ',') + 1);
+        if (empty($_FILES['file']['tmp_name'])) {
+            echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo']);
+            break;
         }
-        $imageData = base64_decode($imageData);
-        if (!$imageData) {
-            echo json_encode(['success' => false, 'message' => 'Imagen inválida']);
+
+        $tmpFile = $_FILES['file']['tmp_name'];
+        if (!is_uploaded_file($tmpFile)) {
+            echo json_encode(['success' => false, 'message' => 'Archivo inválido']);
             break;
         }
 
@@ -174,7 +174,7 @@ switch ($action) {
         $filename  = 'day_' . $classroomId . '_' . $dayDate . '.jpg';
         $filepath  = $uploadDir . $filename;
 
-        if (file_put_contents($filepath, $imageData) === false) {
+        if (!move_uploaded_file($tmpFile, $filepath)) {
             echo json_encode(['success' => false, 'message' => 'Error al guardar imagen']);
             break;
         }
