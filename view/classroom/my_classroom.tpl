@@ -39,7 +39,8 @@
     font-size: 0.75rem; cursor: pointer; transition: background 0.15s;
 }
 .plan-entry:hover { background: #cfe2ff; }
-.plan-entry .pe-subject { font-weight: 700; color: #1a4a8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+.plan-entry .pe-subject { font-weight: 700; color: #1a4a8a; display: block; }
+.plan-entry .pe-topic   { color: #333; display: block; font-size: 0.72rem; }
 .plan-entry .pe-teacher { color: #888; font-size: 0.7rem; }
 /* Tipo: Consolidado */
 .plan-entry.pe-consolidado { background: #e8f5e9; border-left-color: #388e3c; }
@@ -236,7 +237,8 @@
                      onclick="openEditPlan({{ plan.id }}, '{{ plan.plan_date }}', '{{ plan.subject|e('js') }}', '{{ plan.topic|e('js') }}', '{{ plan.notes|e('js') }}', {{ plan.teacher_id }}, {{ is_tutor or is_admin_or_secretary ? 'true' : 'false' }}, {{ current_user_id }})"
                      {% endif %}
                      title="{{ plan.subject }}: {{ plan.topic }}{% if plan.notes %} — {{ plan.notes }}{% endif %}">
-                    <span class="pe-subject">{{ plan.subject }}{% if plan.topic %} : {{ plan.topic }}{% endif %}</span>
+                    <span class="pe-subject">{{ plan.subject }}</span>
+                    {% if plan.topic %}<span class="pe-topic">{{ plan.topic }}</span>{% endif %}
                 </div>
                 {% endfor %}
                 {% if can_edit %}
