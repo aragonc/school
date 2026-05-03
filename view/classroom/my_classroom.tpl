@@ -211,7 +211,7 @@
                 {% endfor %}
                 {% if can_edit %}
                 <button class="btn-add-plan no-print"
-                        onclick="openAddPlan('{{ dayData.date }}')">
+                        onclick="openAddPlan('{{ dayData.date }}', {{ dayData.schedule|json_encode }})">
                     <i class="fas fa-plus"></i> Agregar
                 </button>
                 {% endif %}
@@ -325,9 +325,11 @@
 {% endif %}
 
 <script>
-var ajaxUrl         = '{{ ajax_url }}';
-var isTutorOrAdmin  = {{ (is_tutor or is_admin_or_secretary) ? 'true' : 'false' }};
-var currentUserId   = {{ current_user_id }};
+var ajaxUrl              = '{{ ajax_url }}';
+var isTutorOrAdmin       = {{ (is_tutor or is_admin_or_secretary) ? 'true' : 'false' }};
+var currentUserId        = {{ current_user_id }};
+var allClassroomCourses  = {{ classroom_courses_json|raw }};
+var currentDaySchedule   = [];
 
 function formatDate(dateStr) {
     // '2026-03-15' → '15/03/2026'
@@ -346,6 +348,33 @@ function getTipoFromSubject(subject) {
     return 'curso';
 }
 
+function rebuildCourseSelect(schedSubjects) {
+    var sel = document.getElementById('plan_subject');
+    if (!sel || sel.tagName !== 'SELECT') return;
+
+    var coursesToShow;
+    if (schedSubjects && schedSubjects.length > 0) {
+        coursesToShow = allClassroomCourses.filter(function(c) {
+            return schedSubjects.indexOf(c.subject) !== -1;
+        });
+        if (coursesToShow.length === 0) {
+            coursesToShow = allClassroomCourses;
+        }
+    } else {
+        coursesToShow = allClassroomCourses;
+    }
+
+    sel.innerHTML = '<option value="">-- Seleccionar curso --</option>';
+    coursesToShow.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c.subject;
+        opt.setAttribute('data-teacher-id', c.teacher_id);
+        opt.setAttribute('data-teacher-name', c.teacher_name);
+        opt.textContent = c.subject + (c.teacher_name ? ' — ' + c.teacher_name : '');
+        sel.appendChild(opt);
+    });
+}
+
 function planTipoChanged() {
     var tipo = document.getElementById('plan_tipo').value;
     var row  = document.getElementById('plan_curso_row');
@@ -362,18 +391,19 @@ function planCourseChanged() {
     document.getElementById('plan_teacher_id').value = tid;
 }
 
-function openAddPlan(date) {
+function openAddPlan(date, scheduleSubjects) {
+    currentDaySchedule = scheduleSubjects || [];
     document.getElementById('plan_id').value = 0;
     document.getElementById('plan_date').value = date;
     document.getElementById('plan_date_display').value = formatDate(date);
     document.getElementById('plan_tipo').value = 'curso';
-    document.getElementById('plan_subject').value = '';
     document.getElementById('plan_teacher_id').value = '0';
     document.getElementById('plan_topic').value = '';
     document.getElementById('plan_notes').value = '';
     document.getElementById('plan_modal_error').style.display = 'none';
     document.getElementById('btn_delete_plan').style.display = 'none';
     document.getElementById('planModalTitle').innerHTML = '<i class="fas fa-book-open mr-1"></i> Agregar Tema';
+    rebuildCourseSelect(currentDaySchedule);
     planTipoChanged();
     $('#planModal').modal('show');
 }
