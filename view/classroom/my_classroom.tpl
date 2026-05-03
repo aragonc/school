@@ -234,7 +234,16 @@
                 {% set pe_class = plan.subject == 'Consolidado de Aprendizajes' ? 'pe-consolidado' : (plan.subject == 'Actividad' ? 'pe-actividad' : '') %}
                 <div class="plan-entry {{ pe_class }}"
                      {% if can_edit %}
-                     onclick="openEditPlan({{ plan.id }}, '{{ plan.plan_date }}', '{{ plan.subject|e('js') }}', '{{ plan.topic|e('js') }}', '{{ plan.notes|e('js') }}', {{ plan.teacher_id }}, {{ is_tutor or is_admin_or_secretary ? 'true' : 'false' }}, {{ current_user_id }})"
+                     data-id="{{ plan.id }}"
+                     data-date="{{ plan.plan_date }}"
+                     data-subject="{{ plan.subject|e('html_attr') }}"
+                     data-topic="{{ plan.topic|e('html_attr') }}"
+                     data-notes="{{ plan.notes|e('html_attr') }}"
+                     data-teacher-id="{{ plan.teacher_id }}"
+                     data-can-delete="{{ (is_tutor or is_admin_or_secretary) ? '1' : '0' }}"
+                     data-schedule="{{ dayData.schedule|json_encode|e('html_attr') }}"
+                     data-plans="{{ dayData.plans|json_encode|e('html_attr') }}"
+                     onclick="openEditPlanBtn(this)"
                      {% endif %}
                      title="{{ plan.subject }}: {{ plan.topic }}{% if plan.notes %} — {{ plan.notes }}{% endif %}">
                     <span class="pe-subject">{{ plan.subject }}</span>
@@ -585,7 +594,23 @@ function openAddPlan(date, scheduleSubjects, usedSubjects) {
     $('#planModal').modal('show');
 }
 
-function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myId) {
+function openEditPlanBtn(el) {
+    var plans = JSON.parse(el.dataset.plans);
+    openEditPlan(
+        el.dataset.id,
+        el.dataset.date,
+        el.dataset.subject,
+        el.dataset.topic,
+        el.dataset.notes,
+        el.dataset.teacherId,
+        el.dataset.canDelete === '1',
+        currentUserId,
+        JSON.parse(el.dataset.schedule),
+        plans
+    );
+}
+
+function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myId, scheduleSubjects, dayPlans) {
     document.getElementById('plan_id').value = id;
     document.getElementById('plan_date').value = date;
     document.getElementById('plan_date_display').value = formatDate(date);
@@ -601,7 +626,11 @@ function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myI
 
     // Set subject field only for "curso" type
     if (tipo === 'curso') {
-        rebuildCourseSelect([], []); // Show all courses when editing
+        // Same filter as add: exclude courses already used by OTHER plans today
+        var usedByOthers = (dayPlans || [])
+            .filter(function(p) { return String(p.id) !== String(id); })
+            .map(function(p) { return p.subject; });
+        rebuildCourseSelect(scheduleSubjects || [], usedByOthers);
         var subjectEl = document.getElementById('plan_subject');
         if (subjectEl.tagName === 'SELECT') {
             var matched = false;
