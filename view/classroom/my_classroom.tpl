@@ -190,6 +190,20 @@
                 <span class="cal-nw-label">
                     <i class="fas fa-{% if dayData.nonworking.type == 'vacation' %}umbrella-beach{% else %}flag{% endif %} mr-1"></i>{{ dayData.nonworking.description }}
                 </span>
+                {% set dayImg = day_images_map[dayData.date] ?? null %}
+                {% if dayImg %}
+                <img src="{{ dayImg }}" class="cal-day-img no-print"
+                     title="Ver imagen del día"
+                     onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}')" alt="">
+                {% endif %}
+                {% if can_edit %}
+                <button class="btn-add-img no-print"
+                        data-date="{{ dayData.date }}"
+                        data-classroom="{{ classroom_id }}"
+                        onclick="openDayImageModal(this.dataset.date, this.dataset.classroom)">
+                    <i class="fas fa-image"></i> {% if dayImg %}Cambiar imagen{% else %}Añadir imagen{% endif %}
+                </button>
+                {% endif %}
                 {% else %}
                 {% for plan in dayData.plans %}
                 {% set pe_class = plan.subject == 'Consolidado de Aprendizajes' ? 'pe-consolidado' : (plan.subject == 'Actividad' ? 'pe-actividad' : '') %}
