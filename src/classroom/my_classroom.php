@@ -206,6 +206,7 @@ $plugin->assign('is_tutor',            $isTutor);
 $plugin->assign('is_admin_or_secretary', $isAdmin || $isSecretary);
 $plugin->assign('is_student',          $isStudent);
 $plugin->assign('can_edit',            !$isStudent);
+$plugin->assign('can_image',           $isAdmin || $isTutor);
 $plugin->assign('current_user_id',     $userId);
 $plugin->assign('calendar_weeks',      $calendarWeeks);
 $plugin->assign('current_year',        $currentYear);

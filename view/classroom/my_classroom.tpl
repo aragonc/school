@@ -213,7 +213,7 @@
                          onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
                 </div>
                 {% endif %}
-                {% if can_edit %}
+                {% if can_image %}
                 <button class="btn-add-img no-print"
                         data-date="{{ dayData.date }}"
                         data-classroom="{{ classroom_id }}"
@@ -264,7 +264,7 @@
                          onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
                 </div>
                 {% endif %}
-                {% if can_edit %}
+                {% if can_image %}
                 <button class="btn-add-img no-print"
                         data-date="{{ dayData.date }}"
                         data-classroom="{{ classroom_id }}"
@@ -389,7 +389,7 @@
 {% endif %}
 
 <!-- ===== MODAL: Imagen del día ===== -->
-{% if can_edit %}
+{% if can_image %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 
 {# Modal recortador #}
