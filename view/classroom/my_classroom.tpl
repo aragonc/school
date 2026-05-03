@@ -62,13 +62,6 @@
 /* Print styles */
 .print-header { display: none; }
 
-/* Schedule courses in calendar */
-.cal-sched-list { list-style: none; padding: 0; margin: 0 0 3px 0; }
-.cal-sched-item {
-    font-size: 0.68rem; color: #555; padding: 1px 4px;
-    border-left: 2px solid #90caf9; margin-bottom: 2px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
 /* Non-working days */
 .cal-holiday  { background: #fff8e1; }
 .cal-vacation { background: #e3f2fd; }
@@ -188,13 +181,6 @@
                     <i class="fas fa-{% if dayData.nonworking.type == 'vacation' %}umbrella-beach{% else %}flag{% endif %} mr-1"></i>{{ dayData.nonworking.description }}
                 </span>
                 {% else %}
-                {% if dayData.schedule %}
-                <ul class="cal-sched-list">
-                    {% for subject in dayData.schedule %}
-                    <li class="cal-sched-item" title="{{ subject }}">{{ subject }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
                 {% for plan in dayData.plans %}
                 {% set pe_class = plan.subject == 'Consolidado de Aprendizajes' ? 'pe-consolidado' : (plan.subject == 'Actividad' ? 'pe-actividad' : '') %}
                 <div class="plan-entry {{ pe_class }}"
@@ -231,8 +217,7 @@
 
 <!-- Leyenda -->
 <div class="d-flex flex-wrap align-items-center mt-2 no-print" style="gap:12px;font-size:0.75rem;">
-    <span><span style="display:inline-block;width:3px;height:12px;background:#90caf9;border-radius:1px;margin-right:4px;"></span>Cursos del horario</span>
-    <span><span style="display:inline-block;width:12px;height:12px;background:#e8f0fe;border-left:3px solid #1a4a8a;border-radius:2px;margin-right:4px;"></span>Curso</span>
+<span><span style="display:inline-block;width:12px;height:12px;background:#e8f0fe;border-left:3px solid #1a4a8a;border-radius:2px;margin-right:4px;"></span>Curso</span>
     <span><span style="display:inline-block;width:12px;height:12px;background:#e8f5e9;border-left:3px solid #388e3c;border-radius:2px;margin-right:4px;"></span>Consolidado</span>
     <span><span style="display:inline-block;width:12px;height:12px;background:#fff3e0;border-left:3px solid #f57c00;border-radius:2px;margin-right:4px;"></span>Actividad</span>
     <span><span style="display:inline-block;width:12px;height:12px;background:#ffc107;border-radius:2px;margin-right:4px;"></span>Feriado</span>
