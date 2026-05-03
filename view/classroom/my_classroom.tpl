@@ -63,7 +63,7 @@
 .print-header { display: none; }
 
 /* Day image thumbnail */
-.cal-day-img { width: 100%; max-height: 80px; object-fit: cover; border-radius: 4px; margin-bottom: 4px; cursor: pointer; }
+.cal-day-img { width: 150px; height: auto; object-fit: contain; border-radius: 4px; margin-bottom: 4px; cursor: pointer; display: block; }
 .btn-add-img {
     display: block; width: 100%; text-align: center;
     margin-top: 3px; padding: 2px; font-size: 0.7rem;
@@ -71,6 +71,13 @@
     background: none; cursor: pointer; transition: all 0.15s;
 }
 .btn-add-img:hover { color: #e65100; border-color: #e65100; background: #fff3e0; }
+.btn-del-img {
+    display: block; width: 100%; text-align: center;
+    margin-top: 2px; padding: 2px; font-size: 0.7rem;
+    color: #c0392b; border: 1px dashed #e57373; border-radius: 4px;
+    background: none; cursor: pointer; transition: all 0.15s;
+}
+.btn-del-img:hover { color: #fff; border-color: #c0392b; background: #c0392b; }
 
 /* Non-working days */
 .cal-holiday  { background: #fff8e1; }
@@ -203,6 +210,14 @@
                         onclick="openDayImageModal(this.dataset.date, this.dataset.classroom)">
                     <i class="fas fa-image"></i> {% if dayImg %}Cambiar imagen{% else %}Añadir imagen{% endif %}
                 </button>
+                {% if dayImg %}
+                <button class="btn-del-img no-print"
+                        data-date="{{ dayData.date }}"
+                        data-classroom="{{ classroom_id }}"
+                        onclick="deleteDayImage(this.dataset.date, this.dataset.classroom)">
+                    <i class="fas fa-trash-alt"></i> Eliminar imagen
+                </button>
+                {% endif %}
                 {% endif %}
                 {% else %}
                 {% for plan in dayData.plans %}
@@ -240,6 +255,14 @@
                         onclick="openDayImageModal(this.dataset.date, this.dataset.classroom)">
                     <i class="fas fa-image"></i> {% if dayImg %}Cambiar imagen{% else %}Añadir imagen{% endif %}
                 </button>
+                {% if dayImg %}
+                <button class="btn-del-img no-print"
+                        data-date="{{ dayData.date }}"
+                        data-classroom="{{ classroom_id }}"
+                        onclick="deleteDayImage(this.dataset.date, this.dataset.classroom)">
+                    <i class="fas fa-trash-alt"></i> Eliminar imagen
+                </button>
+                {% endif %}
                 {% endif %}
                 {% endif %}
             </td>
@@ -766,6 +789,21 @@ if (_dayImgBtnDel) {
                 else { alert(d.message || 'Error al eliminar.'); }
             });
     });
+}
+
+function deleteDayImage(dayDate, classroomId) {
+    if (!confirm('¿Eliminar la imagen de este día?')) return;
+    var fd = new FormData();
+    fd.append('action',       'delete_day_image');
+    fd.append('classroom_id', classroomId);
+    fd.append('day_date',     dayDate);
+    fetch(ajaxUrl, { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) { location.reload(); }
+            else { alert(d.message || 'Error al eliminar.'); }
+        })
+        .catch(function() { alert('Error de conexión.'); });
 }
 
 function printCalendar() {
