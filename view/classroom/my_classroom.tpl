@@ -63,7 +63,11 @@
 .print-header { display: none; }
 
 /* Day image thumbnail */
-.cal-day-img { width: 150px; height: auto; object-fit: contain; border-radius: 4px; margin-bottom: 4px; cursor: pointer; display: block; }
+.cal-day-img-wrap { display: flex; margin-bottom: 4px; }
+.cal-day-img-wrap.align-left   { justify-content: flex-start; }
+.cal-day-img-wrap.align-center { justify-content: center; }
+.cal-day-img-wrap.align-right  { justify-content: flex-end; }
+.cal-day-img { height: auto; object-fit: contain; border-radius: 4px; cursor: pointer; display: block; }
 .btn-add-img {
     display: block; width: 100%; text-align: center;
     margin-top: 3px; padding: 2px; font-size: 0.7rem;
@@ -202,11 +206,11 @@
                 {% set imgMeta = day_images_meta[dayData.date] ?? {} %}
                 {% set imgW = imgMeta.width ?? 150 %}
                 {% set imgA = imgMeta.align ?? 'left' %}
-                <div style="text-align:{{ imgA }};">
-                <img src="{{ dayImg }}" class="cal-day-img no-print"
-                     title="Clic para ajustar tamaño y alineación"
-                     style="width:{{ imgW }}px;height:auto;object-fit:contain;"
-                     onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
+                <div class="cal-day-img-wrap align-{{ imgA }}">
+                    <img src="{{ dayImg }}" class="cal-day-img no-print"
+                         title="Clic para ajustar tamaño y alineación"
+                         style="width:{{ imgW }}px;"
+                         onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
                 </div>
                 {% endif %}
                 {% if can_edit %}
@@ -253,11 +257,11 @@
                 {% set imgMeta = day_images_meta[dayData.date] ?? {} %}
                 {% set imgW = imgMeta.width ?? 150 %}
                 {% set imgA = imgMeta.align ?? 'left' %}
-                <div style="text-align:{{ imgA }};">
-                <img src="{{ dayImg }}" class="cal-day-img no-print"
-                     title="Clic para ajustar tamaño y alineación"
-                     style="width:{{ imgW }}px;height:auto;object-fit:contain;"
-                     onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
+                <div class="cal-day-img-wrap align-{{ imgA }}">
+                    <img src="{{ dayImg }}" class="cal-day-img no-print"
+                         title="Clic para ajustar tamaño y alineación"
+                         style="width:{{ imgW }}px;"
+                         onclick="openDayImageView('{{ dayData.date }}', '{{ dayImg }}', '{{ classroom_id }}')" alt="">
                 </div>
                 {% endif %}
                 {% if can_edit %}
