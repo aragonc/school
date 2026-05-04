@@ -201,6 +201,34 @@
                 <span class="cal-nw-label">
                     <i class="fas fa-{% if dayData.nonworking.type == 'vacation' %}umbrella-beach{% else %}flag{% endif %} mr-1"></i>{{ dayData.nonworking.description }}
                 </span>
+                {% for plan in dayData.plans %}
+                <div class="plan-entry pe-actividad"
+                     {% if can_edit %}
+                     data-id="{{ plan.id }}"
+                     data-date="{{ plan.plan_date }}"
+                     data-subject="{{ plan.subject|e('html_attr') }}"
+                     data-topic="{{ plan.topic|e('html_attr') }}"
+                     data-notes="{{ plan.notes|e('html_attr') }}"
+                     data-teacher-id="{{ plan.teacher_id }}"
+                     data-can-delete="{{ (is_tutor or is_admin_or_secretary) ? '1' : '0' }}"
+                     data-schedule="[]"
+                     data-plans="{{ dayData.plans|json_encode|e('html_attr') }}"
+                     data-nw="1"
+                     onclick="openEditPlanBtn(this)"
+                     {% endif %}
+                     title="{{ plan.subject }}: {{ plan.topic }}{% if plan.notes %} — {{ plan.notes }}{% endif %}">
+                    <span class="pe-subject">{{ plan.subject }}</span>
+                    {% if plan.topic %}<span class="pe-topic">{{ plan.topic }}</span>{% endif %}
+                </div>
+                {% endfor %}
+                {% if can_edit %}
+                <button class="btn-add-plan no-print"
+                        data-date="{{ dayData.date }}"
+                        data-plans="{{ dayData.plans|json_encode|e('html_attr') }}"
+                        onclick="openAddActivityBtn(this)">
+                    <i class="fas fa-plus"></i> Actividad
+                </button>
+                {% endif %}
                 {% set dayImg = day_images_map[dayData.date] ?? null %}
                 {% if dayImg %}
                 {% set imgMeta = day_images_meta[dayData.date] ?? {} %}
@@ -558,7 +586,13 @@ function openAddPlanBtn(btn) {
     var schedule     = JSON.parse(btn.dataset.schedule);
     var plans        = JSON.parse(btn.dataset.plans);
     var usedSubjects = plans.map(function(p) { return p.subject; });
-    openAddPlan(date, schedule, usedSubjects);
+    openAddPlan(date, schedule, usedSubjects, false);
+}
+
+function openAddActivityBtn(btn) {
+    var date  = btn.dataset.date;
+    var plans = JSON.parse(btn.dataset.plans);
+    openAddPlan(date, [], [], true);
 }
 
 function planTipoChanged() {
@@ -577,22 +611,33 @@ function planCourseChanged() {
     document.getElementById('plan_teacher_id').value = tid;
 }
 
-function openAddPlan(date, scheduleSubjects, usedSubjects) {
+function openAddPlan(date, scheduleSubjects, usedSubjects, lockToActividad) {
     currentDaySchedule = scheduleSubjects || [];
     document.getElementById('plan_id').value = 0;
     document.getElementById('plan_date').value = date;
     document.getElementById('plan_date_display').value = formatDate(date);
-    document.getElementById('plan_tipo').value = 'curso';
     document.getElementById('plan_teacher_id').value = '0';
     document.getElementById('plan_topic').value = '';
     document.getElementById('plan_notes').value = '';
     document.getElementById('plan_modal_error').style.display = 'none';
     document.getElementById('btn_delete_plan').style.display = 'none';
     document.getElementById('planModalTitle').innerHTML = '<i class="fas fa-book-open mr-1"></i> Agregar Tema';
+    var tipoSel = document.getElementById('plan_tipo');
+    if (lockToActividad) {
+        tipoSel.value    = 'actividad';
+        tipoSel.disabled = true;
+    } else {
+        tipoSel.value    = 'curso';
+        tipoSel.disabled = false;
+    }
     rebuildCourseSelect(currentDaySchedule, usedSubjects || []);
     planTipoChanged();
     $('#planModal').modal('show');
 }
+
+$('#planModal').on('hidden.bs.modal', function() {
+    document.getElementById('plan_tipo').disabled = false;
+});
 
 function openEditPlanBtn(el) {
     var plans = JSON.parse(el.dataset.plans);
@@ -606,11 +651,12 @@ function openEditPlanBtn(el) {
         el.dataset.canDelete === '1',
         currentUserId,
         JSON.parse(el.dataset.schedule),
-        plans
+        plans,
+        el.dataset.nw === '1'
     );
 }
 
-function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myId, scheduleSubjects, dayPlans) {
+function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myId, scheduleSubjects, dayPlans, lockToActividad) {
     document.getElementById('plan_id').value = id;
     document.getElementById('plan_date').value = date;
     document.getElementById('plan_date_display').value = formatDate(date);
@@ -621,7 +667,14 @@ function openEditPlan(id, date, subject, topic, notes, teacherId, canDelete, myI
 
     // Detect tipo from subject
     var tipo = getTipoFromSubject(subject);
-    document.getElementById('plan_tipo').value = tipo;
+    var tipoSel = document.getElementById('plan_tipo');
+    if (lockToActividad) {
+        tipoSel.value    = 'actividad';
+        tipoSel.disabled = true;
+    } else {
+        tipoSel.value    = tipo;
+        tipoSel.disabled = false;
+    }
     planTipoChanged();
 
     // Set subject field only for "curso" type
