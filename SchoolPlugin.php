@@ -2109,9 +2109,12 @@ class SchoolPlugin extends Plugin
                 $descriptionVisibility = true;
             }
 
-            $link = api_get_path(WEB_CODE_PATH).$tool['link'].'?&'.$cidReq;
-            if($tool['category'] == 'plugin'){
+            if (preg_match('#^https?://#', $tool['link'])) {
+                $link = $tool['link'];
+            } elseif ($tool['category'] == 'plugin') {
                 $link = api_get_path(WEB_PLUGIN_PATH).$tool['link'].'?&'.$cidReq;
+            } else {
+                $link = api_get_path(WEB_CODE_PATH).$tool['link'].'?&'.$cidReq;
             }
             $toolName = Security::remove_XSS(stripslashes(strip_tags($tool['name'])));
             $toolName = api_underscore_to_camel_case($toolName);
