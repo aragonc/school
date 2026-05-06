@@ -2,6 +2,8 @@
 
 {{ flash_messages }}
 
+{% include 'profile_completion_modal.tpl' %}
+
 <div class="row">
     <div class="col-12 col-lg-8">
         {% if title_string %}

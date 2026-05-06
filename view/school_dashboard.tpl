@@ -200,6 +200,3 @@
     <a href="{{ _p.web }}certified" class="btn btn-primary btn-goto"><i class="fas fa-file-alt"></i> {{ 'GotoMyCertificates'|get_plugin_lang('SchoolPlugin') }}</a>
 </div>
 
-{% if show_profile_completion_modal %}
-{% include 'profile_completion_modal.tpl' %}
-{% endif %}

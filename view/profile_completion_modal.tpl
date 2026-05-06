@@ -55,6 +55,25 @@
                         </small>
                     </div>
 
+                    <!-- Celular WhatsApp (OBLIGATORIO) -->
+                    <div class="form-group">
+                        <label for="phone">
+                            <i class="fa fa-whatsapp"></i>
+                            Celular (WhatsApp)
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="tel"
+                               class="form-control form-control-lg"
+                               id="phone"
+                               name="phone"
+                               placeholder="+56 9 1234 5678"
+                               value="{{ current_profile_data.phone }}"
+                               required>
+                        <small class="form-text text-muted">
+                            Incluye el código de país. Ejemplo: <strong>+56 9 1234 5678</strong>
+                        </small>
+                    </div>
+
                     <!-- País (OBLIGATORIO) -->
                     <div class="form-group">
                         <label for="country">
@@ -279,6 +298,26 @@
                     $('#lastname').after('<div id="lastname-error" class="invalid-feedback d-block">Apellido inválido. Solo letras y al menos 2 caracteres.</div>');
                 }
                 hasErrors = true;
+            }
+
+            // Validar celular
+            let phone = $('#phone').val().trim();
+            let phoneDigits = phone.replace(/[^0-9]/g, '');
+            if (!phone) {
+                $('#phone').addClass('is-invalid');
+                if (!$('#phone-error').length) {
+                    $('#phone').after('<div id="phone-error" class="invalid-feedback d-block">El celular WhatsApp es obligatorio.</div>');
+                }
+                hasErrors = true;
+            } else if (phoneDigits.length < 8) {
+                $('#phone').addClass('is-invalid');
+                if (!$('#phone-error').length) {
+                    $('#phone').after('<div id="phone-error" class="invalid-feedback d-block">El celular debe tener al menos 8 dígitos.</div>');
+                }
+                hasErrors = true;
+            } else {
+                $('#phone').removeClass('is-invalid');
+                $('#phone-error').remove();
             }
 
             // Validar RUT si es Chile

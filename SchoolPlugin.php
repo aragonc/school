@@ -689,9 +689,28 @@ class SchoolPlugin extends Plugin
      * @throws SyntaxError
      * @throws LoaderError
      */
+    public function setupProfileCompletionModal(): void
+    {
+        $userId = api_get_user_id();
+        if (!$userId) {
+            return;
+        }
+        // Solo aplicar a alumnos, no a admins ni docentes
+        if (api_is_platform_admin() || api_is_teacher()) {
+            return;
+        }
+        require_once __DIR__.'/../../main/auth/external_login/check_profile_completion.php';
+        $profileCheck = checkProfileCompletion($userId);
+        if ($profileCheck['needs_completion']) {
+            $this->assign('show_profile_completion_modal', true);
+            $this->assign('current_profile_data', $profileCheck['current_values']);
+            $this->assign('countries', $this->getCountriesData());
+        }
+    }
+
     public function display_blank_template()
     {
-
+        $this->setupProfileCompletionModal();
         $tpl = $this->twig->loadTemplate('layout/blank.tpl');
         $this->display($tpl);
     }
