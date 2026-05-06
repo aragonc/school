@@ -3,11 +3,14 @@
 <div id="profileCompletionModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header bg-primary text-white d-flex align-items-center">
                 <h4 class="modal-title">
                     <i class="fa fa-user-check"></i>
                     Completa tu perfil para continuar
                 </h4>
+                <button type="button" id="profileLogoutBtn" class="btn btn-sm btn-outline-light ml-auto" style="white-space:nowrap;">
+                    <i class="fa fa-sign-out-alt"></i> Cerrar sesión
+                </button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
@@ -390,10 +393,28 @@
             });
         });
 
-        // Prevenir cerrar modal
+        // Prevenir cerrar modal (excepto cuando se va a cerrar sesión)
+        var allowClose = false;
         $('#profileCompletionModal').on('hide.bs.modal', function (e) {
-            e.preventDefault();
-            return false;
+            if (!allowClose) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Botón cerrar sesión en el header del modal
+        $('#profileLogoutBtn').on('click', function () {
+            allowClose = true;
+            $('#profileCompletionModal').modal('hide');
+            $('#logoutModal').modal('show');
+        });
+
+        // Si el logoutModal se cierra sin hacer logout, volver a mostrar el modal de perfil
+        $('#logoutModal').on('hidden.bs.modal', function () {
+            if (document.getElementById('profileCompletionModal')) {
+                allowClose = false;
+                $('#profileCompletionModal').modal('show');
+            }
         });
     });
 </script>
