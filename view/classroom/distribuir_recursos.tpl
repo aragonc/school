@@ -540,6 +540,14 @@
         ajaxPost({action:'rename_resource', resource_id: id, classroom_id: CLASSROOM, title: newTitle}, function(resp) {
             if (!resp.success) { alert('Error: ' + (resp.error || 'No se pudo renombrar')); return; }
             exitRenameMode(id, resp.title);
+            // Update the filename subtitle and download link
+            var row = document.getElementById('res-row-' + id);
+            if (row) {
+                var small = row.querySelector('td:nth-child(2) small.text-muted');
+                if (small) small.textContent = resp.filename;
+                var link = row.querySelector('a[target="_blank"]');
+                if (link) link.href = resp.web_url;
+            }
         });
     });
 
@@ -676,15 +684,16 @@
 
             if (!resp.success) { showAlert('distAlert', resp.error || 'Error al distribuir.'); return; }
 
-            // Update distribution badge
-            var badge = document.getElementById('dist-count-' + resourceId);
-            if (badge) {
-                badge.textContent = parseInt(badge.textContent || '0') + 1;
-                badge.className = badge.className.replace('badge-light', 'badge-success');
+            $('#modalDistribute').modal('hide');
+
+            // File was moved — remove the row from the list
+            if (resp.resource_removed) {
+                var row = document.getElementById('res-row-' + resourceId);
+                if (row) row.remove();
+                updateResourceCount(-1);
             }
 
-            $('#modalDistribute').modal('hide');
-            var msg = 'Recurso distribuido a "' + resp.course_title + '"';
+            var msg = 'Archivo movido a "' + resp.course_title + '"';
             if (resp.session_name) msg += ' — Sesión: ' + resp.session_name;
             msg += '\nCarpeta: ' + resp.folder_path;
             alert(msg);

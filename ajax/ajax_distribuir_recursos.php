@@ -160,9 +160,51 @@ switch ($action) {
             exit;
         }
 
-        $safe = Database::escape_string($newTitle);
-        Database::query("UPDATE $resTable SET title = '$safe' WHERE id = $resourceId");
-        echo json_encode(['success' => true, 'title' => $newTitle]);
+        // Re-fetch full row to get stored_name
+        $row = Database::fetch_array(
+            Database::query("SELECT * FROM $resTable WHERE id = $resourceId LIMIT 1"),
+            'ASSOC'
+        );
+
+        $uploadDir   = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/recursos/';
+        $srcFile     = $uploadDir . $row['stored_name'];
+        $origExt     = strtolower(pathinfo($row['stored_name'], PATHINFO_EXTENSION));
+
+        // Sanitize the new name and keep the original extension
+        $newBase     = preg_replace('/[^\w\-\.áéíóúÁÉÍÓÚñÑüÜ ]/u', '_', $newTitle);
+        $newBase     = trim($newBase);
+        $newFilename = $newBase . ($origExt ? '.' . $origExt : '');
+
+        // Resolve collision in the upload directory
+        $newStoredName = $newFilename;
+        $destFile      = $uploadDir . $newStoredName;
+        $counter       = 1;
+        while (file_exists($destFile) && realpath($destFile) !== realpath($srcFile)) {
+            $newStoredName = $newBase . '_' . $counter . ($origExt ? '.' . $origExt : '');
+            $destFile      = $uploadDir . $newStoredName;
+            $counter++;
+        }
+
+        // Rename physical file (only if name actually changes)
+        if (realpath($srcFile) !== realpath($destFile)) {
+            if (!is_file($srcFile) || !rename($srcFile, $destFile)) {
+                echo json_encode(['success' => false, 'error' => 'No se pudo renombrar el archivo en el servidor']);
+                exit;
+            }
+        }
+
+        $safeTitle      = Database::escape_string($newTitle);
+        $safeFilename   = Database::escape_string($newFilename);
+        $safeStoredName = Database::escape_string($newStoredName);
+        Database::query("UPDATE $resTable SET title = '$safeTitle', filename = '$safeFilename', stored_name = '$safeStoredName' WHERE id = $resourceId");
+
+        echo json_encode([
+            'success'     => true,
+            'title'       => $newTitle,
+            'filename'    => $newFilename,
+            'stored_name' => $newStoredName,
+            'web_url'     => api_get_path(WEB_UPLOAD_PATH) . 'plugins/school/recursos/' . urlencode($newStoredName),
+        ]);
         break;
 
     // -----------------------------------------------------------------------
@@ -457,14 +499,14 @@ switch ($action) {
             mkdir($destDir, api_get_permissions_for_new_directories(), true);
         }
 
-        // Build destination filename (avoid collisions)
-        $ext       = strtolower(pathinfo($resource['filename'], PATHINFO_EXTENSION));
-        $baseName  = pathinfo($resource['filename'], PATHINFO_FILENAME);
-        $baseName  = api_replace_dangerous_char($baseName);
-        $destFile  = $destDir . '/' . $baseName . ($ext ? '.' . $ext : '');
-        $docPath   = ($folderPath === '/' ? '' : $folderPath) . '/' . $baseName . ($ext ? '.' . $ext : '');
+        // Build destination filename using the resource's current filename (already renamed by user if needed)
+        $ext      = strtolower(pathinfo($resource['filename'], PATHINFO_EXTENSION));
+        $baseName = pathinfo($resource['filename'], PATHINFO_FILENAME);
+        $baseName = api_replace_dangerous_char($baseName);
+        $destFile = $destDir . '/' . $baseName . ($ext ? '.' . $ext : '');
+        $docPath  = ($folderPath === '/' ? '' : $folderPath) . '/' . $baseName . ($ext ? '.' . $ext : '');
 
-        // Handle collision
+        // Handle collision at destination
         $counter = 1;
         while (file_exists($destFile)) {
             $destFile = $destDir . '/' . $baseName . '_' . $counter . ($ext ? '.' . $ext : '');
@@ -472,13 +514,14 @@ switch ($action) {
             $counter++;
         }
 
-        if (!copy($srcFile, $destFile)) {
-            echo json_encode(['success' => false, 'error' => 'No se pudo copiar el archivo al curso']);
+        // MOVE (not copy) the file to its final location in the course
+        if (!rename($srcFile, $destFile)) {
+            echo json_encode(['success' => false, 'error' => 'No se pudo mover el archivo al curso']);
             exit;
         }
 
-        $title      = pathinfo($docPath, PATHINFO_BASENAME);
-        $docId      = add_document(
+        $title = pathinfo($docPath, PATHINFO_BASENAME);
+        $docId = add_document(
             $courseInfo,
             $docPath,
             'file',
@@ -493,8 +536,8 @@ switch ($action) {
         );
 
         if (!$docId) {
-            // File was copied but DB insert failed — clean up
-            @unlink($destFile);
+            // Move succeeded but DB insert failed — put the file back
+            rename($destFile, $srcFile);
             echo json_encode(['success' => false, 'error' => 'No se pudo registrar el documento en el curso']);
             exit;
         }
@@ -506,25 +549,17 @@ switch ($action) {
             $sessionName = $sInfo ? $sInfo['name'] : '';
         }
 
-        // Record distribution
-        $distId = Database::insert($distTable, [
-            'resource_id'    => $resourceId,
-            'course_code'    => Database::escape_string($courseCode),
-            'course_title'   => Database::escape_string($courseInfo['title']),
-            'session_id'     => $sessionId,
-            'session_name'   => Database::escape_string($sessionName),
-            'folder_path'    => Database::escape_string($folderPath),
-            'document_id'    => $docId,
-            'distributed_by' => $userId,
-            'distributed_at' => date('Y-m-d H:i:s'),
-        ]);
+        // Remove resource record (file has been moved to its final destination)
+        Database::query("DELETE FROM $distTable WHERE resource_id = $resourceId");
+        Database::query("DELETE FROM $resTable  WHERE id = $resourceId");
 
         echo json_encode([
-            'success'      => true,
-            'dist_id'      => $distId,
-            'course_title' => $courseInfo['title'],
-            'session_name' => $sessionName,
-            'folder_path'  => $folderPath,
+            'success'          => true,
+            'resource_removed' => true,
+            'resource_id'      => $resourceId,
+            'course_title'     => $courseInfo['title'],
+            'session_name'     => $sessionName,
+            'folder_path'      => $folderPath,
         ]);
         break;
 
