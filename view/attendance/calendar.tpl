@@ -33,6 +33,10 @@
                             <td>
                                 {% if nw.type == 'holiday' %}
                                     <span class="badge badge-warning">{{ 'Holiday'|get_plugin_lang('SchoolPlugin') }}</span>
+                                {% elseif nw.type == 'suspension' %}
+                                    <span class="badge badge-danger">{{ 'Suspension'|get_plugin_lang('SchoolPlugin') }}</span>
+                                {% elseif nw.type == 'asueto' %}
+                                    <span class="badge badge-success">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</span>
                                 {% else %}
                                     <span class="badge badge-info">{{ 'Vacation'|get_plugin_lang('SchoolPlugin') }}</span>
                                 {% endif %}
@@ -100,6 +104,8 @@
                         <select name="type" class="form-control form-control-sm" id="nwType">
                             <option value="holiday">{{ 'Holiday'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="vacation">{{ 'Vacation'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="suspension">{{ 'Suspension'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="asueto">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -165,6 +171,8 @@
                         <select class="form-control form-control-sm" id="editNwType">
                             <option value="holiday">{{ 'Holiday'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="vacation">{{ 'Vacation'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="suspension">{{ 'Suspension'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="asueto">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -196,15 +204,17 @@
 <script>
 var calAjaxUrl = '{{ ajax_url }}';
 
-// Auto-set end_date = start_date for holidays (single day), allow range for vacation
+var singleDayTypes = ['holiday', 'suspension', 'asueto'];
+
+// Auto-set end_date = start_date for single-day types, allow range for vacation
 document.getElementById('nwType').addEventListener('change', function() {
-    if (this.value === 'holiday') {
+    if (singleDayTypes.indexOf(this.value) !== -1) {
         var sd = document.getElementById('nwStartDate').value;
         document.getElementById('nwEndDate').value = sd;
     }
 });
 document.getElementById('nwStartDate').addEventListener('change', function() {
-    if (document.getElementById('nwType').value === 'holiday') {
+    if (singleDayTypes.indexOf(document.getElementById('nwType').value) !== -1) {
         document.getElementById('nwEndDate').value = this.value;
     } else if (!document.getElementById('nwEndDate').value) {
         document.getElementById('nwEndDate').value = this.value;
@@ -241,12 +251,12 @@ document.querySelectorAll('.btn-edit-nw').forEach(function(btn) {
 
 // Auto-sync end date when type changes inside modal
 document.getElementById('editNwType').addEventListener('change', function() {
-    if (this.value === 'holiday') {
+    if (singleDayTypes.indexOf(this.value) !== -1) {
         document.getElementById('editNwEnd').value = document.getElementById('editNwStart').value;
     }
 });
 document.getElementById('editNwStart').addEventListener('change', function() {
-    if (document.getElementById('editNwType').value === 'holiday') {
+    if (singleDayTypes.indexOf(document.getElementById('editNwType').value) !== -1) {
         document.getElementById('editNwEnd').value = this.value;
     }
 });
