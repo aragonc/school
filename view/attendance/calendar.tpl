@@ -35,7 +35,7 @@
                                     <span class="badge badge-warning">{{ 'Holiday'|get_plugin_lang('SchoolPlugin') }}</span>
                                 {% elseif nw.type == 'suspension' %}
                                     <span class="badge badge-danger">{{ 'Suspension'|get_plugin_lang('SchoolPlugin') }}</span>
-                                {% elseif nw.type == 'asueto' %}
+                                {% elseif nw.type == 'free_day' %}
                                     <span class="badge badge-success">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</span>
                                 {% else %}
                                     <span class="badge badge-info">{{ 'Vacation'|get_plugin_lang('SchoolPlugin') }}</span>
@@ -105,7 +105,7 @@
                             <option value="holiday">{{ 'Holiday'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="vacation">{{ 'Vacation'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="suspension">{{ 'Suspension'|get_plugin_lang('SchoolPlugin') }}</option>
-                            <option value="asueto">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="free_day">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -172,7 +172,7 @@
                             <option value="holiday">{{ 'Holiday'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="vacation">{{ 'Vacation'|get_plugin_lang('SchoolPlugin') }}</option>
                             <option value="suspension">{{ 'Suspension'|get_plugin_lang('SchoolPlugin') }}</option>
-                            <option value="asueto">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</option>
+                            <option value="free_day">{{ 'Asueto'|get_plugin_lang('SchoolPlugin') }}</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -204,7 +204,7 @@
 <script>
 var calAjaxUrl = '{{ ajax_url }}';
 
-var singleDayTypes = ['holiday', 'suspension', 'asueto'];
+var singleDayTypes = ['holiday', 'suspension', 'free_day'];
 
 // Auto-set end_date = start_date for single-day types, allow range for vacation
 document.getElementById('nwType').addEventListener('change', function() {

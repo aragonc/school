@@ -1254,7 +1254,7 @@ class SchoolPlugin extends Plugin
         // Migration: attendance non-working day calendar
         Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ATTENDANCE_NONWORKING." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-            type ENUM('holiday','vacation') NOT NULL DEFAULT 'holiday',
+            type ENUM('holiday','vacation','suspension','free_day') NOT NULL DEFAULT 'holiday',
             start_date DATE NOT NULL,
             end_date DATE NOT NULL,
             description VARCHAR(255) NOT NULL DEFAULT '',
@@ -4901,7 +4901,7 @@ class SchoolPlugin extends Plugin
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
         Database::query("CREATE TABLE IF NOT EXISTS $table (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
-            type ENUM('holiday','vacation') NOT NULL DEFAULT 'holiday',
+            type ENUM('holiday','vacation','suspension','free_day') NOT NULL DEFAULT 'holiday',
             start_date DATE NOT NULL,
             end_date DATE NOT NULL,
             description VARCHAR(255) NOT NULL DEFAULT '',
