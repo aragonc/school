@@ -40,18 +40,34 @@ $resTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CLASSROOM_RESOU
 $distTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CLASSROOM_RESOURCE_DIST);
 
 Database::query("CREATE TABLE IF NOT EXISTS $resTable (
-    id            INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    classroom_id  INT NOT NULL DEFAULT 0,
-    filename      VARCHAR(255) NOT NULL DEFAULT '',
-    stored_name   VARCHAR(255) NOT NULL DEFAULT '',
-    title         VARCHAR(255) NOT NULL DEFAULT '',
-    file_type     VARCHAR(30)  NOT NULL DEFAULT '',
-    file_size     INT NOT NULL DEFAULT 0,
-    mime_type     VARCHAR(120) NOT NULL DEFAULT '',
-    uploaded_by   INT NOT NULL DEFAULT 0,
-    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id                INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    classroom_id      INT NOT NULL DEFAULT 0,
+    filename          VARCHAR(255) NOT NULL DEFAULT '',
+    stored_name       VARCHAR(255) NOT NULL DEFAULT '',
+    title             VARCHAR(255) NOT NULL DEFAULT '',
+    file_type         VARCHAR(30)  NOT NULL DEFAULT '',
+    file_size         INT NOT NULL DEFAULT 0,
+    mime_type         VARCHAR(120) NOT NULL DEFAULT '',
+    uploaded_by       INT NOT NULL DEFAULT 0,
+    created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dest_course_code  VARCHAR(40)  NOT NULL DEFAULT '',
+    dest_course_title VARCHAR(255) NOT NULL DEFAULT '',
+    dest_session_id   INT NOT NULL DEFAULT 0,
+    dest_session_name VARCHAR(255) NOT NULL DEFAULT '',
+    dest_folder_path  VARCHAR(500) NOT NULL DEFAULT '',
     INDEX idx_classroom (classroom_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+// Migrate: add destination columns to existing tables
+$existingCols = Database::query("SHOW COLUMNS FROM $resTable LIKE 'dest_course_code'");
+if (Database::num_rows($existingCols) === 0) {
+    Database::query("ALTER TABLE $resTable
+        ADD COLUMN dest_course_code  VARCHAR(40)  NOT NULL DEFAULT '',
+        ADD COLUMN dest_course_title VARCHAR(255) NOT NULL DEFAULT '',
+        ADD COLUMN dest_session_id   INT          NOT NULL DEFAULT 0,
+        ADD COLUMN dest_session_name VARCHAR(255) NOT NULL DEFAULT '',
+        ADD COLUMN dest_folder_path  VARCHAR(500) NOT NULL DEFAULT ''");
+}
 
 Database::query("CREATE TABLE IF NOT EXISTS $distTable (
     id              INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -124,16 +140,10 @@ if ($classroomId > 0) {
         WHERE r.classroom_id = $safeClassId
         ORDER BY r.created_at DESC");
     while ($row = Database::fetch_array($res, 'ASSOC')) {
-        $row['uploader_name'] = trim($row['firstname'] . ' ' . $row['lastname']);
-        $row['file_size_fmt'] = formatFileSize((int) $row['file_size']);
-        $row['web_url']       = api_get_path(WEB_UPLOAD_PATH) . 'plugins/school/recursos/' . urlencode($row['stored_name']);
-        // Distribution count
-        $rid = (int) $row['id'];
-        $cnt = Database::fetch_array(
-            Database::query("SELECT COUNT(*) as c FROM $distTable WHERE resource_id = $rid"),
-            'ASSOC'
-        );
-        $row['dist_count'] = (int) ($cnt['c'] ?? 0);
+        $row['uploader_name']    = trim($row['firstname'] . ' ' . $row['lastname']);
+        $row['file_size_fmt']    = formatFileSize((int) $row['file_size']);
+        $row['web_url']          = api_get_path(WEB_UPLOAD_PATH) . 'plugins/school/recursos/' . urlencode($row['stored_name']);
+        $row['has_destination']  = !empty($row['dest_course_code']);
         $resources[] = $row;
     }
 }

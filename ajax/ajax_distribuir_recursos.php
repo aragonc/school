@@ -606,6 +606,185 @@ switch ($action) {
         break;
 
     // -----------------------------------------------------------------------
+    case 'set_destination':
+        $resourceId  = isset($_POST['resource_id'])  ? (int) $_POST['resource_id']  : 0;
+        $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
+        $courseCode  = isset($_POST['course_code'])  ? trim($_POST['course_code'])  : '';
+        $sessionId   = isset($_POST['session_id'])   ? (int) $_POST['session_id']   : 0;
+        $folderPath  = isset($_POST['folder_path'])  ? trim($_POST['folder_path'])  : '/';
+
+        if ($resourceId <= 0 || empty($courseCode)) {
+            echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
+            exit;
+        }
+        if (!canDistributeToCourse($classroomId, $courseCode, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'No tienes permiso para distribuir a ese curso']);
+            exit;
+        }
+
+        $resource = Database::fetch_array(
+            Database::query("SELECT id FROM $resTable WHERE id = $resourceId AND classroom_id = $classroomId LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$resource) {
+            echo json_encode(['success' => false, 'error' => 'Recurso no encontrado']);
+            exit;
+        }
+
+        $courseInfo  = api_get_course_info($courseCode);
+        $courseTitle = $courseInfo ? $courseInfo['title'] : $courseCode;
+
+        $sessionName = '';
+        if ($sessionId > 0) {
+            $sInfo = api_get_session_info($sessionId);
+            $sessionName = $sInfo ? $sInfo['name'] : '';
+        }
+
+        $folderPath = '/' . ltrim($folderPath, '/');
+
+        Database::query("UPDATE $resTable SET
+            dest_course_code  = '" . Database::escape_string($courseCode)  . "',
+            dest_course_title = '" . Database::escape_string($courseTitle) . "',
+            dest_session_id   = $sessionId,
+            dest_session_name = '" . Database::escape_string($sessionName) . "',
+            dest_folder_path  = '" . Database::escape_string($folderPath)  . "'
+            WHERE id = $resourceId");
+
+        echo json_encode([
+            'success'      => true,
+            'course_code'  => $courseCode,
+            'course_title' => $courseTitle,
+            'session_id'   => $sessionId,
+            'session_name' => $sessionName,
+            'folder_path'  => $folderPath,
+        ]);
+        break;
+
+    // -----------------------------------------------------------------------
+    case 'distribute_selected':
+        $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
+        $idsRaw      = isset($_POST['resource_ids']) ? trim($_POST['resource_ids']) : '';
+
+        if ($classroomId <= 0 || empty($idsRaw)) {
+            echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
+            exit;
+        }
+        if (!canEditClassroomRes($classroomId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos en esta aula']);
+            exit;
+        }
+
+        // Parse and sanitize IDs
+        $ids = array_filter(array_map('intval', explode(',', $idsRaw)));
+        if (empty($ids)) {
+            echo json_encode(['success' => false, 'error' => 'No se recibieron IDs válidos']);
+            exit;
+        }
+
+        require_once api_get_path(LIBRARY_PATH) . 'document.lib.php';
+        require_once api_get_path(LIBRARY_PATH) . 'fileUpload.lib.php';
+
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/recursos/';
+        $results   = [];
+
+        foreach ($ids as $resourceId) {
+            $resource = Database::fetch_array(
+                Database::query("SELECT * FROM $resTable WHERE id = $resourceId AND classroom_id = $classroomId LIMIT 1"),
+                'ASSOC'
+            );
+
+            if (!$resource) {
+                $results[] = ['resource_id' => $resourceId, 'success' => false, 'error' => 'No encontrado'];
+                continue;
+            }
+            if (empty($resource['dest_course_code'])) {
+                $results[] = ['resource_id' => $resourceId, 'success' => false,
+                              'title' => $resource['title'], 'error' => 'Sin destino configurado'];
+                continue;
+            }
+
+            $courseCode = $resource['dest_course_code'];
+            if (!canDistributeToCourse($classroomId, $courseCode, $userId, $isAdmin)) {
+                $results[] = ['resource_id' => $resourceId, 'success' => false,
+                              'title' => $resource['title'], 'error' => 'Sin permiso para ese curso'];
+                continue;
+            }
+
+            $courseInfo = api_get_course_info($courseCode);
+            if (!$courseInfo) {
+                $results[] = ['resource_id' => $resourceId, 'success' => false,
+                              'title' => $resource['title'], 'error' => 'Curso no encontrado'];
+                continue;
+            }
+
+            $srcFile = $uploadDir . $resource['stored_name'];
+            if (!is_file($srcFile)) {
+                $results[] = ['resource_id' => $resourceId, 'success' => false,
+                              'title' => $resource['title'], 'error' => 'Archivo no encontrado en servidor'];
+                continue;
+            }
+
+            $sessionId  = (int) $resource['dest_session_id'];
+            $folderPath = $resource['dest_folder_path'];
+            $folderPath = '/' . ltrim($folderPath, '/');
+            $folderPath = rtrim($folderPath, '/');
+            if (empty($folderPath)) $folderPath = '/';
+
+            $baseWorkDir = api_get_path(SYS_COURSE_PATH) . $courseInfo['path'] . '/document';
+            $destDir     = $baseWorkDir . ($folderPath === '/' ? '' : $folderPath);
+            if (!is_dir($destDir)) {
+                mkdir($destDir, api_get_permissions_for_new_directories(), true);
+            }
+
+            $ext      = strtolower(pathinfo($resource['filename'], PATHINFO_EXTENSION));
+            $baseName = api_replace_dangerous_char(pathinfo($resource['filename'], PATHINFO_FILENAME));
+            $destFile = $destDir . '/' . $baseName . ($ext ? '.' . $ext : '');
+            $docPath  = ($folderPath === '/' ? '' : $folderPath) . '/' . $baseName . ($ext ? '.' . $ext : '');
+
+            $counter = 1;
+            while (file_exists($destFile)) {
+                $destFile = $destDir . '/' . $baseName . '_' . $counter . ($ext ? '.' . $ext : '');
+                $docPath  = ($folderPath === '/' ? '' : $folderPath) . '/' . $baseName . '_' . $counter . ($ext ? '.' . $ext : '');
+                $counter++;
+            }
+
+            if (!rename($srcFile, $destFile)) {
+                $results[] = ['resource_id' => $resourceId, 'success' => false,
+                              'title' => $resource['title'], 'error' => 'No se pudo mover el archivo'];
+                continue;
+            }
+
+            $title = pathinfo($docPath, PATHINFO_BASENAME);
+            $docId = add_document($courseInfo, $docPath, 'file', filesize($destFile),
+                                  $title, null, 0, true, 0, $sessionId, $userId);
+
+            if (!$docId) {
+                rename($destFile, $srcFile); // rollback
+                $results[] = ['resource_id' => $resourceId, 'success' => false,
+                              'title' => $resource['title'], 'error' => 'Error al registrar en el curso'];
+                continue;
+            }
+
+            // Remove resource record — file is now at its final destination
+            Database::query("DELETE FROM $distTable WHERE resource_id = $resourceId");
+            Database::query("DELETE FROM $resTable  WHERE id = $resourceId");
+
+            $results[] = [
+                'resource_id'  => $resourceId,
+                'success'      => true,
+                'title'        => $resource['title'],
+                'course_title' => $courseInfo['title'],
+                'session_name' => $resource['dest_session_name'],
+                'folder_path'  => $folderPath,
+            ];
+        }
+
+        $ok  = count(array_filter($results, fn($r) => $r['success']));
+        $err = count($results) - $ok;
+        echo json_encode(['success' => true, 'results' => $results, 'ok' => $ok, 'errors' => $err]);
+        break;
+
+    // -----------------------------------------------------------------------
     default:
         echo json_encode(['success' => false, 'error' => 'Acción desconocida']);
         break;
