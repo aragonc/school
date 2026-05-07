@@ -34,6 +34,9 @@
             <div class="modal-body p-4" style="font-size:15px; line-height:1.7; color:#2c3e50; max-height:60vh; overflow-y:auto;">
                 {{ suspension_notice_message|raw }}
             </div>
+            <div class="px-4 pb-3">
+                <small class="text-muted"><i class="fas fa-lock mr-1"></i>Este mensaje es visible únicamente para administradores de la plataforma.</small>
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger px-4 font-weight-bold" data-dismiss="modal">
                     <i class="fas fa-check mr-1"></i>
