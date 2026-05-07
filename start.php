@@ -112,6 +112,22 @@ if ($enable) {
         $plugin->assign('current_profile_data', $currentProfileData);
     }
 
+    // Aviso de suspensión próxima del servicio (solo administradores)
+    $showSuspensionNotice = false;
+    $suspensionNoticeMessage = '';
+    if ($plugin->get('show_suspension_notice') == 'true' && api_is_platform_admin()) {
+        $showSuspensionNotice = true;
+        $suspensionNoticeMessage = $plugin->get('suspension_notice_message');
+        if (empty(trim(strip_tags($suspensionNoticeMessage)))) {
+            $suspensionNoticeMessage = '<p><strong>Estimado administrador,</strong></p>'
+                . '<p>Le informamos que el servicio del <strong>Aula Virtual</strong> estará <strong>suspendido temporalmente</strong> por tareas de mantenimiento programado.</p>'
+                . '<p>Por favor, coordine con los usuarios afectados y esté atento a las comunicaciones oficiales para conocer la fecha y hora exacta de la suspensión.</p>'
+                . '<p>Disculpe los inconvenientes.</p>';
+        }
+    }
+    $plugin->assign('show_suspension_notice', $showSuspensionNotice);
+    $plugin->assign('suspension_notice_message', $suspensionNoticeMessage);
+
     $plugin->setTitle($plugin->get_lang('Dashboard'));
     $content = $plugin->fetch('dashboard/start.tpl');
     $plugin->assign('content', $content);

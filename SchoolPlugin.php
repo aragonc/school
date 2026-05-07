@@ -99,6 +99,8 @@ class SchoolPlugin extends Plugin
                 ],
                 'google_client_id' => 'text',
                 'google_client_secret' => 'text',
+                'show_suspension_notice' => 'boolean',
+                'suspension_notice_message' => 'wysiwyg',
             ])
         );
 

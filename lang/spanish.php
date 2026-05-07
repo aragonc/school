@@ -798,3 +798,9 @@ $strings['QuizValidated']          = 'Revisado';
 $strings['QuizNotValidated']       = 'Pendiente';
 $strings['QuizAttemptsExhausted']  = 'Has alcanzado el número máximo de intentos.';
 $strings['QuizTimeRemaining']      = 'Tiempo restante';
+
+// Suspension notice modal
+$strings['show_suspension_notice']    = 'Mostrar aviso de suspensión próxima del servicio (solo administradores)';
+$strings['suspension_notice_message'] = 'Mensaje del aviso de suspensión';
+$strings['SuspensionNoticeTitle']     = 'Aviso de Servicio';
+$strings['SuspensionNoticeClose']     = 'Entendido';

@@ -20,6 +20,36 @@
     <i class="fas fa-angle-up"></i>
 </a>
 
+{% if show_suspension_notice %}
+<!-- Suspension Notice Modal (admins only) -->
+<div class="modal fade" id="suspensionNoticeModal" tabindex="-1" role="dialog" aria-labelledby="suspensionNoticeLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #c0392b, #e74c3c);">
+                <h5 class="modal-title font-weight-bold" id="suspensionNoticeLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    {{ 'SuspensionNoticeTitle'|get_plugin_lang('SchoolPlugin') }}
+                </h5>
+            </div>
+            <div class="modal-body p-4" style="font-size:15px; line-height:1.7; color:#2c3e50;">
+                {{ suspension_notice_message|raw }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger px-4 font-weight-bold" data-dismiss="modal">
+                    <i class="fas fa-check mr-1"></i>
+                    {{ 'SuspensionNoticeClose'|get_plugin_lang('SchoolPlugin') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+$(document).ready(function () {
+    $('#suspensionNoticeModal').modal('show');
+});
+</script>
+{% endif %}
+
 <!-- Logout Modal-->
 <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
      aria-hidden="true">
