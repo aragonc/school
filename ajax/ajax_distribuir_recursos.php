@@ -170,9 +170,10 @@ switch ($action) {
         $srcFile     = $uploadDir . $row['stored_name'];
         $origExt     = strtolower(pathinfo($row['stored_name'], PATHINFO_EXTENSION));
 
-        // Sanitize the new name and keep the original extension
+        // Sanitize the new name: spaces → underscore, keep the original extension
         $newBase     = preg_replace('/[^\w\-\.áéíóúÁÉÍÓÚñÑüÜ ]/u', '_', $newTitle);
-        $newBase     = trim($newBase);
+        $newBase     = str_replace(' ', '_', trim($newBase));
+        $newBase     = preg_replace('/_+/', '_', $newBase); // collapse multiple underscores
         $newFilename = $newBase . ($origExt ? '.' . $origExt : '');
 
         // Resolve collision in the upload directory
