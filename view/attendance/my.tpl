@@ -36,7 +36,20 @@
                         <td>{{ record.check_in|date('H:i:s') }}</td>
                         {% endif %}
                         <td>
-                            {% if record.status == 'on_time' %}
+                            {% if record.nw_type is defined %}
+                                {% if record.nw_type == 'holiday' %}
+                                    <span class="badge badge-warning">{{ record.nw_label }}</span>
+                                {% elseif record.nw_type == 'vacation' %}
+                                    <span class="badge badge-info">{{ record.nw_label }}</span>
+                                {% elseif record.nw_type == 'suspension' %}
+                                    <span class="badge badge-danger">{{ record.nw_label }}</span>
+                                {% elseif record.nw_type == 'free_day' %}
+                                    <span class="badge badge-success">{{ record.nw_label }}</span>
+                                {% endif %}
+                                {% if record.nw_desc %}
+                                    <small class="text-muted ml-1">{{ record.nw_desc }}</small>
+                                {% endif %}
+                            {% elseif record.status == 'on_time' %}
                                 <span class="badge badge-success">{{ 'OnTime'|get_plugin_lang('SchoolPlugin') }}</span>
                             {% elseif record.status == 'late' %}
                                 <span class="badge badge-warning text-dark">{{ 'Late'|get_plugin_lang('SchoolPlugin') }}</span>

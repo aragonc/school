@@ -43,6 +43,29 @@ if ($rawDays !== '') {
     $allowedDows = [1, 2, 3, 4, 5];
 }
 
+// Días no laborables del año actual, expandidos a fechas individuales
+$nonWorkingDays = $plugin->getNonWorkingDays((int) date('Y'));
+$nonWorkingByDate = [];
+$nonWorkingLabels = [
+    'holiday'    => $plugin->get_lang('Holiday'),
+    'vacation'   => $plugin->get_lang('Vacation'),
+    'suspension' => $plugin->get_lang('Suspension'),
+    'free_day'   => $plugin->get_lang('Asueto'),
+];
+foreach ($nonWorkingDays as $nw) {
+    $cur = strtotime($nw['start_date']);
+    $end = strtotime($nw['end_date']);
+    while ($cur <= $end) {
+        $dateKey = date('Y-m-d', $cur);
+        $nonWorkingByDate[$dateKey] = [
+            'nw_type'  => $nw['type'],
+            'nw_label' => $nonWorkingLabels[$nw['type']] ?? $nw['type'],
+            'nw_desc'  => $nw['description'],
+        ];
+        $cur = strtotime('+1 day', $cur);
+    }
+}
+
 // Agrupar por mes, filtrar solo los días que labora
 $byMonth = [];
 foreach ($myAttendance as $record) {
@@ -53,10 +76,15 @@ foreach ($myAttendance as $record) {
     $dow     = (int) date('w', $ts); // 0=dom, 6=sab
     if (!in_array($dow, $allowedDows)) continue;
 
-    $record['day_name']   = $days_es[$dow];
-    $monthNum             = (int) date('n', $ts);
-    $monthKey             = date('Y-m', $ts);
+    $record['day_name']    = $days_es[$dow];
+    $monthNum              = (int) date('n', $ts);
+    $monthKey              = date('Y-m', $ts);
     $record['month_label'] = $months_es[$monthNum] . ' ' . date('Y', $ts);
+
+    // Adjuntar info de día no laborable si aplica
+    if (isset($nonWorkingByDate[$record['date']])) {
+        $record = array_merge($record, $nonWorkingByDate[$record['date']]);
+    }
 
     $byMonth[$monthKey]['label']     = $record['month_label'];
     $byMonth[$monthKey]['records'][] = $record;
