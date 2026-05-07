@@ -1,0 +1,497 @@
+<?php
+/* For licensing terms, see /license.txt */
+
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../src/AcademicManager.php';
+require_once __DIR__ . '/../src/MatriculaManager.php';
+
+$plugin = SchoolPlugin::create();
+$plugin->requireLogin();
+
+header('Content-Type: application/json');
+
+$userId   = api_get_user_id();
+$userInfo = api_get_user_info($userId);
+$isAdmin  = api_is_platform_admin();
+$isTeacher = $userInfo && (int) $userInfo['status'] === COURSEMANAGER;
+
+if (!$userId || (!$isAdmin && !$isTeacher)) {
+    echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+    exit;
+}
+
+$resTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CLASSROOM_RESOURCE);
+$distTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CLASSROOM_RESOURCE_DIST);
+
+$action = $_REQUEST['action'] ?? '';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function canEditClassroomRes(int $classroomId, int $userId, bool $isAdmin): bool
+{
+    if ($isAdmin) return true;
+    if ($classroomId <= 0 || $userId <= 0) return false;
+    $cTable     = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+    $activeYear = MatriculaManager::getActiveYear();
+    $yearId     = $activeYear ? (int) $activeYear['id'] : 0;
+    if ($yearId === 0) return false;
+    $row = Database::fetch_array(
+        Database::query("SELECT id FROM $cTable
+                         WHERE id = $classroomId
+                           AND academic_year_id = $yearId
+                           AND (tutor_id = $userId OR supervisor_id = $userId)
+                         LIMIT 1"),
+        'ASSOC'
+    );
+    // Also allow teachers who have a course in the classroom
+    if (empty($row)) {
+        $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $ctTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER);
+        $row2 = Database::fetch_array(
+            Database::query("SELECT cc.id FROM $ccTable cc
+                             INNER JOIN $ctTable ct ON ct.classroom_course_id = cc.id
+                             WHERE cc.classroom_id = $classroomId AND ct.user_id = $userId
+                             LIMIT 1"),
+            'ASSOC'
+        );
+        return !empty($row2);
+    }
+    return true;
+}
+
+function formatFileSizeAjax(int $bytes): string
+{
+    if ($bytes >= 1048576) return round($bytes / 1048576, 1) . ' MB';
+    if ($bytes >= 1024)    return round($bytes / 1024, 1)    . ' KB';
+    return $bytes . ' B';
+}
+
+// Allowed MIME types
+$allowedMimes = [
+    // Images
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+    // Documents
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    // Audio
+    'audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/wav', 'audio/x-wav',
+    // Video
+    'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm',
+];
+
+// ---------------------------------------------------------------------------
+switch ($action) {
+
+    // -----------------------------------------------------------------------
+    case 'upload_resource':
+        $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
+        if ($classroomId <= 0 || !canEditClassroomRes($classroomId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos para esta aula']);
+            exit;
+        }
+
+        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            $err = $_FILES['file']['error'] ?? 'desconocido';
+            echo json_encode(['success' => false, 'error' => "Error en la subida ($err)"]);
+            exit;
+        }
+
+        $file     = $_FILES['file'];
+        $origName = basename($file['name']);
+        $mimeType = mime_content_type($file['tmp_name']);
+
+        if (!in_array($mimeType, $allowedMimes)) {
+            echo json_encode(['success' => false, 'error' => "Tipo de archivo no permitido: $mimeType"]);
+            exit;
+        }
+
+        $maxSize = 100 * 1024 * 1024; // 100 MB
+        if ($file['size'] > $maxSize) {
+            echo json_encode(['success' => false, 'error' => 'El archivo supera el límite de 100 MB']);
+            exit;
+        }
+
+        // Build upload directory
+        $uploadDir = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/recursos/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // Unique stored filename
+        $ext        = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+        $storedName = 'res_' . $classroomId . '_' . uniqid() . ($ext ? '.' . $ext : '');
+        $destPath   = $uploadDir . $storedName;
+
+        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+            echo json_encode(['success' => false, 'error' => 'No se pudo guardar el archivo']);
+            exit;
+        }
+
+        // Classify file type
+        $fileType = 'file';
+        if (str_starts_with($mimeType, 'image/'))      $fileType = 'image';
+        elseif ($mimeType === 'application/pdf')       $fileType = 'pdf';
+        elseif (str_contains($mimeType, 'word'))       $fileType = 'word';
+        elseif (str_contains($mimeType, 'powerpoint') || str_contains($mimeType, 'presentation')) $fileType = 'ppt';
+        elseif (str_contains($mimeType, 'excel') || str_contains($mimeType, 'spreadsheet'))       $fileType = 'excel';
+        elseif (str_starts_with($mimeType, 'audio/'))  $fileType = 'audio';
+        elseif (str_starts_with($mimeType, 'video/'))  $fileType = 'video';
+
+        $title = pathinfo($origName, PATHINFO_FILENAME);
+
+        $docId = Database::insert($resTable, [
+            'classroom_id' => $classroomId,
+            'filename'     => Database::escape_string($origName),
+            'stored_name'  => Database::escape_string($storedName),
+            'title'        => Database::escape_string($title),
+            'file_type'    => $fileType,
+            'file_size'    => (int) $file['size'],
+            'mime_type'    => Database::escape_string($mimeType),
+            'uploaded_by'  => $userId,
+            'created_at'   => date('Y-m-d H:i:s'),
+        ]);
+
+        echo json_encode([
+            'success'      => true,
+            'id'           => $docId,
+            'filename'     => $origName,
+            'stored_name'  => $storedName,
+            'title'        => $title,
+            'file_type'    => $fileType,
+            'file_size'    => $file['size'],
+            'file_size_fmt'=> formatFileSizeAjax((int) $file['size']),
+            'mime_type'    => $mimeType,
+            'web_url'      => api_get_path(WEB_UPLOAD_PATH) . 'plugins/school/recursos/' . urlencode($storedName),
+            'dist_count'   => 0,
+            'created_at'   => date('d/m/Y H:i'),
+        ]);
+        break;
+
+    // -----------------------------------------------------------------------
+    case 'delete_resource':
+        $resourceId  = isset($_POST['resource_id']) ? (int) $_POST['resource_id'] : 0;
+        $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
+
+        if ($resourceId <= 0 || !canEditClassroomRes($classroomId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            exit;
+        }
+
+        $row = Database::fetch_array(
+            Database::query("SELECT * FROM $resTable WHERE id = $resourceId AND classroom_id = $classroomId LIMIT 1"),
+            'ASSOC'
+        );
+
+        if (!$row) {
+            echo json_encode(['success' => false, 'error' => 'Recurso no encontrado']);
+            exit;
+        }
+
+        // Delete physical file
+        $filePath = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/recursos/' . $row['stored_name'];
+        if (is_file($filePath)) {
+            unlink($filePath);
+        }
+
+        // Delete distribution records
+        Database::query("DELETE FROM $distTable WHERE resource_id = $resourceId");
+        // Delete resource record
+        Database::query("DELETE FROM $resTable WHERE id = $resourceId");
+
+        echo json_encode(['success' => true]);
+        break;
+
+    // -----------------------------------------------------------------------
+    case 'get_courses':
+        $classroomId = isset($_GET['classroom_id']) ? (int) $_GET['classroom_id'] : 0;
+        if ($classroomId <= 0) {
+            echo json_encode(['success' => false, 'courses' => []]);
+            exit;
+        }
+
+        $courses = AcademicManager::getClassroomCourses($classroomId);
+        $result  = [];
+        foreach ($courses as $c) {
+            $result[] = [
+                'id'    => $c['id'],
+                'code'  => $c['code'],
+                'title' => $c['title'],
+            ];
+        }
+        echo json_encode(['success' => true, 'courses' => $result]);
+        break;
+
+    // -----------------------------------------------------------------------
+    case 'get_folders':
+        $courseCode = isset($_GET['course_code']) ? trim($_GET['course_code']) : '';
+        $sessionId  = isset($_GET['session_id'])  ? (int) $_GET['session_id']  : 0;
+
+        if (empty($courseCode)) {
+            echo json_encode(['success' => false, 'folders' => []]);
+            exit;
+        }
+
+        $courseInfo = api_get_course_info($courseCode);
+        if (!$courseInfo) {
+            echo json_encode(['success' => false, 'error' => 'Curso no encontrado']);
+            exit;
+        }
+
+        require_once api_get_path(LIBRARY_PATH) . 'document.lib.php';
+
+        $courseId  = (int) $courseInfo['real_id'];
+        $docTable  = Database::get_course_table(TABLE_DOCUMENT);
+        $propTable = Database::get_course_table(TABLE_ITEM_PROPERTY);
+
+        $sql = "SELECT d.id, d.path, d.title
+                FROM $docTable d
+                INNER JOIN $propTable p
+                    ON p.ref = d.id AND p.tool = 'document' AND p.c_id = $courseId
+                WHERE d.c_id = $courseId
+                  AND d.filetype = 'folder'
+                  AND p.visibility != 2
+                  AND (d.session_id = 0 OR d.session_id = $sessionId)
+                ORDER BY d.path ASC";
+
+        $res     = Database::query($sql);
+        $folders = [['path' => '/', 'label' => '/ (raíz)']];
+        while ($f = Database::fetch_array($res, 'ASSOC')) {
+            $folders[] = [
+                'path'  => $f['path'],
+                'label' => $f['path'] . ' — ' . $f['title'],
+            ];
+        }
+
+        echo json_encode(['success' => true, 'folders' => $folders]);
+        break;
+
+    // -----------------------------------------------------------------------
+    case 'create_folder':
+        $courseCode  = isset($_POST['course_code'])  ? trim($_POST['course_code'])  : '';
+        $sessionId   = isset($_POST['session_id'])   ? (int) $_POST['session_id']   : 0;
+        $folderName  = isset($_POST['folder_name'])  ? trim($_POST['folder_name'])  : '';
+        $parentPath  = isset($_POST['parent_path'])  ? trim($_POST['parent_path'])  : '/';
+        $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
+
+        if (empty($courseCode) || empty($folderName)) {
+            echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
+            exit;
+        }
+        if (!canEditClassroomRes($classroomId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            exit;
+        }
+
+        $courseInfo = api_get_course_info($courseCode);
+        if (!$courseInfo) {
+            echo json_encode(['success' => false, 'error' => 'Curso no encontrado']);
+            exit;
+        }
+
+        require_once api_get_path(LIBRARY_PATH) . 'document.lib.php';
+        require_once api_get_path(LIBRARY_PATH) . 'fileUpload.lib.php';
+
+        $folderName  = api_replace_dangerous_char($folderName);
+        $parentPath  = rtrim($parentPath, '/');
+        $newPath     = $parentPath . '/' . $folderName;
+        $baseWorkDir = api_get_path(SYS_COURSE_PATH) . $courseInfo['path'] . '/document';
+
+        $result = create_unexisting_directory(
+            $courseInfo,
+            $userId,
+            $sessionId,
+            0,  // group
+            null,
+            $baseWorkDir,
+            $newPath,
+            $folderName,
+            1,  // visible
+            true
+        );
+
+        if ($result === false) {
+            echo json_encode(['success' => false, 'error' => 'La carpeta ya existe o no se pudo crear']);
+            exit;
+        }
+
+        echo json_encode(['success' => true, 'path' => $newPath, 'title' => $folderName]);
+        break;
+
+    // -----------------------------------------------------------------------
+    case 'distribute_resource':
+        $resourceId  = isset($_POST['resource_id'])  ? (int) $_POST['resource_id']  : 0;
+        $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
+        $courseCode  = isset($_POST['course_code'])  ? trim($_POST['course_code'])  : '';
+        $sessionId   = isset($_POST['session_id'])   ? (int) $_POST['session_id']   : 0;
+        $folderPath  = isset($_POST['folder_path'])  ? trim($_POST['folder_path'])  : '/';
+
+        if ($resourceId <= 0 || empty($courseCode)) {
+            echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
+            exit;
+        }
+        if (!canEditClassroomRes($classroomId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            exit;
+        }
+
+        // Load resource
+        $resource = Database::fetch_array(
+            Database::query("SELECT * FROM $resTable WHERE id = $resourceId AND classroom_id = $classroomId LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$resource) {
+            echo json_encode(['success' => false, 'error' => 'Recurso no encontrado']);
+            exit;
+        }
+
+        $courseInfo = api_get_course_info($courseCode);
+        if (!$courseInfo) {
+            echo json_encode(['success' => false, 'error' => 'Curso no encontrado']);
+            exit;
+        }
+
+        require_once api_get_path(LIBRARY_PATH) . 'document.lib.php';
+        require_once api_get_path(LIBRARY_PATH) . 'fileUpload.lib.php';
+
+        $srcFile  = api_get_path(SYS_UPLOAD_PATH) . 'plugins/school/recursos/' . $resource['stored_name'];
+        if (!is_file($srcFile)) {
+            echo json_encode(['success' => false, 'error' => 'Archivo fuente no encontrado en el servidor']);
+            exit;
+        }
+
+        $baseWorkDir = api_get_path(SYS_COURSE_PATH) . $courseInfo['path'] . '/document';
+        $folderPath  = '/' . ltrim($folderPath, '/');
+        $folderPath  = rtrim($folderPath, '/');
+        if (empty($folderPath)) $folderPath = '/';
+
+        // Ensure the destination folder is created on disk
+        $destDir = $baseWorkDir . ($folderPath === '/' ? '' : $folderPath);
+        if (!is_dir($destDir)) {
+            mkdir($destDir, api_get_permissions_for_new_directories(), true);
+        }
+
+        // Build destination filename (avoid collisions)
+        $ext       = strtolower(pathinfo($resource['filename'], PATHINFO_EXTENSION));
+        $baseName  = pathinfo($resource['filename'], PATHINFO_FILENAME);
+        $baseName  = api_replace_dangerous_char($baseName);
+        $destFile  = $destDir . '/' . $baseName . ($ext ? '.' . $ext : '');
+        $docPath   = ($folderPath === '/' ? '' : $folderPath) . '/' . $baseName . ($ext ? '.' . $ext : '');
+
+        // Handle collision
+        $counter = 1;
+        while (file_exists($destFile)) {
+            $destFile = $destDir . '/' . $baseName . '_' . $counter . ($ext ? '.' . $ext : '');
+            $docPath  = ($folderPath === '/' ? '' : $folderPath) . '/' . $baseName . '_' . $counter . ($ext ? '.' . $ext : '');
+            $counter++;
+        }
+
+        if (!copy($srcFile, $destFile)) {
+            echo json_encode(['success' => false, 'error' => 'No se pudo copiar el archivo al curso']);
+            exit;
+        }
+
+        $title      = pathinfo($docPath, PATHINFO_BASENAME);
+        $docId      = add_document(
+            $courseInfo,
+            $docPath,
+            'file',
+            filesize($destFile),
+            $title,
+            null,
+            0,
+            true,
+            0,
+            $sessionId,
+            $userId
+        );
+
+        if (!$docId) {
+            // File was copied but DB insert failed — clean up
+            @unlink($destFile);
+            echo json_encode(['success' => false, 'error' => 'No se pudo registrar el documento en el curso']);
+            exit;
+        }
+
+        // Get session name
+        $sessionName = '';
+        if ($sessionId > 0) {
+            $sInfo = api_get_session_info($sessionId);
+            $sessionName = $sInfo ? $sInfo['name'] : '';
+        }
+
+        // Record distribution
+        $distId = Database::insert($distTable, [
+            'resource_id'    => $resourceId,
+            'course_code'    => Database::escape_string($courseCode),
+            'course_title'   => Database::escape_string($courseInfo['title']),
+            'session_id'     => $sessionId,
+            'session_name'   => Database::escape_string($sessionName),
+            'folder_path'    => Database::escape_string($folderPath),
+            'document_id'    => $docId,
+            'distributed_by' => $userId,
+            'distributed_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        echo json_encode([
+            'success'      => true,
+            'dist_id'      => $distId,
+            'course_title' => $courseInfo['title'],
+            'session_name' => $sessionName,
+            'folder_path'  => $folderPath,
+        ]);
+        break;
+
+    // -----------------------------------------------------------------------
+    case 'get_distributions':
+        $resourceId  = isset($_GET['resource_id'])  ? (int) $_GET['resource_id']  : 0;
+        $classroomId = isset($_GET['classroom_id']) ? (int) $_GET['classroom_id'] : 0;
+
+        if ($resourceId <= 0) {
+            echo json_encode(['success' => false, 'distributions' => []]);
+            exit;
+        }
+
+        // Verify resource belongs to classroom
+        $res = Database::fetch_array(
+            Database::query("SELECT id FROM $resTable WHERE id = $resourceId AND classroom_id = $classroomId LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$res) {
+            echo json_encode(['success' => false, 'error' => 'Recurso no encontrado']);
+            exit;
+        }
+
+        $dRes  = Database::query(
+            "SELECT d.*, u.firstname, u.lastname
+             FROM $distTable d
+             LEFT JOIN " . Database::get_main_table(TABLE_MAIN_USER) . " u ON u.id = d.distributed_by
+             WHERE d.resource_id = $resourceId
+             ORDER BY d.distributed_at DESC"
+        );
+        $dists = [];
+        while ($d = Database::fetch_array($dRes, 'ASSOC')) {
+            $dists[] = [
+                'id'           => $d['id'],
+                'course_title' => $d['course_title'],
+                'session_name' => $d['session_name'],
+                'folder_path'  => $d['folder_path'],
+                'distributed_by'   => trim($d['firstname'] . ' ' . $d['lastname']),
+                'distributed_at'   => date('d/m/Y H:i', strtotime($d['distributed_at'])),
+            ];
+        }
+
+        echo json_encode(['success' => true, 'distributions' => $dists]);
+        break;
+
+    // -----------------------------------------------------------------------
+    default:
+        echo json_encode(['success' => false, 'error' => 'Acción desconocida']);
+        break;
+}

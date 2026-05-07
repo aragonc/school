@@ -61,6 +61,8 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_CLASSROOM_PLAN             = 'plugin_school_classroom_plan';
     const TABLE_SCHOOL_CLASSROOM_SCHEDULE         = 'plugin_school_classroom_schedule';
     const TABLE_SCHOOL_CLASSROOM_FULLDAY          = 'plugin_school_classroom_fullday';
+    const TABLE_SCHOOL_CLASSROOM_RESOURCE         = 'plugin_school_classroom_resource';
+    const TABLE_SCHOOL_CLASSROOM_RESOURCE_DIST    = 'plugin_school_classroom_resource_dist';
     const TABLE_SCHOOL_ATTENDANCE_NONWORKING      = 'plugin_school_attendance_nonworking';
     const TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER   = 'plugin_school_attendance_schedule_user';
     const TABLE_SCHOOL_SUPPORT_TICKET             = 'plugin_school_support_ticket';
@@ -1441,6 +1443,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]\n".
             "RewriteRule ^my-aula/mis-alumnos$ plugin/school/src/classroom/mis_alumnos.php [L,QSA]\n".
             "RewriteRule ^my-aula/horario$ plugin/school/src/classroom/schedule.php [L,QSA]\n".
+            "RewriteRule ^my-aula/recursos$ plugin/school/src/classroom/distribuir_recursos.php [L,QSA]\n".
             "RewriteRule ^support$ plugin/school/src/support/list.php [L]\n".
             "RewriteRule ^support/view$ plugin/school/src/support/view.php [L,QSA]\n".
             "RewriteRule ^support/settings$ plugin/school/src/support/settings.php [L]\n".
@@ -2653,7 +2656,7 @@ class SchoolPlugin extends Plugin
 
         // Mi Aula: visible for teachers, students and admin (NOT secretary)
         if ($this->get('show_my_aula') !== 'false' && !$isSecretary && ($isAdmin || $isTeacherUser || $isStudent) && $this->getSchoolSetting('module_my_aula') !== '0') {
-            $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos', 'my-classroom-schedule']);
+            $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos', 'my-classroom-schedule', 'my-classroom-recursos']);
 
             $myAulaItems = [
                 [
@@ -2681,6 +2684,16 @@ class SchoolPlugin extends Plugin
                 'url'     => '/my-aula/horario',
                 'current' => $currentSection === 'my-classroom-schedule',
             ];
+
+            // "Distribuir recursos" only for admin and teacher (tutor/docente)
+            if (api_is_platform_admin() || $isTeacherUser) {
+                $myAulaItems[] = [
+                    'name'    => 'my-aula-recursos',
+                    'label'   => 'Distribuir recursos',
+                    'url'     => '/my-aula/recursos',
+                    'current' => $currentSection === 'my-classroom-recursos',
+                ];
+            }
 
             $menus[] = [
                 'id'      => 12,
