@@ -33,7 +33,7 @@
                             </span>
                         </td>
                         {% if show_checkin_time %}
-                        <td>{{ record.check_in|date('H:i:s') }}</td>
+                        <td class="text-muted">{% if record.nw_type is defined %}—{% else %}{{ record.check_in|date('H:i:s') }}{% endif %}</td>
                         {% endif %}
                         <td>
                             {% if record.nw_type is defined %}
@@ -46,14 +46,16 @@
                                 <span class="badge badge-danger">{{ 'Absent'|get_plugin_lang('SchoolPlugin') }}</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if record.method == 'qr' %}
+                        <td class="text-muted">
+                            {% if record.nw_type is defined %}
+                                —
+                            {% elseif record.method == 'qr' %}
                                 <i class="fas fa-qrcode mr-1"></i> QR
                             {% else %}
                                 <i class="fas fa-hand-pointer mr-1"></i> Manual
                             {% endif %}
                         </td>
-                        <td class="text-muted">{{ record.schedule_name ?? '-' }}</td>
+                        <td class="text-muted">{% if record.nw_type is defined %}—{% else %}{{ record.schedule_name ?? '-' }}{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
