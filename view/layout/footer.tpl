@@ -31,7 +31,7 @@
                     {{ 'SuspensionNoticeTitle'|get_plugin_lang('SchoolPlugin') }}
                 </h5>
             </div>
-            <div class="modal-body p-4" style="font-size:15px; line-height:1.7; color:#2c3e50;">
+            <div class="modal-body p-4" style="font-size:15px; line-height:1.7; color:#2c3e50; max-height:60vh; overflow-y:auto;">
                 {{ suspension_notice_message|raw }}
             </div>
             <div class="modal-footer">
