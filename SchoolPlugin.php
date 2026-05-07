@@ -4810,7 +4810,7 @@ class SchoolPlugin extends Plugin
     public function addNonWorkingDay(string $type, string $startDate, string $endDate, string $description): int
     {
         $this->ensureNonWorkingTable();
-        if (!in_array($type, ['holiday', 'vacation'])) $type = 'holiday';
+        if (!in_array($type, ['holiday', 'vacation', 'suspension', 'free_day'])) $type = 'holiday';
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
         return (int) Database::insert($table, [
             'type'        => $type,
@@ -4827,7 +4827,7 @@ class SchoolPlugin extends Plugin
     public function updateNonWorkingDay(int $id, string $type, string $startDate, string $endDate, string $description): bool
     {
         $this->ensureNonWorkingTable();
-        if (!in_array($type, ['holiday', 'vacation'])) $type = 'holiday';
+        if (!in_array($type, ['holiday', 'vacation', 'suspension', 'free_day'])) $type = 'holiday';
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_NONWORKING);
         return (bool) Database::update(
             $table,
