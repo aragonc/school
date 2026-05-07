@@ -19,9 +19,11 @@
             {% endif %}
         </div>
         <div class="d-flex" style="gap:8px;">
+            {% if can_upload %}
             <button type="button" class="btn btn-sm btn-primary" id="btnUploadResource">
                 <i class="fas fa-cloud-upload-alt mr-1"></i>Subir archivo
             </button>
+            {% endif %}
             <a href="/my-aula" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-arrow-left mr-1"></i>Mi Aula
             </a>
@@ -68,7 +70,8 @@
     </div>
     {% else %}
 
-    {# ---- Upload drop zone ---- #}
+    {% if can_upload %}
+    {# ---- Upload drop zone (tutor / admin only) ---- #}
     <div id="dropZone" class="border-dashed rounded mb-4 text-center py-4 px-3"
          style="border:2px dashed #adb5bd; background:#f8f9fc; cursor:pointer; transition:border-color .2s;"
          onclick="document.getElementById('fileInputHidden').click()">
@@ -78,7 +81,6 @@
         <input type="file" id="fileInputHidden" multiple style="display:none;"
                accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.mp3,.mp4,.ogg,.wav,.webm">
     </div>
-
     {# ---- Upload progress bar ---- #}
     <div id="uploadProgress" class="mb-3" style="display:none;">
         <div class="progress" style="height:8px;">
@@ -87,6 +89,7 @@
         </div>
         <small class="text-muted mt-1 d-block" id="uploadProgressLabel">Subiendo...</small>
     </div>
+    {% endif %}
 
     {# ---- Resources list ---- #}
     <div class="card shadow-sm border-0">
@@ -129,7 +132,16 @@
                                     </span>
                                 </td>
                                 <td class="align-middle">
-                                    <div class="font-weight-semibold">{{ r.title }}</div>
+                                    <div class="res-title-wrap" id="title-wrap-{{ r.id }}">
+                                        <span class="res-title font-weight-semibold" id="title-text-{{ r.id }}">{{ r.title }}</span>
+                                        <input type="text" class="form-control form-control-sm res-title-input d-none"
+                                               id="title-input-{{ r.id }}" value="{{ r.title }}"
+                                               maxlength="255" style="display:none!important; max-width:280px;">
+                                        <span class="res-rename-actions d-none" id="title-actions-{{ r.id }}" style="white-space:nowrap;">
+                                            <button class="btn btn-xs btn-primary ml-1 btn-rename-save" data-id="{{ r.id }}" title="Guardar"><i class="fas fa-check"></i></button>
+                                            <button class="btn btn-xs btn-outline-secondary ml-1 btn-rename-cancel" data-id="{{ r.id }}" title="Cancelar"><i class="fas fa-times"></i></button>
+                                        </span>
+                                    </div>
                                     <small class="text-muted">{{ r.filename }}</small>
                                     {% if r.uploader_name %}
                                     <br><small class="text-muted"><i class="fas fa-user mr-1"></i>{{ r.uploader_name }} &mdash; {{ r.created_at|date("d/m/Y H:i") }}</small>
@@ -149,6 +161,13 @@
                                        title="Vista previa / descargar">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    {% if is_admin or is_tutor or r.uploaded_by == current_user_id %}
+                                    <button class="btn btn-xs btn-outline-warning mr-1 btn-rename-start"
+                                            data-id="{{ r.id }}"
+                                            title="Renombrar">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                    {% endif %}
                                     <button class="btn btn-xs btn-outline-info mr-1 btn-view-dists"
                                             data-id="{{ r.id }}" data-title="{{ r.title }}"
                                             title="Ver distribuciones">
@@ -159,11 +178,13 @@
                                             title="Distribuir a curso">
                                         <i class="fas fa-share-alt"></i>
                                     </button>
+                                    {% if is_admin or is_tutor or r.uploaded_by == current_user_id %}
                                     <button class="btn btn-xs btn-outline-danger btn-delete-resource"
                                             data-id="{{ r.id }}" data-title="{{ r.title }}"
                                             title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -323,14 +344,17 @@
 (function () {
     var AJAX_URL    = '{{ ajax_url }}';
     var CLASSROOM   = {{ classroom_id }};
+    var CAN_UPLOAD  = {{ can_upload ? 'true' : 'false' }};
 
-    // ---- drag-and-drop ----
-    var dropZone = document.getElementById('dropZone');
-    dropZone.addEventListener('dragover',  function(e){ e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', function()  { dropZone.classList.remove('drag-over'); });
-    dropZone.addEventListener('drop',      function(e){ e.preventDefault(); dropZone.classList.remove('drag-over'); uploadFiles(e.dataTransfer.files); });
-    document.getElementById('btnUploadResource').addEventListener('click', function(){ document.getElementById('fileInputHidden').click(); });
-    document.getElementById('fileInputHidden').addEventListener('change', function(){ uploadFiles(this.files); this.value=''; });
+    // ---- drag-and-drop (only when tutor/admin) ----
+    if (CAN_UPLOAD) {
+        var dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover',  function(e){ e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', function()  { dropZone.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop',      function(e){ e.preventDefault(); dropZone.classList.remove('drag-over'); uploadFiles(e.dataTransfer.files); });
+        document.getElementById('btnUploadResource').addEventListener('click', function(){ document.getElementById('fileInputHidden').click(); });
+        document.getElementById('fileInputHidden').addEventListener('change', function(){ uploadFiles(this.files); this.value=''; });
+    }
 
     // ---- upload files ----
     function uploadFiles(files) {
@@ -419,7 +443,14 @@
         tr.setAttribute('data-type', r.file_type);
         tr.setAttribute('data-title', r.title);
         tr.innerHTML = '<td class="text-center align-middle">' + fileTypeIcon(r.file_type) + '</td>'
-            + '<td class="align-middle"><div class="font-weight-semibold">' + escHtml(r.title) + '</div>'
+            + '<td class="align-middle">'
+            + '<div class="res-title-wrap" id="title-wrap-' + r.id + '">'
+            + '<span class="res-title font-weight-semibold" id="title-text-' + r.id + '">' + escHtml(r.title) + '</span>'
+            + '<input type="text" class="form-control form-control-sm res-title-input" id="title-input-' + r.id + '" value="' + escHtml(r.title) + '" maxlength="255" style="display:none!important; max-width:280px;">'
+            + '<span class="res-rename-actions d-none" id="title-actions-' + r.id + '" style="white-space:nowrap;">'
+            + '<button class="btn btn-xs btn-primary ml-1 btn-rename-save" data-id="' + r.id + '" title="Guardar"><i class="fas fa-check"></i></button>'
+            + '<button class="btn btn-xs btn-outline-secondary ml-1 btn-rename-cancel" data-id="' + r.id + '" title="Cancelar"><i class="fas fa-times"></i></button>'
+            + '</span></div>'
             + '<small class="text-muted">' + escHtml(r.filename) + '</small>'
             + '<br><small class="text-muted"><i class="fas fa-clock mr-1"></i>' + escHtml(r.created_at) + '</small></td>'
             + '<td class="text-center align-middle"><span class="badge badge-light text-uppercase small">' + r.file_type + '</span></td>'
@@ -427,9 +458,10 @@
             + '<td class="text-center align-middle"><span class="badge badge-light dist-count-badge" id="dist-count-' + r.id + '">0</span></td>'
             + '<td class="text-right align-middle" style="white-space:nowrap;">'
             + '<a href="' + r.web_url + '" target="_blank" class="btn btn-xs btn-outline-secondary mr-1" title="Descargar"><i class="fas fa-eye"></i></a>'
+            + (CAN_UPLOAD ? '<button class="btn btn-xs btn-outline-warning mr-1 btn-rename-start" data-id="' + r.id + '" title="Renombrar"><i class="fas fa-pencil-alt"></i></button>' : '')
             + '<button class="btn btn-xs btn-outline-info mr-1 btn-view-dists" data-id="' + r.id + '" data-title="' + escHtml(r.title) + '" title="Ver distribuciones"><i class="fas fa-list-ul"></i></button>'
             + '<button class="btn btn-xs btn-success mr-1 btn-distribute" data-id="' + r.id + '" data-title="' + escHtml(r.title) + '" title="Distribuir"><i class="fas fa-share-alt"></i></button>'
-            + '<button class="btn btn-xs btn-outline-danger btn-delete-resource" data-id="' + r.id + '" data-title="' + escHtml(r.title) + '" title="Eliminar"><i class="fas fa-trash"></i></button>'
+            + (CAN_UPLOAD ? '<button class="btn btn-xs btn-outline-danger btn-delete-resource" data-id="' + r.id + '" data-title="' + escHtml(r.title) + '" title="Eliminar"><i class="fas fa-trash"></i></button>' : '')
             + '</td>';
         tbody.insertBefore(tr, tbody.firstChild);
     }
@@ -455,12 +487,92 @@
         });
     });
 
+    // ---- Rename: start editing ----
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-rename-start');
+        if (!btn) return;
+        var id = btn.getAttribute('data-id');
+        enterRenameMode(id);
+    });
+
+    function enterRenameMode(id) {
+        var textEl    = document.getElementById('title-text-' + id);
+        var inputEl   = document.getElementById('title-input-' + id);
+        var actionsEl = document.getElementById('title-actions-' + id);
+        textEl.style.display    = 'none';
+        inputEl.style.removeProperty('display');   // override the inline !important
+        inputEl.style.display   = 'inline-block';
+        actionsEl.classList.remove('d-none');
+        inputEl.focus();
+        inputEl.select();
+    }
+
+    function exitRenameMode(id, newTitle) {
+        var textEl    = document.getElementById('title-text-' + id);
+        var inputEl   = document.getElementById('title-input-' + id);
+        var actionsEl = document.getElementById('title-actions-' + id);
+        if (newTitle !== undefined) {
+            textEl.textContent = newTitle;
+            // Update data-title on distribute / view-dists buttons
+            var row = document.getElementById('res-row-' + id);
+            if (row) {
+                row.setAttribute('data-title', newTitle);
+                var distBtn = row.querySelector('.btn-distribute');
+                if (distBtn) distBtn.setAttribute('data-title', newTitle);
+                var viewBtn = row.querySelector('.btn-view-dists');
+                if (viewBtn) viewBtn.setAttribute('data-title', newTitle);
+            }
+        }
+        inputEl.style.display = '';   // let the !important hide it again
+        textEl.style.display  = '';
+        actionsEl.classList.add('d-none');
+    }
+
+    // ---- Rename: save ----
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-rename-save');
+        if (!btn) return;
+        var id       = btn.getAttribute('data-id');
+        var inputEl  = document.getElementById('title-input-' + id);
+        var newTitle = inputEl.value.trim();
+        if (!newTitle) { inputEl.focus(); return; }
+
+        ajaxPost({action:'rename_resource', resource_id: id, classroom_id: CLASSROOM, title: newTitle}, function(resp) {
+            if (!resp.success) { alert('Error: ' + (resp.error || 'No se pudo renombrar')); return; }
+            exitRenameMode(id, resp.title);
+        });
+    });
+
+    // ---- Rename: cancel ----
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-rename-cancel');
+        if (!btn) return;
+        var id = btn.getAttribute('data-id');
+        var inputEl = document.getElementById('title-input-' + id);
+        // Restore original value
+        inputEl.value = document.getElementById('title-text-' + id).textContent;
+        exitRenameMode(id);
+    });
+
+    // ---- Rename: confirm with Enter, cancel with Escape ----
+    document.addEventListener('keydown', function(e) {
+        if (!e.target.classList.contains('res-title-input')) return;
+        var id = e.target.id.replace('title-input-', '');
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.querySelector('.btn-rename-save[data-id="' + id + '"]').click();
+        } else if (e.key === 'Escape') {
+            document.querySelector('.btn-rename-cancel[data-id="' + id + '"]').click();
+        }
+    });
+
     // ---- Open distribute modal ----
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.btn-distribute');
         if (!btn) return;
         var id    = btn.getAttribute('data-id');
-        var title = btn.getAttribute('data-title');
+        var titleEl = document.getElementById('title-text-' + id);
+        var title = titleEl ? titleEl.textContent : btn.getAttribute('data-title');
 
         document.getElementById('distResourceId').value = id;
         document.getElementById('distResourceTitle').textContent = title;

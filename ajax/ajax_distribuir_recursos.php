@@ -29,7 +29,10 @@ $action = $_REQUEST['action'] ?? '';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function canEditClassroomRes(int $classroomId, int $userId, bool $isAdmin): bool
+/**
+ * Returns true if the user is admin or tutor/supervisor of the classroom.
+ */
+function isTutorOfClassroom(int $classroomId, int $userId, bool $isAdmin): bool
 {
     if ($isAdmin) return true;
     if ($classroomId <= 0 || $userId <= 0) return false;
@@ -45,20 +48,60 @@ function canEditClassroomRes(int $classroomId, int $userId, bool $isAdmin): bool
                          LIMIT 1"),
         'ASSOC'
     );
-    // Also allow teachers who have a course in the classroom
-    if (empty($row)) {
-        $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
-        $ctTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER);
-        $row2 = Database::fetch_array(
-            Database::query("SELECT cc.id FROM $ccTable cc
-                             INNER JOIN $ctTable ct ON ct.classroom_course_id = cc.id
-                             WHERE cc.classroom_id = $classroomId AND ct.user_id = $userId
-                             LIMIT 1"),
-            'ASSOC'
-        );
-        return !empty($row2);
-    }
-    return true;
+    return !empty($row);
+}
+
+/**
+ * Upload: only admin or tutor of the classroom.
+ */
+function canUploadToClassroom(int $classroomId, int $userId, bool $isAdmin): bool
+{
+    return isTutorOfClassroom($classroomId, $userId, $isAdmin);
+}
+
+/**
+ * Distribute/create-folder: admin and tutor can use any course;
+ * a plain docente can only use courses they are personally assigned to.
+ */
+function canDistributeToCourse(int $classroomId, string $courseCode, int $userId, bool $isAdmin): bool
+{
+    if (isTutorOfClassroom($classroomId, $userId, $isAdmin)) return true;
+    if ($classroomId <= 0 || $userId <= 0 || empty($courseCode)) return false;
+
+    $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+    $ctTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER);
+    $cTable  = Database::get_main_table(TABLE_MAIN_COURSE);
+
+    $code = Database::escape_string($courseCode);
+    $row  = Database::fetch_array(
+        Database::query("SELECT cc.id
+                         FROM $ccTable cc
+                         INNER JOIN $ctTable ct ON ct.classroom_course_id = cc.id
+                         INNER JOIN $cTable c ON c.id = cc.course_id
+                         WHERE cc.classroom_id = $classroomId
+                           AND c.code = '$code'
+                           AND ct.teacher_id = $userId
+                         LIMIT 1"),
+        'ASSOC'
+    );
+    return !empty($row);
+}
+
+/** Legacy alias — any access to this classroom (tutor or assigned teacher). */
+function canEditClassroomRes(int $classroomId, int $userId, bool $isAdmin): bool
+{
+    if (isTutorOfClassroom($classroomId, $userId, $isAdmin)) return true;
+    if ($classroomId <= 0 || $userId <= 0) return false;
+    $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+    $ctTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER);
+    $row = Database::fetch_array(
+        Database::query("SELECT cc.id FROM $ccTable cc
+                         INNER JOIN $ctTable ct ON ct.classroom_course_id = cc.id
+                         WHERE cc.classroom_id = $classroomId AND ct.teacher_id = $userId
+                         LIMIT 1"),
+        'ASSOC'
+    );
+    return !empty($row);
 }
 
 function formatFileSizeAjax(int $bytes): string
@@ -90,10 +133,43 @@ $allowedMimes = [
 switch ($action) {
 
     // -----------------------------------------------------------------------
+    case 'rename_resource':
+        $resourceId  = isset($_POST['resource_id'])  ? (int) $_POST['resource_id']  : 0;
+        $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
+        $newTitle    = isset($_POST['title'])         ? trim($_POST['title'])         : '';
+
+        if ($resourceId <= 0 || empty($newTitle)) {
+            echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
+            exit;
+        }
+        if (!canEditClassroomRes($classroomId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'Sin permisos en esta aula']);
+            exit;
+        }
+
+        $row = Database::fetch_array(
+            Database::query("SELECT id, uploaded_by FROM $resTable WHERE id = $resourceId AND classroom_id = $classroomId LIMIT 1"),
+            'ASSOC'
+        );
+        if (!$row) {
+            echo json_encode(['success' => false, 'error' => 'Recurso no encontrado']);
+            exit;
+        }
+        if (!isTutorOfClassroom($classroomId, $userId, $isAdmin) && (int)$row['uploaded_by'] !== $userId) {
+            echo json_encode(['success' => false, 'error' => 'Solo puedes renombrar tus propios archivos']);
+            exit;
+        }
+
+        $safe = Database::escape_string($newTitle);
+        Database::query("UPDATE $resTable SET title = '$safe' WHERE id = $resourceId");
+        echo json_encode(['success' => true, 'title' => $newTitle]);
+        break;
+
+    // -----------------------------------------------------------------------
     case 'upload_resource':
         $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
         if ($classroomId <= 0 || !canEditClassroomRes($classroomId, $userId, $isAdmin)) {
-            echo json_encode(['success' => false, 'error' => 'Sin permisos para esta aula']);
+            echo json_encode(['success' => false, 'error' => 'Sin permisos para subir archivos en esta aula']);
             exit;
         }
 
@@ -180,7 +256,7 @@ switch ($action) {
         $classroomId = isset($_POST['classroom_id']) ? (int) $_POST['classroom_id'] : 0;
 
         if ($resourceId <= 0 || !canEditClassroomRes($classroomId, $userId, $isAdmin)) {
-            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+            echo json_encode(['success' => false, 'error' => 'Sin permisos en esta aula']);
             exit;
         }
 
@@ -191,6 +267,10 @@ switch ($action) {
 
         if (!$row) {
             echo json_encode(['success' => false, 'error' => 'Recurso no encontrado']);
+            exit;
+        }
+        if (!isTutorOfClassroom($classroomId, $userId, $isAdmin) && (int)$row['uploaded_by'] !== $userId) {
+            echo json_encode(['success' => false, 'error' => 'Solo puedes eliminar tus propios archivos']);
             exit;
         }
 
@@ -284,8 +364,8 @@ switch ($action) {
             echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
             exit;
         }
-        if (!canEditClassroomRes($classroomId, $userId, $isAdmin)) {
-            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+        if (!canDistributeToCourse($classroomId, $courseCode, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'No tienes permiso para crear carpetas en ese curso']);
             exit;
         }
 
@@ -336,8 +416,8 @@ switch ($action) {
             echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
             exit;
         }
-        if (!canEditClassroomRes($classroomId, $userId, $isAdmin)) {
-            echo json_encode(['success' => false, 'error' => 'Sin permisos']);
+        if (!canDistributeToCourse($classroomId, $courseCode, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'error' => 'No tienes permiso para distribuir a ese curso']);
             exit;
         }
 

@@ -138,8 +138,37 @@ if ($classroomId > 0) {
     }
 }
 
-// Get courses linked to this classroom (for distribution modal)
-$classroomCourses = $classroomId > 0 ? AcademicManager::getClassroomCourses($classroomId) : [];
+// ---- Permission rules ----
+// Any teacher (including plain docentes) can upload, rename and delete their own files.
+// Tutor and admin can manage all files in the classroom.
+// Distribution: tutor/admin → any course; plain docente → only their assigned courses.
+$canUpload = $isAdmin || $isTeacher; // all teachers can upload
+
+// Get ALL courses linked to this classroom
+$allClassroomCourses = $classroomId > 0 ? AcademicManager::getClassroomCourses($classroomId) : [];
+
+// For a non-tutor teacher: filter to only their assigned courses
+$classroomCourses = $allClassroomCourses;
+$teacherCourseIds = []; // course IDs the current teacher can distribute to
+
+if (!$isAdmin && !$isTutor && $isTeacher && $classroomId > 0) {
+    $ccTable2 = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+    $ctTable2 = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_COURSE_TEACHER);
+    $tcRes = Database::query(
+        "SELECT cc.course_id
+         FROM $ccTable2 cc
+         INNER JOIN $ctTable2 ct ON ct.classroom_course_id = cc.id
+         WHERE cc.classroom_id = $classroomId AND ct.teacher_id = $userId"
+    );
+    while ($tcRow = Database::fetch_array($tcRes, 'ASSOC')) {
+        $teacherCourseIds[] = (int) $tcRow['course_id'];
+    }
+    // Restrict course list shown to teacher
+    $classroomCourses = array_filter($allClassroomCourses, function($c) use ($teacherCourseIds) {
+        return in_array((int)$c['id'], $teacherCourseIds, true);
+    });
+    $classroomCourses = array_values($classroomCourses);
+}
 
 // Get session for this classroom
 $sessionId = 0;
@@ -159,14 +188,17 @@ function formatFileSize(int $bytes): string
     return $bytes . ' B';
 }
 
-$plugin->assign('classroom',         $classroom);
-$plugin->assign('classroom_id',      $classroomId);
-$plugin->assign('classrooms_list',   $classroomsList);
-$plugin->assign('is_admin',          $isAdmin);
-$plugin->assign('is_tutor',          $isTutor);
-$plugin->assign('resources',         $resources);
-$plugin->assign('classroom_courses', $classroomCourses);
-$plugin->assign('session_id',        $sessionId);
+$plugin->assign('classroom',          $classroom);
+$plugin->assign('classroom_id',       $classroomId);
+$plugin->assign('classrooms_list',    $classroomsList);
+$plugin->assign('is_admin',           $isAdmin);
+$plugin->assign('is_tutor',           $isTutor);
+$plugin->assign('can_upload',         $canUpload);
+$plugin->assign('current_user_id',    $userId);
+$plugin->assign('resources',          $resources);
+$plugin->assign('classroom_courses',  $classroomCourses);
+$plugin->assign('teacher_course_ids', $teacherCourseIds);
+$plugin->assign('session_id',         $sessionId);
 $plugin->assign('active_year',       $activeYear);
 $plugin->assign('ajax_url',          api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_distribuir_recursos.php');
 $plugin->assign('web_upload_path',   api_get_path(WEB_UPLOAD_PATH) . 'plugins/school/recursos/');
