@@ -132,8 +132,7 @@
                         <div class="res-title-wrap" id="title-wrap-{{ r.id }}">
                             <span class="res-title font-weight-semibold" id="title-text-{{ r.id }}">{{ r.title }}</span>
                             <input type="text" class="form-control form-control-sm res-title-input"
-                                   id="title-input-{{ r.id }}" value="{{ r.title }}" maxlength="255"
-                                   style="display:none!important; max-width:260px;">
+                                   id="title-input-{{ r.id }}" value="{{ r.title }}" maxlength="255">
                             <span class="res-rename-actions d-none" id="title-actions-{{ r.id }}">
                                 <button class="btn btn-xs btn-primary ml-1 btn-rename-save" data-id="{{ r.id }}"><i class="fas fa-check"></i></button>
                                 <button class="btn btn-xs btn-outline-secondary ml-1 btn-rename-cancel" data-id="{{ r.id }}"><i class="fas fa-times"></i></button>
@@ -330,8 +329,7 @@
 #dropZone.drag-over { border-color:#4e73df!important; background:#eef0fa!important; }
 .btn-xs { padding:2px 7px; font-size:12px; }
 .font-weight-semibold { font-weight:600; }
-.res-title-input { display:none!important; }
-.res-title-input.editing { display:inline-block!important; }
+.res-title-input { display:none; max-width:260px; }
 </style>
 
 <script>
@@ -420,7 +418,7 @@
             + '<td class="align-middle">'
             + '<div class="res-title-wrap" id="title-wrap-'+r.id+'">'
             + '<span class="res-title font-weight-semibold" id="title-text-'+r.id+'">' + escHtml(r.title) + '</span>'
-            + '<input type="text" class="form-control form-control-sm res-title-input" id="title-input-'+r.id+'" value="'+escHtml(r.title)+'" maxlength="255" style="display:none!important; max-width:260px;">'
+            + '<input type="text" class="form-control form-control-sm res-title-input" id="title-input-'+r.id+'" value="'+escHtml(r.title)+'" maxlength="255">'
             + '<span class="res-rename-actions d-none" id="title-actions-'+r.id+'">'
             + '<button class="btn btn-xs btn-primary ml-1 btn-rename-save" data-id="'+r.id+'"><i class="fas fa-check"></i></button>'
             + '<button class="btn btn-xs btn-outline-secondary ml-1 btn-rename-cancel" data-id="'+r.id+'"><i class="fas fa-times"></i></button>'
