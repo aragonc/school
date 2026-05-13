@@ -416,6 +416,146 @@ switch ($action) {
         echo json_encode(['success' => true]);
         break;
 
+    case 'get_chamilo_activities':
+        $registroId = (int) ($_GET['registro_id'] ?? 0);
+        if ($registroId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'registro_id required']);
+            exit;
+        }
+
+        $rTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUXILIAR);
+        $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $cTable  = Database::get_main_table(TABLE_MAIN_COURSE);
+
+        $regRow = Database::fetch_array(Database::query(
+            "SELECT c.id AS course_c_id FROM $rTable r
+             INNER JOIN $ccTable cc ON cc.id = r.classroom_course_id
+             INNER JOIN $cTable c ON c.id = cc.course_id
+             WHERE r.id = $registroId LIMIT 1"
+        ), 'ASSOC');
+
+        if (!$regRow) {
+            echo json_encode(['success' => false, 'message' => 'Registro no encontrado']);
+            exit;
+        }
+
+        $cId = (int) $regRow['course_c_id'];
+
+        // Exercises
+        $qTable  = Database::get_course_table(TABLE_QUIZ_TEST);
+        $exRes   = Database::query(
+            "SELECT iid AS id, title FROM $qTable WHERE c_id = $cId AND active = 1 ORDER BY iid DESC"
+        );
+        $exercises = [];
+        while ($row = Database::fetch_array($exRes, 'ASSOC')) {
+            $exercises[] = ['id' => (int) $row['id'], 'title' => $row['title']];
+        }
+
+        // Tasks (student publications with grading enabled)
+        $spTable  = Database::get_course_table(TABLE_STUDENT_PUBLICATION);
+        $spaTable = Database::get_course_table(TABLE_STUDENT_PUBLICATION_ASSIGNMENT);
+        $taskRes  = Database::query(
+            "SELECT sp.iid AS id, sp.title
+             FROM $spTable sp
+             INNER JOIN $spaTable spa ON spa.c_id = sp.c_id AND spa.publication_id = sp.id
+             WHERE sp.c_id = $cId AND sp.parent_id = 0 AND sp.active = 1 AND spa.enable_qualification = 1
+             ORDER BY sp.iid DESC"
+        );
+        $tasks = [];
+        while ($row = Database::fetch_array($taskRes, 'ASSOC')) {
+            $tasks[] = ['id' => (int) $row['id'], 'title' => $row['title']];
+        }
+
+        echo json_encode(['success' => true, 'exercises' => $exercises, 'tasks' => $tasks]);
+        break;
+
+    case 'get_activity_grades':
+        $registroId  = (int) ($_GET['registro_id'] ?? 0);
+        $type        = $_GET['type'] ?? 'exercise';
+        $activityId  = (int) ($_GET['activity_id'] ?? 0);
+
+        if ($registroId <= 0 || $activityId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Parámetros incompletos']);
+            exit;
+        }
+
+        $rTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUXILIAR);
+        $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $cTable  = Database::get_main_table(TABLE_MAIN_COURSE);
+
+        $regRow = Database::fetch_array(Database::query(
+            "SELECT c.id AS course_c_id, cc.classroom_id FROM $rTable r
+             INNER JOIN $ccTable cc ON cc.id = r.classroom_course_id
+             INNER JOIN $cTable c ON c.id = cc.course_id
+             WHERE r.id = $registroId LIMIT 1"
+        ), 'ASSOC');
+
+        if (!$regRow) {
+            echo json_encode(['success' => false, 'message' => 'Registro no encontrado']);
+            exit;
+        }
+
+        $cId         = (int) $regRow['course_c_id'];
+        $classroomId = (int) $regRow['classroom_id'];
+
+        $students   = AcademicManager::getClassroomStudents($classroomId);
+        $studentIds = array_map('intval', array_column($students, 'user_id'));
+
+        if (empty($studentIds)) {
+            echo json_encode(['success' => true, 'grades' => [], 'max_score' => 20]);
+            exit;
+        }
+
+        $ids     = implode(',', $studentIds);
+        $grades  = [];
+        $maxScore = 20;
+
+        if ($type === 'exercise') {
+            $teTable = Database::get_main_table(TABLE_STATISTIC_TRACK_E_EXERCISES);
+            $res = Database::query(
+                "SELECT exe_user_id, exe_result, exe_weighting
+                 FROM $teTable
+                 WHERE c_id = $cId AND exe_exo_id = $activityId
+                   AND exe_user_id IN ($ids) AND status = '' AND exe_weighting > 0
+                 ORDER BY (exe_result / exe_weighting) DESC"
+            );
+            $seen = [];
+            while ($row = Database::fetch_array($res, 'ASSOC')) {
+                $uid = (int) $row['exe_user_id'];
+                if (!isset($seen[$uid])) {
+                    $grades[$uid] = round(($row['exe_result'] / $row['exe_weighting']) * 20, 1);
+                    $seen[$uid]   = true;
+                }
+            }
+        } elseif ($type === 'task') {
+            $spTable = Database::get_course_table(TABLE_STUDENT_PUBLICATION);
+            // Get assignment weight
+            $wRow = Database::fetch_array(Database::query(
+                "SELECT weight FROM $spTable WHERE c_id = $cId AND id = $activityId LIMIT 1"
+            ), 'ASSOC');
+            $weight   = ($wRow && (float) $wRow['weight'] > 0) ? (float) $wRow['weight'] : 20;
+            $maxScore = $weight;
+
+            $res = Database::query(
+                "SELECT user_id, qualification FROM $spTable
+                 WHERE c_id = $cId AND parent_id = $activityId
+                   AND user_id IN ($ids) AND active = 1
+                   AND qualificator_id IS NOT NULL AND qualificator_id > 0
+                 ORDER BY sent_date DESC"
+            );
+            $seen = [];
+            while ($row = Database::fetch_array($res, 'ASSOC')) {
+                $uid = (int) $row['user_id'];
+                if (!isset($seen[$uid])) {
+                    $grades[$uid] = round(((float) $row['qualification'] / $weight) * 20, 1);
+                    $seen[$uid]   = true;
+                }
+            }
+        }
+
+        echo json_encode(['success' => true, 'grades' => $grades, 'max_score' => (float) $maxScore]);
+        break;
+
     case 'get_enfoques_curricula':
         require_once __DIR__ . '/../src/CurriculaManager.php';
         $enfoques = CurriculaManager::getEnfoquesWithValores();

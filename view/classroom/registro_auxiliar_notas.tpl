@@ -185,13 +185,19 @@
                         <tr style="background:#fffbf0;">
                             {% for comp in competencias %}
                             {% for cap in comp.capacidades %}
-                            <td class="p-0 align-middle text-center" style="min-width:66px;">
+                            <td class="p-0 align-middle text-center" style="min-width:66px;position:relative;">
                                 <textarea class="criterio-input form-control form-control-sm border-0 text-center p-1"
-                                          style="resize:none;font-size:0.7rem;background:transparent;height:46px;width:100%;"
+                                          style="resize:none;font-size:0.7rem;background:transparent;height:34px;width:100%;"
                                           data-registro="{{ registro_id }}"
                                           data-cap="{{ cap.aux_cap_id }}"
                                           placeholder="Criterio…"
                                           title="Criterio para: {{ cap.name }}">{{ cap.criterio }}</textarea>
+                                <button class="btn btn-link p-0 d-block w-100 import-notes-btn"
+                                        style="font-size:9px;line-height:1.4;color:#3b7dd8;border-top:1px solid #e8e0c8;"
+                                        onclick="openImportModal({{ cap.aux_cap_id }}, {{ cap.name|json_encode }})"
+                                        title="Importar notas desde Chamilo">
+                                    <i class="fas fa-plus-circle"></i>
+                                </button>
                             </td>
                             {% endfor %}
                             {# NIVEL DE LOGRO cell covered by rowspan=3 from row 3 #}
@@ -244,6 +250,76 @@
     </div>
 
     {% endif %}
+</div>
+
+{# ===== Modal: Importar Notas desde Chamilo ===== #}
+<div class="modal fade" id="modalImportGrades" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h6 class="modal-title mb-0">
+                    <i class="fas fa-file-import mr-2"></i>Importar notas &mdash; <span id="importCapName" class="font-weight-bold"></span>
+                </h6>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body pb-2">
+                <ul class="nav nav-tabs nav-sm mb-3" id="importTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active small py-1 px-3" href="#" data-tab="exercise"
+                           onclick="switchImportTab('exercise'); return false;">
+                            <i class="fas fa-tasks mr-1"></i>Ejercicios / Exámenes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link small py-1 px-3" href="#" data-tab="task"
+                           onclick="switchImportTab('task'); return false;">
+                            <i class="fas fa-file-alt mr-1"></i>Tareas
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="form-group mb-2">
+                    <label class="font-weight-bold small mb-1">Seleccionar actividad:</label>
+                    <select id="selImportActivity" class="form-control form-control-sm" onchange="loadActivityGrades()">
+                        <option value="">— Cargando actividades… —</option>
+                    </select>
+                </div>
+
+                <div id="importGradesContainer" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small font-weight-bold text-muted">Notas por estudiante:</span>
+                        <span class="small text-info" id="importGradeScale"></span>
+                    </div>
+                    <div style="max-height:320px;overflow-y:auto;">
+                        <table class="table table-sm table-bordered mb-0" id="importGradesTable">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th class="small">Apellidos y Nombres</th>
+                                    <th class="text-center small" style="width:110px;">Nota en Chamilo</th>
+                                    <th class="text-center small" style="width:110px;">Nota a registrar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importGradesBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="importNoActivities" class="text-center text-muted small py-3" style="display:none;">
+                    <i class="fas fa-info-circle mr-1"></i>No hay actividades disponibles de este tipo para este curso.
+                </div>
+                <div id="importNoGrades" class="text-center text-muted small py-2" style="display:none;">
+                    <i class="fas fa-exclamation-circle mr-1"></i>No se encontraron notas para esta actividad.
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnApplyImport"
+                        onclick="applyImportedGrades()" style="display:none;">
+                    <i class="fas fa-check mr-1"></i> Aplicar notas a la columna
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {# ===== Modal: Enfoques Transversales ===== #}
@@ -819,6 +895,166 @@ function saveCompetencias() {
 function escHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ==================== IMPORT GRADES MODAL ====================
+
+var _importCapId   = null;
+var _importTab     = 'exercise';
+var _importActs    = { exercise: [], task: [] };
+var _importLoaded  = false;
+
+function openImportModal(capId, capName) {
+    _importCapId  = capId;
+    _importTab    = 'exercise';
+    _importLoaded = false;
+
+    $('#importCapName').text(capName);
+    $('#importTabs .nav-link').removeClass('active');
+    $('#importTabs .nav-link[data-tab="exercise"]').addClass('active');
+    $('#selImportActivity').html('<option value="">— Cargando actividades… —</option>');
+    $('#importGradesContainer').hide();
+    $('#importNoActivities').hide();
+    $('#importNoGrades').hide();
+    $('#btnApplyImport').hide();
+
+    $('#modalImportGrades').modal('show');
+
+    $.get(AJAX_URL, { action: 'get_chamilo_activities', registro_id: REGISTRO_ID }, function(res) {
+        _importLoaded = true;
+        if (res.success) {
+            _importActs = { exercise: res.exercises || [], task: res.tasks || [] };
+        } else {
+            _importActs = { exercise: [], task: [] };
+        }
+        _populateImportSelect();
+    }, 'json').fail(function() {
+        _importActs = { exercise: [], task: [] };
+        _populateImportSelect();
+    });
+}
+
+function switchImportTab(tab) {
+    _importTab = tab;
+    $('#importTabs .nav-link').removeClass('active');
+    $('#importTabs .nav-link[data-tab="' + tab + '"]').addClass('active');
+    $('#importGradesContainer').hide();
+    $('#importNoGrades').hide();
+    $('#btnApplyImport').hide();
+    if (_importLoaded) _populateImportSelect();
+}
+
+function _populateImportSelect() {
+    var acts = _importActs[_importTab] || [];
+    var $sel = $('#selImportActivity');
+    $sel.html('<option value="">— Selecciona una actividad —</option>');
+    if (!acts.length) {
+        $('#importNoActivities').show();
+        return;
+    }
+    $('#importNoActivities').hide();
+    acts.forEach(function(a) {
+        $sel.append('<option value="' + a.id + '">' + escHtml(a.title) + '</option>');
+    });
+}
+
+function loadActivityGrades() {
+    var actId = $('#selImportActivity').val();
+    $('#importGradesContainer').hide();
+    $('#importNoGrades').hide();
+    $('#btnApplyImport').hide();
+    if (!actId) return;
+
+    $.get(AJAX_URL, {
+        action: 'get_activity_grades',
+        registro_id: REGISTRO_ID,
+        type: _importTab,
+        activity_id: actId
+    }, function(res) {
+        if (!res.success) { $('#importNoGrades').show(); return; }
+        _renderImportTable(res.grades || {}, res.max_score || 20);
+    }, 'json').fail(function() { $('#importNoGrades').show(); });
+}
+
+function _renderImportTable(grades, maxScore) {
+    var $tbody = $('#importGradesBody');
+    $tbody.empty();
+    var count = 0;
+
+    $('tr[data-student]').each(function() {
+        var $row = $(this);
+        var sid  = $row.data('student');
+        var name = $row.find('td:nth-child(2)').text().trim();
+        var chamGrade = (grades[sid] !== undefined) ? grades[sid] : null;
+        var currentVal = $('input.nota-input[data-cap="' + _importCapId + '"][data-student="' + sid + '"]').val() || '';
+        var registerVal = chamGrade !== null ? _formatImportGrade(chamGrade) : currentVal;
+        var displayGrade = chamGrade !== null
+            ? '<span class="badge badge-info">' + parseFloat(chamGrade).toFixed(1) + '</span>'
+            : '<span class="text-muted">—</span>';
+
+        $tbody.append(
+            '<tr>'
+            + '<td class="small align-middle py-1">' + escHtml(name) + '</td>'
+            + '<td class="text-center align-middle py-1">' + displayGrade + '</td>'
+            + '<td class="text-center p-1">'
+            + '<input type="text" class="form-control form-control-sm text-center import-grade-inp"'
+            + ' data-sid="' + sid + '" value="' + escHtml(registerVal) + '" maxlength="5">'
+            + '</td>'
+            + '</tr>'
+        );
+        count++;
+    });
+
+    if (!count) { $('#importNoGrades').show(); return; }
+
+    var scaleHint = GRADE_TYPE === 'letter' ? 'Escala: AD / A / B / C'
+                  : GRADE_TYPE === 'numeric' ? 'Escala: 0 – 20'
+                  : 'Escala combinada';
+    $('#importGradeScale').text(scaleHint + ' · Puntaje máx. Chamilo: ' + maxScore);
+    $('#importGradesContainer').show();
+    $('#btnApplyImport').show();
+}
+
+function _formatImportGrade(num) {
+    if (GRADE_TYPE === 'letter')  return numToLetter(num);
+    if (GRADE_TYPE === 'numeric') return Math.round(num).toString();
+    return Math.round(num) + ' (' + numToLetter(num) + ')';
+}
+
+function applyImportedGrades() {
+    var notas = [];
+    $('#importGradesBody .import-grade-inp').each(function() {
+        var $inp = $(this);
+        var sid  = parseInt($inp.data('sid'));
+        var val  = $inp.val().trim();
+        $('input.nota-input[data-cap="' + _importCapId + '"][data-student="' + sid + '"]').val(val);
+        notas.push({ aux_capacidad_id: _importCapId, student_id: sid, nota: val });
+    });
+
+    if (!notas.length) { $('#modalImportGrades').modal('hide'); return; }
+
+    $('#btnApplyImport').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando…');
+
+    $.post(AJAX_URL, {
+        action: 'save_notas_bulk',
+        registro_id: REGISTRO_ID,
+        notas: JSON.stringify(notas)
+    }, function(res) {
+        if (res.success) {
+            $('#modalImportGrades').modal('hide');
+            recalcAll();
+            $('input.nota-input[data-cap="' + _importCapId + '"]').css('background', '#e6ffed');
+            setTimeout(function() {
+                $('input.nota-input[data-cap="' + _importCapId + '"]').css('background', '');
+            }, 1200);
+        } else {
+            alert(res.message || 'Error al guardar');
+            $('#btnApplyImport').prop('disabled', false).html('<i class="fas fa-check mr-1"></i> Aplicar notas a la columna');
+        }
+    }, 'json').fail(function() {
+        alert('Error de comunicación');
+        $('#btnApplyImport').prop('disabled', false).html('<i class="fas fa-check mr-1"></i> Aplicar notas a la columna');
+    });
 }
 
 $(document).ready(function() {
