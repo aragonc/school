@@ -69,6 +69,13 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_SUPPORT_MESSAGE            = 'plugin_school_support_message';
     const TABLE_SCHOOL_SUPPORT_ASSIGNEE           = 'plugin_school_support_assignee';
 
+    const TABLE_SCHOOL_CURRICULA_AREA             = 'plugin_school_curricula_area';
+    const TABLE_SCHOOL_CURRICULA_COMPETENCIA      = 'plugin_school_curricula_competencia';
+    const TABLE_SCHOOL_CURRICULA_CAPACIDAD        = 'plugin_school_curricula_capacidad';
+    const TABLE_SCHOOL_CURRICULA_TRANSVERSAL      = 'plugin_school_curricula_transversal';
+    const TABLE_SCHOOL_CURRICULA_TRANSVERSAL_CAP  = 'plugin_school_curricula_transversal_cap';
+    const TABLE_SCHOOL_CURRICULA_ENFOQUE          = 'plugin_school_curricula_enfoque';
+
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
     protected function __construct()
@@ -1434,6 +1441,7 @@ class SchoolPlugin extends Plugin
             "RewriteRule ^academic$ plugin/school/src/academic/index.php [L]\n".
             "RewriteRule ^academic/settings$ plugin/school/src/academic/settings.php [L]\n".
             "RewriteRule ^academic/classroom$ plugin/school/src/academic/classroom.php [L,QSA]\n".
+            "RewriteRule ^academic/curricula$ plugin/school/src/academic/curricula.php [L]\n".
             "RewriteRule ^payments/pricing$ plugin/school/src/payments/pricing.php [L,QSA]\n".
             "RewriteRule ^matricula$ plugin/school/src/matricula/list.php [L]\n".
             "RewriteRule ^matricula/nueva$ plugin/school/src/matricula/form.php [L]\n".
@@ -2892,6 +2900,7 @@ class SchoolPlugin extends Plugin
             $academicItems = [
                 ['name' => 'academic-classrooms', 'label' => $this->get_lang('Classrooms'), 'url' => '/academic'],
                 ['name' => 'academic-settings',   'label' => $this->get_lang('AcademicSettings'), 'url' => '/academic/settings'],
+                ['name' => 'academic-curricula',  'label' => $this->get_lang('CurricularAreas'), 'url' => '/academic/curricula'],
             ];
             $menus[] = [
                 'id' => 9,

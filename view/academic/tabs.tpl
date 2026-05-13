@@ -6,6 +6,11 @@
     </li>
     {% if is_admin is defined and is_admin %}
     <li class="nav-item">
+        <a class="nav-link {{ active_tab == 'curricula' ? 'active' : '' }}" href="{{ _p.web }}academic/curricula">
+            <i class="fas fa-book-open"></i> {{ 'CurricularAreas'|get_plugin_lang('SchoolPlugin') }}
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link {{ active_tab == 'settings' ? 'active' : '' }}" href="{{ _p.web }}academic/settings">
             <i class="fas fa-cogs"></i> {{ 'AcademicSettings'|get_plugin_lang('SchoolPlugin') }}
         </a>
