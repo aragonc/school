@@ -11,6 +11,11 @@
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link {{ active_tab == 'periods' ? 'active' : '' }}" href="{{ _p.web }}academic/periods">
+            <i class="fas fa-calendar-alt"></i> Períodos / Bimestres
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link {{ active_tab == 'settings' ? 'active' : '' }}" href="{{ _p.web }}academic/settings">
             <i class="fas fa-cogs"></i> {{ 'AcademicSettings'|get_plugin_lang('SchoolPlugin') }}
         </a>

@@ -76,6 +76,13 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_CURRICULA_TRANSVERSAL_CAP  = 'plugin_school_curricula_transversal_cap';
     const TABLE_SCHOOL_CURRICULA_ENFOQUE          = 'plugin_school_curricula_enfoque';
 
+    const TABLE_SCHOOL_ACADEMIC_PERIOD            = 'plugin_school_academic_period';
+
+    const TABLE_SCHOOL_REGISTRO_AUXILIAR          = 'plugin_school_registro_auxiliar';
+    const TABLE_SCHOOL_REGISTRO_AUX_COMPETENCIA   = 'plugin_school_registro_aux_competencia';
+    const TABLE_SCHOOL_REGISTRO_AUX_CAPACIDAD     = 'plugin_school_registro_aux_capacidad';
+    const TABLE_SCHOOL_REGISTRO_AUX_NOTA          = 'plugin_school_registro_aux_nota';
+
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;
     protected function __construct()
@@ -2666,7 +2673,7 @@ class SchoolPlugin extends Plugin
 
         // Mi Aula: visible for teachers, students and admin (NOT secretary)
         if ($this->get('show_my_aula') !== 'false' && !$isSecretary && ($isAdmin || $isTeacherUser || $isStudent) && $this->getSchoolSetting('module_my_aula') !== '0') {
-            $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos', 'my-classroom-schedule', 'my-classroom-recursos']);
+            $myAulaActive = in_array($currentSection, ['my-classroom', 'my-classroom-alumnos', 'my-classroom-schedule', 'my-classroom-recursos', 'my-classroom-registro', 'my-classroom-registro-notas']);
 
             $myAulaItems = [
                 [
@@ -2702,6 +2709,16 @@ class SchoolPlugin extends Plugin
                     'label'   => 'Distribuir recursos',
                     'url'     => '/my-aula/recursos',
                     'current' => $currentSection === 'my-classroom-recursos',
+                ];
+            }
+
+            // "Registro Auxiliar" only for admin and teacher
+            if (api_is_platform_admin() || $isTeacherUser) {
+                $myAulaItems[] = [
+                    'name'    => 'my-aula-registro',
+                    'label'   => 'Registro Auxiliar',
+                    'url'     => '/my-aula/registro',
+                    'current' => in_array($currentSection, ['my-classroom-registro', 'my-classroom-registro-notas']),
                 ];
             }
 
@@ -2901,6 +2918,7 @@ class SchoolPlugin extends Plugin
                 ['name' => 'academic-classrooms', 'label' => $this->get_lang('Classrooms'), 'url' => '/academic'],
                 ['name' => 'academic-settings',   'label' => $this->get_lang('AcademicSettings'), 'url' => '/academic/settings'],
                 ['name' => 'academic-curricula',  'label' => $this->get_lang('CurricularAreas'), 'url' => '/academic/curricula'],
+                ['name' => 'academic-periods',    'label' => 'Períodos / Bimestres', 'url' => '/academic/periods', 'current' => $currentSection === 'academic-periods'],
             ];
             $menus[] = [
                 'id' => 9,
