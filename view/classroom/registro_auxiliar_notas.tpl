@@ -13,7 +13,10 @@
                 {% if registro.area_name %} &mdash; {{ registro.area_name }}{% endif %}
             </p>
         </div>
-        <div class="d-flex" style="gap:6px; flex-wrap:wrap;">
+        <div class="d-flex flex-wrap" style="gap:6px;">
+            <button class="btn btn-sm btn-outline-secondary" onclick="openEditEnfoques()">
+                <i class="fas fa-leaf mr-1"></i> Enfoques Transversales
+            </button>
             <button class="btn btn-sm btn-outline-primary" onclick="openEditCompetencias()">
                 <i class="fas fa-edit mr-1"></i> Editar competencias
             </button>
@@ -23,10 +26,10 @@
         </div>
     </div>
 
-    {# Info row #}
+    {# Info row + tipo de nota #}
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body py-2 px-3">
-            <div class="row small text-muted">
+            <div class="row small text-muted align-items-center">
                 <div class="col-auto"><strong>Área:</strong> {{ registro.area_name ?: '—' }}</div>
                 <div class="col-auto"><strong>Docente:</strong> {{ registro.teacher_name }}</div>
                 <div class="col-auto"><strong>Tipo nota:</strong>
@@ -36,15 +39,71 @@
                 </div>
                 {% if registro.grade_type == 'letter' or registro.grade_type == 'combined' %}
                 <div class="col-auto text-info">
-                    <i class="fas fa-info-circle"></i> AD=18–20 &nbsp; A=14–17 &nbsp; B=11–13 &nbsp; C=0–10
+                    <i class="fas fa-info-circle"></i> AD ≥ 18 &nbsp; A 14–17 &nbsp; B 11–13 &nbsp; C ≤ 10
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
+    {# ===== ENFOQUES TRANSVERSALES DISPLAY ===== #}
+    {% if enfoques %}
+    <div class="card shadow-sm border-0 mb-3" id="enfoques-card">
+        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+            <span class="font-weight-bold small text-uppercase text-muted">
+                <i class="fas fa-leaf text-success mr-1"></i>Valores y Actitudes de los Enfoques Transversales
+            </span>
+            <button class="btn btn-xs btn-outline-secondary btn-sm" onclick="openEditEnfoques()">
+                <i class="fas fa-edit fa-xs"></i>
+            </button>
+        </div>
+        <div class="card-body py-2 px-3">
+            <div class="row">
+                <div class="col-md-5">
+                    <p class="mb-1 small"><strong>ENFOQUES:</strong>
+                        {% for ef in enfoques %}{{ ef.nombre }}{% if not loop.last %}, {% endif %}{% endfor %}
+                    </p>
+                </div>
+                <div class="col-md-7">
+                    {% set all_valores = [] %}
+                    {% set all_actitudes = [] %}
+                    {% for ef in enfoques %}
+                        {% if ef.valores %}{% set all_valores = all_valores|merge([ef.valores]) %}{% endif %}
+                        {% if ef.actitudes %}{% set all_actitudes = all_actitudes|merge([ef.actitudes]) %}{% endif %}
+                    {% endfor %}
+                    {% if all_valores %}
+                    <p class="mb-1 small"><strong>VALORES:</strong> {{ all_valores|join(', ') }}</p>
+                    {% endif %}
+                    {% if all_actitudes %}
+                    <p class="mb-0 small"><strong>ACTITUDES:</strong> {{ all_actitudes|join(', ') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {# Detail per enfoque #}
+            {% if enfoques|length > 1 %}
+            <div class="mt-2 border-top pt-2">
+                <div class="row">
+                {% for ef in enfoques %}
+                <div class="col-md-4 mb-1">
+                    <span class="badge badge-light border mr-1">{{ ef.nombre }}</span>
+                    {% if ef.valores %}<span class="small text-muted">{{ ef.valores }}</span>{% endif %}
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-light border d-flex justify-content-between align-items-center py-2 mb-3" id="enfoques-empty">
+        <span class="small text-muted"><i class="fas fa-leaf mr-1"></i>No se han definido enfoques transversales para este registro.</span>
+        <button class="btn btn-xs btn-outline-success btn-sm" onclick="openEditEnfoques()">
+            <i class="fas fa-plus mr-1"></i>Agregar enfoques
+        </button>
+    </div>
+    {% endif %}
+
     {% if not competencias %}
-    {# No competencias yet #}
     <div class="card shadow-sm border-0">
         <div class="card-body text-center py-5">
             <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
@@ -57,48 +116,101 @@
     {% else %}
 
     {# ===== Grade Table ===== #}
+    {# Pre-calculate total colspan for "COMPETENCIA DEL ÁREA" row #}
+    {% set total_comp_cols = 0 %}
+    {% for comp in competencias %}{% set total_comp_cols = total_comp_cols + comp.capacidades|length + 1 %}{% endfor %}
+
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body p-0">
             <div style="overflow-x:auto;">
-                <table class="table table-bordered table-sm mb-0" id="tablaNotas" style="min-width:900px;">
+                <table class="table table-bordered table-sm mb-0" id="tablaNotas" style="min-width:900px;font-size:0.8rem;">
                     <thead>
-                        {# Row 1: Competencias header #}
-                        <tr class="bg-light">
-                            <th rowspan="3" class="align-middle text-center" style="min-width:40px;width:40px;">N°</th>
-                            <th rowspan="3" class="align-middle" style="min-width:200px;">Apellidos y Nombres</th>
-                            {% for comp in competencias %}
-                            <th colspan="{{ comp.capacidades|length + 1 }}" class="text-center text-primary font-weight-bold" style="background:#e8f0fe;">
-                                {{ comp.label }} — {{ comp.name|slice(0,50) }}{% if comp.name|length > 50 %}...{% endif %}
+
+                        {# ── ROW 1: "COMPETENCIA DEL ÁREA" ── #}
+                        <tr>
+                            <th rowspan="5" class="align-middle text-center bg-light" style="min-width:38px;width:38px;">N°</th>
+                            <th rowspan="5" class="align-middle bg-light" style="min-width:190px;">Apellidos y Nombres</th>
+                            <th colspan="{{ total_comp_cols }}" class="text-center font-weight-bold text-uppercase"
+                                style="background:#dce8fc;letter-spacing:1px;">
+                                COMPETENCIA DEL ÁREA
                             </th>
-                            {% endfor %}
-                            <th rowspan="3" class="align-middle text-center font-weight-bold" style="min-width:80px;background:#fff3cd;">
-                                PROMEDIO
+                            <th rowspan="5" class="align-middle text-center font-weight-bold"
+                                style="min-width:72px;background:#fff3cd;writing-mode:vertical-rl;transform:rotate(180deg);padding:6px;">
+                                PROMEDIO DE LA ASIGNATURA
                             </th>
                         </tr>
-                        {# Row 2: Capacidades label #}
+
+                        {# ── ROW 2: competencia descriptions ── #}
+                        <tr>
+                            {% for comp in competencias %}
+                            <th colspan="{{ comp.capacidades|length + 1 }}"
+                                class="text-center"
+                                style="background:#e8f0fe;font-size:0.75rem;padding:4px 6px;">
+                                <span class="font-weight-bold text-primary">{{ comp.label }}_</span>{{ comp.name }}
+                            </th>
+                            {% endfor %}
+                        </tr>
+
+                        {# ── ROW 3: "CAPACIDADES" label + NIVEL DE LOGRO (rowspan=3) ── #}
+                        <tr>
+                            {% for comp in competencias %}
+                            <th colspan="{{ comp.capacidades|length }}"
+                                class="text-center font-weight-bold text-uppercase"
+                                style="background:#e3eeff;font-size:0.72rem;letter-spacing:0.5px;">
+                                CAPACIDADES
+                            </th>
+                            <th rowspan="3"
+                                class="text-center font-weight-bold align-middle"
+                                style="min-width:68px;background:#c8e6c9;writing-mode:vertical-rl;transform:rotate(180deg);padding:4px;font-size:0.72rem;letter-spacing:0.5px;">
+                                NIVEL DE LOGRO
+                            </th>
+                            {% endfor %}
+                        </tr>
+
+                        {# ── ROW 4: individual capacidad names (vertical) ── #}
                         <tr>
                             {% for comp in competencias %}
                             {% for cap in comp.capacidades %}
-                            <th class="text-center small" style="min-width:70px;max-width:90px;background:#f0f4ff;font-size:0.7rem;writing-mode:vertical-rl;transform:rotate(180deg);height:80px;padding:4px;">
+                            <th class="text-center align-middle"
+                                style="min-width:66px;max-width:86px;background:#f0f4ff;font-size:0.68rem;writing-mode:vertical-rl;transform:rotate(180deg);height:90px;padding:4px;"
+                                title="{{ cap.name }}">
                                 {{ cap.name }}
                             </th>
                             {% endfor %}
-                            <th class="text-center small font-weight-bold" style="min-width:70px;background:#d4edda;">NIVEL<br>LOGRO</th>
+                            {# NIVEL DE LOGRO already occupies this cell via rowspan=3 #}
                             {% endfor %}
                         </tr>
+
+                        {# ── ROW 5: CRITERIOS — one editable cell per capacidad ── #}
+                        <tr style="background:#fffbf0;">
+                            {% for comp in competencias %}
+                            {% for cap in comp.capacidades %}
+                            <td class="p-0 align-middle text-center" style="min-width:66px;">
+                                <textarea class="criterio-input form-control form-control-sm border-0 text-center p-1"
+                                          style="resize:none;font-size:0.7rem;background:transparent;height:46px;width:100%;"
+                                          data-registro="{{ registro_id }}"
+                                          data-cap="{{ cap.aux_cap_id }}"
+                                          placeholder="Criterio…"
+                                          title="Criterio para: {{ cap.name }}">{{ cap.criterio }}</textarea>
+                            </td>
+                            {% endfor %}
+                            {# NIVEL DE LOGRO cell covered by rowspan=3 from row 3 #}
+                            {% endfor %}
+                        </tr>
+
                     </thead>
                     <tbody>
                         {% for student in students %}
                         <tr data-student="{{ student.user_id }}">
-                            <td class="text-center text-muted">{{ loop.index }}</td>
-                            <td class="font-weight-bold small">{{ student.lastname }}, {{ student.firstname }}</td>
+                            <td class="text-center text-muted align-middle">{{ loop.index }}</td>
+                            <td class="font-weight-bold small align-middle">{{ student.lastname }}, {{ student.firstname }}</td>
                             {% for comp in competencias %}
                             {% for cap in comp.capacidades %}
                             {% set nota_val = notas_map[cap.aux_cap_id][student.user_id] ?? '' %}
-                            <td class="text-center p-0" data-comp="{{ comp.rc_id }}" data-cap="{{ cap.aux_cap_id }}">
+                            <td class="text-center p-0 align-middle">
                                 <input type="text"
                                        class="nota-input form-control form-control-sm text-center p-0 border-0"
-                                       style="min-width:60px;max-width:80px;font-size:0.85rem;"
+                                       style="min-width:60px;font-size:0.85rem;"
                                        data-registro="{{ registro_id }}"
                                        data-cap="{{ cap.aux_cap_id }}"
                                        data-student="{{ student.user_id }}"
@@ -107,16 +219,14 @@
                                        placeholder="—">
                             </td>
                             {% endfor %}
-                            {# NIVEL DE LOGRO per competencia #}
-                            <td class="text-center font-weight-bold nivel-logro" style="background:#f8fff8;"
+                            <td class="text-center font-weight-bold align-middle nivel-logro"
+                                style="background:#f1faf1;"
                                 data-comp="{{ comp.rc_id }}"
                                 data-student="{{ student.user_id }}"
-                                data-cap-ids="{{ comp.cap_ids|join(',') }}">
-                                —
-                            </td>
+                                data-cap-ids="{{ comp.cap_ids|join(',') }}">—</td>
                             {% endfor %}
-                            {# PROMEDIO ASIGNATURA #}
-                            <td class="text-center font-weight-bold promedio-cell" style="background:#fffde7;"
+                            <td class="text-center font-weight-bold align-middle promedio-cell"
+                                style="background:#fffde7;"
                                 data-student="{{ student.user_id }}">—</td>
                         </tr>
                         {% endfor %}
@@ -136,6 +246,51 @@
     {% endif %}
 </div>
 
+{# ===== Modal: Enfoques Transversales ===== #}
+<div class="modal fade" id="modalEnfoques" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-leaf mr-2"></i>Enfoques Transversales del Registro</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    Selecciona los enfoques del currículo — los valores se cargan automáticamente y puedes ajustarlos.
+                </p>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="font-weight-bold small">Agregar desde currículo:</label>
+                        <div class="d-flex" style="gap:6px;">
+                            <select id="selEnfoqueCurr" class="form-control form-control-sm">
+                                <option value="">— Selecciona enfoque —</option>
+                            </select>
+                            <button class="btn btn-sm btn-success px-3" onclick="addEnfoqueFromSelect()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted" id="valoresPreview"></small>
+                    </div>
+                    <div class="col-md-4 align-self-end">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="addEnfoqueCustom()">
+                            <i class="fas fa-plus mr-1"></i>Personalizado
+                        </button>
+                    </div>
+                </div>
+
+                <div id="enfoquesList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnSaveEnfoques" onclick="saveEnfoques()">
+                    <i class="fas fa-save mr-1"></i> Guardar enfoques
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {# ===== Modal: Editar Competencias & Capacidades ===== #}
 <div class="modal fade" id="modalEditComp" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-xl" role="document">
@@ -146,7 +301,6 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    {# Left: Available from area #}
                     <div class="col-md-5">
                         <h6 class="font-weight-bold text-muted mb-2">Disponibles del Área Curricular</h6>
                         <div class="form-group mb-2">
@@ -157,16 +311,13 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="availableComp" style="max-height:450px;overflow-y:auto;border:1px solid #dee2e6;border-radius:4px;padding:8px;">
+                        <div id="availableComp" style="max-height:420px;overflow-y:auto;border:1px solid #dee2e6;border-radius:4px;padding:8px;">
                             <p class="text-muted small m-0">Selecciona un área para ver competencias y capacidades.</p>
                         </div>
                     </div>
-
-                    {# Right: Selected competencias/capacidades #}
                     <div class="col-md-7">
                         <h6 class="font-weight-bold text-muted mb-2">Competencias seleccionadas para el registro</h6>
-                        <div id="selectedComps" style="max-height:450px;overflow-y:auto;border:1px solid #dee2e6;border-radius:4px;padding:8px;">
-                            {# Dynamically populated #}
+                        <div id="selectedComps" style="max-height:420px;overflow-y:auto;border:1px solid #dee2e6;border-radius:4px;padding:8px;">
                         </div>
                         <button class="btn btn-sm btn-outline-secondary mt-2" onclick="addCustomCompetencia()">
                             <i class="fas fa-plus mr-1"></i> Añadir competencia personalizada
@@ -215,25 +366,20 @@ function formatDisplay(avg) {
 // ==================== CALCULATE AVERAGES ====================
 
 function recalcAll() {
-    // For each student row, recalc nivel logro per competencia and overall promedio
     $('[data-student]').filter('tr').each(function() {
-        const $row     = $(this);
-        const stuId    = $row.data('student');
+        const $row      = $(this);
         const nivelVals = [];
 
         $row.find('.nivel-logro').each(function() {
-            const $cell   = $(this);
-            const capIds  = ($cell.data('cap-ids') || '').toString().split(',').filter(Boolean);
-            const vals    = [];
-
+            const $cell  = $(this);
+            const capIds = ($cell.data('cap-ids') || '').toString().split(',').filter(Boolean);
+            const vals   = [];
             capIds.forEach(function(capId) {
-                const $input = $row.find('input.nota-input[data-cap="' + capId + '"]');
-                const num    = letterToNum(($input.val() || '').trim());
+                const num = letterToNum(($row.find('input.nota-input[data-cap="' + capId + '"]').val() || '').trim());
                 if (num !== null) vals.push(num);
             });
-
-            if (vals.length > 0) {
-                const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            if (vals.length) {
+                const avg = vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
                 $cell.text(formatDisplay(avg));
                 nivelVals.push(avg);
             } else {
@@ -242,8 +388,8 @@ function recalcAll() {
         });
 
         const $prom = $row.find('.promedio-cell');
-        if (nivelVals.length > 0) {
-            const prom = nivelVals.reduce((a, b) => a + b, 0) / nivelVals.length;
+        if (nivelVals.length) {
+            const prom = nivelVals.reduce(function(a, b) { return a + b; }, 0) / nivelVals.length;
             $prom.text(formatDisplay(prom));
         } else {
             $prom.text('—');
@@ -251,45 +397,53 @@ function recalcAll() {
     });
 }
 
-// ==================== AUTO-SAVE ON BLUR ====================
+// ==================== CRITERIO AUTO-SAVE ====================
 
-$(document).on('blur', 'input.nota-input', function() {
-    const $inp      = $(this);
-    const registroId = $inp.data('registro');
-    const capId     = $inp.data('cap');
-    const studentId = $inp.data('student');
-    const nota      = $inp.val().trim();
-
-    recalcAll();
+$(document).on('blur', 'textarea.criterio-input', function() {
+    const $ta       = $(this);
+    const registroId = $ta.data('registro');
+    const capId     = $ta.data('cap');
+    const criterio  = $ta.val().trim();
 
     $.post(AJAX_URL, {
-        action: 'save_nota',
+        action: 'save_criterio',
         registro_id: registroId,
         aux_capacidad_id: capId,
-        student_id: studentId,
-        nota: nota
+        criterio: criterio
     }, function(res) {
         if (res.success) {
-            $inp.css('background', '#e6ffed');
-            setTimeout(() => $inp.css('background', ''), 800);
+            $ta.css('background', '#e6ffed');
+            setTimeout(function() { $ta.css('background', 'transparent'); }, 700);
         }
     }, 'json');
 });
 
-$(document).on('input', 'input.nota-input', function() {
+// ==================== NOTA AUTO-SAVE ====================
+
+$(document).on('blur', 'input.nota-input', function() {
+    const $inp       = $(this);
     recalcAll();
+    $.post(AJAX_URL, {
+        action: 'save_nota',
+        registro_id: $inp.data('registro'),
+        aux_capacidad_id: $inp.data('cap'),
+        student_id: $inp.data('student'),
+        nota: $inp.val().trim()
+    }, function(res) {
+        if (res.success) {
+            $inp.css('background', '#e6ffed');
+            setTimeout(function() { $inp.css('background', ''); }, 800);
+        }
+    }, 'json');
 });
 
+$(document).on('input', 'input.nota-input', function() { recalcAll(); });
+
 $(document).on('keydown', 'input.nota-input', function(e) {
-    if (e.key === 'Enter' || e.key === 'Tab') {
-        // Move to next cell in same column
+    if (e.key === 'Enter') {
+        e.preventDefault();
         const $all = $('input.nota-input');
-        const idx  = $all.index(this);
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const $next = $all.eq(idx + 1);
-            if ($next.length) $next.focus();
-        }
+        $all.eq($all.index(this) + 1).focus();
     }
 });
 
@@ -299,25 +453,15 @@ function saveAllNotas() {
     const notas = [];
     $('input.nota-input').each(function() {
         const $inp = $(this);
-        notas.push({
-            aux_capacidad_id: $inp.data('cap'),
-            student_id: $inp.data('student'),
-            nota: $inp.val().trim()
-        });
+        notas.push({ aux_capacidad_id: $inp.data('cap'), student_id: $inp.data('student'), nota: $inp.val().trim() });
     });
-
     $('#btnSaveAll').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...');
-
-    $.post(AJAX_URL, {
-        action: 'save_notas_bulk',
-        registro_id: REGISTRO_ID,
-        notas: JSON.stringify(notas)
-    }, function(res) {
+    $.post(AJAX_URL, { action: 'save_notas_bulk', registro_id: REGISTRO_ID, notas: JSON.stringify(notas) }, function(res) {
         if (res.success) {
             $('#saveStatus').html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i>Guardado</span>');
-            setTimeout(() => $('#saveStatus').html(''), 3000);
+            setTimeout(function() { $('#saveStatus').html(''); }, 3000);
         } else {
-            $('#saveStatus').html('<span class="text-danger">Error: ' + (res.message||'') + '</span>');
+            $('#saveStatus').html('<span class="text-danger">Error: ' + (res.message || '') + '</span>');
         }
         $('#btnSaveAll').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar todo');
     }, 'json').fail(function() {
@@ -326,28 +470,173 @@ function saveAllNotas() {
     });
 }
 
+// ==================== ENFOQUES ====================
+
+let selectedEnfoques  = [];
+let _enfoquesCache    = [];  // curricula enfoques with valores_list
+
+function openEditEnfoques() {
+    selectedEnfoques = [];
+    {% for ef in enfoques %}
+    selectedEnfoques.push({
+        enfoque_id: {{ ef.enfoque_id }},
+        nombre:     {{ ef.nombre|json_encode }},
+        valores:    {{ ef.valores|json_encode }},
+        actitudes:  {{ ef.actitudes|json_encode }}
+    });
+    {% endfor %}
+
+    // Load curricula enfoques with valores if not cached
+    if (_enfoquesCache.length === 0) {
+        $.get(AJAX_URL, { action: 'get_enfoques_curricula' }, function(res) {
+            if (res.success) {
+                _enfoquesCache = res.enfoques || [];
+                _populateEnfoqueSelect();
+            }
+        }, 'json');
+    } else {
+        _populateEnfoqueSelect();
+    }
+
+    renderEnfoquesList();
+    $('#modalEnfoques').modal('show');
+}
+
+function _populateEnfoqueSelect() {
+    const $sel = $('#selEnfoqueCurr');
+    $sel.find('option:not(:first)').remove();
+    _enfoquesCache.forEach(function(ef) {
+        $sel.append('<option value="' + ef.id + '">' + escHtml(ef.name) + '</option>');
+    });
+}
+
+// Show valores preview when enfoque is selected
+$('#selEnfoqueCurr').on('change', function() {
+    const id = parseInt($(this).val());
+    if (!id || !_enfoquesCache.length) { $('#valoresPreview').text(''); return; }
+    const ef = _enfoquesCache.find(function(e) { return e.id == id; });
+    if (ef && ef.valores_list && ef.valores_list.length) {
+        $('#valoresPreview').html('<i class="fas fa-check-circle text-success mr-1"></i>Valores: ' + ef.valores_list.join(', '));
+    } else {
+        $('#valoresPreview').text('Sin valores definidos en el currículo');
+    }
+});
+
+function renderEnfoquesList() {
+    if (!selectedEnfoques.length) {
+        $('#enfoquesList').html('<p class="text-muted small text-center py-3">No hay enfoques añadidos.</p>');
+        return;
+    }
+    let html = '';
+    selectedEnfoques.forEach(function(ef, i) {
+        html += '<div class="card mb-2 border" id="ef-row-' + i + '">'
+              + '<div class="card-body py-2 px-3">'
+              + '<div class="d-flex justify-content-between align-items-center mb-2">'
+              + '<strong class="small"><i class="fas fa-leaf text-success mr-1"></i>' + escHtml(ef.nombre) + '</strong>'
+              + '<button class="btn btn-xs btn-outline-danger btn-sm" onclick="removeEnfoque(' + i + ')"><i class="fas fa-times"></i></button>'
+              + '</div>'
+              + '<div class="form-row">'
+              + '<div class="form-group col-md-6 mb-1">'
+              + '<label class="small font-weight-bold mb-0">Valores:</label>'
+              + '<textarea class="form-control form-control-sm ef-valores" rows="2" style="font-size:0.8rem;" '
+              + 'data-idx="' + i + '" placeholder="Ej: Laboriosidad, Flexibilidad...">'
+              + escHtml(ef.valores) + '</textarea>'
+              + '</div>'
+              + '<div class="form-group col-md-6 mb-1">'
+              + '<label class="small font-weight-bold mb-0">Actitudes:</label>'
+              + '<textarea class="form-control form-control-sm ef-actitudes" rows="2" style="font-size:0.8rem;" '
+              + 'data-idx="' + i + '" placeholder="Ej: Demuestra empatía...">'
+              + escHtml(ef.actitudes) + '</textarea>'
+              + '</div>'
+              + '</div>'
+              + '</div></div>';
+    });
+    $('#enfoquesList').html(html);
+}
+
+// Sync textareas to array on input
+$(document).on('input', '.ef-valores', function() {
+    selectedEnfoques[$(this).data('idx')].valores = $(this).val();
+});
+$(document).on('input', '.ef-actitudes', function() {
+    selectedEnfoques[$(this).data('idx')].actitudes = $(this).val();
+});
+
+function addEnfoqueFromSelect() {
+    const $sel = $('#selEnfoqueCurr');
+    const id   = parseInt($sel.val());
+    if (!id) { alert('Selecciona un enfoque'); return; }
+
+    const already = selectedEnfoques.some(function(e) { return e.enfoque_id == id; });
+    if (already) { alert('Este enfoque ya fue añadido.'); return; }
+
+    // Find in cache to auto-populate valores
+    const efData   = _enfoquesCache.find(function(e) { return e.id == id; });
+    const name     = efData ? efData.name : $sel.find('option:selected').text();
+    const valStr   = efData && efData.valores_list ? efData.valores_list.join(', ') : '';
+
+    selectedEnfoques.push({ enfoque_id: id, nombre: name, valores: valStr, actitudes: '' });
+    $sel.val('');
+    $('#valoresPreview').text('');
+    renderEnfoquesList();
+}
+
+function addEnfoqueCustom() {
+    const nombre = prompt('Nombre del enfoque:');
+    if (!nombre || !nombre.trim()) return;
+    selectedEnfoques.push({ enfoque_id: 0, nombre: nombre.trim(), valores: '', actitudes: '' });
+    renderEnfoquesList();
+}
+
+function removeEnfoque(i) {
+    selectedEnfoques.splice(i, 1);
+    renderEnfoquesList();
+}
+
+function saveEnfoques() {
+    // Values already synced live via input event handlers
+
+    $('#btnSaveEnfoques').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>');
+    $.post(AJAX_URL, {
+        action: 'save_enfoques',
+        registro_id: REGISTRO_ID,
+        enfoques: JSON.stringify(selectedEnfoques)
+    }, function(res) {
+        if (res.success) {
+            $('#modalEnfoques').modal('hide');
+            location.reload();
+        } else {
+            alert(res.message || 'Error al guardar');
+            $('#btnSaveEnfoques').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar enfoques');
+        }
+    }, 'json').fail(function() {
+        alert('Error de comunicación');
+        $('#btnSaveEnfoques').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar enfoques');
+    });
+}
+
 // ==================== EDIT COMPETENCIAS MODAL ====================
 
-// State: list of selected competencias
 let selectedComps = [];
+let _curriculaCache = { competencias: [], capacidades: [], transversales: [] };
 
 function openEditCompetencias() {
-    // Build selectedComps from current table state
     selectedComps = [];
     {% for comp in competencias %}
     selectedComps.push({
-        rc_id:         {{ comp.rc_id }},
+        rc_id:          {{ comp.rc_id }},
         competencia_id: {{ comp.competencia_id }},
         is_transversal: {{ comp.is_transversal ? 1 : 0 }},
-        label:         '{{ comp.label|e('js') }}',
-        name:          {{ comp.name|json_encode }},
-        capacidades:   [
+        label:          '{{ comp.label|e('js') }}',
+        name:           {{ comp.name|json_encode }},
+        capacidades: [
             {% for cap in comp.capacidades %}
             {
-                aux_cap_id:    {{ cap.aux_cap_id }},
-                capacidad_id:  {{ cap.capacidad_id }},
+                aux_cap_id:     {{ cap.aux_cap_id }},
+                capacidad_id:   {{ cap.capacidad_id }},
                 is_transversal: {{ cap.is_transversal ? 1 : 0 }},
-                name:          {{ cap.name|json_encode }}
+                name:           {{ cap.name|json_encode }},
+                criterio:       {{ cap.criterio|json_encode }}
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ]
@@ -355,13 +644,8 @@ function openEditCompetencias() {
     {% endfor %}
 
     renderSelectedComps();
-
-    // Auto-load area if set
-    const areaId = $('#filterArea').val();
-    if (parseInt(areaId) > 0) {
-        loadAreaCurricula();
-    }
-
+    const areaId = parseInt($('#filterArea').val());
+    if (areaId > 0) loadAreaCurricula();
     $('#modalEditComp').modal('show');
 }
 
@@ -371,29 +655,23 @@ function renderSelectedComps() {
         html = '<p class="text-muted small">No has seleccionado competencias aún.</p>';
     } else {
         selectedComps.forEach(function(comp, ci) {
-            html += `<div class="border rounded p-2 mb-2" id="selcomp-${ci}">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <span class="badge badge-primary mr-1">C${ci+1}</span>
-                        <strong class="small">${escHtml(comp.name)}</strong>
-                        ${comp.is_transversal ? '<span class="badge badge-info ml-1">Transversal</span>' : ''}
-                    </div>
-                    <button class="btn btn-xs btn-outline-danger btn-sm" onclick="removeComp(${ci})">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="mt-2 pl-2">
-                    <small class="text-muted font-weight-bold">Capacidades:</small>
-                    <div id="selcaps-${ci}">`;
+            html += '<div class="border rounded p-2 mb-2" id="selcomp-' + ci + '">'
+                  + '<div class="d-flex justify-content-between align-items-start">'
+                  + '<div><span class="badge badge-primary mr-1">C' + (ci+1) + '</span>'
+                  + '<strong class="small">' + escHtml(comp.name) + '</strong>'
+                  + (comp.is_transversal ? '<span class="badge badge-info ml-1">Transversal</span>' : '')
+                  + '</div>'
+                  + '<button class="btn btn-xs btn-outline-danger btn-sm" onclick="removeComp(' + ci + ')"><i class="fas fa-times"></i></button>'
+                  + '</div>'
+                  + '<div class="mt-2 pl-2"><small class="text-muted font-weight-bold">Capacidades:</small>'
+                  + '<div id="selcaps-' + ci + '">';
             comp.capacidades.forEach(function(cap, ki) {
-                html += `<div class="d-flex justify-content-between align-items-center py-1 border-bottom" id="selcap-${ci}-${ki}">
-                    <span class="small">${escHtml(cap.name)}</span>
-                    <button class="btn btn-xs btn-outline-danger btn-sm" onclick="removeCap(${ci},${ki})">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                </div>`;
+                html += '<div class="d-flex justify-content-between align-items-center py-1 border-bottom">'
+                      + '<span class="small">' + escHtml(cap.name) + '</span>'
+                      + '<button class="btn btn-xs btn-outline-danger btn-sm" onclick="removeCap(' + ci + ',' + ki + ')"><i class="fas fa-minus"></i></button>'
+                      + '</div>';
             });
-            html += `</div></div></div>`;
+            html += '</div></div></div>';
         });
     }
     $('#selectedComps').html(html);
@@ -405,66 +683,48 @@ function loadAreaCurricula() {
         $('#availableComp').html('<p class="text-muted small m-0">Selecciona un área para ver competencias y capacidades.</p>');
         return;
     }
-
     $('#availableComp').html('<p class="text-muted small"><i class="fas fa-spinner fa-spin mr-1"></i>Cargando...</p>');
-
     $.get(AJAX_URL, { action: 'get_curricula_for_area', area_id: areaId }, function(res) {
-        if (!res.success) {
-            $('#availableComp').html('<p class="text-danger small">Error al cargar</p>');
-            return;
-        }
-
+        if (!res.success) { $('#availableComp').html('<p class="text-danger small">Error al cargar</p>'); return; }
+        _curriculaCache = { competencias: res.competencias || [], capacidades: res.capacidades || [], transversales: res.transversales || [] };
         let html = '';
 
-        // Competencias del área
-        if (res.competencias.length) {
-            html += '<div class="mb-3"><strong class="small text-muted">COMPETENCIAS DEL ÁREA</strong>';
-            res.competencias.forEach(function(comp) {
-                html += `<div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                    <span class="small">${escHtml(comp.name)}</span>
-                    <button class="btn btn-xs btn-outline-primary btn-sm" onclick="addCompFromArea(${comp.id}, 0, ${JSON.stringify(escHtml(comp.name)).replace(/'/g,"&#39;")})">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>`;
+        if (_curriculaCache.competencias.length) {
+            html += '<div class="mb-2"><strong class="small text-muted d-block mb-1">COMPETENCIAS DEL ÁREA</strong>';
+            _curriculaCache.competencias.forEach(function(comp, i) {
+                html += '<div class="d-flex justify-content-between align-items-center border-bottom py-1">'
+                      + '<span class="small">' + escHtml(comp.name) + '</span>'
+                      + '<button class="btn btn-xs btn-outline-primary btn-sm" onclick="addCompByIdx(' + i + ',0)"><i class="fas fa-plus"></i></button>'
+                      + '</div>';
             });
             html += '</div>';
         }
-
-        // Capacidades del área (para agregar a una competencia existente)
-        if (res.capacidades.length) {
-            html += '<div class="mb-3"><strong class="small text-muted">CAPACIDADES DEL ÁREA</strong>';
-            html += '<p class="text-muted" style="font-size:0.7rem;">Haz clic en (+) para agregar a la última competencia seleccionada</p>';
-            res.capacidades.forEach(function(cap) {
-                html += `<div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                    <span class="small">${escHtml(cap.name)}</span>
-                    <button class="btn btn-xs btn-outline-success btn-sm" onclick="addCapToLastComp(${cap.id}, 0, ${JSON.stringify(escHtml(cap.name)).replace(/'/g,"&#39;")})">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>`;
+        if (_curriculaCache.capacidades.length) {
+            html += '<div class="mb-2"><strong class="small text-muted d-block mb-1">CAPACIDADES DEL ÁREA</strong>'
+                  + '<p class="text-muted mb-1" style="font-size:0.7rem;">Se añaden a la última competencia seleccionada</p>';
+            _curriculaCache.capacidades.forEach(function(cap, i) {
+                html += '<div class="d-flex justify-content-between align-items-center border-bottom py-1">'
+                      + '<span class="small">' + escHtml(cap.name) + '</span>'
+                      + '<button class="btn btn-xs btn-outline-success btn-sm" onclick="addCapByIdx(' + i + ',0)"><i class="fas fa-plus"></i></button>'
+                      + '</div>';
             });
             html += '</div>';
         }
-
-        // Competencias transversales
-        if (res.transversales.length) {
-            html += '<div class="mb-3"><strong class="small text-muted">COMPETENCIAS TRANSVERSALES</strong>';
-            res.transversales.forEach(function(trans) {
-                html += `<div class="border rounded p-2 mb-1">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="small font-weight-bold">${escHtml(trans.name)}</span>
-                        <button class="btn btn-xs btn-outline-primary btn-sm" onclick="addCompFromArea(${trans.id}, 1, ${JSON.stringify(escHtml(trans.name)).replace(/'/g,"&#39;")})">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>`;
-                if (trans.capacidades.length) {
+        if (_curriculaCache.transversales.length) {
+            html += '<div class="mb-2"><strong class="small text-muted d-block mb-1">COMPETENCIAS TRANSVERSALES</strong>';
+            _curriculaCache.transversales.forEach(function(trans, ti) {
+                html += '<div class="border rounded p-2 mb-1">'
+                      + '<div class="d-flex justify-content-between align-items-center">'
+                      + '<span class="small font-weight-bold">' + escHtml(trans.name) + '</span>'
+                      + '<button class="btn btn-xs btn-outline-primary btn-sm" onclick="addTransComp(' + ti + ')"><i class="fas fa-plus"></i></button>'
+                      + '</div>';
+                if (trans.capacidades && trans.capacidades.length) {
                     html += '<div class="pl-2 mt-1">';
-                    trans.capacidades.forEach(function(cap) {
-                        html += `<div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                            <span class="small text-muted">${escHtml(cap.name)}</span>
-                            <button class="btn btn-xs btn-outline-success btn-sm" onclick="addTransCapToComp(${trans.id}, ${cap.id}, ${JSON.stringify(escHtml(cap.name)).replace(/'/g,"&#39;")})">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>`;
+                    trans.capacidades.forEach(function(cap, ki) {
+                        html += '<div class="d-flex justify-content-between align-items-center border-bottom py-1">'
+                              + '<span class="small text-muted">' + escHtml(cap.name) + '</span>'
+                              + '<button class="btn btn-xs btn-outline-success btn-sm" onclick="addTransCap(' + ti + ',' + ki + ')"><i class="fas fa-plus"></i></button>'
+                              + '</div>';
                     });
                     html += '</div>';
                 }
@@ -472,121 +732,84 @@ function loadAreaCurricula() {
             });
             html += '</div>';
         }
-
         if (!html) html = '<p class="text-muted small">No hay competencias ni capacidades para esta área.</p>';
         $('#availableComp').html(html);
-    }, 'json').fail(function() {
-        $('#availableComp').html('<p class="text-danger small">Error al cargar</p>');
-    });
+    }, 'json').fail(function() { $('#availableComp').html('<p class="text-danger small">Error al cargar</p>'); });
+}
+
+function addCompByIdx(idx, isTrans) {
+    const comp = _curriculaCache.competencias[idx];
+    if (comp) addCompFromArea(comp.id, isTrans, comp.name);
+}
+function addCapByIdx(idx, isTrans) {
+    const cap = _curriculaCache.capacidades[idx];
+    if (cap) addCapToLastComp(cap.id, isTrans, cap.name);
+}
+function addTransComp(ti) {
+    const trans = _curriculaCache.transversales[ti];
+    if (trans) addCompFromArea(trans.id, 1, trans.name);
+}
+function addTransCap(ti, ki) {
+    const trans = _curriculaCache.transversales[ti];
+    if (trans && trans.capacidades[ki]) addTransCapToComp(trans.id, trans.capacidades[ki].id, trans.capacidades[ki].name);
 }
 
 function addCompFromArea(compId, isTrans, name) {
-    // Check not already added
-    const exists = selectedComps.some(c => c.competencia_id == compId && c.is_transversal == isTrans);
-    if (exists) {
-        alert('Esta competencia ya fue añadida.');
-        return;
+    if (selectedComps.some(function(c) { return c.competencia_id == compId && c.is_transversal == isTrans; })) {
+        alert('Esta competencia ya fue añadida.'); return;
     }
-    selectedComps.push({
-        rc_id: null,
-        competencia_id: compId,
-        is_transversal: isTrans,
-        name: name,
-        capacidades: []
-    });
+    selectedComps.push({ rc_id: null, competencia_id: compId, is_transversal: isTrans, name: name, capacidades: [] });
     renderSelectedComps();
 }
-
 function addCapToLastComp(capId, isTrans, name) {
-    if (!selectedComps.length) {
-        alert('Primero añade una competencia.');
-        return;
-    }
+    if (!selectedComps.length) { alert('Primero añade una competencia.'); return; }
     const last = selectedComps[selectedComps.length - 1];
-    const exists = last.capacidades.some(c => c.capacidad_id == capId && c.is_transversal == isTrans);
-    if (exists) {
-        alert('Esta capacidad ya fue añadida a la última competencia.');
-        return;
+    if (last.capacidades.some(function(c) { return c.capacidad_id == capId && c.is_transversal == isTrans; })) {
+        alert('Esta capacidad ya fue añadida.'); return;
     }
     last.capacidades.push({ aux_cap_id: null, capacidad_id: capId, is_transversal: isTrans, name: name });
     renderSelectedComps();
 }
-
 function addTransCapToComp(transId, capId, name) {
-    // Find the transversal competencia in selected
-    const comp = selectedComps.find(c => c.competencia_id == transId && c.is_transversal == 1);
-    if (!comp) {
-        alert('Primero añade la competencia transversal correspondiente.');
-        return;
-    }
-    const exists = comp.capacidades.some(c => c.capacidad_id == capId && c.is_transversal == 1);
-    if (exists) {
-        alert('Esta capacidad ya fue añadida.');
-        return;
+    const comp = selectedComps.find(function(c) { return c.competencia_id == transId && c.is_transversal == 1; });
+    if (!comp) { alert('Primero añade la competencia transversal correspondiente.'); return; }
+    if (comp.capacidades.some(function(c) { return c.capacidad_id == capId && c.is_transversal == 1; })) {
+        alert('Esta capacidad ya fue añadida.'); return;
     }
     comp.capacidades.push({ aux_cap_id: null, capacidad_id: capId, is_transversal: 1, name: name });
     renderSelectedComps();
 }
-
 function removeComp(ci) {
-    if (!confirm('¿Eliminar esta competencia? Se perderán las notas asociadas a sus capacidades.')) return;
-    selectedComps.splice(ci, 1);
-    renderSelectedComps();
+    if (!confirm('¿Eliminar esta competencia? Se perderán las notas asociadas.')) return;
+    selectedComps.splice(ci, 1); renderSelectedComps();
 }
-
-function removeCap(ci, ki) {
-    selectedComps[ci].capacidades.splice(ki, 1);
-    renderSelectedComps();
-}
-
+function removeCap(ci, ki) { selectedComps[ci].capacidades.splice(ki, 1); renderSelectedComps(); }
 function addCustomCompetencia() {
     const name = prompt('Nombre de la competencia:');
     if (!name || !name.trim()) return;
-    selectedComps.push({
-        rc_id: null,
-        competencia_id: 0,
-        is_transversal: 0,
-        name: name.trim(),
-        capacidades: []
-    });
+    selectedComps.push({ rc_id: null, competencia_id: 0, is_transversal: 0, name: name.trim(), capacidades: [] });
     renderSelectedComps();
 }
-
 function saveCompetencias() {
-    if (!selectedComps.length) {
-        alert('Debes añadir al menos una competencia.');
-        return;
-    }
+    if (!selectedComps.length) { alert('Debes añadir al menos una competencia.'); return; }
     for (let i = 0; i < selectedComps.length; i++) {
         if (!selectedComps[i].capacidades.length) {
-            alert('La competencia "' + selectedComps[i].name + '" no tiene capacidades. Añade al menos una.');
-            return;
+            alert('La competencia "' + selectedComps[i].name + '" no tiene capacidades.'); return;
         }
     }
-
-    // Build payload
-    const payload = selectedComps.map(c => ({
-        competencia_id: c.competencia_id,
-        is_transversal: c.is_transversal,
-        capacidades: c.capacidades.map(cap => ({
-            capacidad_id:  cap.capacidad_id,
-            is_transversal: cap.is_transversal
-        }))
-    }));
-
+    const payload = selectedComps.map(function(c) {
+        return {
+            competencia_id: c.competencia_id,
+            is_transversal: c.is_transversal,
+            capacidades: c.capacidades.map(function(cap) {
+                return { capacidad_id: cap.capacidad_id, is_transversal: cap.is_transversal };
+            })
+        };
+    });
     $('#btnSaveComp').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>');
-
-    $.post(AJAX_URL, {
-        action: 'save_competencias',
-        registro_id: REGISTRO_ID,
-        competencias: JSON.stringify(payload)
-    }, function(res) {
-        if (res.success) {
-            location.reload();
-        } else {
-            alert(res.message || 'Error al guardar');
-            $('#btnSaveComp').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar configuración');
-        }
+    $.post(AJAX_URL, { action: 'save_competencias', registro_id: REGISTRO_ID, competencias: JSON.stringify(payload) }, function(res) {
+        if (res.success) { location.reload(); }
+        else { alert(res.message || 'Error al guardar'); $('#btnSaveComp').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar configuración'); }
     }, 'json').fail(function() {
         alert('Error de comunicación');
         $('#btnSaveComp').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar configuración');
@@ -595,20 +818,12 @@ function saveCompetencias() {
 
 function escHtml(str) {
     if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Init: calculate averages on load
 $(document).ready(function() {
     recalcAll();
-    // Pre-load area curricula if area is set
     const areaId = parseInt('{{ registro.area_id }}');
-    if (areaId > 0) {
-        $('#filterArea').val(areaId);
-    }
+    if (areaId > 0) $('#filterArea').val(areaId);
 });
 </script>

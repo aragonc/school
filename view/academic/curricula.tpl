@@ -115,6 +115,63 @@
 {% endfor %}
 {% endmacro %}
 
+{# Macro para sección de enfoques con valores #}
+{% macro enfoqueSection(enfoques, level, ajaxUrl) %}
+{% if enfoques %}
+<div class="list-group list-group-flush">
+{% for e in enfoques %}
+<div class="list-group-item px-3 py-2" id="enfoque-row-{{ e.id }}">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <strong class="small">{{ loop.index }}. {{ e.name }}</strong>
+            {% if e.valores %}
+            <span class="badge badge-light border ml-2">{{ e.valores|length }} valores</span>
+            {% endif %}
+        </div>
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-success btn-sm" title="Añadir valor"
+                    onclick="openValorModal({{ e.id }}, 0, null)">
+                <i class="fas fa-plus fa-xs"></i> Valor
+            </button>
+            <button class="btn btn-outline-warning btn-sm" title="Editar enfoque"
+                    onclick="openEnfoqueModal({{ e.id }}, {{ e|json_encode|e('html_attr') }}, '{{ level }}')">
+                <i class="fas fa-edit fa-xs"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" title="Eliminar enfoque"
+                    onclick="deleteEnfoque({{ e.id }})">
+                <i class="fas fa-trash fa-xs"></i>
+            </button>
+        </div>
+    </div>
+    {% if e.valores %}
+    <div class="pl-3 mt-1" id="valores-list-{{ e.id }}">
+        {% for v in e.valores %}
+        <div class="d-flex justify-content-between align-items-center border-bottom py-1" id="valor-row-{{ v.id }}">
+            <span class="small text-secondary"><i class="fas fa-circle fa-xs mr-1 text-success"></i>{{ v.name }}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-warning btn-sm btn-xs" onclick="openValorModal({{ e.id }}, {{ v.id }}, {{ v|json_encode|e('html_attr') }})">
+                    <i class="fas fa-edit fa-xs"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm btn-xs" onclick="deleteValor({{ v.id }})">
+                    <i class="fas fa-times fa-xs"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="pl-3 mt-1" id="valores-list-{{ e.id }}">
+        <small class="text-muted">Sin valores definidos. <a href="#" onclick="openValorModal({{ e.id }},0,null);return false;">Añadir valor</a></small>
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="text-muted p-3 small">No hay enfoques definidos.</p>
+{% endif %}
+{% endmacro %}
+
 {% import _self as self %}
 
 <!-- Tabs de nivel -->
@@ -173,29 +230,7 @@
             </button>
         </div>
         <div class="card-body p-0">
-            <table class="table table-sm table-hover mb-0">
-                <thead class="thead-light">
-                    <tr>
-                        <th style="width:50px">#</th>
-                        <th>{{ 'Name'|get_plugin_lang('SchoolPlugin') }}</th>
-                        <th class="text-center" style="width:100px">{{ 'Actions'|get_plugin_lang('SchoolPlugin') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for e in enfoques_ini %}
-                <tr id="enfoque-row-{{ e.id }}">
-                    <td>{{ loop.index }}</td>
-                    <td>{{ e.name }}</td>
-                    <td class="text-center">
-                        <button class="btn btn-warning btn-sm" onclick="openEnfoqueModal({{ e.id }}, {{ e|json_encode|e('html_attr') }}, 'inicial')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteEnfoque({{ e.id }})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="3" class="text-muted text-center">{{ 'NoEnfoques'|get_plugin_lang('SchoolPlugin') }}</td></tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            {{ _self.enfoqueSection(enfoques_ini, 'inicial', ajax_url) }}
         </div>
     </div>
 
@@ -267,29 +302,7 @@
             </button>
         </div>
         <div class="card-body p-0">
-            <table class="table table-sm table-hover mb-0">
-                <thead class="thead-light">
-                    <tr>
-                        <th style="width:50px">#</th>
-                        <th>{{ 'Name'|get_plugin_lang('SchoolPlugin') }}</th>
-                        <th class="text-center" style="width:100px">{{ 'Actions'|get_plugin_lang('SchoolPlugin') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for e in enfoques_ebr %}
-                <tr id="enfoque-row-{{ e.id }}">
-                    <td>{{ loop.index }}</td>
-                    <td>{{ e.name }}</td>
-                    <td class="text-center">
-                        <button class="btn btn-warning btn-sm" onclick="openEnfoqueModal({{ e.id }}, {{ e|json_encode|e('html_attr') }}, 'ebr')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteEnfoque({{ e.id }})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="3" class="text-muted text-center">{{ 'NoEnfoques'|get_plugin_lang('SchoolPlugin') }}</td></tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            {{ _self.enfoqueSection(enfoques_ebr, 'ebr', ajax_url) }}
         </div>
     </div>
 
@@ -425,6 +438,37 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ 'Close'|get_plugin_lang('SchoolPlugin') }}</button>
                 <button type="button" class="btn btn-primary" onclick="saveEnfoque()">{{ 'SaveChanges'|get_plugin_lang('SchoolPlugin') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Valor de Enfoque -->
+<div class="modal fade" id="valorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="valorModalTitle"><i class="fas fa-leaf mr-1"></i> Valor del Enfoque</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="valor_id" value="0">
+                <input type="hidden" id="valor_enfoque_id" value="0">
+                <div class="form-group">
+                    <label class="font-weight-bold">Nombre del valor <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="valor_name"
+                           placeholder="Ej: Conciencia de derechos" required>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Orden</label>
+                    <input type="number" class="form-control" id="valor_order" value="0" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="saveValor()">
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
             </div>
         </div>
     </div>
@@ -609,5 +653,44 @@ function deleteEnfoque(id) {
     fetch(ajaxUrl, {method:'POST', body:fd})
         .then(r => r.json())
         .then(d => { if (d.success) document.getElementById('enfoque-row-'+id).remove(); });
+}
+
+// ---- VALORES DE ENFOQUES ----
+function openValorModal(enfoqueId, valorId, data) {
+    document.getElementById('valor_enfoque_id').value = enfoqueId;
+    document.getElementById('valor_id').value = valorId || 0;
+    document.getElementById('valor_name').value = data ? data.name : '';
+    document.getElementById('valor_order').value = data ? data.order_index : 0;
+    document.getElementById('valorModalTitle').innerHTML = (valorId > 0
+        ? '<i class="fas fa-edit mr-1"></i> Editar Valor'
+        : '<i class="fas fa-plus-circle mr-1"></i> Nuevo Valor');
+    $('#valorModal').modal('show');
+}
+
+function saveValor() {
+    var name = document.getElementById('valor_name').value.trim();
+    if (!name) { alert('El nombre del valor es obligatorio'); return; }
+    var fd = new FormData();
+    fd.append('action', 'save_enfoque_valor');
+    fd.append('id', document.getElementById('valor_id').value);
+    fd.append('enfoque_id', document.getElementById('valor_enfoque_id').value);
+    fd.append('name', name);
+    fd.append('order_index', document.getElementById('valor_order').value);
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { $('#valorModal').modal('hide'); location.reload(); }
+            else alert(d.message || 'Error al guardar');
+        });
+}
+
+function deleteValor(id) {
+    if (!confirm('¿Eliminar este valor?')) return;
+    var fd = new FormData();
+    fd.append('action', 'delete_enfoque_valor');
+    fd.append('id', id);
+    fetch(ajaxUrl, {method:'POST', body:fd})
+        .then(r => r.json())
+        .then(d => { if (d.success) document.getElementById('valor-row-'+id).remove(); });
 }
 </script>

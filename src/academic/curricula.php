@@ -22,8 +22,8 @@ $plugin->setSidebar('academic');
 $areasByLevel     = CurriculaManager::getAllDataByLevel();
 $transversalesEbr = CurriculaManager::getTransversalesWithCaps('ebr');
 $transversalesIni = CurriculaManager::getTransversalesWithCaps('inicial');
-$enfoquesEbr      = CurriculaManager::getEnfoques('ebr');
-$enfoquesIni      = CurriculaManager::getEnfoques('inicial');
+$enfoquesEbr      = CurriculaManager::getEnfoquesWithValores('ebr');
+$enfoquesIni      = CurriculaManager::getEnfoquesWithValores('inicial');
 
 $plugin->assign('areas_by_level',       $areasByLevel);
 $plugin->assign('transversales_ebr',    $transversalesEbr);

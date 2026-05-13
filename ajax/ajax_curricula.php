@@ -137,6 +137,26 @@ switch ($action) {
         echo json_encode(['success' => true]);
         break;
 
+    case 'save_enfoque_valor':
+        $name = trim($_POST['name'] ?? '');
+        if (empty($name)) {
+            echo json_encode(['success' => false, 'message' => 'Nombre requerido']);
+            exit;
+        }
+        $id = CurriculaManager::saveEnfoqueValor([
+            'id'          => (int) ($_POST['id'] ?? 0),
+            'enfoque_id'  => (int) ($_POST['enfoque_id'] ?? 0),
+            'name'        => $name,
+            'order_index' => (int) ($_POST['order_index'] ?? 0),
+        ]);
+        echo json_encode(['success' => true, 'id' => $id]);
+        break;
+
+    case 'delete_enfoque_valor':
+        CurriculaManager::deleteEnfoqueValor((int) ($_POST['id'] ?? 0));
+        echo json_encode(['success' => true]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Unknown action']);
         break;

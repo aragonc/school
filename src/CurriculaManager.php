@@ -267,9 +267,67 @@ class CurriculaManager
     public static function deleteEnfoque(int $id): bool
     {
         if ($id <= 0) return false;
-        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_ENFOQUE);
+        $table      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_ENFOQUE);
+        $valorTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_ENFOQUE_VALOR);
+        Database::delete($valorTable, ['enfoque_id = ?' => $id]);
         Database::delete($table, ['id = ?' => $id]);
         return true;
+    }
+
+    // =========================================================================
+    // VALORES DE ENFOQUES TRANSVERSALES
+    // =========================================================================
+
+    public static function getValoresByEnfoque(int $enfoqueId): array
+    {
+        if ($enfoqueId <= 0) return [];
+        $table  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_ENFOQUE_VALOR);
+        $result = Database::query(
+            "SELECT * FROM $table WHERE enfoque_id = $enfoqueId AND active = 1 ORDER BY order_index ASC, name ASC"
+        );
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    public static function saveEnfoqueValor(array $data): int
+    {
+        $table      = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_ENFOQUE_VALOR);
+        $id         = (int) ($data['id'] ?? 0);
+        $enfoqueId  = (int) ($data['enfoque_id'] ?? 0);
+        $name       = Database::escape_string(trim($data['name'] ?? ''));
+        $orderIndex = (int) ($data['order_index'] ?? 0);
+
+        if (empty($name) || $enfoqueId <= 0) return 0;
+
+        if ($id > 0) {
+            Database::query(
+                "UPDATE $table SET name='$name', order_index=$orderIndex WHERE id=$id AND enfoque_id=$enfoqueId"
+            );
+            return $id;
+        }
+        Database::query(
+            "INSERT INTO $table (enfoque_id, name, active, order_index) VALUES ($enfoqueId, '$name', 1, $orderIndex)"
+        );
+        return Database::insert_id();
+    }
+
+    public static function deleteEnfoqueValor(int $id): void
+    {
+        if ($id <= 0) return;
+        $table = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_ENFOQUE_VALOR);
+        Database::delete($table, ['id = ?' => $id]);
+    }
+
+    public static function getEnfoquesWithValores(string $level = ''): array
+    {
+        $enfoques = self::getEnfoques($level);
+        foreach ($enfoques as &$ef) {
+            $ef['valores'] = self::getValoresByEnfoque((int) $ef['id']);
+        }
+        return $enfoques;
     }
 
     // =========================================================================

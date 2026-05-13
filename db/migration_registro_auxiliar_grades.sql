@@ -46,3 +46,17 @@ CREATE TABLE IF NOT EXISTS plugin_school_registro_aux_nota (
     KEY idx_registro (registro_id),
     KEY idx_student (student_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Add criterio column to capacidades (run separately if already deployed)
+-- ALTER TABLE plugin_school_registro_aux_capacidad ADD COLUMN criterio VARCHAR(300) NOT NULL DEFAULT '' AFTER order_index;
+
+CREATE TABLE IF NOT EXISTS plugin_school_registro_aux_enfoque (
+    id           INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    registro_id  INT UNSIGNED NOT NULL,
+    enfoque_id   INT UNSIGNED NOT NULL DEFAULT 0,
+    nombre       VARCHAR(300) NOT NULL DEFAULT '',
+    valores      TEXT NOT NULL,
+    actitudes    TEXT NOT NULL,
+    order_index  INT NOT NULL DEFAULT 0,
+    KEY idx_registro (registro_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

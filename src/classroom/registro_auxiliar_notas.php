@@ -115,7 +115,7 @@ while ($rcRow = Database::fetch_array($rcRes, 'ASSOC')) {
     // Load capacidades for this competencia
     $capacidades = [];
     $capRes = Database::query(
-        "SELECT rc2.id AS aux_cap_id, rc2.capacidad_id, rc2.is_transversal, rc2.order_index
+        "SELECT rc2.id AS aux_cap_id, rc2.capacidad_id, rc2.is_transversal, rc2.order_index, rc2.criterio
          FROM $rCapTable rc2
          WHERE rc2.registro_comp_id = $rcId
          ORDER BY rc2.order_index ASC"
@@ -138,10 +138,11 @@ while ($rcRow = Database::fetch_array($rcRes, 'ASSOC')) {
         if (!$capInfo) continue;
 
         $capacidades[] = [
-            'aux_cap_id'   => $capAuxId,
-            'capacidad_id' => $capId,
+            'aux_cap_id'     => $capAuxId,
+            'capacidad_id'   => $capId,
             'is_transversal' => $capTrans,
-            'name'         => $capInfo['name'],
+            'name'           => $capInfo['name'],
+            'criterio'       => $capRow['criterio'] ?? '',
         ];
     }
 
@@ -177,6 +178,26 @@ foreach ($competencias as $comp) {
     $competenciasData[] = array_merge($comp, ['cap_ids' => $capIds]);
 }
 
+// Load enfoques for this registro
+$efTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUX_ENFOQUE);
+$enfsRes   = Database::query(
+    "SELECT * FROM $efTable WHERE registro_id = $registroId ORDER BY order_index ASC"
+);
+$enfoques = [];
+while ($efRow = Database::fetch_array($enfsRes, 'ASSOC')) {
+    $enfoques[] = $efRow;
+}
+
+// Load curricula enfoques for the selection modal
+$enfCurriculaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_ENFOQUE);
+$enfCurriculaRes   = Database::query(
+    "SELECT id, name FROM $enfCurriculaTable WHERE active = 1 ORDER BY order_index ASC"
+);
+$enfoquesDisponibles = [];
+while ($row = Database::fetch_array($enfCurriculaRes, 'ASSOC')) {
+    $enfoquesDisponibles[] = $row;
+}
+
 // Load curricula areas and all competencias/capacidades for the edit modal
 $areas     = CurriculaManager::getAreas();
 $ajaxUrl   = api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_registro_auxiliar.php';
@@ -189,6 +210,8 @@ $plugin->assign('competencias', $competenciasData);
 $plugin->assign('students', $students);
 $plugin->assign('notas_map', $notasMap);
 $plugin->assign('areas', $areas);
+$plugin->assign('enfoques', $enfoques);
+$plugin->assign('enfoques_disponibles', $enfoquesDisponibles);
 $plugin->assign('ajax_url', $ajaxUrl);
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('registro_id', $registroId);

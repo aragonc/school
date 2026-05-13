@@ -75,6 +75,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_CURRICULA_TRANSVERSAL      = 'plugin_school_curricula_transversal';
     const TABLE_SCHOOL_CURRICULA_TRANSVERSAL_CAP  = 'plugin_school_curricula_transversal_cap';
     const TABLE_SCHOOL_CURRICULA_ENFOQUE          = 'plugin_school_curricula_enfoque';
+    const TABLE_SCHOOL_CURRICULA_ENFOQUE_VALOR    = 'plugin_school_curricula_enfoque_valor';
 
     const TABLE_SCHOOL_ACADEMIC_PERIOD            = 'plugin_school_academic_period';
 
@@ -82,6 +83,7 @@ class SchoolPlugin extends Plugin
     const TABLE_SCHOOL_REGISTRO_AUX_COMPETENCIA   = 'plugin_school_registro_aux_competencia';
     const TABLE_SCHOOL_REGISTRO_AUX_CAPACIDAD     = 'plugin_school_registro_aux_capacidad';
     const TABLE_SCHOOL_REGISTRO_AUX_NOTA          = 'plugin_school_registro_aux_nota';
+    const TABLE_SCHOOL_REGISTRO_AUX_ENFOQUE       = 'plugin_school_registro_aux_enfoque';
 
     const TEMPLATE_ZERO = 0;
     const INTERFACE_ONE = 1;

@@ -363,6 +363,70 @@ switch ($action) {
         echo json_encode(['success' => true, 'courses' => $courses]);
         break;
 
+    case 'save_criterio':
+        $auxCapId   = (int) ($_POST['aux_capacidad_id'] ?? 0);
+        $registroId = (int) ($_POST['registro_id'] ?? 0);
+        $criterio   = trim($_POST['criterio'] ?? '');
+
+        if ($auxCapId <= 0 || $registroId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Parámetros incompletos']);
+            exit;
+        }
+        if (!_userCanEditRegistro($registroId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            exit;
+        }
+        $criterio_e  = Database::escape_string($criterio);
+        $rCapTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUX_CAPACIDAD);
+        Database::query("UPDATE $rCapTable SET criterio = '$criterio_e' WHERE id = $auxCapId");
+        echo json_encode(['success' => true]);
+        break;
+
+    case 'save_enfoques':
+        $registroId = (int) ($_POST['registro_id'] ?? 0);
+        $enfoques   = json_decode($_POST['enfoques'] ?? '[]', true);
+
+        if ($registroId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'registro_id requerido']);
+            exit;
+        }
+        if (!_userCanEditRegistro($registroId, $userId, $isAdmin)) {
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            exit;
+        }
+
+        $efTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUX_ENFOQUE);
+        Database::query("DELETE FROM $efTable WHERE registro_id = $registroId");
+
+        if (is_array($enfoques)) {
+            $order = 0;
+            foreach ($enfoques as $ef) {
+                $efId     = (int) ($ef['enfoque_id'] ?? 0);
+                $nombre   = Database::escape_string(trim($ef['nombre'] ?? ''));
+                $valores  = Database::escape_string(trim($ef['valores'] ?? ''));
+                $actitudes = Database::escape_string(trim($ef['actitudes'] ?? ''));
+                if (empty($nombre)) continue;
+                Database::query(
+                    "INSERT INTO $efTable (registro_id, enfoque_id, nombre, valores, actitudes, order_index)
+                     VALUES ($registroId, $efId, '$nombre', '$valores', '$actitudes', $order)"
+                );
+                $order++;
+            }
+        }
+        echo json_encode(['success' => true]);
+        break;
+
+    case 'get_enfoques_curricula':
+        require_once __DIR__ . '/../src/CurriculaManager.php';
+        $enfoques = CurriculaManager::getEnfoquesWithValores();
+        // simplify valores to just names array
+        foreach ($enfoques as &$ef) {
+            $ef['valores_list'] = array_column($ef['valores'], 'name');
+            unset($ef['valores']);
+        }
+        echo json_encode(['success' => true, 'enfoques' => $enfoques]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Unknown action']);
         break;
