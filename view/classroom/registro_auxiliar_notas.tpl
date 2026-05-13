@@ -916,7 +916,8 @@ function openImportModal(capId, capName) {
     $('#importGradesContainer').hide();
     $('#importNoActivities').hide();
     $('#importNoGrades').hide();
-    $('#btnApplyImport').hide();
+    $('#btnApplyImport').prop('disabled', false)
+        .html('<i class="fas fa-check mr-1"></i> Aplicar notas a la columna').hide();
 
     $('#modalImportGrades').modal('show');
 
@@ -1041,6 +1042,8 @@ function applyImportedGrades() {
         notas: JSON.stringify(notas)
     }, function(res) {
         if (res.success) {
+            $('#btnApplyImport').prop('disabled', false)
+                .html('<i class="fas fa-check mr-1"></i> Aplicar notas a la columna');
             $('#modalImportGrades').modal('hide');
             recalcAll();
             $('input.nota-input[data-cap="' + _importCapId + '"]').css('background', '#e6ffed');
