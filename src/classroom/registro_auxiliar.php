@@ -114,15 +114,36 @@ while ($row = Database::fetch_array($res, 'ASSOC')) {
 // Load curricula areas for the create form
 $areas = CurriculaManager::getAreas();
 
-$periods = ['I BIMESTRE', 'II BIMESTRE', 'III BIMESTRE', 'IV BIMESTRE'];
+// Load periods from DB for active year; fallback to defaults if none defined
+$periods = [];
+if ($yearId > 0) {
+    $periodTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_PERIOD);
+    $perRes = Database::query(
+        "SELECT id, name, date_start, date_end FROM $periodTable
+         WHERE academic_year_id = $yearId AND active = 1
+         ORDER BY order_index ASC, date_start ASC"
+    );
+    while ($pr = Database::fetch_array($perRes, 'ASSOC')) {
+        $periods[] = $pr;
+    }
+}
+if (empty($periods)) {
+    // Default fallback if no periods defined yet
+    $defaults = ['I BIMESTRE', 'II BIMESTRE', 'III BIMESTRE', 'IV BIMESTRE'];
+    foreach ($defaults as $d) {
+        $periods[] = ['id' => 0, 'name' => $d, 'date_start' => '', 'date_end' => ''];
+    }
+}
 
 $ajaxUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_registro_auxiliar.php';
+$periodsAjaxUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/ajax/ajax_academic_periods.php';
 
 $plugin->assign('teacher_courses', $teacherCourses);
 $plugin->assign('registros', $registros);
 $plugin->assign('areas', $areas);
 $plugin->assign('periods', $periods);
 $plugin->assign('ajax_url', $ajaxUrl);
+$plugin->assign('periods_ajax_url', $periodsAjaxUrl);
 $plugin->assign('is_admin', $isAdmin);
 $plugin->assign('active_year', $activeYear);
 

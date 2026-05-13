@@ -115,10 +115,20 @@
                         <div class="form-group col-md-6">
                             <label class="font-weight-bold">Período / Bimestre <span class="text-danger">*</span></label>
                             <select id="selPeriod" name="period" class="form-control" required>
+                                <option value="">— Selecciona —</option>
                                 {% for p in periods %}
-                                <option value="{{ p }}">{{ p }}</option>
+                                <option value="{{ p.name }}">
+                                    {{ p.name }}{% if p.date_start %} ({{ p.date_start }} – {{ p.date_end }}){% endif %}
+                                </option>
                                 {% endfor %}
                             </select>
+                            {% if is_admin %}
+                            <small class="form-text text-muted">
+                                <a href="/academic/periods" target="_blank">
+                                    <i class="fas fa-cog mr-1"></i>Gestionar períodos
+                                </a>
+                            </small>
+                            {% endif %}
                         </div>
                         <div class="form-group col-md-6">
                             <label class="font-weight-bold">Tipo de nota <span class="text-danger">*</span></label>
