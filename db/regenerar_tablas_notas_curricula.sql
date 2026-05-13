@@ -2,9 +2,8 @@
 -- REGENERAR TABLAS: Registro Auxiliar + Curricula Enfoques Valores
 -- School Plugin - Play School
 -- ================================================================
--- ADVERTENCIA: Este script elimina y recrea las tablas indicadas.
+-- Elimina y recrea las tablas indicadas.
 -- Los datos existentes en estas tablas se perderán.
--- Tablas que NO se tocan: matricula, pagos, asistencia, usuarios, etc.
 -- ================================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -37,94 +36,198 @@ CREATE TABLE plugin_school_curricula_enfoque_valor (
     KEY idx_enfoque (enfoque_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Seed valores usando el nombre del enfoque (independiente del ID)
+-- ================================================================
+-- SEED EBR (nombres: "Enfoque de derechos", "Inclusivo o de
+-- atención a la diversidad", "Intercultural", "Igualdad de
+-- género", "Ambiental", "Orientación al bien común",
+-- "Búsqueda de la excelencia")
+-- ================================================================
+
+-- 1. Enfoque de Derechos EBR
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Conciencia de derechos', 1
+FROM plugin_school_curricula_enfoque WHERE name = 'Enfoque de derechos' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Libertad y responsabilidad', 2
+FROM plugin_school_curricula_enfoque WHERE name = 'Enfoque de derechos' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Diálogo y concertación', 3
+FROM plugin_school_curricula_enfoque WHERE name = 'Enfoque de derechos' AND level = 'ebr';
+
+-- 2. Inclusivo o de Atención a la Diversidad EBR
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Respeto por las diferencias', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%nclusi%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Equidad en la enseñanza', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%nclusi%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Confianza en la persona', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%nclusi%' AND level = 'ebr';
+
+-- 3. Intercultural EBR
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Respeto a la identidad cultural', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ntercultural%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Justicia', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ntercultural%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Diálogo intercultural', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ntercultural%' AND level = 'ebr';
+
+-- 4. Igualdad de Género EBR
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Igualdad y dignidad', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%gualdad%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Justicia', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%gualdad%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Empatía', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%gualdad%' AND level = 'ebr';
+
+-- 5. Ambiental EBR
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Solidaridad planetaria y equidad intergeneracional', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%mbiental%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Justicia y solidaridad', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%mbiental%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Respeto a toda forma de vida', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%mbiental%' AND level = 'ebr';
+
+-- 6. Orientación al Bien Común EBR
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Equidad y justicia', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Solidaridad', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Empatía', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Responsabilidad', 4
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'ebr';
+
+-- 7. Búsqueda de la Excelencia EBR
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Flexibilidad y apertura', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%xcelencia%' AND level = 'ebr';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Superación personal', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%xcelencia%' AND level = 'ebr';
+
+-- ================================================================
+-- SEED INICIAL (nombres: "Enfoque de derechos", "Inclusión y
+-- diversidad", "Interculturalidad", "Igualdad de género",
+-- "Ambiental", "Bien común", "Excelencia")
+-- ================================================================
+
+-- 1. Enfoque de Derechos Inicial
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Conciencia de derechos', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%erechos%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Libertad y responsabilidad', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%erechos%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Diálogo y concertación', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%erechos%' AND level = 'inicial';
+
+-- 2. Inclusión y Diversidad Inicial
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Respeto por las diferencias', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%nclusi%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Equidad', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%nclusi%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Confianza en la persona', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%nclusi%' AND level = 'inicial';
+
+-- 3. Interculturalidad Inicial
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Respeto a la identidad cultural', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ntercultural%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Justicia', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ntercultural%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Diálogo intercultural', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ntercultural%' AND level = 'inicial';
+
+-- 4. Igualdad de Género Inicial
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Igualdad y dignidad', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%gualdad%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Justicia', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%gualdad%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Empatía', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%gualdad%' AND level = 'inicial';
+
+-- 5. Ambiental Inicial
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Solidaridad planetaria', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%mbiental%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Justicia y solidaridad', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%mbiental%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Respeto a toda forma de vida', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%mbiental%' AND level = 'inicial';
+
+-- 6. Bien Común Inicial
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Equidad y justicia', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Solidaridad', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Empatía', 3
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Responsabilidad', 4
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%ien com%' AND level = 'inicial';
+
+-- 7. Excelencia Inicial
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Superación personal', 1
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%xcelencia%' AND level = 'inicial';
+INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
+SELECT id, 'Flexibilidad y apertura', 2
+FROM plugin_school_curricula_enfoque WHERE name LIKE '%xcelencia%' AND level = 'inicial';
+
+-- ================================================================
+-- FALLBACK: si los enfoques no tienen level asignado ('ambos')
+-- inserta para los que aún no tienen valores
+-- ================================================================
 INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
 SELECT e.id, 'Conciencia de derechos', 1
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Derechos%' LIMIT 1;
+FROM plugin_school_curricula_enfoque e
+WHERE e.name LIKE '%erechos%' AND e.level = 'ambos'
+AND NOT EXISTS (SELECT 1 FROM plugin_school_curricula_enfoque_valor v WHERE v.enfoque_id = e.id);
 
 INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
 SELECT e.id, 'Libertad y responsabilidad', 2
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Derechos%' LIMIT 1;
+FROM plugin_school_curricula_enfoque e
+WHERE e.name LIKE '%erechos%' AND e.level = 'ambos'
+AND NOT EXISTS (SELECT 1 FROM plugin_school_curricula_enfoque_valor v WHERE v.enfoque_id = e.id AND v.order_index = 2);
 
 INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
 SELECT e.id, 'Diálogo y concertación', 3
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Derechos%' LIMIT 1;
+FROM plugin_school_curricula_enfoque e
+WHERE e.name LIKE '%erechos%' AND e.level = 'ambos'
+AND NOT EXISTS (SELECT 1 FROM plugin_school_curricula_enfoque_valor v WHERE v.enfoque_id = e.id AND v.order_index = 3);
 
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Respeto por las diferencias', 1
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Inclusiv%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Equidad en la enseñanza', 2
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Inclusiv%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Confianza en la persona', 3
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Inclusiv%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Respeto a la identidad cultural', 1
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Intercultural%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Justicia', 2
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Intercultural%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Diálogo intercultural', 3
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Intercultural%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Igualdad y dignidad', 1
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Género%' OR e.name LIKE '%Genero%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Justicia', 2
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Género%' OR e.name LIKE '%Genero%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Empatía', 3
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Género%' OR e.name LIKE '%Genero%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Solidaridad planetaria y equidad intergeneracional', 1
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Ambiental%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Justicia y solidaridad', 2
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Ambiental%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Respeto a toda forma de vida', 3
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Ambiental%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Equidad y justicia', 1
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Bien Com%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Solidaridad', 2
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Bien Com%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Empatía', 3
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Bien Com%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Responsabilidad', 4
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Bien Com%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Flexibilidad y apertura', 1
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Excelencia%' LIMIT 1;
-
-INSERT INTO plugin_school_curricula_enfoque_valor (enfoque_id, name, order_index)
-SELECT e.id, 'Superación personal', 2
-FROM plugin_school_curricula_enfoque e WHERE e.name LIKE '%Excelencia%' LIMIT 1;
-
--- ----------------------------------------------------------------
--- 3. REGISTRO AUXILIAR (cabecera)
--- ----------------------------------------------------------------
+-- ================================================================
+-- 3. REGISTRO AUXILIAR Y TABLAS RELACIONADAS
+-- ================================================================
 DROP TABLE IF EXISTS plugin_school_registro_aux_nota;
 DROP TABLE IF EXISTS plugin_school_registro_aux_capacidad;
 DROP TABLE IF EXISTS plugin_school_registro_aux_competencia;
@@ -144,9 +247,6 @@ CREATE TABLE plugin_school_registro_auxiliar (
     KEY idx_classroom_course (classroom_course_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ----------------------------------------------------------------
--- 4. COMPETENCIAS DEL REGISTRO
--- ----------------------------------------------------------------
 CREATE TABLE plugin_school_registro_aux_competencia (
     id              INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     registro_id     INT UNSIGNED NOT NULL,
@@ -157,9 +257,6 @@ CREATE TABLE plugin_school_registro_aux_competencia (
     KEY idx_registro (registro_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ----------------------------------------------------------------
--- 5. CAPACIDADES DEL REGISTRO (con campo criterio)
--- ----------------------------------------------------------------
 CREATE TABLE plugin_school_registro_aux_capacidad (
     id               INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     registro_comp_id INT UNSIGNED NOT NULL,
@@ -171,9 +268,6 @@ CREATE TABLE plugin_school_registro_aux_capacidad (
     KEY idx_comp (registro_comp_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ----------------------------------------------------------------
--- 6. NOTAS POR ALUMNO
--- ----------------------------------------------------------------
 CREATE TABLE plugin_school_registro_aux_nota (
     id               INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     registro_id      INT UNSIGNED NOT NULL,
@@ -186,9 +280,6 @@ CREATE TABLE plugin_school_registro_aux_nota (
     KEY idx_student (student_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ----------------------------------------------------------------
--- 7. ENFOQUES VINCULADOS AL REGISTRO
--- ----------------------------------------------------------------
 CREATE TABLE plugin_school_registro_aux_enfoque (
     id           INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     registro_id  INT UNSIGNED NOT NULL,
@@ -203,5 +294,6 @@ CREATE TABLE plugin_school_registro_aux_enfoque (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ================================================================
--- FIN
+-- FIN — Ejecutar en el VPS:
+-- mysql -u USUARIO -p BASEDEDATOS < regenerar_tablas_notas_curricula.sql
 -- ================================================================
