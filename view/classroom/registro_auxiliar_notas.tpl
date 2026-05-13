@@ -194,7 +194,7 @@
                                           title="Criterio para: {{ cap.name }}">{{ cap.criterio }}</textarea>
                                 <button class="btn btn-link p-0 d-block w-100 import-notes-btn"
                                         style="font-size:9px;line-height:1.4;color:#3b7dd8;border-top:1px solid #e8e0c8;"
-                                        onclick="openImportModal({{ cap.aux_cap_id }}, {{ cap.name|json_encode }})"
+                                        onclick="openImportModal({{ cap.aux_cap_id }}, '{{ cap.name|e('js') }}')"
                                         title="Importar notas desde Chamilo">
                                     <i class="fas fa-plus-circle"></i>
                                 </button>
