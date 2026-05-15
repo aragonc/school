@@ -323,13 +323,39 @@
                             <i class="fas fa-file-alt mr-1"></i>Tareas
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link small py-1 px-3" href="#" data-tab="fill"
+                           onclick="switchImportTab('fill'); return false;">
+                            <i class="fas fa-fill-drip mr-1"></i>Rellenar notas
+                        </a>
+                    </li>
                 </ul>
 
-                <div class="form-group mb-2">
+                <div id="activitySelectGroup" class="form-group mb-2">
                     <label class="font-weight-bold small mb-1">Seleccionar actividad:</label>
                     <select id="selImportActivity" class="form-control form-control-sm" onchange="loadActivityGrades()">
                         <option value="">— Cargando actividades… —</option>
                     </select>
+                </div>
+
+                <div id="fillGradeContainer" style="display:none;">
+                    <p class="small text-muted mb-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Ingresa una nota y se copiará en todas las celdas de la columna <strong id="fillCapName"></strong>.
+                    </p>
+                    <div class="d-flex align-items-center" style="gap:12px;">
+                        <div>
+                            <label class="font-weight-bold small mb-1">Nota para todos los alumnos:</label>
+                            <input type="number" id="fillGradeValue" class="form-control"
+                                   min="0" max="20" step="0.5" placeholder="0 – 20"
+                                   style="width:120px;font-size:1.1rem;text-align:center;">
+                        </div>
+                        <div class="mt-3 text-muted small">
+                            {% if registro.grade_type == 'letter' or registro.grade_type == 'combined' %}
+                            AD ≥ 18 &nbsp; A 14–17 &nbsp; B 11–13 &nbsp; C ≤ 10
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
                 <div id="importGradesContainer" style="display:none;">
@@ -363,6 +389,10 @@
                 <button type="button" class="btn btn-sm btn-primary" id="btnApplyImport"
                         onclick="applyImportedGrades()" style="display:none;">
                     <i class="fas fa-check mr-1"></i> Aplicar notas a la columna
+                </button>
+                <button type="button" class="btn btn-sm btn-success" id="btnApplyFill"
+                        onclick="applyFillGrade()" style="display:none;">
+                    <i class="fas fa-fill-drip mr-1"></i> Rellenar columna
                 </button>
             </div>
         </div>
@@ -983,14 +1013,19 @@ function openImportModal(capId, capName) {
     _importLoaded = false;
 
     $('#importCapName').text(capName);
+    $('#fillCapName').text(capName);
+    $('#fillGradeValue').val('');
     $('#importTabs .nav-link').removeClass('active');
     $('#importTabs .nav-link[data-tab="exercise"]').addClass('active');
     $('#selImportActivity').html('<option value="">— Cargando actividades… —</option>');
+    $('#activitySelectGroup').show();
+    $('#fillGradeContainer').hide();
     $('#importGradesContainer').hide();
     $('#importNoActivities').hide();
     $('#importNoGrades').hide();
     $('#btnApplyImport').prop('disabled', false)
         .html('<i class="fas fa-check mr-1"></i> Aplicar notas a la columna').hide();
+    $('#btnApplyFill').hide();
 
     $('#modalImportGrades').modal('show');
 
@@ -1014,8 +1049,63 @@ function switchImportTab(tab) {
     $('#importTabs .nav-link[data-tab="' + tab + '"]').addClass('active');
     $('#importGradesContainer').hide();
     $('#importNoGrades').hide();
+    $('#importNoActivities').hide();
     $('#btnApplyImport').hide();
-    if (_importLoaded) _populateImportSelect();
+    $('#btnApplyFill').hide();
+
+    if (tab === 'fill') {
+        $('#activitySelectGroup').hide();
+        $('#fillGradeContainer').show();
+        $('#btnApplyFill').show();
+    } else {
+        $('#activitySelectGroup').show();
+        $('#fillGradeContainer').hide();
+        if (_importLoaded) _populateImportSelect();
+    }
+}
+
+function applyFillGrade() {
+    var rawVal = $('#fillGradeValue').val().trim();
+    if (rawVal === '') { alert('Ingresa una nota entre 0 y 20'); return; }
+    var num = parseFloat(rawVal);
+    if (isNaN(num) || num < 0 || num > 20) { alert('La nota debe estar entre 0 y 20'); return; }
+
+    var displayVal;
+    if (GRADE_TYPE === 'letter')       displayVal = numToLetter(num);
+    else if (GRADE_TYPE === 'numeric') displayVal = Math.round(num).toString();
+    else                               displayVal = Math.round(num) + ' (' + numToLetter(num) + ')';
+
+    var notas = [];
+    $('input.nota-input[data-cap="' + _importCapId + '"]').each(function() {
+        var $inp = $(this);
+        $inp.val(displayVal);
+        notas.push({ aux_capacidad_id: _importCapId, student_id: parseInt($inp.data('student')), nota: displayVal });
+    });
+
+    if (!notas.length) { $('#modalImportGrades').modal('hide'); return; }
+
+    $('#btnApplyFill').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando…');
+
+    $.post(AJAX_URL, {
+        action: 'save_notas_bulk',
+        registro_id: REGISTRO_ID,
+        notas: JSON.stringify(notas)
+    }, function(res) {
+        if (res.success) {
+            $('#modalImportGrades').modal('hide');
+            recalcAll();
+            $('input.nota-input[data-cap="' + _importCapId + '"]').css('background', '#e6ffed');
+            setTimeout(function() {
+                $('input.nota-input[data-cap="' + _importCapId + '"]').css('background', '');
+            }, 1200);
+        } else {
+            alert(res.message || 'Error al guardar');
+        }
+        $('#btnApplyFill').prop('disabled', false).html('<i class="fas fa-fill-drip mr-1"></i> Rellenar columna');
+    }, 'json').fail(function() {
+        alert('Error de comunicación');
+        $('#btnApplyFill').prop('disabled', false).html('<i class="fas fa-fill-drip mr-1"></i> Rellenar columna');
+    });
 }
 
 function _populateImportSelect() {
