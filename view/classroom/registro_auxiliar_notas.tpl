@@ -20,10 +20,9 @@
             <button class="btn btn-sm btn-outline-primary" onclick="openEditCompetencias()">
                 <i class="fas fa-edit mr-1"></i> Editar competencias
             </button>
-            <a href="/my-aula/registro/notas/exportar?id={{ registro_id }}"
-               class="btn btn-sm btn-outline-success" title="Exportar a Excel">
+            <button class="btn btn-sm btn-outline-success" onclick="openExportModal()" title="Exportar a Excel">
                 <i class="fas fa-file-excel mr-1"></i> Exportar Excel
-            </a>
+            </button>
             <a href="/my-aula/registro" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </a>
@@ -254,6 +253,50 @@
     </div>
 
     {% endif %}
+</div>
+
+{# ===== Modal: Exportar Excel ===== #}
+<div class="modal fade" id="modalExportExcel" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title"><i class="fas fa-file-excel text-success mr-2"></i>Exportar Registro a Excel</h6>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Selecciona el formato de exportación:</p>
+                <div class="list-group">
+                    <label class="list-group-item list-group-item-action d-flex align-items-start" style="cursor:pointer;">
+                        <input type="radio" name="exportMode" value="decimals" class="mt-1 mr-3" checked>
+                        <div>
+                            <strong>Sin redondeo &mdash; decimales</strong>
+                            <div class="text-muted small">Las notas y promedios se exportan tal cual, con 2 decimales. Formato <code>.xls</code></div>
+                        </div>
+                    </label>
+                    <label class="list-group-item list-group-item-action d-flex align-items-start" style="cursor:pointer;">
+                        <input type="radio" name="exportMode" value="round" class="mt-1 mr-3">
+                        <div>
+                            <strong>Con redondeo &mdash; enteros</strong>
+                            <div class="text-muted small">Los promedios se redondean al entero más cercano. Formato <code>.xls</code></div>
+                        </div>
+                    </label>
+                    <label class="list-group-item list-group-item-action d-flex align-items-start" style="cursor:pointer;">
+                        <input type="radio" name="exportMode" value="formula" class="mt-1 mr-3">
+                        <div>
+                            <strong>Con fórmulas Excel (ROUND + AVERAGE)</strong>
+                            <div class="text-muted small">Los promedios y niveles de logro usan fórmulas reales. Si editas una nota en Excel, se recalcula solo. Formato <code>.xlsx</code></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success btn-sm" onclick="doExportExcel()">
+                    <i class="fas fa-download mr-1"></i> Descargar
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {# ===== Modal: Importar Notas desde Chamilo ===== #}
@@ -1095,4 +1138,15 @@ $(document).ready(function() {
     const areaId = parseInt('{{ registro.area_id }}');
     if (areaId > 0) $('#filterArea').val(areaId);
 });
+
+// ==================== EXPORT MODAL ====================
+function openExportModal() {
+    $('input[name="exportMode"][value="decimals"]').prop('checked', true);
+    $('#modalExportExcel').modal('show');
+}
+function doExportExcel() {
+    const mode = $('input[name="exportMode"]:checked').val() || 'decimals';
+    window.location.href = '/my-aula/registro/notas/exportar?id={{ registro_id }}&mode=' + mode;
+    $('#modalExportExcel').modal('hide');
+}
 </script>
