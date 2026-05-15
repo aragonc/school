@@ -270,14 +270,14 @@
                         <input type="radio" name="exportMode" value="decimals" class="mt-1 mr-3" checked>
                         <div>
                             <strong>Sin redondeo &mdash; decimales</strong>
-                            <div class="text-muted small">Las notas y promedios se exportan tal cual, con 2 decimales. Formato <code>.xls</code></div>
+                            <div class="text-muted small">Las notas y promedios se exportan tal cual, con 2 decimales. Formato <code>.xlsx</code></div>
                         </div>
                     </label>
                     <label class="list-group-item list-group-item-action d-flex align-items-start" style="cursor:pointer;">
                         <input type="radio" name="exportMode" value="round" class="mt-1 mr-3">
                         <div>
                             <strong>Con redondeo &mdash; enteros</strong>
-                            <div class="text-muted small">Los promedios se redondean al entero más cercano. Formato <code>.xls</code></div>
+                            <div class="text-muted small">Los promedios se redondean al entero más cercano. Formato <code>.xlsx</code></div>
                         </div>
                     </label>
                     <label class="list-group-item list-group-item-action d-flex align-items-start" style="cursor:pointer;">

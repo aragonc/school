@@ -36,6 +36,7 @@ $clTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSR
 $gTable    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_GRADE);
 $sTable    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_SECTION);
 $lTable    = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_LEVEL);
+$ayTable   = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_YEAR);
 $areaTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_AREA);
 $compTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_COMPETENCIA);
 $transTable= Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_CURRICULA_TRANSVERSAL);
@@ -50,7 +51,8 @@ $regRes = Database::query(
     "SELECT r.*, c.title AS course_title,
             l.name AS level_name, g.name AS grade_name, sec.name AS section_name,
             a.name AS area_name, cc.classroom_id,
-            u.firstname AS teacher_firstname, u.lastname AS teacher_lastname
+            u.firstname AS teacher_firstname, u.lastname AS teacher_lastname,
+            ay.year AS academic_year
      FROM $rTable r
      INNER JOIN $ccTable cc ON cc.id = r.classroom_course_id
      INNER JOIN $cTable  c  ON c.id  = cc.course_id
@@ -58,6 +60,7 @@ $regRes = Database::query(
      INNER JOIN $gTable  g  ON g.id  = cl.grade_id
      LEFT  JOIN $sTable sec ON sec.id = cl.section_id
      INNER JOIN $lTable  l  ON l.id  = g.level_id
+     LEFT  JOIN $ayTable ay ON ay.id = cl.academic_year_id
      LEFT  JOIN $areaTable a ON a.id = r.area_id
      LEFT  JOIN " . Database::get_main_table(TABLE_MAIN_USER) . " u ON u.id = r.created_by
      WHERE r.id = $registroId LIMIT 1"
@@ -413,27 +416,16 @@ $xml .= '</Table></Worksheet></Workbook>';
 // ── Send file ─────────────────────────────────────────────────────────────────
 $area     = preg_replace('/[^A-Za-z0-9_\-]/', '_', $registro['area_name'] ?? 'Area');
 
-if ($exportMode === 'formula') {
-    $filename = 'Registro_Auxiliar_' . $registro['period'] . '_' . $area . '.xlsx';
-    $xlsx = raGenerateXlsx(
-        $registro, $competencias, $compRanges, $promedioCol,
-        $students, $notasMap, $enfoques, $gradeType
-    );
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Cache-Control: max-age=0');
-    header('Pragma: no-cache');
-    echo $xlsx;
-    exit;
-}
-
-$filename = 'Registro_Auxiliar_' . $registro['period'] . '_' . $area . '.xls';
-header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+$filename = 'Registro_Auxiliar_' . $registro['period'] . '_' . $area . '.xlsx';
+$xlsx = raGenerateXlsx(
+    $registro, $competencias, $compRanges, $promedioCol,
+    $students, $notasMap, $enfoques, $gradeType, $exportMode
+);
+header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Cache-Control: max-age=0');
 header('Pragma: no-cache');
-
-echo $xml;
+echo $xlsx;
 exit;
 
 // ── XLSX generator — layout matching registro auxiliar oficial ────────────────
@@ -445,7 +437,8 @@ function raGenerateXlsx(
     array $students,
     array $notasMap,
     array $enfoques,
-    string $gradeType
+    string $gradeType,
+    string $exportMode = 'formula'
 ): string {
     $lastCol   = $promedioCol + 1;  // 1-based index of PROMEDIO column
     $fullMerge = $lastCol - 1;      // MergeAcross to cover all columns
@@ -510,7 +503,7 @@ function raGenerateXlsx(
     // Row 1: logo placeholder merging rows 1-3, title on right
     $heights[++$curRow] = 26; // row 1
     $cell($curRow, 1, "INSTITUCIÓN\nEDUCATIVA", 'sLeftTitle', '', 1, 2); // A1:B3 logo area
-    $cell($curRow, 3, 'REGISTRO AUXILIAR DE EVALUACIÓN - ' . date('Y'), 'sTitle', '', $fullMerge - 2);
+    $cell($curRow, 3, 'REGISTRO AUXILIAR DE EVALUACIÓN - ' . ($registro['academic_year'] ?? date('Y')), 'sTitle', '', $fullMerge - 2);
 
     $heights[++$curRow] = 18; // row 2
     $cell($curRow, 3, 'R.V.M. N° 00094 - 2020  -  MINEDU', 'sSubtitle', '', $fullMerge - 2);
@@ -539,12 +532,12 @@ function raGenerateXlsx(
     $heights[++$curRow] = 5;
     $cell($curRow, 1, '', 'sSep', '', $fullMerge);
 
-    // Row 7: ASIGNATURA: (A) | course (B:D) | PROFESOR: (E) | teacher (F:N)
+    // Row 7: ASIGNATURA: (A) | course (B:colGradoSec) | PROFESOR: (colGradoSec+1) | teacher (colGradoSec+2:lastCol)
     $heights[++$curRow] = 18;
-    $cell($curRow, 1,             'ASIGNATURA:',                                    'sLblInfo');
-    $cell($curRow, 2,             strtoupper($registro['course_title'] ?? ''),       'sValInfo', '', $colNivel - 2);
-    $cell($curRow, $colNivel + 1, 'PROFESOR:',                                       'sLblInfo');
-    $cell($curRow, $colNivel + 2, strtoupper($registro['teacher_name'] ?? ''),       'sValInfo', '', $lastCol - $colNivel - 2);
+    $cell($curRow, 1,                'ASIGNATURA:',                                    'sLblInfo');
+    $cell($curRow, 2,                strtoupper($registro['course_title'] ?? ''),       'sValInfo', '', $colGradoSec - 2);
+    $cell($curRow, $colGradoSec + 1, 'PROFESOR:',                                       'sLblInfo');
+    $cell($curRow, $colGradoSec + 2, strtoupper($registro['teacher_name'] ?? ''),       'sValInfo', '', $lastCol - $colGradoSec - 2);
 
     // Row 8: separator
     $heights[++$curRow] = 5;
@@ -574,10 +567,9 @@ function raGenerateXlsx(
 
     $compAreaSpan = $promedioCol - 3; // mergeAcross: cols 3 to promedioCol
 
-    // Row 13: DATOS DEL ESTUDIANTE (col 2) | COMPETENCIA DEL ÁREA (cols 3-promedioCol) | PROMEDIO (rows 13-18)
+    // Row 13: DATOS DEL ESTUDIANTE (cols A:B merged) | COMPETENCIA DEL ÁREA (cols 3-promedioCol) | PROMEDIO (rows 13-18)
     $heights[++$curRow] = 18; // row 13
-    $cell($curRow, 1, '', 'sDatosEst');          // col A: vacío con mismo estilo
-    $cell($curRow, 2, 'DATOS DEL ESTUDIANTE',   'sDatosEst');
+    $cell($curRow, 1, 'DATOS DEL ESTUDIANTE', 'sDatosEst', '', 1, 2); // A:B merged, rows 13-15
     $cell($curRow, 3, 'COMPETENCIA DEL ÁREA',   'sCompArea', '', $compAreaSpan);
     $cell($curRow, $lastCol, 'PROMEDIO DE LA ASIGNATURA', 'sPromHdr', '', 0, 5);
 
@@ -643,17 +635,53 @@ function raGenerateXlsx(
                 $cell($curRow, $col, $isNum ? (float)$notaNum : $nota, 'sDataNota');
                 if ($notaNum !== null) $vals[] = $notaNum;
             }
-            $capFrom  = raColLetter($r['start'] + 1) . $curRow;
-            $capTo    = raColLetter($r['nivel'])      . $curRow;
-            $fNivel   = 'IFERROR(ROUND(AVERAGE(' . $capFrom . ':' . $capTo . '),0),"")';
-            $phpNivel = !empty($vals) ? (int)round(array_sum($vals) / count($vals)) : '';
-            $cell($curRow, $r['nivel'] + 1, $phpNivel, 'sDataNivel', $fNivel);
-            if ($phpNivel !== '') $nivelVals[] = (float)$phpNivel;
+
+            if ($gradeType === 'numeric') {
+                if ($exportMode === 'formula') {
+                    $capFrom  = raColLetter($r['start'] + 1) . $curRow;
+                    $capTo    = raColLetter($r['nivel'])      . $curRow;
+                    $fNivel   = 'IFERROR(ROUND(AVERAGE(' . $capFrom . ':' . $capTo . '),0),"")';
+                    $phpNivel = !empty($vals) ? (int)round(array_sum($vals) / count($vals)) : '';
+                    $cell($curRow, $r['nivel'] + 1, $phpNivel, 'sDataNivel', $fNivel);
+                } elseif ($exportMode === 'round') {
+                    $phpNivel = !empty($vals) ? (int)round(array_sum($vals) / count($vals)) : '';
+                    $cell($curRow, $r['nivel'] + 1, $phpNivel !== '' ? $phpNivel : '', 'sDataNivel');
+                } else { // decimals
+                    $phpNivel = !empty($vals) ? round(array_sum($vals) / count($vals), 2) : '';
+                    $cell($curRow, $r['nivel'] + 1, $phpNivel !== '' ? $phpNivel : '', 'sDataNivel');
+                }
+                if (!empty($vals)) $nivelVals[] = (float)($phpNivel);
+            } else {
+                if (!empty($vals)) {
+                    $avg = array_sum($vals) / count($vals);
+                    $nivelVals[] = $avg;
+                    $cell($curRow, $r['nivel'] + 1, raFormat($avg, $gradeType), 'sDataNivel');
+                } else {
+                    $cell($curRow, $r['nivel'] + 1, '', 'sDataNivel');
+                }
+            }
         }
-        $nivelRefs = array_map(fn($r) => raColLetter($r['nivel'] + 1) . $curRow, $compRanges);
-        $fProm     = 'IFERROR(ROUND(AVERAGE(' . implode(',', $nivelRefs) . '),0),"")';
-        $phpProm   = !empty($nivelVals) ? (int)round(array_sum($nivelVals) / count($nivelVals)) : '';
-        $cell($curRow, $lastCol, $phpProm, 'sDataProm', $fProm);
+
+        if ($gradeType === 'numeric') {
+            if ($exportMode === 'formula') {
+                $nivelRefs = array_map(fn($r) => raColLetter($r['nivel'] + 1) . $curRow, $compRanges);
+                $fProm     = 'IFERROR(ROUND(AVERAGE(' . implode(',', $nivelRefs) . '),0),"")';
+                $phpProm   = !empty($nivelVals) ? (int)round(array_sum($nivelVals) / count($nivelVals)) : '';
+                $cell($curRow, $lastCol, $phpProm, 'sDataProm', $fProm);
+            } elseif ($exportMode === 'round') {
+                $phpProm = !empty($nivelVals) ? (int)round(array_sum($nivelVals) / count($nivelVals)) : '';
+                $cell($curRow, $lastCol, $phpProm !== '' ? $phpProm : '', 'sDataProm');
+            } else { // decimals
+                $phpProm = !empty($nivelVals) ? round(array_sum($nivelVals) / count($nivelVals), 2) : '';
+                $cell($curRow, $lastCol, $phpProm !== '' ? $phpProm : '', 'sDataProm');
+            }
+        } else {
+            if (!empty($nivelVals)) {
+                $cell($curRow, $lastCol, raFormat(array_sum($nivelVals) / count($nivelVals), $gradeType), 'sDataProm');
+            } else {
+                $cell($curRow, $lastCol, '', 'sDataProm');
+            }
+        }
     }
 
     // ── Build sheet XML ────────────────────────────────────────────────────────
