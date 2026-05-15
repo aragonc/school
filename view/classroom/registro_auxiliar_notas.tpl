@@ -500,24 +500,50 @@ $(document).on('blur', 'textarea.criterio-input', function() {
 
 // ==================== NOTA AUTO-SAVE ====================
 
+function isValidNota(val) {
+    if (val === '') return true;
+    const letters = ['AD', 'A', 'B', 'C'];
+    if (letters.indexOf(val.toUpperCase()) !== -1) return true;
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 0 && num <= 20;
+}
+
 $(document).on('blur', 'input.nota-input', function() {
-    const $inp       = $(this);
+    const $inp = $(this);
+    const val  = $inp.val().trim();
+
+    if (!isValidNota(val)) {
+        $inp.css({ background: '#ffe0e0', border: '1px solid #dc3545' });
+        $inp.attr('title', 'La nota debe estar entre 0 y 20');
+        return;
+    }
+    $inp.css({ background: '', border: '' }).removeAttr('title');
     recalcAll();
     $.post(AJAX_URL, {
         action: 'save_nota',
         registro_id: $inp.data('registro'),
         aux_capacidad_id: $inp.data('cap'),
         student_id: $inp.data('student'),
-        nota: $inp.val().trim()
+        nota: val
     }, function(res) {
         if (res.success) {
             $inp.css('background', '#e6ffed');
             setTimeout(function() { $inp.css('background', ''); }, 800);
+        } else {
+            $inp.css({ background: '#ffe0e0', border: '1px solid #dc3545' });
+            $inp.attr('title', res.message || 'Error al guardar');
         }
     }, 'json');
 });
 
-$(document).on('input', 'input.nota-input', function() { recalcAll(); });
+$(document).on('input', 'input.nota-input', function() {
+    const $inp = $(this);
+    const val  = $inp.val().trim();
+    if (isValidNota(val)) {
+        $inp.css({ background: '', border: '' }).removeAttr('title');
+    }
+    recalcAll();
+});
 
 $(document).on('keydown', 'input.nota-input', function(e) {
     if (e.key === 'Enter') {

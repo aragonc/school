@@ -284,6 +284,18 @@ switch ($action) {
             exit;
         }
 
+        // Validate numeric note range 0-20
+        if ($nota !== '') {
+            $validLetters = ['AD', 'A', 'B', 'C'];
+            if (!in_array(strtoupper($nota), $validLetters)) {
+                $notaNum = filter_var($nota, FILTER_VALIDATE_FLOAT);
+                if ($notaNum === false || $notaNum < 0 || $notaNum > 20) {
+                    echo json_encode(['success' => false, 'message' => 'La nota debe estar entre 0 y 20']);
+                    exit;
+                }
+            }
+        }
+
         $nota_e = Database::escape_string($nota);
         $nTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUX_NOTA);
         $now    = date('Y-m-d H:i:s');
@@ -310,18 +322,36 @@ switch ($action) {
 
         $nTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUX_NOTA);
         $now    = date('Y-m-d H:i:s');
+        $validLetters = ['AD', 'A', 'B', 'C'];
+        $invalidNotas = [];
         foreach ($notas as $nota) {
             $auxCapId  = (int) ($nota['aux_capacidad_id'] ?? 0);
             $studentId = (int) ($nota['student_id'] ?? 0);
-            $val       = Database::escape_string(trim($nota['nota'] ?? ''));
+            $val       = trim($nota['nota'] ?? '');
             if ($auxCapId <= 0 || $studentId <= 0) continue;
+
+            // Validate numeric range 0-20
+            if ($val !== '' && !in_array(strtoupper($val), $validLetters)) {
+                $notaNum = filter_var($val, FILTER_VALIDATE_FLOAT);
+                if ($notaNum === false || $notaNum < 0 || $notaNum > 20) {
+                    $invalidNotas[] = $val;
+                    continue;
+                }
+            }
+
+            $val_e = Database::escape_string($val);
             Database::query(
                 "INSERT INTO $nTable (registro_id, aux_capacidad_id, student_id, nota, updated_at)
-                 VALUES ($registroId, $auxCapId, $studentId, '$val', '$now')
-                 ON DUPLICATE KEY UPDATE nota = '$val', updated_at = '$now'"
+                 VALUES ($registroId, $auxCapId, $studentId, '$val_e', '$now')
+                 ON DUPLICATE KEY UPDATE nota = '$val_e', updated_at = '$now'"
             );
         }
-        echo json_encode(['success' => true]);
+
+        if (!empty($invalidNotas)) {
+            echo json_encode(['success' => false, 'message' => 'Algunas notas fuera de rango (0-20) fueron ignoradas: ' . implode(', ', $invalidNotas)]);
+        } else {
+            echo json_encode(['success' => true]);
+        }
         break;
 
     case 'get_teacher_courses':
