@@ -597,6 +597,108 @@ switch ($action) {
         echo json_encode(['success' => true, 'enfoques' => $enfoques]);
         break;
 
+    case 'submit_registro':
+        $registroId = (int) ($_POST['id'] ?? 0);
+        if ($registroId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'ID requerido']);
+            exit;
+        }
+
+        $rTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUXILIAR);
+
+        // Only the creator (or admin) can submit
+        $reg = Database::fetch_array(Database::query(
+            "SELECT id, created_by, status FROM $rTable WHERE id = $registroId LIMIT 1"
+        ), 'ASSOC');
+
+        if (!$reg) {
+            echo json_encode(['success' => false, 'message' => 'Registro no encontrado']);
+            exit;
+        }
+        if (!$isAdmin && (int) $reg['created_by'] !== $userId) {
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            exit;
+        }
+        if ($reg['status'] === 'reviewed') {
+            echo json_encode(['success' => false, 'message' => 'El registro ya fue revisado por el tutor']);
+            exit;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        Database::query(
+            "UPDATE $rTable SET status = 'submitted', submitted_at = '$now', updated_at = '$now'
+             WHERE id = $registroId"
+        );
+        echo json_encode(['success' => true]);
+        break;
+
+    case 'mark_reviewed':
+        $registroId = (int) ($_POST['id'] ?? 0);
+        if ($registroId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'ID requerido']);
+            exit;
+        }
+
+        $rTable  = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUXILIAR);
+        $ccTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM_COURSE);
+        $clTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_ACADEMIC_CLASSROOM);
+
+        // Verify the user is the tutor of the classroom this registro belongs to (or admin)
+        if (!$isAdmin) {
+            $check = Database::fetch_array(Database::query(
+                "SELECT cl.tutor_id FROM $rTable r
+                 INNER JOIN $ccTable cc ON cc.id = r.classroom_course_id
+                 INNER JOIN $clTable cl ON cl.id = cc.classroom_id
+                 WHERE r.id = $registroId LIMIT 1"
+            ), 'ASSOC');
+            if (!$check || (int) $check['tutor_id'] !== $userId) {
+                echo json_encode(['success' => false, 'message' => 'Solo el tutor del aula puede marcar como revisado']);
+                exit;
+            }
+        }
+
+        $now = date('Y-m-d H:i:s');
+        Database::query(
+            "UPDATE $rTable SET status = 'reviewed', reviewed_at = '$now', reviewed_by = $userId, updated_at = '$now'
+             WHERE id = $registroId"
+        );
+        echo json_encode(['success' => true]);
+        break;
+
+    case 'recall_registro':
+        // Creator retracts a submitted registro back to draft
+        $registroId = (int) ($_POST['id'] ?? 0);
+        if ($registroId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'ID requerido']);
+            exit;
+        }
+
+        $rTable = Database::get_main_table(SchoolPlugin::TABLE_SCHOOL_REGISTRO_AUXILIAR);
+        $reg = Database::fetch_array(Database::query(
+            "SELECT id, created_by, status FROM $rTable WHERE id = $registroId LIMIT 1"
+        ), 'ASSOC');
+
+        if (!$reg) {
+            echo json_encode(['success' => false, 'message' => 'Registro no encontrado']);
+            exit;
+        }
+        if (!$isAdmin && (int) $reg['created_by'] !== $userId) {
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            exit;
+        }
+        if ($reg['status'] === 'reviewed') {
+            echo json_encode(['success' => false, 'message' => 'No se puede retirar un registro ya revisado']);
+            exit;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        Database::query(
+            "UPDATE $rTable SET status = 'draft', submitted_at = NULL, updated_at = '$now'
+             WHERE id = $registroId"
+        );
+        echo json_encode(['success' => true]);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Unknown action']);
         break;

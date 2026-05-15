@@ -17,7 +17,32 @@
         {% endif %}
     </div>
 
-    {# List #}
+    {# Classroom selector (admin only) #}
+    {% if is_admin and classrooms_list %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body py-3">
+            <form method="get" action="" class="d-flex align-items-center flex-wrap" style="gap:16px;">
+                <div>
+                    <label class="mb-1 small font-weight-bold text-muted">Aula</label>
+                    <select name="classroom_id" class="form-control form-control-sm" onchange="this.form.submit()" style="min-width:240px;">
+                        {% for cls in classrooms_list %}
+                        <option value="{{ cls.id }}" {% if cls.id == selected_classroom_id %}selected{% endif %}>
+                            {{ cls.level_name }} — {{ cls.grade_name }}{% if cls.section_name %} Sec. {{ cls.section_name }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mt-3">
+                    <span class="badge badge-primary px-3 py-2" style="font-size:0.8rem;">
+                        <i class="fas fa-shield-alt mr-1"></i>Administrador — acceso total a todas las aulas
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {# List — Mis Registros #}
     {% if registros %}
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white py-3">
@@ -33,15 +58,14 @@
                             <th>Área Curricular</th>
                             <th>Período</th>
                             <th>Tipo de nota</th>
+                            <th>Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for reg in registros %}
                         <tr>
-                            <td>
-                                <span class="font-weight-bold">{{ reg.classroom_label }}</span>
-                            </td>
+                            <td><span class="font-weight-bold">{{ reg.classroom_label }}</span></td>
                             <td>{{ reg.course_title }}</td>
                             <td>{{ reg.area_name ?: '—' }}</td>
                             <td><span class="badge badge-secondary">{{ reg.period }}</span></td>
@@ -54,16 +78,52 @@
                                     <span class="badge badge-warning">Combinada</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center">
+                            <td>
+                                {% if reg.status == 'reviewed' %}
+                                    <span class="badge badge-success px-2 py-1">
+                                        <i class="fas fa-check-double mr-1"></i>Revisado
+                                    </span>
+                                    {% if reg.reviewed_at %}
+                                    <br><small class="text-muted">{{ reg.reviewed_at|date('d/m/Y') }}</small>
+                                    {% endif %}
+                                {% elseif reg.status == 'submitted' %}
+                                    <span class="badge badge-warning px-2 py-1">
+                                        <i class="fas fa-paper-plane mr-1"></i>Presentado
+                                    </span>
+                                    {% if reg.submitted_at %}
+                                    <br><small class="text-muted">{{ reg.submitted_at|date('d/m/Y') }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge badge-light border px-2 py-1 text-muted">
+                                        <i class="fas fa-pencil-alt mr-1"></i>Borrador
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center" style="white-space:nowrap;">
                                 <a href="/my-aula/registro/notas?id={{ reg.id }}"
                                    class="btn btn-sm btn-primary" title="Ver notas">
                                     <i class="fas fa-table"></i> Notas
                                 </a>
+                                {% if reg.status == 'draft' and (reg.created_by == current_user_id or is_admin) %}
+                                <button class="btn btn-sm btn-success ml-1"
+                                        onclick="submitRegistro({{ reg.id }}, '{{ reg.course_title|e('js') }} – {{ reg.period|e('js') }}')"
+                                        title="Presentar al tutor">
+                                    <i class="fas fa-paper-plane"></i> Presentar al tutor
+                                </button>
+                                {% elseif reg.status == 'submitted' and (reg.created_by == current_user_id or is_admin) %}
+                                <button class="btn btn-sm btn-outline-secondary ml-1"
+                                        onclick="recallRegistro({{ reg.id }}, '{{ reg.course_title|e('js') }} – {{ reg.period|e('js') }}')"
+                                        title="Retirar presentación">
+                                    <i class="fas fa-undo"></i> Retirar
+                                </button>
+                                {% endif %}
+                                {% if reg.status != 'reviewed' and (reg.created_by == current_user_id or is_admin) %}
                                 <button class="btn btn-sm btn-danger ml-1"
                                         onclick="confirmDelete({{ reg.id }}, '{{ reg.course_title|e('js') }} – {{ reg.period|e('js') }}')"
                                         title="Eliminar">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -76,13 +136,97 @@
     <div class="card shadow-sm border-0">
         <div class="card-body text-center py-5">
             <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+            {% if is_admin %}
+            <p class="text-muted mb-0">No hay registros auxiliares en esta aula aún.</p>
+            {% else %}
             <p class="text-muted mb-0">No tienes registros auxiliares aún.</p>
+            {% endif %}
             {% if teacher_courses %}
             <button class="btn btn-primary mt-3" onclick="openCreateModal()">
                 <i class="fas fa-plus mr-1"></i> Crear primer registro
             </button>
-            {% else %}
+            {% elseif not is_admin %}
             <p class="text-muted small mt-2">No tienes cursos asignados en el año académico activo.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# ===== Sección Tutor: Registros recibidos para revisión ===== #}
+    {% if is_tutor %}
+    <div class="card shadow-sm border-0 mt-4">
+        <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-success">
+                <i class="fas fa-inbox mr-2"></i>Registros presentados a tu aula
+            </h6>
+            {% if tutor_registros %}
+            <span class="badge badge-success">{{ tutor_registros|length }}</span>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            {% if tutor_registros %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Docente</th>
+                            <th>Curso</th>
+                            <th>Área</th>
+                            <th>Período</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in tutor_registros %}
+                        <tr class="{% if reg.status == 'submitted' %}table-warning{% endif %}">
+                            <td>
+                                <i class="fas fa-chalkboard-teacher text-muted mr-1"></i>
+                                {{ reg.creator_name }}
+                            </td>
+                            <td>{{ reg.course_title }}</td>
+                            <td>{{ reg.area_name ?: '—' }}</td>
+                            <td><span class="badge badge-secondary">{{ reg.period }}</span></td>
+                            <td>
+                                {% if reg.status == 'reviewed' %}
+                                <span class="badge badge-success px-2 py-1">
+                                    <i class="fas fa-check-double mr-1"></i>Revisado
+                                </span>
+                                {% if reg.reviewed_at %}
+                                <br><small class="text-muted">{{ reg.reviewed_at|date('d/m/Y') }}</small>
+                                {% endif %}
+                                {% else %}
+                                <span class="badge badge-warning px-2 py-1">
+                                    <i class="fas fa-paper-plane mr-1"></i>Pendiente de revisión
+                                </span>
+                                {% if reg.submitted_at %}
+                                <br><small class="text-muted">{{ reg.submitted_at|date('d/m/Y') }}</small>
+                                {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="text-center" style="white-space:nowrap;">
+                                <a href="/my-aula/registro/notas?id={{ reg.id }}"
+                                   class="btn btn-sm btn-outline-primary" title="Ver registro">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                                {% if reg.status == 'submitted' %}
+                                <button class="btn btn-sm btn-success ml-1"
+                                        onclick="markReviewed({{ reg.id }}, '{{ reg.creator_name|e('js') }} – {{ reg.course_title|e('js') }}')"
+                                        title="Marcar como revisado">
+                                    <i class="fas fa-check"></i> Marcar revisado
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-inbox fa-2x mb-2"></i>
+                <p class="mb-0 small">Ningún docente ha presentado registros aún.</p>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -252,5 +396,38 @@ function doDelete() {
         alert('Error de comunicación');
         $('#btnDeleteConfirm').prop('disabled', false).html('<i class="fas fa-trash mr-1"></i> Eliminar');
     });
+}
+
+function submitRegistro(id, label) {
+    if (!confirm('¿Presentar el registro "' + label + '" al tutor del aula para su revisión?')) return;
+    $.post(AJAX_URL, { action: 'submit_registro', id: id }, function(res) {
+        if (res.success) {
+            location.reload();
+        } else {
+            alert(res.message || 'Error al presentar el registro');
+        }
+    }, 'json').fail(function() { alert('Error de comunicación'); });
+}
+
+function recallRegistro(id, label) {
+    if (!confirm('¿Retirar la presentación del registro "' + label + '"? Volverá a estado borrador.')) return;
+    $.post(AJAX_URL, { action: 'recall_registro', id: id }, function(res) {
+        if (res.success) {
+            location.reload();
+        } else {
+            alert(res.message || 'Error al retirar el registro');
+        }
+    }, 'json').fail(function() { alert('Error de comunicación'); });
+}
+
+function markReviewed(id, label) {
+    if (!confirm('¿Marcar como revisado el registro de "' + label + '"?')) return;
+    $.post(AJAX_URL, { action: 'mark_reviewed', id: id }, function(res) {
+        if (res.success) {
+            location.reload();
+        } else {
+            alert(res.message || 'Error al marcar como revisado');
+        }
+    }, 'json').fail(function() { alert('Error de comunicación'); });
 }
 </script>
