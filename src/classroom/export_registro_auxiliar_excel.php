@@ -436,7 +436,7 @@ header('Pragma: no-cache');
 echo $xml;
 exit;
 
-// ── XLSX generator — builds directly from data (no XML parsing) ───────────────
+// ── XLSX generator — layout matching registro auxiliar oficial ────────────────
 function raGenerateXlsx(
     array $registro,
     array $competencias,
@@ -447,17 +447,19 @@ function raGenerateXlsx(
     array $enfoques,
     string $gradeType
 ): string {
-    $totalCols     = $promedioCol + 1;
-    $fullMerge     = $totalCols - 1; // MergeAcross for full-width rows
+    $lastCol   = $promedioCol + 1;  // 1-based index of PROMEDIO column
+    $fullMerge = $lastCol - 1;      // MergeAcross to cover all columns
 
-    // Style index map (matches cellXfs order in styles.xml below)
+    // Style index map (must match cellXfs order in styles XML below)
     $sty = [
-        'Default'      => 0,  'sTitle'       => 1,  'sInfo'        => 2,
-        'sHdrNro'      => 3,  'sHdrComp'     => 4,  'sHdrCompName' => 5,
-        'sHdrCaps'     => 6,  'sHdrNivel'    => 7,  'sHdrProm'     => 8,
-        'sHdrCapName'  => 9,  'sHdrCriterio' => 10,
-        'sDataNro'     => 11, 'sDataName'    => 12, 'sDataNota'    => 13,
-        'sDataNivel'   => 14, 'sDataProm'    => 15,
+        'Default'    => 0,  'sTitle'     => 1,  'sSubtitle'  => 2,  'sNorma'    => 3,
+        'sSep'       => 4,  'sLblInfo'   => 5,  'sValInfo'   => 6,
+        'sLeftTitle' => 7,  'sLeftText'  => 8,  'sDatosEst'  => 9,
+        'sNroHdr'    => 10, 'sApelHdr'   => 11, 'sCompArea'  => 12,
+        'sCompName'  => 13, 'sCaps'      => 14, 'sNivelHdr'  => 15,
+        'sPromHdr'   => 16, 'sCapName'   => 17, 'sCriterio'  => 18,
+        'sDataNro'   => 19, 'sDataName'  => 20, 'sDataNota'  => 21,
+        'sDataNivel' => 22, 'sDataProm'  => 23,
     ];
 
     $ss  = []; // shared strings list
@@ -493,74 +495,137 @@ function raGenerateXlsx(
         $xlRows[$row][$col] = $c;
     };
 
-    // ── Info rows ─────────────────────────────────────────────────────────────
-    $gradeLabel = $gradeType === 'numeric' ? 'Numérica (0–20)'
-                : ($gradeType === 'letter'  ? 'Literal (AD/A/B/C)' : 'Combinada');
-    $classroom  = $registro['level_name'] . ' — ' . $registro['grade_name']
-                . (!empty($registro['section_name']) ? ' Sec. ' . $registro['section_name'] : '');
+    // ── Build rows ────────────────────────────────────────────────────────────
+    // Column positions for info rows
+    $colNivel    = 4;                                               // col D: NIVEL / PROFESOR label
+    $colGradoSec = 6;                                               // col F: GRADO Y SECCIÓN label
+    $colPeriodo  = max($colNivel + 5, (int)($lastCol * 2 / 3));    // col ~I: PERIODO label
 
-    $heights[++$curRow] = 20;
-    $cell($curRow, 1, 'REGISTRO AUXILIAR — ' . strtoupper($registro['period']), 'sTitle', '', $fullMerge);
+    // Prepare enfoques text
+    $enfNombres   = implode(' - ', array_filter(array_column($enfoques, 'nombre')));
+    $enfValores   = implode(', ',  array_filter(array_column($enfoques, 'valores')));
+    $enfActitudes = implode(', ',  array_filter(array_column($enfoques, 'actitudes')));
 
-    $heights[++$curRow] = 16;
-    $cell($curRow, 1, $classroom . '   ' . $registro['course_title'] . '   ' . $registro['area_name'], 'sInfo', '', $fullMerge);
+    // ── ROWS 1-3: Logo (A:B) + Title block (C:N) ──────────────────────────────
+    // Row 1: logo placeholder merging rows 1-3, title on right
+    $heights[++$curRow] = 26; // row 1
+    $cell($curRow, 1, "INSTITUCIÓN\nEDUCATIVA", 'sLeftTitle', '', 1, 2); // A1:B3 logo area
+    $cell($curRow, 3, 'REGISTRO AUXILIAR DE EVALUACIÓN - ' . date('Y'), 'sTitle', '', $fullMerge - 2);
 
-    $heights[++$curRow] = 16;
-    $cell($curRow, 1, 'Área: ' . $registro['area_name'] . '   Docente: ' . $registro['teacher_name'] . '   Tipo nota: ' . $gradeLabel, 'sInfo', '', $fullMerge);
+    $heights[++$curRow] = 18; // row 2
+    $cell($curRow, 3, 'R.V.M. N° 00094 - 2020  -  MINEDU', 'sSubtitle', '', $fullMerge - 2);
 
-    if (!empty($enfoques)) {
-        $heights[++$curRow] = 30;
-        $nombres = implode(', ', array_column($enfoques, 'nombre'));
-        $valores = implode(', ', array_filter(array_column($enfoques, 'valores')));
-        $cell($curRow, 1, 'Enfoques: ' . $nombres . ($valores ? '   |   Valores: ' . $valores : ''), 'sInfo', '', $fullMerge);
-    }
+    $heights[++$curRow] = 16; // row 3
+    $cell($curRow, 3, '"Norma que regula la evaluación de las competencias de los Estudiantes de la Educación Básica"', 'sNorma', '', $fullMerge - 2);
 
-    $heights[++$curRow] = 8; // separator
-    $cell($curRow, 1, '', 'Default');
+    // Row 4: separator
+    $heights[++$curRow] = 5;
+    $cell($curRow, 1, '', 'sSep', '', $fullMerge);
 
-    // ── Header row 1 ──────────────────────────────────────────────────────────
-    $heights[++$curRow] = 30;
-    $compAreaSpan = $promedioCol - 3;
-    $cell($curRow, 1, 'N°',                       'sHdrNro',  '', 0, 4);
-    $cell($curRow, 2, 'Apellidos y Nombres',       'sHdrNro',  '', 0, 4);
-    $cell($curRow, 3, 'COMPETENCIA DEL ÁREA',      'sHdrComp', '', $compAreaSpan);
-    $cell($curRow, $promedioCol + 1, 'PROMEDIO DE LA ASIGNATURA', 'sHdrProm', '', 0, 4);
+    // Row 5: ÁREA | NIVEL | GRADO Y SECCIÓN | PERIODO
+    $heights[++$curRow] = 18;
+    $gradeSecVal   = $registro['grade_name'] . (!empty($registro['section_name']) ? ' ' . $registro['section_name'] : '');
+    $gradeMerge    = max(0, $colPeriodo - $colGradoSec - 2); // cols (colGradoSec+1) to (colPeriodo-1)
+    $cell($curRow, 1,               'ÁREA:',                                       'sLblInfo');
+    $cell($curRow, 2,               strtoupper($registro['area_name'] ?? ''),       'sValInfo', '', $colNivel - 3);
+    $cell($curRow, $colNivel,       'NIVEL',                                        'sLblInfo');
+    $cell($curRow, $colNivel + 1,   strtoupper($registro['level_name'] ?? ''),      'sValInfo');
+    $cell($curRow, $colGradoSec,    'GRADO Y SECCIÓN',                              'sLblInfo');
+    $cell($curRow, $colGradoSec + 1, strtoupper($gradeSecVal),                      'sValInfo', '', $gradeMerge);
+    $cell($curRow, $colPeriodo,     'PERIODO',                                      'sLblInfo');
+    $cell($curRow, $colPeriodo + 1, strtoupper($registro['period'] ?? ''),           'sValInfo', '', $lastCol - $colPeriodo - 1);
 
-    // ── Header row 2: comp names ───────────────────────────────────────────────
-    $heights[++$curRow] = 36;
+    // Row 6: separator
+    $heights[++$curRow] = 5;
+    $cell($curRow, 1, '', 'sSep', '', $fullMerge);
+
+    // Row 7: ASIGNATURA: (A) | course (B:D) | PROFESOR: (E) | teacher (F:N)
+    $heights[++$curRow] = 18;
+    $cell($curRow, 1,             'ASIGNATURA:',                                    'sLblInfo');
+    $cell($curRow, 2,             strtoupper($registro['course_title'] ?? ''),       'sValInfo', '', $colNivel - 2);
+    $cell($curRow, $colNivel + 1, 'PROFESOR:',                                       'sLblInfo');
+    $cell($curRow, $colNivel + 2, strtoupper($registro['teacher_name'] ?? ''),       'sValInfo', '', $lastCol - $colNivel - 2);
+
+    // Row 8: separator
+    $heights[++$curRow] = 5;
+    $cell($curRow, 1, '', 'sSep', '', $fullMerge);
+
+    // ── ROWS 9-11: ENFOQUES section — ancho completo (cols A-N) ─────────────
+    $heights[++$curRow] = 22; // row 9
+    $cell($curRow, 1, 'VALORES Y ACTITUDES DE LOS ENFOQUES TRANSVERSALES', 'sLeftTitle', '', $fullMerge);
+
+    $heights[++$curRow] = 18; // row 10
+    $cell($curRow, 1, 'ENFOQUES: ' . ($enfNombres ?: '-'), 'sLeftText', '', $fullMerge);
+
+    $heights[++$curRow] = 18; // row 11
+    $enfVText = 'VALORES: ' . ($enfValores ?: '-');
+    if ($enfActitudes) $enfVText .= '  |  ACTITUDES: ' . $enfActitudes;
+    $cell($curRow, 1, $enfVText, 'sLeftText', '', $fullMerge);
+
+    // Row 12: separator
+    $heights[++$curRow] = 5;
+    $cell($curRow, 1, '', 'sSep', '', $fullMerge);
+
+    // ── ROWS 13-18: Competencia headers ───────────────────────────────────────
+    // Col 1 (A) empty rows 13-15, N° rows 16-18
+    // Col 2 (B): DATOS DEL ESTUDIANTE row 13, empty 14-15, APELLIDOS rows 16-18
+    // Cols 3-promedioCol: competencia structure
+    // Col lastCol: PROMEDIO rotated rows 13-18
+
+    $compAreaSpan = $promedioCol - 3; // mergeAcross: cols 3 to promedioCol
+
+    // Row 13: DATOS DEL ESTUDIANTE (col 2) | COMPETENCIA DEL ÁREA (cols 3-promedioCol) | PROMEDIO (rows 13-18)
+    $heights[++$curRow] = 18; // row 13
+    $cell($curRow, 1, '', 'sDatosEst');          // col A: vacío con mismo estilo
+    $cell($curRow, 2, 'DATOS DEL ESTUDIANTE',   'sDatosEst');
+    $cell($curRow, 3, 'COMPETENCIA DEL ÁREA',   'sCompArea', '', $compAreaSpan);
+    $cell($curRow, $lastCol, 'PROMEDIO DE LA ASIGNATURA', 'sPromHdr', '', 0, 5);
+
+    // Row 14: comp names (each spans cap cols + nivel col)
+    $heights[++$curRow] = 28; // row 14
     foreach ($competencias as $i => $comp) {
         $r = $compRanges[$i];
-        $cell($curRow, $r['start'] + 1, $comp['label'] . '_' . $comp['name'], 'sHdrCompName', '', $r['capCount']);
+        $cell($curRow, $r['start'] + 1, $comp['label'] . '_' . $comp['name'], 'sCompName', '', $r['capCount']);
     }
 
-    // ── Header row 3: CAPACIDADES + NIVEL ─────────────────────────────────────
-    $heights[++$curRow] = 20;
+    // Row 15: CAPACIDADES | NIVEL DE LOGRO (rows 15-18, rotated)
+    $heights[++$curRow] = 18; // row 15
     foreach ($competencias as $i => $comp) {
         $r  = $compRanges[$i];
         $ma = $r['capCount'] > 1 ? $r['capCount'] - 1 : 0;
-        $cell($curRow, $r['start'] + 1,  'CAPACIDADES',    'sHdrCaps',  '', $ma);
-        $cell($curRow, $r['nivel']  + 1, 'NIVEL DE LOGRO', 'sHdrNivel', '', 0, 2);
+        $cell($curRow, $r['start'] + 1, 'CAPACIDADES',    'sCaps',     '', $ma);
+        $cell($curRow, $r['nivel']  + 1, 'NIVEL DE LOGRO', 'sNivelHdr', '', 0, 3);
     }
 
-    // ── Header row 4: cap names ────────────────────────────────────────────────
-    $heights[++$curRow] = 72;
+    // Row 16: N° (rows 16-18) | APELLIDOS (rows 16-18) | cap names rotated (tall row)
+    $heights[++$curRow] = 70; // row 16 — tall for rotated cap names
+    $cell($curRow, 1, 'N°',                  'sNroHdr',  '', 0, 2);
+    $cell($curRow, 2, 'APELLIDOS Y NOMBRES', 'sApelHdr', '', 0, 2);
     foreach ($competencias as $i => $comp) {
         $r = $compRanges[$i];
         foreach ($comp['capacidades'] as $ci => $cap) {
-            $cell($curRow, $r['start'] + 1 + $ci, $cap['name'], 'sHdrCapName');
+            $cell($curRow, $r['start'] + 1 + $ci, $cap['name'], 'sCapName');
         }
     }
 
-    // ── Header row 5: criterios ────────────────────────────────────────────────
-    $heights[++$curRow] = 28;
+    // Row 17: CRITERIOS labels (N° and APELLIDOS covered by mergeDown)
+    $heights[++$curRow] = 18; // row 17
+    foreach ($competencias as $i => $comp) {
+        $r  = $compRanges[$i];
+        $ma = $r['capCount'] > 1 ? $r['capCount'] - 1 : 0;
+        $cell($curRow, $r['start'] + 1, 'CRITERIOS', 'sCaps', '', $ma);
+    }
+
+    // Row 18: criterio values per cap
+    $heights[++$curRow] = 28; // row 18
     foreach ($competencias as $i => $comp) {
         $r = $compRanges[$i];
         foreach ($comp['capacidades'] as $ci => $cap) {
-            $cell($curRow, $r['start'] + 1 + $ci, $cap['criterio'] ?? '', 'sHdrCriterio');
+            $cell($curRow, $r['start'] + 1 + $ci, $cap['criterio'] ?? '', 'sCriterio');
         }
     }
 
-    // ── Data rows ──────────────────────────────────────────────────────────────
+    // ── DATA ROWS (row 19+) ────────────────────────────────────────────────────
     foreach ($students as $si => $student) {
         $heights[++$curRow] = 18;
         $cell($curRow, 1, $si + 1, 'sDataNro');
@@ -571,39 +636,33 @@ function raGenerateXlsx(
             $r    = $compRanges[$i];
             $vals = [];
             foreach ($comp['capacidades'] as $ci => $cap) {
-                $col      = $r['start'] + 1 + $ci;
-                $nota     = $notasMap[$cap['aux_cap_id']][$student['user_id']] ?? '';
-                $notaNum  = ($nota !== '') ? raLetterToNum($nota) : null;
-                $isNum    = ($notaNum !== null && !in_array(strtoupper(trim($nota)), ['AD','A','B','C']));
-                if ($isNum) {
-                    $cell($curRow, $col, (float)$notaNum, 'sDataNota');
-                } else {
-                    $cell($curRow, $col, $nota, 'sDataNota');
-                }
+                $col     = $r['start'] + 1 + $ci;
+                $nota    = $notasMap[$cap['aux_cap_id']][$student['user_id']] ?? '';
+                $notaNum = ($nota !== '') ? raLetterToNum($nota) : null;
+                $isNum   = ($notaNum !== null && !in_array(strtoupper(trim($nota)), ['AD','A','B','C']));
+                $cell($curRow, $col, $isNum ? (float)$notaNum : $nota, 'sDataNota');
                 if ($notaNum !== null) $vals[] = $notaNum;
             }
-            // Nivel de logro: fórmula AVERAGE sobre las capacidades
             $capFrom  = raColLetter($r['start'] + 1) . $curRow;
             $capTo    = raColLetter($r['nivel'])      . $curRow;
             $fNivel   = 'IFERROR(ROUND(AVERAGE(' . $capFrom . ':' . $capTo . '),0),"")';
-            $phpNivel = !empty($vals) ? (int) round(array_sum($vals) / count($vals)) : '';
+            $phpNivel = !empty($vals) ? (int)round(array_sum($vals) / count($vals)) : '';
             $cell($curRow, $r['nivel'] + 1, $phpNivel, 'sDataNivel', $fNivel);
             if ($phpNivel !== '') $nivelVals[] = (float)$phpNivel;
         }
-        // Promedio: fórmula AVERAGE sobre los niveles de logro
         $nivelRefs = array_map(fn($r) => raColLetter($r['nivel'] + 1) . $curRow, $compRanges);
         $fProm     = 'IFERROR(ROUND(AVERAGE(' . implode(',', $nivelRefs) . '),0),"")';
-        $phpProm   = !empty($nivelVals) ? (int) round(array_sum($nivelVals) / count($nivelVals)) : '';
-        $cell($curRow, $promedioCol + 1, $phpProm, 'sDataProm', $fProm);
+        $phpProm   = !empty($nivelVals) ? (int)round(array_sum($nivelVals) / count($nivelVals)) : '';
+        $cell($curRow, $lastCol, $phpProm, 'sDataProm', $fProm);
     }
 
     // ── Build sheet XML ────────────────────────────────────────────────────────
-    $colWidths  = '<col min="1" max="1" width="5"  customWidth="1"/>'
-                . '<col min="2" max="2" width="28" customWidth="1"/>';
-    for ($c = 3; $c <= $promedioCol; $c++) {
-        $colWidths .= '<col min="' . $c . '" max="' . $c . '" width="12" customWidth="1"/>';
+    $colWidths = '<col min="1" max="1" width="5"  customWidth="1"/>'
+               . '<col min="2" max="2" width="30" customWidth="1"/>';
+    for ($c = 3; $c < $lastCol; $c++) {
+        $colWidths .= '<col min="' . $c . '" max="' . $c . '" width="10" customWidth="1"/>';
     }
-    $colWidths .= '<col min="' . ($promedioCol+1) . '" max="' . ($promedioCol+1) . '" width="14" customWidth="1"/>';
+    $colWidths .= '<col min="' . $lastCol . '" max="' . $lastCol . '" width="6" customWidth="1"/>';
 
     $sheetData = '';
     ksort($xlRows);
@@ -615,7 +674,7 @@ function raGenerateXlsx(
             $sheetData .= '<c r="' . $c['r'] . '" s="' . $c['s'] . '"';
             if (isset($c['t'])) $sheetData .= ' t="' . $c['t'] . '"';
             $sheetData .= '>';
-            if (isset($c['f']))  $sheetData .= '<f>' . htmlspecialchars($c['f'],  ENT_XML1) . '</f>';
+            if (isset($c['f']))  $sheetData .= '<f>' . htmlspecialchars($c['f'], ENT_XML1) . '</f>';
             if (isset($c['fv'])) $sheetData .= '<v>' . htmlspecialchars((string)$c['fv'], ENT_XML1) . '</v>';
             elseif (isset($c['v'])) $sheetData .= '<v>' . htmlspecialchars((string)$c['v'], ENT_XML1) . '</v>';
             $sheetData .= '</c>';
@@ -667,72 +726,95 @@ function raGenerateXlsx(
     }
     $ssXml .= '</sst>';
 
-    // 16 styles (indices 0-15 matching $sty map)
+    // 24 styles (indices 0-23 matching $sty map)
+    $bdr = '<left style="thin"><color rgb="FF888888"/></left>'
+         . '<right style="thin"><color rgb="FF888888"/></right>'
+         . '<top style="thin"><color rgb="FF888888"/></top>'
+         . '<bottom style="thin"><color rgb="FF888888"/></bottom>'
+         . '<diagonal/>';
     $stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-        . '<fonts count="5">'
-        .   '<font><sz val="10"/><name val="Calibri"/></font>'                      // 0 normal
-        .   '<font><sz val="12"/><b/><name val="Calibri"/></font>'                  // 1 title
-        .   '<font><sz val="9"/><b/><name val="Calibri"/></font>'                   // 2 hdr bold 9
-        .   '<font><sz val="8"/><b/><name val="Calibri"/></font>'                   // 3 hdr bold 8
-        .   '<font><sz val="10"/><b/><name val="Calibri"/></font>'                  // 4 data bold
+        . '<fonts count="9">'
+        .   '<font><sz val="10"/><name val="Calibri"/></font>'                                              // 0 normal
+        .   '<font><sz val="14"/><b/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'                  // 1 title white bold
+        .   '<font><sz val="11"/><b/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'                  // 2 subtitle white bold
+        .   '<font><sz val="9"/><i/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'                   // 3 norma white italic
+        .   '<font><sz val="10"/><b/><name val="Calibri"/></font>'                                         // 4 label bold
+        .   '<font><sz val="9"/><b/><name val="Calibri"/></font>'                                          // 5 hdr 9 bold
+        .   '<font><sz val="8"/><b/><name val="Calibri"/></font>'                                          // 6 hdr 8 bold (nivel/prom/caps)
+        .   '<font><sz val="8"/><name val="Calibri"/></font>'                                              // 7 small normal
+        .   '<font><sz val="10"/><b/><color rgb="FF1A56CC"/><name val="Calibri"/></font>'                  // 8 comp name blue bold
         . '</fonts>'
-        . '<fills count="10">'
-        .   '<fill><patternFill patternType="none"/></fill>'                         // 0
-        .   '<fill><patternFill patternType="gray125"/></fill>'                      // 1
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFDCE8FC"/></patternFill></fill>'  // 2 blue
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/></patternFill></fill>'  // 3 gray
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE8F0FE"/></patternFill></fill>'  // 4 comp name
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE3EEFF"/></patternFill></fill>'  // 5 caps
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFC8E6C9"/></patternFill></fill>'  // 6 nivel
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF3CD"/></patternFill></fill>'  // 7 prom
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFF0F4FF"/></patternFill></fill>'  // 8 capname
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFFFFBF0"/></patternFill></fill>'  // 9 criterio
+        . '<fills count="14">'
+        .   '<fill><patternFill patternType="none"/></fill>'                                                // 0 none
+        .   '<fill><patternFill patternType="gray125"/></fill>'                                             // 1 required
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FF2E75B6"/></patternFill></fill>'         // 2 dark blue (title)
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FF4472C4"/></patternFill></fill>'         // 3 medium blue (subtitle)
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFD6E4F7"/></patternFill></fill>'         // 4 light blue (info labels)
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFDCE8FC"/></patternFill></fill>'         // 5 very light blue (comp area)
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE8F0FE"/></patternFill></fill>'         // 6 comp name
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE3EEFF"/></patternFill></fill>'         // 7 caps / criterios
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFC8E6C9"/></patternFill></fill>'         // 8 nivel green
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF3CD"/></patternFill></fill>'         // 9 prom yellow
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFF0F4FF"/></patternFill></fill>'         // 10 cap name bg
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFD0E8FF"/></patternFill></fill>'         // 11 left panel title
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE8F4FF"/></patternFill></fill>'         // 12 left panel text
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE0E0E0"/></patternFill></fill>'         // 13 datos estudiante gray
         . '</fills>'
         . '<borders count="2">'
         .   '<border><left/><right/><top/><bottom/><diagonal/></border>'
-        .   '<border>'
-        .     '<left style="thin"><color rgb="FFBBBBBB"/></left>'
-        .     '<right style="thin"><color rgb="FFBBBBBB"/></right>'
-        .     '<top style="thin"><color rgb="FFBBBBBB"/></top>'
-        .     '<bottom style="thin"><color rgb="FFBBBBBB"/></bottom>'
-        .     '<diagonal/>'
-        .   '</border>'
+        .   '<border>' . $bdr . '</border>'
         . '</borders>'
         . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-        . '<cellXfs count="16">'
-        // 0 Default
+        . '<cellXfs count="24">'
+        // 0  Default
         . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment vertical="center"/></xf>'
-        // 1 sTitle
+        // 1  sTitle
         . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 2 sInfo
-        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>'
-        // 3 sHdrNro
-        . '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 4 sHdrComp
-        . '<xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 5 sHdrCompName
-        . '<xf numFmtId="0" fontId="3" fillId="4" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 6 sHdrCaps
-        . '<xf numFmtId="0" fontId="3" fillId="5" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 7 sHdrNivel
-        . '<xf numFmtId="0" fontId="3" fillId="6" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 8 sHdrProm
-        . '<xf numFmtId="0" fontId="3" fillId="7" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 9 sHdrCapName
-        . '<xf numFmtId="0" fontId="0" fillId="8" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 10 sHdrCriterio
-        . '<xf numFmtId="0" fontId="0" fillId="9" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-        // 11 sDataNro
+        // 2  sSubtitle
+        . '<xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 3  sNorma
+        . '<xf numFmtId="0" fontId="3" fillId="3" borderId="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 4  sSep
+        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+        // 5  sLblInfo
+        . '<xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0"><alignment horizontal="left" vertical="center"/></xf>'
+        // 6  sValInfo
+        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>'
+        // 7  sLeftTitle
+        . '<xf numFmtId="0" fontId="5" fillId="11" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 8  sLeftText
+        . '<xf numFmtId="0" fontId="7" fillId="12" borderId="1" xfId="0"><alignment horizontal="left" vertical="top" wrapText="1"/></xf>'
+        // 9  sDatosEst
+        . '<xf numFmtId="0" fontId="4" fillId="13" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 10 sNroHdr
+        . '<xf numFmtId="0" fontId="4" fillId="13" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 11 sApelHdr
+        . '<xf numFmtId="0" fontId="4" fillId="13" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 12 sCompArea
+        . '<xf numFmtId="0" fontId="5" fillId="5" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 13 sCompName
+        . '<xf numFmtId="0" fontId="8" fillId="6" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 14 sCaps
+        . '<xf numFmtId="0" fontId="6" fillId="7" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 15 sNivelHdr (rotated 90°)
+        . '<xf numFmtId="0" fontId="6" fillId="8" borderId="1" xfId="0"><alignment horizontal="center" vertical="bottom" textRotation="90"/></xf>'
+        // 16 sPromHdr (rotated 90°)
+        . '<xf numFmtId="0" fontId="6" fillId="9" borderId="1" xfId="0"><alignment horizontal="center" vertical="bottom" textRotation="90"/></xf>'
+        // 17 sCapName (rotated 90°)
+        . '<xf numFmtId="0" fontId="7" fillId="10" borderId="1" xfId="0"><alignment horizontal="center" vertical="bottom" textRotation="90"/></xf>'
+        // 18 sCriterio
+        . '<xf numFmtId="0" fontId="7" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 19 sDataNro
         . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
-        // 12 sDataName
+        // 20 sDataName
         . '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center"/></xf>'
-        // 13 sDataNota
+        // 21 sDataNota
         . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
-        // 14 sDataNivel
-        . '<xf numFmtId="0" fontId="4" fillId="6" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
-        // 15 sDataProm
-        . '<xf numFmtId="0" fontId="4" fillId="7" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 22 sDataNivel
+        . '<xf numFmtId="0" fontId="4" fillId="8" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 23 sDataProm
+        . '<xf numFmtId="0" fontId="4" fillId="9" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
         . '</cellXfs>'
         . '</styleSheet>';
 
