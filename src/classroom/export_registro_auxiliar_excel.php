@@ -331,35 +331,47 @@ $xml .= '</Row>' . "\n";
 // ── Data rows ─────────────────────────────────────────────────────────────────
 foreach ($students as $si => $student) {
     $xml .= '<Row ss:Height="18">';
-    $xml .= xlCell($si + 1, 'sDataNro');
+    $xml .= xlCell($si + 1, 'sDataNro', 0, 0, 0, 'Number');
     $xml .= xlCell($student['lastname'] . ', ' . $student['firstname'], 'sDataName');
 
     $nivelVals = [];
     foreach ($competencias as $i => $comp) {
         $vals = [];
         foreach ($comp['capacidades'] as $cap) {
-            $nota = $notasMap[$cap['aux_cap_id']][$student['user_id']] ?? '';
-            $xml .= xlCell($nota, 'sDataNota');
-            if ($nota !== '') {
-                $n = raLetterToNum($nota);
-                if ($n !== null) $vals[] = $n;
-            }
+            $nota     = $notasMap[$cap['aux_cap_id']][$student['user_id']] ?? '';
+            $notaNum  = ($nota !== '') ? raLetterToNum($nota) : null;
+            $notaIsNum = ($notaNum !== null && !in_array(strtoupper(trim($nota)), ['AD','A','B','C']));
+            $xml .= xlCell(
+                $notaIsNum ? $notaNum : $nota,
+                'sDataNota',
+                0, 0, 0,
+                $notaIsNum ? 'Number' : 'String'
+            );
+            if ($notaNum !== null) $vals[] = $notaNum;
         }
         if (!empty($vals)) {
-            $avg  = array_sum($vals) / count($vals);
+            $avg         = array_sum($vals) / count($vals);
             $nivelVals[] = $avg;
-            $nivelStr = raFormat($avg, $gradeType);
+            if ($gradeType === 'numeric') {
+                $xml .= xlCell(round($avg, 2), 'sDataNivel', 0, 0, 0, 'Number');
+            } else {
+                $xml .= xlCell(raFormat($avg, $gradeType), 'sDataNivel');
+            }
         } else {
-            $nivelStr = '';
+            $xml .= xlCell('', 'sDataNivel');
         }
-        $xml .= xlCell($nivelStr, 'sDataNivel');
     }
 
-    $promStr = '';
     if (!empty($nivelVals)) {
-        $promStr = raFormat(array_sum($nivelVals) / count($nivelVals), $gradeType);
+        $prom = array_sum($nivelVals) / count($nivelVals);
+        if ($gradeType === 'numeric') {
+            $xml .= xlCell(round($prom, 2), 'sDataProm', 0, 0, 0, 'Number');
+        } else {
+            $xml .= xlCell(raFormat($prom, $gradeType), 'sDataProm');
+        }
+    } else {
+        $xml .= xlCell('', 'sDataProm');
     }
-    $xml .= xlCell($promStr, 'sDataProm');
     $xml .= '</Row>' . "\n";
 }
 
