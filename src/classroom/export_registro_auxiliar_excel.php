@@ -414,9 +414,11 @@ $xml .= '</Table></Worksheet></Workbook>';
 $area     = preg_replace('/[^A-Za-z0-9_\-]/', '_', $registro['area_name'] ?? 'Area');
 
 if ($exportMode === 'formula') {
-    // Generar XLSX real usando ZipArchive
     $filename = 'Registro_Auxiliar_' . $registro['period'] . '_' . $area . '.xlsx';
-    $xlsx = raGenerateXlsx($xml);
+    $xlsx = raGenerateXlsx(
+        $registro, $competencias, $compRanges, $promedioCol,
+        $students, $notasMap, $enfoques, $gradeType
+    );
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Cache-Control: max-age=0');
@@ -434,198 +436,327 @@ header('Pragma: no-cache');
 echo $xml;
 exit;
 
-// ── XLSX generator (SpreadsheetML → OOXML via ZipArchive) ────────────────────
-function raGenerateXlsx(string $xlsXml): string
-{
-    // Parse the SpreadsheetML XML into rows/cells
-    $dom = new DOMDocument();
-    $dom->loadXML($xlsXml);
-    $ns  = 'urn:schemas-microsoft-com:office:spreadsheet';
-    $rows = $dom->getElementsByTagNameNS($ns, 'Row');
+// ── XLSX generator — builds directly from data (no XML parsing) ───────────────
+function raGenerateXlsx(
+    array $registro,
+    array $competencias,
+    array $compRanges,
+    int   $promedioCol,
+    array $students,
+    array $notasMap,
+    array $enfoques,
+    string $gradeType
+): string {
+    $totalCols     = $promedioCol + 1;
+    $fullMerge     = $totalCols - 1; // MergeAcross for full-width rows
 
-    $sharedStrings = [];
-    $sharedIndex   = [];
-
-    // Helpers
-    $addStr = function(string $s) use (&$sharedStrings, &$sharedIndex): int {
-        if (!isset($sharedIndex[$s])) {
-            $sharedIndex[$s] = count($sharedStrings);
-            $sharedStrings[] = $s;
-        }
-        return $sharedIndex[$s];
-    };
-
-    // Map style IDs to XLSX style indices (built below)
-    $styleMap = [
-        'sTitle'       => 1,  'sInfo'        => 2,
+    // Style index map (matches cellXfs order in styles.xml below)
+    $sty = [
+        'Default'      => 0,  'sTitle'       => 1,  'sInfo'        => 2,
         'sHdrNro'      => 3,  'sHdrComp'     => 4,  'sHdrCompName' => 5,
         'sHdrCaps'     => 6,  'sHdrNivel'    => 7,  'sHdrProm'     => 8,
         'sHdrCapName'  => 9,  'sHdrCriterio' => 10,
         'sDataNro'     => 11, 'sDataName'    => 12, 'sDataNota'    => 13,
         'sDataNivel'   => 14, 'sDataProm'    => 15,
-        'Default'      => 0,
     ];
 
-    // Build sheet data XML
-    $sheetXml = '';
-    $rowNum   = 0;
-    foreach ($rows as $row) {
-        $rowNum++;
-        $ht  = $row->getAttributeNS($ns, 'Height') ?: '15';
-        $sheetXml .= '<row r="' . $rowNum . '" ht="' . $ht . '" customHeight="1">';
+    $ss  = []; // shared strings list
+    $ssm = []; // shared strings map
+    $addStr = function(string $v) use (&$ss, &$ssm): int {
+        if (!isset($ssm[$v])) { $ssm[$v] = count($ss); $ss[] = $v; }
+        return $ssm[$v];
+    };
 
-        $colNum = 0;
-        foreach ($row->childNodes as $cell) {
-            if ($cell->nodeType !== XML_ELEMENT_NODE) continue;
-            $localName = $cell->localName;
-            if ($localName !== 'Cell') continue;
+    $xlRows  = []; // [rowNum => [colNum => cell]]
+    $merges  = []; // ['A1:C3', ...]
+    $heights = []; // [rowNum => height]
+    $curRow  = 0;
 
-            $idx = (int) $cell->getAttributeNS($ns, 'Index');
-            if ($idx > 0) $colNum = $idx - 1;
-            $colNum++;
-
-            $mergeAcross = (int) $cell->getAttributeNS($ns, 'MergeAcross');
-            $styleId     = $cell->getAttributeNS($ns, 'StyleID') ?: 'Default';
-            $formula     = $cell->getAttributeNS($ns, 'Formula');
-            $sIdx        = $styleMap[$styleId] ?? 0;
-
-            $dataNode = null;
-            foreach ($cell->childNodes as $cn) {
-                if ($cn->nodeType === XML_ELEMENT_NODE && $cn->localName === 'Data') {
-                    $dataNode = $cn; break;
-                }
-            }
-
-            $cellRef = raColLetter($colNum) . $rowNum;
-            $cellXml = '<c r="' . $cellRef . '" s="' . $sIdx . '"';
-
-            if ($formula !== '') {
-                // Convert R1C1 formula to A1 notation
-                $a1Formula = raR1C1toA1(ltrim($formula, '='), $rowNum, $colNum);
-                $cellXml .= '><f>' . htmlspecialchars($a1Formula, ENT_XML1) . '</f>';
-                if ($dataNode && $dataNode->nodeValue !== '') {
-                    $cellXml .= '<v>' . htmlspecialchars($dataNode->nodeValue, ENT_XML1) . '</v>';
-                }
-                $cellXml .= '</c>';
-            } elseif ($dataNode) {
-                $type = $dataNode->getAttributeNS($ns, 'Type');
-                $val  = $dataNode->nodeValue;
-                if ($type === 'Number' && $val !== '') {
-                    $cellXml .= ' t="n"><v>' . htmlspecialchars($val, ENT_XML1) . '</v></c>';
-                } elseif ($val !== '') {
-                    $si = $addStr($val);
-                    $cellXml .= ' t="s"><v>' . $si . '</v></c>';
-                } else {
-                    $cellXml .= '/>';
-                }
-            } else {
-                $cellXml .= '/>';
-            }
-
-            $sheetXml .= $cellXml;
-            // Advance colNum past merged columns (merged cells are separate in XLSX)
-            $colNum += $mergeAcross;
+    // cell builder: $row,$col are 1-based
+    $cell = function(int $row, int $col, $value, string $styleId,
+                     string $formula = '', int $mAcross = 0, int $mDown = 0)
+        use (&$xlRows, &$merges, &$addStr, $sty) {
+        $ref = raColLetter($col) . $row;
+        $s   = $sty[$styleId] ?? 0;
+        if ($mAcross > 0 || $mDown > 0) {
+            $merges[] = $ref . ':' . raColLetter($col + $mAcross) . ($row + $mDown);
         }
-        $sheetXml .= '</row>';
+        $c = ['r' => $ref, 's' => $s];
+        if ($formula !== '') {
+            $c['f'] = $formula;
+            if ($value !== '' && $value !== null) $c['fv'] = $value;
+        } elseif (is_numeric($value) && $value !== '') {
+            $c['t'] = 'n'; $c['v'] = $value;
+        } elseif ($value !== '' && $value !== null) {
+            $c['t'] = 's'; $c['v'] = $addStr((string)$value);
+        }
+        $xlRows[$row][$col] = $c;
+    };
+
+    // ── Info rows ─────────────────────────────────────────────────────────────
+    $gradeLabel = $gradeType === 'numeric' ? 'Numérica (0–20)'
+                : ($gradeType === 'letter'  ? 'Literal (AD/A/B/C)' : 'Combinada');
+    $classroom  = $registro['level_name'] . ' — ' . $registro['grade_name']
+                . (!empty($registro['section_name']) ? ' Sec. ' . $registro['section_name'] : '');
+
+    $heights[++$curRow] = 20;
+    $cell($curRow, 1, 'REGISTRO AUXILIAR — ' . strtoupper($registro['period']), 'sTitle', '', $fullMerge);
+
+    $heights[++$curRow] = 16;
+    $cell($curRow, 1, $classroom . '   ' . $registro['course_title'] . '   ' . $registro['area_name'], 'sInfo', '', $fullMerge);
+
+    $heights[++$curRow] = 16;
+    $cell($curRow, 1, 'Área: ' . $registro['area_name'] . '   Docente: ' . $registro['teacher_name'] . '   Tipo nota: ' . $gradeLabel, 'sInfo', '', $fullMerge);
+
+    if (!empty($enfoques)) {
+        $heights[++$curRow] = 30;
+        $nombres = implode(', ', array_column($enfoques, 'nombre'));
+        $valores = implode(', ', array_filter(array_column($enfoques, 'valores')));
+        $cell($curRow, 1, 'Enfoques: ' . $nombres . ($valores ? '   |   Valores: ' . $valores : ''), 'sInfo', '', $fullMerge);
     }
 
-    // ── Build XLSX parts ─────────────────────────────────────────────────────
-    $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml"  ContentType="application/xml"/>
-  <Override PartName="/xl/workbook.xml"            ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-  <Override PartName="/xl/worksheets/sheet1.xml"   ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-  <Override PartName="/xl/sharedStrings.xml"        ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
-  <Override PartName="/xl/styles.xml"              ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
-</Types>';
+    $heights[++$curRow] = 8; // separator
+    $cell($curRow, 1, '', 'Default');
 
-    $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
-</Relationships>';
+    // ── Header row 1 ──────────────────────────────────────────────────────────
+    $heights[++$curRow] = 30;
+    $compAreaSpan = $promedioCol - 3;
+    $cell($curRow, 1, 'N°',                       'sHdrNro',  '', 0, 4);
+    $cell($curRow, 2, 'Apellidos y Nombres',       'sHdrNro',  '', 0, 4);
+    $cell($curRow, 3, 'COMPETENCIA DEL ÁREA',      'sHdrComp', '', $compAreaSpan);
+    $cell($curRow, $promedioCol + 1, 'PROMEDIO DE LA ASIGNATURA', 'sHdrProm', '', 0, 4);
 
-    $workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"     Target="worksheets/sheet1.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"        Target="styles.xml"/>
-</Relationships>';
+    // ── Header row 2: comp names ───────────────────────────────────────────────
+    $heights[++$curRow] = 36;
+    foreach ($competencias as $i => $comp) {
+        $r = $compRanges[$i];
+        $cell($curRow, $r['start'] + 1, $comp['label'] . '_' . $comp['name'], 'sHdrCompName', '', $r['capCount']);
+    }
 
-    $workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <sheets><sheet name="Registro Auxiliar" sheetId="1" r:id="rId1"/></sheets>
-</workbook>';
+    // ── Header row 3: CAPACIDADES + NIVEL ─────────────────────────────────────
+    $heights[++$curRow] = 20;
+    foreach ($competencias as $i => $comp) {
+        $r  = $compRanges[$i];
+        $ma = $r['capCount'] > 1 ? $r['capCount'] - 1 : 0;
+        $cell($curRow, $r['start'] + 1,  'CAPACIDADES',    'sHdrCaps',  '', $ma);
+        $cell($curRow, $r['nivel']  + 1, 'NIVEL DE LOGRO', 'sHdrNivel', '', 0, 2);
+    }
 
-    // Shared strings
-    $ssXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' . count($sharedStrings) . '" uniqueCount="' . count($sharedStrings) . '">';
-    foreach ($sharedStrings as $s) {
-        $ssXml .= '<si><t xml:space="preserve">' . htmlspecialchars($s, ENT_XML1, 'UTF-8') . '</t></si>';
+    // ── Header row 4: cap names ────────────────────────────────────────────────
+    $heights[++$curRow] = 72;
+    foreach ($competencias as $i => $comp) {
+        $r = $compRanges[$i];
+        foreach ($comp['capacidades'] as $ci => $cap) {
+            $cell($curRow, $r['start'] + 1 + $ci, $cap['name'], 'sHdrCapName');
+        }
+    }
+
+    // ── Header row 5: criterios ────────────────────────────────────────────────
+    $heights[++$curRow] = 28;
+    foreach ($competencias as $i => $comp) {
+        $r = $compRanges[$i];
+        foreach ($comp['capacidades'] as $ci => $cap) {
+            $cell($curRow, $r['start'] + 1 + $ci, $cap['criterio'] ?? '', 'sHdrCriterio');
+        }
+    }
+
+    // ── Data rows ──────────────────────────────────────────────────────────────
+    foreach ($students as $si => $student) {
+        $heights[++$curRow] = 18;
+        $cell($curRow, 1, $si + 1, 'sDataNro');
+        $cell($curRow, 2, $student['lastname'] . ', ' . $student['firstname'], 'sDataName');
+
+        $nivelVals = [];
+        foreach ($competencias as $i => $comp) {
+            $r    = $compRanges[$i];
+            $vals = [];
+            foreach ($comp['capacidades'] as $ci => $cap) {
+                $col      = $r['start'] + 1 + $ci;
+                $nota     = $notasMap[$cap['aux_cap_id']][$student['user_id']] ?? '';
+                $notaNum  = ($nota !== '') ? raLetterToNum($nota) : null;
+                $isNum    = ($notaNum !== null && !in_array(strtoupper(trim($nota)), ['AD','A','B','C']));
+                if ($isNum) {
+                    $cell($curRow, $col, (float)$notaNum, 'sDataNota');
+                } else {
+                    $cell($curRow, $col, $nota, 'sDataNota');
+                }
+                if ($notaNum !== null) $vals[] = $notaNum;
+            }
+            // Nivel de logro: fórmula AVERAGE sobre las capacidades
+            $capFrom  = raColLetter($r['start'] + 1) . $curRow;
+            $capTo    = raColLetter($r['nivel'])      . $curRow;
+            $fNivel   = 'IFERROR(ROUND(AVERAGE(' . $capFrom . ':' . $capTo . '),0),"")';
+            $phpNivel = !empty($vals) ? (int) round(array_sum($vals) / count($vals)) : '';
+            $cell($curRow, $r['nivel'] + 1, $phpNivel, 'sDataNivel', $fNivel);
+            if ($phpNivel !== '') $nivelVals[] = (float)$phpNivel;
+        }
+        // Promedio: fórmula AVERAGE sobre los niveles de logro
+        $nivelRefs = array_map(fn($r) => raColLetter($r['nivel'] + 1) . $curRow, $compRanges);
+        $fProm     = 'IFERROR(ROUND(AVERAGE(' . implode(',', $nivelRefs) . '),0),"")';
+        $phpProm   = !empty($nivelVals) ? (int) round(array_sum($nivelVals) / count($nivelVals)) : '';
+        $cell($curRow, $promedioCol + 1, $phpProm, 'sDataProm', $fProm);
+    }
+
+    // ── Build sheet XML ────────────────────────────────────────────────────────
+    $colWidths  = '<col min="1" max="1" width="5"  customWidth="1"/>'
+                . '<col min="2" max="2" width="28" customWidth="1"/>';
+    for ($c = 3; $c <= $promedioCol; $c++) {
+        $colWidths .= '<col min="' . $c . '" max="' . $c . '" width="12" customWidth="1"/>';
+    }
+    $colWidths .= '<col min="' . ($promedioCol+1) . '" max="' . ($promedioCol+1) . '" width="14" customWidth="1"/>';
+
+    $sheetData = '';
+    ksort($xlRows);
+    foreach ($xlRows as $rn => $cols) {
+        $ht = $heights[$rn] ?? 15;
+        $sheetData .= '<row r="' . $rn . '" ht="' . $ht . '" customHeight="1">';
+        ksort($cols);
+        foreach ($cols as $c) {
+            $sheetData .= '<c r="' . $c['r'] . '" s="' . $c['s'] . '"';
+            if (isset($c['t'])) $sheetData .= ' t="' . $c['t'] . '"';
+            $sheetData .= '>';
+            if (isset($c['f']))  $sheetData .= '<f>' . htmlspecialchars($c['f'],  ENT_XML1) . '</f>';
+            if (isset($c['fv'])) $sheetData .= '<v>' . htmlspecialchars((string)$c['fv'], ENT_XML1) . '</v>';
+            elseif (isset($c['v'])) $sheetData .= '<v>' . htmlspecialchars((string)$c['v'], ENT_XML1) . '</v>';
+            $sheetData .= '</c>';
+        }
+        $sheetData .= '</row>';
+    }
+
+    $mergesXml = '';
+    if (!empty($merges)) {
+        $mergesXml = '<mergeCells count="' . count($merges) . '">'
+                   . implode('', array_map(fn($m) => '<mergeCell ref="' . $m . '"/>', $merges))
+                   . '</mergeCells>';
+    }
+
+    // ── XLSX package parts ─────────────────────────────────────────────────────
+    $ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        . '<Default Extension="xml"  ContentType="application/xml"/>'
+        . '<Override PartName="/xl/workbook.xml"          ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        . '<Override PartName="/xl/sharedStrings.xml"     ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>'
+        . '<Override PartName="/xl/styles.xml"            ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+        . '</Types>';
+
+    $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+          . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+          . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+          . '</Relationships>';
+
+    $wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"     Target="worksheets/sheet1.xml"/>'
+            . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
+            . '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"        Target="styles.xml"/>'
+            . '</Relationships>';
+
+    $wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+        . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        . '<sheets><sheet name="Registro Auxiliar" sheetId="1" r:id="rId1"/></sheets>'
+        . '</workbook>';
+
+    $ssXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+           . '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+           . ' count="' . count($ss) . '" uniqueCount="' . count($ss) . '">';
+    foreach ($ss as $str) {
+        $ssXml .= '<si><t xml:space="preserve">' . htmlspecialchars($str, ENT_XML1, 'UTF-8') . '</t></si>';
     }
     $ssXml .= '</sst>';
 
-    // Styles — 16 entries matching $styleMap (index 0 = Default)
-    $styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="5">
-    <font><sz val="10"/><name val="Calibri"/></font>
-    <font><sz val="12"/><b/><name val="Calibri"/></font>
-    <font><sz val="9"/><b/><name val="Calibri"/></font>
-    <font><sz val="8"/><b/><name val="Calibri"/></font>
-    <font><sz val="10"/><b/><name val="Calibri"/></font>
-  </fonts>
-  <fills count="3">
-    <fill><patternFill patternType="none"/></fill>
-    <fill><patternFill patternType="gray125"/></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFDCE8FC"/></patternFill></fill>
-  </fills>
-  <borders count="2">
-    <border><left/><right/><top/><bottom/><diagonal/></border>
-    <border><left style="thin"><color rgb="FFBBBBBB"/></left><right style="thin"><color rgb="FFBBBBBB"/></right><top style="thin"><color rgb="FFBBBBBB"/></top><bottom style="thin"><color rgb="FFBBBBBB"/></bottom><diagonal/></border>
-  </borders>
-  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="16">
-    <xf numFmtId="0"  fontId="0" fillId="0" borderId="1" xfId="0"><alignment vertical="center"/></xf>
-    <xf numFmtId="0"  fontId="1" fillId="2" borderId="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="0" fillId="0" borderId="0" xfId="0"><alignment horizontal="left"   vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="2" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="2" fillId="2" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="3" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="3" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="3" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="3" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0"  fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>
-    <xf numFmtId="0"  fontId="4" fillId="0" borderId="1" xfId="0"><alignment horizontal="left"   vertical="center"/></xf>
-    <xf numFmtId="0"  fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>
-    <xf numFmtId="0"  fontId="4" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>
-    <xf numFmtId="0"  fontId="4" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>
-  </cellXfs>
-</styleSheet>';
+    // 16 styles (indices 0-15 matching $sty map)
+    $stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        . '<fonts count="5">'
+        .   '<font><sz val="10"/><name val="Calibri"/></font>'                      // 0 normal
+        .   '<font><sz val="12"/><b/><name val="Calibri"/></font>'                  // 1 title
+        .   '<font><sz val="9"/><b/><name val="Calibri"/></font>'                   // 2 hdr bold 9
+        .   '<font><sz val="8"/><b/><name val="Calibri"/></font>'                   // 3 hdr bold 8
+        .   '<font><sz val="10"/><b/><name val="Calibri"/></font>'                  // 4 data bold
+        . '</fonts>'
+        . '<fills count="10">'
+        .   '<fill><patternFill patternType="none"/></fill>'                         // 0
+        .   '<fill><patternFill patternType="gray125"/></fill>'                      // 1
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFDCE8FC"/></patternFill></fill>'  // 2 blue
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/></patternFill></fill>'  // 3 gray
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE8F0FE"/></patternFill></fill>'  // 4 comp name
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE3EEFF"/></patternFill></fill>'  // 5 caps
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFC8E6C9"/></patternFill></fill>'  // 6 nivel
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF3CD"/></patternFill></fill>'  // 7 prom
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFF0F4FF"/></patternFill></fill>'  // 8 capname
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFFFFBF0"/></patternFill></fill>'  // 9 criterio
+        . '</fills>'
+        . '<borders count="2">'
+        .   '<border><left/><right/><top/><bottom/><diagonal/></border>'
+        .   '<border>'
+        .     '<left style="thin"><color rgb="FFBBBBBB"/></left>'
+        .     '<right style="thin"><color rgb="FFBBBBBB"/></right>'
+        .     '<top style="thin"><color rgb="FFBBBBBB"/></top>'
+        .     '<bottom style="thin"><color rgb="FFBBBBBB"/></bottom>'
+        .     '<diagonal/>'
+        .   '</border>'
+        . '</borders>'
+        . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+        . '<cellXfs count="16">'
+        // 0 Default
+        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment vertical="center"/></xf>'
+        // 1 sTitle
+        . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 2 sInfo
+        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>'
+        // 3 sHdrNro
+        . '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 4 sHdrComp
+        . '<xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 5 sHdrCompName
+        . '<xf numFmtId="0" fontId="3" fillId="4" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 6 sHdrCaps
+        . '<xf numFmtId="0" fontId="3" fillId="5" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 7 sHdrNivel
+        . '<xf numFmtId="0" fontId="3" fillId="6" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 8 sHdrProm
+        . '<xf numFmtId="0" fontId="3" fillId="7" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 9 sHdrCapName
+        . '<xf numFmtId="0" fontId="0" fillId="8" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 10 sHdrCriterio
+        . '<xf numFmtId="0" fontId="0" fillId="9" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        // 11 sDataNro
+        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 12 sDataName
+        . '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center"/></xf>'
+        // 13 sDataNota
+        . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 14 sDataNivel
+        . '<xf numFmtId="0" fontId="4" fillId="6" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        // 15 sDataProm
+        . '<xf numFmtId="0" fontId="4" fillId="7" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+        . '</cellXfs>'
+        . '</styleSheet>';
 
-    $sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetData>' . $sheetXml . '</sheetData>
-</worksheet>';
+    $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+              . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+              . '<cols>' . $colWidths . '</cols>'
+              . '<sheetData>' . $sheetData . '</sheetData>'
+              . $mergesXml
+              . '</worksheet>';
 
-    // ── Pack into ZIP (XLSX) ──────────────────────────────────────────────────
-    $tmpFile = tempnam(sys_get_temp_dir(), 'xlsx_');
+    // ── Pack ZIP ───────────────────────────────────────────────────────────────
+    $tmp = tempnam(sys_get_temp_dir(), 'xlsx_');
     $zip = new ZipArchive();
-    $zip->open($tmpFile, ZipArchive::OVERWRITE);
-    $zip->addFromString('[Content_Types].xml',          $contentTypes);
-    $zip->addFromString('_rels/.rels',                  $rels);
-    $zip->addFromString('xl/workbook.xml',              $workbook);
-    $zip->addFromString('xl/_rels/workbook.xml.rels',   $workbookRels);
-    $zip->addFromString('xl/worksheets/sheet1.xml',     $sheet);
-    $zip->addFromString('xl/sharedStrings.xml',         $ssXml);
-    $zip->addFromString('xl/styles.xml',                $styles);
+    $zip->open($tmp, ZipArchive::OVERWRITE);
+    $zip->addFromString('[Content_Types].xml',        $ct);
+    $zip->addFromString('_rels/.rels',                $rels);
+    $zip->addFromString('xl/workbook.xml',            $wb);
+    $zip->addFromString('xl/_rels/workbook.xml.rels', $wbRels);
+    $zip->addFromString('xl/worksheets/sheet1.xml',   $sheetXml);
+    $zip->addFromString('xl/sharedStrings.xml',       $ssXml);
+    $zip->addFromString('xl/styles.xml',              $stylesXml);
     $zip->close();
-
-    $data = file_get_contents($tmpFile);
-    unlink($tmpFile);
+    $data = file_get_contents($tmp);
+    unlink($tmp);
     return $data;
 }
 
@@ -635,28 +766,7 @@ function raColLetter(int $col): string
     while ($col > 0) {
         $col--;
         $letter = chr(65 + ($col % 26)) . $letter;
-        $col    = (int) ($col / 26);
+        $col    = (int)($col / 26);
     }
     return $letter;
-}
-
-function raR1C1toA1(string $formula, int $row, int $col): string
-{
-    // R[m]C[n] → absolute A1 reference
-    $formula = preg_replace_callback(
-        '/R\[(-?\d+)\]C\[(-?\d+)\]/',
-        function($m) use ($row, $col) {
-            return raColLetter($col + (int)$m[2]) . ($row + (int)$m[1]);
-        },
-        $formula
-    );
-    // RC[n] → same row, relative column
-    $formula = preg_replace_callback(
-        '/RC\[(-?\d+)\]/',
-        function($m) use ($row, $col) {
-            return raColLetter($col + (int)$m[1]) . $row;
-        },
-        $formula
-    );
-    return $formula;
 }
