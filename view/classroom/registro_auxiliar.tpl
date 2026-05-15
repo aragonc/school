@@ -100,6 +100,12 @@
             </div>
             <div class="modal-body">
                 <form id="formCreate">
+                    {% if active_year %}
+                    <div class="alert alert-info py-2 mb-3 d-flex align-items-center" style="font-size:0.92em;">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        Este registro se creará para el año académico <strong class="ml-1">{{ active_year.year }}</strong>.
+                    </div>
+                    {% endif %}
                     <div class="form-group">
                         <label class="font-weight-bold">Curso asignado <span class="text-danger">*</span></label>
                         <select id="selCourse" name="classroom_course_id" class="form-control" required>
