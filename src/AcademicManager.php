@@ -457,7 +457,7 @@ class AcademicManager
 
         $sql = "SELECT
                     cs.id, cs.user_id, cs.classroom_id, cs.enrolled_at,
-                    u.firstname, u.lastname, u.username, u.email, u.picture_uri,
+                    u.firstname, u.lastname, u.username, u.email, u.picture_uri, u.active AS user_active,
                     -- current active matrícula for this academic year
                     m.id         AS mat_id,
                     m.grade_id   AS mat_grade_id,

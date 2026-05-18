@@ -210,9 +210,17 @@
                     </thead>
                     <tbody>
                         {% for student in students %}
-                        <tr data-student="{{ student.user_id }}">
+                        {% set is_inactive = student.user_active is defined and student.user_active == 0 %}
+                        <tr data-student="{{ student.user_id }}"{% if is_inactive %} class="table-warning" style="background:#fff3cd;"{% endif %}>
                             <td class="text-center text-muted align-middle">{{ loop.index }}</td>
-                            <td class="font-weight-bold small align-middle">{{ student.lastname }}, {{ student.firstname }}</td>
+                            <td class="font-weight-bold small align-middle">
+                                {{ student.lastname }}, {{ student.firstname }}
+                                {% if is_inactive %}
+                                <span class="badge badge-warning ml-1" title="Usuario inactivo en la plataforma — posible falta de pago sin desmatricular">
+                                    <i class="fas fa-exclamation-triangle"></i> Inactivo
+                                </span>
+                                {% endif %}
+                            </td>
                             {% for comp in competencias %}
                             {% for cap in comp.capacidades %}
                             {% set nota_val = notas_map[cap.aux_cap_id][student.user_id] ?? '' %}
