@@ -913,10 +913,14 @@ class SchoolPlugin extends Plugin
                 return strtotime($b['display_start_date']) <=> strtotime($a['display_start_date']);
             });
 
-            $total = count($rows);
             foreach ($rows as $row) {
                 $endDateSession = api_get_local_time($row['display_end_date']);
                 $courseList = self::getCoursesListBySession($userID, $row['id']);
+
+                if (empty($courseList)) {
+                    continue;
+                }
+
                 $shortDate = $this->formatDateToSpanish($endDateSession);
                 $dateRegister = api_format_date($row['registered_at'], DATE_FORMAT_SHORT);
                 $row['registered_at'] = $dateRegister;
@@ -940,6 +944,7 @@ class SchoolPlugin extends Plugin
                     ];
                 }
                 $categories[$row['id_category']]['sessions'][] = $row;
+                $total++;
             }
         }
 
@@ -1020,11 +1025,12 @@ class SchoolPlugin extends Plugin
             foreach ($rows as $result_row) {
                 $count++;
                 $result_row['status'] = 5;
-                // Si el curso tiene fecha efectiva asignada, siempre es visible
-                // (coherente con el admin que muestra el ojo como visible cuando hay fecha efectiva)
-                $result_row['visible'] = !empty($result_row['access_start_date'])
-                    ? true
-                    : boolval($result_row['visibility'] ?? true);
+                // Si el curso tiene fecha efectiva, solo se muestra desde esa fecha en adelante.
+                if (!empty($result_row['access_start_date'])) {
+                    $result_row['visible'] = strtotime($result_row['access_start_date']) <= time();
+                } else {
+                    $result_row['visible'] = boolval($result_row['visibility'] ?? true);
+                }
                 $result_row['icon'] = self::get_svg_icon('course', $result_row['title'],32);
                 $result_row['icon_mobile'] = self::get_svg_icon('course', $result_row['title'],22, true);
                 $result_row['url'] = api_get_path(WEB_PATH).'home/course/'.$result_row['course_code'].'&id_session='.$session_id;
