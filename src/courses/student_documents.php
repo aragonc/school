@@ -47,7 +47,7 @@ $useRewriteUrl = api_get_configuration_value('use_friendly_document_urls');
 if ($useRewriteUrl) {
     $baseUrl = api_get_path(WEB_PATH) . 'documents';
 } else {
-    $baseUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/courses/student_documents.php';
+    $baseUrl = api_get_path(WEB_PLUGIN_PATH) . 'school/src/courses/student_documents.php';
 }
 $currentUrlParams = api_get_cidreq();
 
