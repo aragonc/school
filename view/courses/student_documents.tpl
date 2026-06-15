@@ -261,9 +261,9 @@
             var docPath = $elem.data('path');
 
             $.ajax({
-                url: '{{ _p.web_ajax }}document.ajax.php',
+                url: '{{ _p.web_plugin }}school/ajax/ajax_documents.php',
                 data: {
-                    a: 'get_dir_size',
+                    a: 'get_folder_size',
                     path: docPath,
                     cidReq: '{{ data.course_info.code }}',
                     id_session: '{{ data.session_id }}',

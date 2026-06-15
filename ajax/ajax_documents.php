@@ -44,29 +44,34 @@ function getFolderSize()
         return;
     }
 
-    $baseWorkDir = api_get_path(SYS_COURSE_PATH) . $courseInfo['directory'] . '/document';
-    $fullPath = $baseWorkDir . $path;
+    // Calcular el tamaño desde la base de datos (suma del campo size de los
+    // documentos bajo este path). Es consistente con el cálculo de Chamilo y
+    // robusto ante diferencias entre el path lógico y el directorio físico
+    // (carpetas de sesión, renombrados). Se pasa $byId = false para que el
+    // valor recibido se interprete como path y no como id de documento.
+    $size = DocumentManager::getTotalFolderSize($path, false, false);
 
-    if (!is_dir($fullPath)) {
-        echo '-';
-        return;
-    }
+    // Fallback al filesystem si la BD no devolvió tamaño
+    if (empty($size)) {
+        $baseWorkDir = api_get_path(SYS_COURSE_PATH) . $courseInfo['directory'] . '/document';
+        $fullPath = $baseWorkDir . $path;
 
-    $size = 0;
-    try {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($fullPath, RecursiveDirectoryIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::SELF_FIRST
-        );
+        if (is_dir($fullPath)) {
+            try {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($fullPath, RecursiveDirectoryIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::SELF_FIRST
+                );
 
-        foreach ($iterator as $file) {
-            if ($file->isFile()) {
-                $size += $file->getSize();
+                foreach ($iterator as $file) {
+                    if ($file->isFile()) {
+                        $size += $file->getSize();
+                    }
+                }
+            } catch (Exception $e) {
+                $size = 0;
             }
         }
-    } catch (Exception $e) {
-        echo '-';
-        return;
     }
 
     echo format_file_size($size);

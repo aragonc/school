@@ -157,7 +157,7 @@ $breadcrumb = DocumentHelper::getBreadcrumb($currentDocument, $documentId, $grou
 // Preparar datos para la vista
 $templateData = [
     'course_info' => $courseInfo,
-    'session_id' => $sessionId,
+    'session_id' => $effectiveSessionId,
     'user_id' => $userId,
     'group_id' => $groupId,
     'current_path' => $curdirpath,
