@@ -100,6 +100,38 @@ class DocumentHelper
     }
 
     /**
+     * Obtener el session_id al que pertenece un documento.
+     *
+     * Útil cuando el enlace de la carpeta llega sin id_session (sesión
+     * perdida/expirada) y necesitamos recuperar la sesión real del documento
+     * para resolverlo y verificar su visibilidad.
+     *
+     * @return int session_id del documento (0 si es del curso base o no existe)
+     */
+    public static function getDocumentSessionId($documentId, $courseInfo)
+    {
+        $documentTable = Database::get_course_table(TABLE_DOCUMENT);
+        $documentId = (int) $documentId;
+        $courseId = (int) $courseInfo['real_id'];
+
+        if (empty($documentId) || empty($courseId)) {
+            return 0;
+        }
+
+        $sql = "SELECT session_id FROM $documentTable
+                WHERE c_id = $courseId AND id = $documentId";
+        $result = Database::query($sql);
+
+        if ($result && Database::num_rows($result) > 0) {
+            $row = Database::fetch_array($result, 'ASSOC');
+
+            return (int) $row['session_id'];
+        }
+
+        return 0;
+    }
+
+    /**
      * Obtener título del documento
      */
     private static function getDocumentTitle($document)

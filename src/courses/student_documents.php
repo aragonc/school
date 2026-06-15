@@ -75,6 +75,14 @@ if ($action === 'downloadfolder' && !empty($documentId)) {
 $currentDocument = null;
 $parentId = null;
 
+// Sesión efectiva para resolver el documento. Si el enlace de la carpeta
+// llega sin id_session (sesión perdida/expirada), api_get_session_id() es 0
+// y los documentos de sesión no se encuentran, provocando un falso
+// "No autorizado" al entrar a la carpeta. Reintentamos con session 0 para
+// recuperar el documento del curso base y, si el documento pertenece a una
+// sesión, adoptamos esa sesión para las verificaciones de visibilidad.
+$effectiveSessionId = $sessionId;
+
 if ($documentId) {
     $currentDocument = DocumentManager::get_document_data_by_id(
         $documentId,
@@ -82,6 +90,29 @@ if ($documentId) {
         true,
         $sessionId
     );
+
+    if (!$currentDocument && $sessionId != 0) {
+        $currentDocument = DocumentManager::get_document_data_by_id(
+            $documentId,
+            $courseInfo['code'],
+            true,
+            0
+        );
+    }
+
+    // Fallback: documento de sesión alcanzado con la sesión perdida (id 0)
+    if (!$currentDocument && $sessionId == 0) {
+        $documentSessionId = DocumentHelper::getDocumentSessionId($documentId, $courseInfo);
+        if (!empty($documentSessionId)) {
+            $effectiveSessionId = $documentSessionId;
+            $currentDocument = DocumentManager::get_document_data_by_id(
+                $documentId,
+                $courseInfo['code'],
+                true,
+                $effectiveSessionId
+            );
+        }
+    }
 
     if ($currentDocument) {
         $parentId = $currentDocument['parent_id'];
@@ -91,17 +122,17 @@ if ($documentId) {
 
 // Si no hay documento, obtener ID desde el path
 if (!$documentId && $curdirpath) {
-    $documentId = DocumentManager::get_document_id($courseInfo, $curdirpath, $sessionId);
+    $documentId = DocumentManager::get_document_id($courseInfo, $curdirpath, $effectiveSessionId);
     if (!$documentId) {
         $documentId = DocumentManager::get_document_id($courseInfo, $curdirpath, 0);
     }
 }
 
-// Verificar visibilidad
+// Verificar visibilidad usando la sesión efectiva del documento
 $visibility = DocumentManager::check_visibility_tree(
     $documentId,
     $courseInfo,
-    $sessionId,
+    $effectiveSessionId,
     $userId,
     $groupId
 );
@@ -115,7 +146,7 @@ $documentsData = DocumentHelper::getStudentDocuments(
     $courseInfo,
     $curdirpath,
     $groupId,
-    $sessionId,
+    $effectiveSessionId,
     $userId,
     $keyword
 );
@@ -136,7 +167,8 @@ $templateData = [
     'documents' => $documentsData['documents'],
     'can_download_folders' => api_get_setting('students_download_folders') == 'true',
     'keyword' => $keyword,
-    'base_url' => $baseUrl . '?' . $currentUrlParams,
+    'base_url' => $baseUrl . '?' . $currentUrlParams
+        . (api_get_session_id() == 0 && $effectiveSessionId != 0 ? '&id_session=' . (int) $effectiveSessionId : ''),
     'has_search' => !empty($keyword),
 ];
 
