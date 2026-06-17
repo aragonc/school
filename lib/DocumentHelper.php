@@ -357,6 +357,21 @@ class DocumentHelper
             api_not_allowed(true);
         }
 
+        // Asegurar la sesión correcta del documento. downloadfolder.inc.php usa
+        // api_get_session_id() internamente para filtrar los archivos; si el
+        // enlace llegó sin id_session (sesión perdida/expirada) la consulta
+        // excluye los documentos de sesión y el ZIP sale vacío. Si el documento
+        // pertenece a una sesión y el contexto actual la perdió, la reinyectamos
+        // en la sesión de Chamilo (api_get_session_id() lee de ahí, no de $_GET).
+        if (api_get_session_id() == 0) {
+            $documentSessionId = self::getDocumentSessionId($documentData['iid'] ?? $documentData['id'], $courseInfo);
+            if (!empty($documentSessionId)) {
+                ChamiloSession::write('id_session', (int) $documentSessionId);
+                $_GET['id_session'] = (int) $documentSessionId;
+                $_REQUEST['id_session'] = (int) $documentSessionId;
+            }
+        }
+
         // Verificar si es carpeta compartida del usuario o si tiene acceso
         if (DocumentManager::is_any_user_shared_folder($documentData['path'], $sessionId)) {
             if (!DocumentManager::is_my_shared_folder($userId, $documentData['path'], $sessionId)) {
