@@ -204,8 +204,10 @@
 
 
         }
+        {% if disable_message_notifications != '1' %}
         loadNotifications();
         setInterval(loadNotifications, 30000);
+        {% endif %}
 
     });
 

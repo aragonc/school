@@ -8,6 +8,12 @@ $plugin = SchoolPlugin::create();
 
 switch ($action) {
     case 'check_notifications':
+        // Interruptor temporal de diagnóstico (ver configuration.php)
+        if (api_get_configuration_value('disable_message_notifications') === true) {
+            header('Content-Type: application/json');
+            echo json_encode(['count_messages' => 0, 'messages' => []]);
+            break;
+        }
         $userId = api_get_user_id();
         $messages = $plugin->getAjaxMessages($userId);
         $jsonResponse  = [
