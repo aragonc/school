@@ -5407,6 +5407,105 @@ class SchoolPlugin extends Plugin
         exit;
     }
 
+    /**
+     * Export the admin users list (staff/admins, non-students) to XLSX.
+     * Applies the same search filter used by the /admin/usuarios listing.
+     */
+    public function exportAdminUsersExcel(string $search = ''): void
+    {
+        $userTable  = Database::get_main_table(TABLE_MAIN_USER);
+        $adminTable = Database::get_main_table(TABLE_MAIN_ADMIN);
+        $extraTable = Database::get_main_table(self::TABLE_SCHOOL_EXTRA_PROFILE);
+
+        $searchCond = '';
+        $search     = trim($search);
+        if ($search !== '') {
+            $s = Database::escape_string($search);
+            $searchCond = "AND (u.firstname LIKE '%$s%' OR u.lastname LIKE '%$s%' OR u.username LIKE '%$s%' OR u.email LIKE '%$s%')";
+        }
+
+        $nonStudentStatuses = implode(',', [
+            COURSEMANAGER, DRH, SCHOOL_SECRETARY, SCHOOL_AUXILIARY,
+            SCHOOL_DIRECTOR, SCHOOL_PARENT, SCHOOL_GUARDIAN,
+        ]);
+
+        $sql = "SELECT u.user_id, u.firstname, u.lastname, u.username, u.email,
+                       u.active, u.status, u.official_code, u.phone,
+                       ep.document_type, ep.document_number, ep.birthdate,
+                       ep.phone AS extra_phone, ep.address, ep.district, ep.province, ep.region,
+                       ep.sexo, ep.nacionalidad, ep.niveles_docente,
+                       ep.id AS ficha_id,
+                       CASE
+                           WHEN adm.user_id IS NOT NULL THEN 'Administrador'
+                           WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
+                           WHEN u.status = ".DRH."           THEN 'Administrativo'
+                           WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
+                           WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                           WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
+                           WHEN u.status = ".SCHOOL_PARENT."    THEN 'Padre de familia'
+                           WHEN u.status = ".SCHOOL_GUARDIAN."  THEN 'Apoderado'
+                           ELSE 'Otro'
+                       END AS role_label
+                FROM $userTable u
+                LEFT JOIN $adminTable adm ON adm.user_id = u.user_id
+                LEFT JOIN $extraTable ep  ON ep.user_id  = u.user_id
+                WHERE (u.status IN ($nonStudentStatuses) OR adm.user_id IS NOT NULL)
+                  $searchCond
+                ORDER BY u.lastname, u.firstname";
+
+        $result = Database::query($sql);
+
+        $nivelesLabels = ['inicial' => 'Inicial', 'primaria' => 'Primaria', 'secundaria' => 'Secundaria'];
+        $sexoLabels    = ['F' => 'Femenino', 'M' => 'Masculino'];
+
+        $headers = [
+            'Apellidos', 'Nombres', 'Usuario', 'Correo', 'Perfil', 'Nivel',
+            'Tipo doc.', 'N° documento', 'Fecha nacimiento', 'Sexo', 'Nacionalidad',
+            'Teléfono', 'Dirección', 'Distrito', 'Provincia', 'Región',
+            'Estado', 'Ficha',
+        ];
+
+        $rows = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $niveles = '';
+            if ((int) $row['status'] === COURSEMANAGER && !empty($row['niveles_docente'])) {
+                $partes  = array_filter(array_map('trim', explode(',', $row['niveles_docente'])));
+                $niveles = implode(', ', array_map(fn($v) => $nivelesLabels[$v] ?? ucfirst($v), $partes));
+            }
+
+            $rows[] = ['status' => null, 'data' => [
+                $row['lastname'] ?? '',
+                $row['firstname'] ?? '',
+                $row['username'] ?? '',
+                $row['email'] ?? '',
+                $row['role_label'] ?? '',
+                $niveles,
+                $row['document_type'] ?? '',
+                $row['document_number'] ?: ($row['official_code'] ?? ''),
+                (!empty($row['birthdate']) && $row['birthdate'] !== '0000-00-00')
+                    ? date('d/m/Y', strtotime($row['birthdate'])) : '',
+                $sexoLabels[$row['sexo']] ?? '',
+                $row['nacionalidad'] ?? '',
+                $row['extra_phone'] ?: ($row['phone'] ?? ''),
+                $row['address'] ?? '',
+                $row['district'] ?? '',
+                $row['province'] ?? '',
+                $row['region'] ?? '',
+                ((int) $row['active'] === 1) ? 'Activo' : 'Inactivo',
+                !empty($row['ficha_id']) ? 'Sí' : 'No',
+            ]];
+        }
+
+        $xlsx     = $this->buildXlsx($headers, $rows, -1);
+        $filename = 'usuarios_' . date('Y-m-d_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($xlsx));
+        header('Cache-Control: max-age=0');
+        echo $xlsx;
+        exit;
+    }
+
     public function exportAttendanceExcelSimple(
         ?string $startDate = null,
         ?string $endDate   = null,

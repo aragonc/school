@@ -5,6 +5,9 @@
             <span class="badge badge-primary badge-pill ml-1">{{ users|length }}</span>
         </h6>
         <div class="d-flex gap-2">
+            <a href="{{ _p.web }}admin/usuarios-export{% if search %}?search={{ search|url_encode }}{% endif %}" class="btn btn-sm btn-outline-success mr-2">
+                <i class="fas fa-file-excel mr-1"></i> Exportar XLS
+            </a>
             <a href="{{ _p.web }}admin/usuarios-qr-print" target="_blank" class="btn btn-sm btn-outline-secondary mr-2">
                 <i class="fas fa-qrcode mr-1"></i> Imprimir QR
             </a>
