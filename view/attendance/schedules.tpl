@@ -15,6 +15,7 @@
                         <th>{{ 'ScheduleName'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'EntryTime'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'LateTime'|get_plugin_lang('SchoolPlugin') }}</th>
+                        <th>{{ 'DaysOfWeek'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'AppliesTo'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Level'|get_plugin_lang('SchoolPlugin') }} / {{ 'Grade'|get_plugin_lang('SchoolPlugin') }}</th>
                         <th>{{ 'Status'|get_plugin_lang('SchoolPlugin') }}</th>
@@ -25,8 +26,18 @@
                     {% for schedule in schedules %}
                     <tr>
                         <td>{{ schedule.name }}</td>
-                        <td>{{ schedule.entry_time }}</td>
+                        <td>{{ schedule.entry_time }}{% if schedule.exit_time %} <span class="text-muted">&ndash; {{ schedule.exit_time }}</span>{% endif %}</td>
                         <td>{{ schedule.late_time }}</td>
+                        <td>
+                            {% if schedule.days == '0' or schedule.days == '' %}
+                                <span class="badge badge-light">{{ 'AllDays'|get_plugin_lang('SchoolPlugin') }}</span>
+                            {% else %}
+                                {% set dayLabels = {'1': 'Lun', '2': 'Mar', '3': 'Mie', '4': 'Jue', '5': 'Vie'} %}
+                                {% for d in schedule.days|split(',') %}
+                                    {% if dayLabels[d] is defined %}<span class="badge badge-info">{{ dayLabels[d] }}</span> {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </td>
                         <td>
                             {% set roles = schedule.applies_to|split(',') %}
                             {% set labels = [] %}
@@ -71,6 +82,8 @@
                                     data-name="{{ schedule.name }}"
                                     data-entry-time="{{ schedule.entry_time }}"
                                     data-late-time="{{ schedule.late_time }}"
+                                    data-exit-time="{{ schedule.exit_time }}"
+                                    data-days="{{ schedule.days }}"
                                     data-applies-to="{{ schedule.applies_to }}"
                                     data-level-id="{{ schedule.level_id }}"
                                     data-grade-id="{{ schedule.grade_id }}"

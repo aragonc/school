@@ -656,6 +656,8 @@ class SchoolPlugin extends Plugin
             name VARCHAR(255) NOT NULL,
             entry_time TIME NOT NULL,
             late_time TIME NOT NULL,
+            exit_time TIME NULL,
+            days VARCHAR(20) NOT NULL DEFAULT '0',
             applies_to VARCHAR(255) NOT NULL DEFAULT 'all',
             active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL
@@ -1311,15 +1313,44 @@ class SchoolPlugin extends Plugin
                 ADD COLUMN grade_id INT unsigned NULL DEFAULT NULL AFTER level_id");
         }
 
+        // Migration: add exit_time and days (per-weekday shifts) to the schedule table
+        $colCheckDays = Database::query(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '$schedTableName'
+               AND COLUMN_NAME = 'days'"
+        );
+        $colRowDays = Database::fetch_array($colCheckDays, 'ASSOC');
+        if ((int) ($colRowDays['cnt'] ?? 0) === 0) {
+            Database::query("ALTER TABLE $schedTableName
+                ADD COLUMN exit_time TIME NULL AFTER late_time,
+                ADD COLUMN days VARCHAR(20) NOT NULL DEFAULT '0' AFTER exit_time");
+        }
+
         // Migration: table for user-specific schedule assignments
         Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER." (
             id INT unsigned NOT NULL auto_increment PRIMARY KEY,
             user_id INT NOT NULL,
             schedule_id INT unsigned NOT NULL,
             created_at DATETIME NOT NULL,
-            UNIQUE KEY unique_user (user_id),
+            UNIQUE KEY unique_user_schedule (user_id, schedule_id),
             INDEX idx_schedule (schedule_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+        // Migration: allow multiple shifts per user (unique_user -> unique_user_schedule)
+        $schedUserTable = self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER;
+        $idxCheck = Database::query(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '$schedUserTable'
+               AND INDEX_NAME = 'unique_user'"
+        );
+        $idxRow = Database::fetch_array($idxCheck, 'ASSOC');
+        if ((int) ($idxRow['cnt'] ?? 0) > 0) {
+            Database::query("ALTER TABLE $schedUserTable
+                DROP INDEX unique_user,
+                ADD UNIQUE KEY unique_user_schedule (user_id, schedule_id)");
+        }
 
         // Support tickets
         Database::query("CREATE TABLE IF NOT EXISTS ".self::TABLE_SCHOOL_SUPPORT_TICKET." (
@@ -3728,10 +3759,28 @@ class SchoolPlugin extends Plugin
         $levelId = ($hasStudent && !empty($data['level_id'])) ? (int) $data['level_id'] : null;
         $gradeId = ($levelId && !empty($data['grade_id'])) ? (int) $data['grade_id'] : null;
 
+        // days: CSV of weekdays (1=Mon..5=Fri); '0' means every day (backward compatible)
+        $days = array_values(array_intersect(
+            array_map('strval', (array) ($data['days'] ?? ['0'])),
+            ['0', '1', '2', '3', '4', '5']
+        ));
+        if (empty($days) || in_array('0', $days, true)) {
+            $days = ['0'];
+        }
+        $daysCsv = implode(',', $days);
+
+        // exit_time is informational (no check-out); accept HH:MM or HH:MM:SS only
+        $exitTime = null;
+        if (!empty($data['exit_time']) && preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $data['exit_time'])) {
+            $exitTime = $data['exit_time'];
+        }
+
         $params = [
             'name'       => Database::escape_string($data['name']),
             'entry_time' => Database::escape_string($data['entry_time']),
             'late_time'  => Database::escape_string($data['late_time']),
+            'exit_time'  => $exitTime,
+            'days'       => $daysCsv,
             'applies_to' => Database::escape_string($appliesTo),
             'level_id'   => $levelId,
             'grade_id'   => $gradeId,
@@ -3761,34 +3810,88 @@ class SchoolPlugin extends Plugin
     }
 
     /**
-     * Assign a custom schedule to a specific user (overrides all other logic).
+     * Expand a schedule 'days' CSV to an array of weekday numbers.
+     * '0' (every day) expands to Mon..Fri [1,2,3,4,5].
      */
-    public function assignUserSchedule(int $userId, int $scheduleId): bool
+    private function expandScheduleDays(?string $days): array
     {
-        $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
-        $existing = Database::fetch_array(
-            Database::query("SELECT id FROM $table WHERE user_id = $userId LIMIT 1"),
-            'ASSOC'
-        );
-        if ($existing) {
-            Database::update($table, ['schedule_id' => $scheduleId], ['user_id = ?' => $userId]);
-        } else {
-            Database::insert($table, [
-                'user_id'     => $userId,
-                'schedule_id' => $scheduleId,
-                'created_at'  => api_get_utc_datetime(),
-            ]);
+        $days = trim((string) $days);
+        if ($days === '' || $days === '0') {
+            return [1, 2, 3, 4, 5];
         }
-        return true;
+        return array_values(array_filter(array_map('intval', explode(',', $days)), function ($d) {
+            return $d >= 1 && $d <= 7;
+        }));
     }
 
     /**
-     * Remove the custom schedule assignment for a user.
+     * Assign a custom schedule to a specific user. A user may have several shifts
+     * (one per weekday). Returns an array describing the outcome.
+     * If the new shift overlaps an existing one on any weekday and $force is false,
+     * returns a 'day_conflict' result instead of assigning.
      */
-    public function removeUserSchedule(int $userId): bool
+    public function assignUserSchedule(int $userId, int $scheduleId, bool $force = false): array
+    {
+        $table    = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
+        $schedTbl = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $userId   = (int) $userId;
+        $scheduleId = (int) $scheduleId;
+
+        // Already assigned? No-op success.
+        $existing = Database::fetch_array(
+            Database::query("SELECT id FROM $table WHERE user_id = $userId AND schedule_id = $scheduleId LIMIT 1"),
+            'ASSOC'
+        );
+        if ($existing) {
+            return ['success' => true, 'message' => 'already_assigned'];
+        }
+
+        // Day-overlap check against the user's other shifts (unless forced).
+        if (!$force) {
+            $newSched = Database::fetch_array(
+                Database::query("SELECT name, days FROM $schedTbl WHERE id = $scheduleId LIMIT 1"),
+                'ASSOC'
+            );
+            $newDays = $this->expandScheduleDays($newSched['days'] ?? '0');
+
+            $others = Database::query(
+                "SELECT s.name, s.days
+                 FROM $table su
+                 INNER JOIN $schedTbl s ON s.id = su.schedule_id
+                 WHERE su.user_id = $userId"
+            );
+            while ($other = Database::fetch_array($others, 'ASSOC')) {
+                $overlap = array_intersect($newDays, $this->expandScheduleDays($other['days'] ?? '0'));
+                if (!empty($overlap)) {
+                    return [
+                        'success'       => false,
+                        'code'          => 'day_conflict',
+                        'conflict_with' => $other['name'],
+                    ];
+                }
+            }
+        }
+
+        Database::insert($table, [
+            'user_id'     => $userId,
+            'schedule_id' => $scheduleId,
+            'created_at'  => api_get_utc_datetime(),
+        ]);
+        return ['success' => true];
+    }
+
+    /**
+     * Remove a schedule assignment for a user.
+     * With $scheduleId > 0 only that pairing is removed; with 0 all are removed.
+     */
+    public function removeUserSchedule(int $userId, int $scheduleId = 0): bool
     {
         $table = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
-        Database::delete($table, ['user_id = ?' => $userId]);
+        if ($scheduleId > 0) {
+            Database::delete($table, ['user_id = ? AND schedule_id = ?' => [$userId, $scheduleId]]);
+        } else {
+            Database::delete($table, ['user_id = ?' => $userId]);
+        }
         return true;
     }
 
@@ -3839,11 +3942,30 @@ class SchoolPlugin extends Plugin
     }
 
     /**
-     * Get the applicable schedule for a user.
+     * Whether a schedule applies on the weekday of the given date.
+     * '0' or empty 'days' means every day.
+     */
+    public function scheduleAppliesToDay(array $schedule, string $date): bool
+    {
+        $days = trim((string) ($schedule['days'] ?? '0'));
+        if ($days === '' || $days === '0') {
+            return true;
+        }
+        $dow = (int) date('N', strtotime($date)); // 1=Mon..7=Sun
+        return in_array((string) $dow, array_map('trim', explode(',', $days)), true);
+    }
+
+    /**
+     * Get the applicable schedule for a user on a given date.
      * For students: priority = grade-specific > level-specific > role-only > all.
      * For staff roles: matches by applies_to role or 'all'.
+     * Only schedules whose 'days' include the given weekday are considered
+     * ('0' = every day). If $ignoreDays is true, the weekday filter is skipped.
+     *
+     * @param string|null $date  Y-m-d; defaults to today.
+     * @param bool $ignoreDays   When true, ignore the weekday of the schedule.
      */
-    public function getApplicableSchedule(int $userId): ?array
+    public function getApplicableSchedule(int $userId, ?string $date = null, bool $ignoreDays = false): ?array
     {
         $table      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
         $userTable  = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE_USER);
@@ -3852,17 +3974,36 @@ class SchoolPlugin extends Plugin
         $gradeTable = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_GRADE);
         $yearTable  = Database::get_main_table(self::TABLE_SCHOOL_ACADEMIC_YEAR);
 
-        // Priority 0: user-specific custom schedule
+        $date = $date ?: date('Y-m-d');
+        $dow  = (int) date('N', strtotime($date)); // 1=Mon..7=Sun
+        // Weekday filter reused across role/level/grade queries.
+        $dayFilter = $ignoreDays ? '' : " AND (days = '0' OR FIND_IN_SET('$dow', days))";
+
+        // Priority 0: user-specific custom shifts. A user may have several; pick the
+        // one that applies today. If the user has shifts but none applies today, they
+        // are off today (return null) — personal shifts define the whole week.
         $uid = (int) $userId;
-        $custom = Database::fetch_array(
-            Database::query(
-                "SELECT s.* FROM $userTable su
-                 INNER JOIN $table s ON s.id = su.schedule_id AND s.active = 1
-                 WHERE su.user_id = $uid LIMIT 1"
-            ),
-            'ASSOC'
+        $customRes = Database::query(
+            "SELECT s.* FROM $userTable su
+             INNER JOIN $table s ON s.id = su.schedule_id AND s.active = 1
+             WHERE su.user_id = $uid
+             ORDER BY s.entry_time ASC"
         );
-        if ($custom) return $custom;
+        $customShifts = [];
+        while ($row = Database::fetch_array($customRes, 'ASSOC')) {
+            $customShifts[] = $row;
+        }
+        if (!empty($customShifts)) {
+            if ($ignoreDays) {
+                return $customShifts[0];
+            }
+            foreach ($customShifts as $shift) {
+                if ($this->scheduleAppliesToDay($shift, $date)) {
+                    return $shift;
+                }
+            }
+            return null;
+        }
 
         $user = api_get_user_info($userId);
         $userRole = 'student';
@@ -3907,6 +4048,7 @@ class SchoolPlugin extends Plugin
                         WHERE active = 1
                           AND level_id = $levelId AND grade_id = $gradeId
                           AND (FIND_IN_SET('student', applies_to) OR applies_to = 'all')
+                          $dayFilter
                         ORDER BY entry_time ASC LIMIT 1";
                 $row = Database::fetch_array(Database::query($sql), 'ASSOC');
                 if ($row) return $row;
@@ -3916,6 +4058,7 @@ class SchoolPlugin extends Plugin
                         WHERE active = 1
                           AND level_id = $levelId AND grade_id IS NULL
                           AND (FIND_IN_SET('student', applies_to) OR applies_to = 'all')
+                          $dayFilter
                         ORDER BY entry_time ASC LIMIT 1";
                 $row = Database::fetch_array(Database::query($sql), 'ASSOC');
                 if ($row) return $row;
@@ -3925,6 +4068,7 @@ class SchoolPlugin extends Plugin
             $sql = "SELECT * FROM $table
                     WHERE active = 1 AND level_id IS NULL AND grade_id IS NULL
                       AND (FIND_IN_SET('student', applies_to) OR applies_to = 'all')
+                      $dayFilter
                     ORDER BY entry_time ASC LIMIT 1";
             $row = Database::fetch_array(Database::query($sql), 'ASSOC');
             if ($row) return $row;
@@ -3935,6 +4079,7 @@ class SchoolPlugin extends Plugin
         $sql = "SELECT * FROM $table
                 WHERE active = 1 AND level_id IS NULL AND grade_id IS NULL
                   AND (applies_to = 'all' OR FIND_IN_SET('$safeRole', applies_to))
+                  $dayFilter
                 ORDER BY entry_time ASC LIMIT 1";
         $result = Database::query($sql);
         $row = Database::fetch_array($result, 'ASSOC');
@@ -4777,6 +4922,7 @@ class SchoolPlugin extends Plugin
         $now     = api_get_utc_datetime();
         $inserted = 0;
         $skippedExisting = 0;
+        $skippedNoShift  = 0;
 
         while ($row = Database::fetch_array($result, 'ASSOC')) {
             $userId = (int) $row['id'];
@@ -4786,6 +4932,18 @@ class SchoolPlugin extends Plugin
             if ($workingDays !== '') {
                 $days = array_map('trim', explode(',', $workingDays));
                 if (!in_array($todayName, $days)) {
+                    continue;
+                }
+            }
+
+            // Per-weekday shifts: if the user's schedule(s) don't apply today,
+            // they are off today. Only skip when the user does have a schedule on
+            // some other day; users without any schedule keep the old behaviour.
+            $scheduleToday = $this->getApplicableSchedule($userId, $date);
+            if (!$scheduleToday) {
+                $anySchedule = $this->getApplicableSchedule($userId, $date, true);
+                if ($anySchedule) {
+                    $skippedNoShift++;
                     continue;
                 }
             }
@@ -4801,7 +4959,7 @@ class SchoolPlugin extends Plugin
 
             Database::insert($logTable, [
                 'user_id'       => $userId,
-                'schedule_id'   => null,
+                'schedule_id'   => $scheduleToday['id'] ?? null,
                 'check_in'      => $date . ' 00:00:00',
                 'status'        => 'absent',
                 'method'        => 'manual',
@@ -4818,6 +4976,7 @@ class SchoolPlugin extends Plugin
             'date'             => $date,
             'inserted'         => $inserted,
             'skipped_existing' => $skippedExisting,
+            'skipped_no_shift' => $skippedNoShift,
         ];
     }
 

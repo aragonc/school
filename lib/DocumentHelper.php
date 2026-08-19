@@ -336,6 +336,18 @@ class DocumentHelper
      */
     public static function handleFolderDownload($documentId, $courseInfo, $sessionId, $userId)
     {
+        $documentId = (int) $documentId;
+
+        // Carpeta raiz: no existe fila en c_document para '/'. downloadfolder.inc.php
+        // ya soporta este caso (path '/' -> documents.zip), solo necesita id vacio.
+        if (empty($documentId)) {
+            $_GET['id'] = 0;
+            $_REQUEST['id'] = 0;
+            self::streamFolderZip();
+
+            return;
+        }
+
         // Obtener datos del documento
         $documentData = DocumentManager::get_document_data_by_id(
             $documentId,
@@ -379,11 +391,35 @@ class DocumentHelper
             }
         }
 
+        // downloadfolder.inc.php lee exclusivamente $_GET['id']; si llegamos aqui
+        // por POST o con el id resuelto via fallback de sesion, hay que fijarlo.
+        $_GET['id'] = $documentId;
+        $_REQUEST['id'] = $documentId;
+
         // Registrar descarga
         Event::event_download($documentData['url']);
 
-        // Incluir script de descarga de carpeta
+        self::streamFolderZip();
+    }
+
+    /**
+     * Incluye downloadfolder.inc.php limpiando cualquier salida previa.
+     *
+     * El plugin ya emitio cabeceras/HTML (config.php, layout, avisos de PHP)
+     * antes de llegar aqui. file_send_for_download() envia cabeceras binarias,
+     * asi que cualquier byte pendiente en el buffer corrompe el ZIP.
+     */
+    private static function streamFolderZip()
+    {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        // Evitar que warnings/deprecations se mezclen en el stream binario.
+        @ini_set('display_errors', '0');
+
         require_once api_get_path(SYS_CODE_PATH) . 'document/downloadfolder.inc.php';
+        exit;
     }
 
     /**

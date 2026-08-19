@@ -27,8 +27,8 @@
                 </a>
                 {% endif %}
 
-                {% if data.can_download_folders and data.current_document_id %}
-                <a href="{{ data.base_url }}&action=downloadfolder&id={{ data.current_document_id }}"
+                {% if data.can_download_folders %}
+                <a href="{{ data.base_url }}&action=downloadfolder&id={{ data.current_document_id|default(0) }}"
                    class="btn btn-primary">
                     <i class="fa fa-download"></i> {{ 'DownloadFolder'|get_plugin_lang('SchoolPlugin') }}
                 </a>

@@ -59,7 +59,7 @@ if ($dryRun) echo "[DRY-RUN] No se escribirá en la BD.\n";
 echo str_repeat('-', 60) . "\n";
 
 // ---- Obtener registros no ausentes ----
-$sql = "SELECT al.id, al.user_id, al.check_in, al.status, al.schedule_id
+$sql = "SELECT al.id, al.user_id, al.check_in, al.status, al.schedule_id, al.date
         FROM $logTable al
         WHERE al.status != 'absent'
         $whereDate
@@ -80,9 +80,9 @@ while ($row = Database::fetch_array($result, 'ASSOC')) {
     $checkIn  = $row['check_in'];
     $oldStatus = $row['status'];
 
-    // Obtener horario aplicable
+    // Obtener horario aplicable para la fecha del registro
     try {
-        $schedule = $plugin->getApplicableSchedule($userId);
+        $schedule = $plugin->getApplicableSchedule($userId, $row['date']);
     } catch (Exception $e) {
         echo "  [ERROR] user_id=$userId id=$recordId: " . $e->getMessage() . "\n";
         $errors++;

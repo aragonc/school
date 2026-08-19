@@ -155,6 +155,8 @@ switch ($action) {
             'name'       => isset($_POST['name']) ? trim($_POST['name']) : '',
             'entry_time' => isset($_POST['entry_time']) ? $_POST['entry_time'] : '',
             'late_time'  => isset($_POST['late_time']) ? $_POST['late_time'] : '',
+            'exit_time'  => isset($_POST['exit_time']) && $_POST['exit_time'] !== '' ? $_POST['exit_time'] : null,
+            'days'       => isset($_POST['days']) ? (array) $_POST['days'] : ['0'],
             'applies_to' => isset($_POST['applies_to']) ? $_POST['applies_to'] : ['all'],
             'level_id'   => isset($_POST['level_id']) && $_POST['level_id'] !== '' ? (int) $_POST['level_id'] : null,
             'grade_id'   => isset($_POST['grade_id']) && $_POST['grade_id'] !== '' ? (int) $_POST['grade_id'] : null,
@@ -223,8 +225,9 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
             exit;
         }
-        $plugin->assignUserSchedule($userId, $scheduleId);
-        echo json_encode(['success' => true, 'message' => 'User assigned']);
+        $force  = !empty($_POST['force']);
+        $result = $plugin->assignUserSchedule($userId, $scheduleId, $force);
+        echo json_encode($result);
         break;
 
     case 'remove_user_schedule':
@@ -232,12 +235,13 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Not authorized']);
             exit;
         }
-        $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+        $userId     = isset($_POST['user_id'])     ? (int) $_POST['user_id']     : 0;
+        $scheduleId = isset($_POST['schedule_id']) ? (int) $_POST['schedule_id'] : 0;
         if ($userId <= 0) {
             echo json_encode(['success' => false, 'message' => 'Invalid user']);
             exit;
         }
-        $plugin->removeUserSchedule($userId);
+        $plugin->removeUserSchedule($userId, $scheduleId);
         echo json_encode(['success' => true, 'message' => 'Assignment removed']);
         break;
 

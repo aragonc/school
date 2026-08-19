@@ -64,11 +64,12 @@ if ($action === 'download' && !empty($documentId)) {
 }
 
 // Manejar descarga de carpeta
-if ($action === 'downloadfolder' && !empty($documentId)) {
+if ($action === 'downloadfolder') {
     if (api_get_setting('students_download_folders') == 'true') {
         DocumentHelper::handleFolderDownload($documentId, $courseInfo, $sessionId, $userId);
         exit;
     }
+    api_not_allowed(true);
 }
 
 // Obtener información del documento actual

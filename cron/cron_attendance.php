@@ -52,6 +52,7 @@ if ($result['skipped']) {
 } else {
     echo "[" . date('Y-m-d H:i:s') . "] Inserted : {$result['inserted']} absent record(s).\n";
     echo "[" . date('Y-m-d H:i:s') . "] Skipped  : {$result['skipped_existing']} user(s) already had a record.\n";
+    echo "[" . date('Y-m-d H:i:s') . "] No shift : {$result['skipped_no_shift']} user(s) had no shift today.\n";
 }
 
 echo "[" . date('Y-m-d H:i:s') . "] Done.\n";
