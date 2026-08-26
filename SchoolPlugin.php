@@ -6268,6 +6268,170 @@ class SchoolPlugin extends Plugin
         $pdf->content_to_pdf($content, null, $filename, null, 'D');
     }
 
+    /**
+     * Build individual attendance data for one user in a date range:
+     * user info + records (real logs plus synthetic absents on active dates) + stats.
+     */
+    private function getIndividualAttendanceData(int $userId, ?string $startDate, ?string $endDate): array
+    {
+        $logTable      = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_LOG);
+        $userTable     = Database::get_main_table(TABLE_MAIN_USER);
+        $scheduleTable = Database::get_main_table(self::TABLE_SCHOOL_ATTENDANCE_SCHEDULE);
+        $adminTable    = Database::get_main_table(TABLE_MAIN_ADMIN);
+
+        $userSql = "SELECT u.id, u.firstname, u.lastname, u.username,
+                           CASE
+                               WHEN adm.user_id IS NOT NULL THEN 'Administrativo'
+                               WHEN u.status = ".COURSEMANAGER." THEN 'Docente'
+                               WHEN u.status = ".DRH." THEN 'Administrativo'
+                               WHEN u.status = ".SCHOOL_SECRETARY." THEN 'Secretaria'
+                               WHEN u.status = ".SCHOOL_AUXILIARY." THEN 'Auxiliar'
+                               WHEN u.status = ".SCHOOL_DIRECTOR." THEN 'Director(a)'
+                               WHEN u.status = ".SCHOOL_PARENT." THEN 'Padre de familia'
+                               WHEN u.status = ".SCHOOL_GUARDIAN." THEN 'Apoderado'
+                               ELSE 'Alumno'
+                           END as role
+                    FROM $userTable u
+                    LEFT JOIN $adminTable adm ON u.id = adm.user_id
+                    WHERE u.id = $userId LIMIT 1";
+        $user = Database::fetch_array(Database::query($userSql), 'ASSOC');
+        if (!$user) {
+            return ['user' => null, 'records' => [], 'stats' => []];
+        }
+
+        $where = "WHERE al.user_id = $userId";
+        if ($startDate) $where .= " AND al.date >= '".Database::escape_string($startDate)."'";
+        if ($endDate)   $where .= " AND al.date <= '".Database::escape_string($endDate)."'";
+
+        $sql = "SELECT al.date, al.check_in, al.status, al.method, al.notes, s.name as schedule_name
+                FROM $logTable al
+                LEFT JOIN $scheduleTable s ON al.schedule_id = s.id
+                $where
+                ORDER BY al.date DESC";
+        $result = Database::query($sql);
+
+        $records      = [];
+        $existingKeys = [];
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            $existingKeys[$row['date']] = true;
+            $records[] = $row;
+        }
+
+        // Synthetic absents: active dates (any log in the platform) without a record for this user
+        foreach ($this->getActiveDatesInRange($startDate, $endDate) as $date) {
+            if (isset($existingKeys[$date])) continue;
+            $records[] = [
+                'date'          => $date,
+                'check_in'      => null,
+                'status'        => 'absent',
+                'method'        => null,
+                'notes'         => null,
+                'schedule_name' => null,
+            ];
+        }
+        usort($records, fn($a, $b) => strcmp($b['date'], $a['date']));
+
+        $stats = ['total' => 0, 'on_time' => 0, 'late' => 0, 'absent' => 0];
+        foreach ($records as $r) {
+            $stats['total']++;
+            if (isset($stats[$r['status']])) $stats[$r['status']]++;
+        }
+
+        return ['user' => $user, 'records' => $records, 'stats' => $stats];
+    }
+
+    /**
+     * Export individual attendance report to Excel for one user.
+     */
+    public function exportAttendanceExcelIndividual(int $userId, ?string $startDate = null, ?string $endDate = null): void
+    {
+        $data = $this->getIndividualAttendanceData($userId, $startDate, $endDate);
+        if (empty($data['user'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
+            exit;
+        }
+        $user = $data['user'];
+
+        $headers      = ['Apellidos y Nombres', 'Usuario', 'Rol', 'Fecha', 'Hora de entrada', 'Estado', 'Metodo', 'Turno', 'Observaciones'];
+        $statusLabels = ['on_time' => 'Asistio puntualmente', 'late' => 'Asistio con tardanza', 'absent' => 'No asistio'];
+        $methodLabels = ['qr' => 'QR', 'manual' => 'Manual'];
+        $fullName     = trim(($user['lastname'] ?? '') . ', ' . ($user['firstname'] ?? ''));
+
+        $rows = [];
+        foreach ($data['records'] as $row) {
+            $checkIn = !empty($row['check_in']) ? date('H:i:s', strtotime(api_get_local_time($row['check_in']))) : '-';
+            $rows[] = [
+                'data' => [
+                    $fullName,
+                    $user['username'] ?? '',
+                    $user['role'] ?? '',
+                    $row['date'],
+                    $checkIn,
+                    $statusLabels[$row['status']] ?? $row['status'],
+                    ($row['status'] === 'absent') ? '-' : (!empty($row['method']) ? ($methodLabels[$row['method']] ?? $row['method']) : '-'),
+                    $row['schedule_name'] ?? '-',
+                    $row['notes'] ?? '',
+                ],
+                'status' => $row['status'],
+            ];
+        }
+
+        $xlsx     = $this->buildXlsx($headers, $rows, 5);
+        $filename = 'asistencia_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $user['username'] ?? 'usuario') . '_' . date('Y-m-d_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($xlsx));
+        header('Cache-Control: max-age=0');
+        echo $xlsx;
+        exit;
+    }
+
+    /**
+     * Export individual attendance report to PDF for one user.
+     */
+    public function exportAttendancePDFIndividual(int $userId, ?string $startDate = null, ?string $endDate = null): void
+    {
+        $data = $this->getIndividualAttendanceData($userId, $startDate, $endDate);
+        if (empty($data['user'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
+            exit;
+        }
+        $user = $data['user'];
+
+        $records = [];
+        foreach ($data['records'] as $row) {
+            $row['check_in_time'] = !empty($row['check_in'])
+                ? date('H:i:s', strtotime(api_get_local_time($row['check_in'])))
+                : '-';
+            $records[] = $row;
+        }
+
+        $dateRange = '';
+        if ($startDate && $endDate) {
+            $dateRange = "Del $startDate al $endDate";
+        } elseif ($startDate) {
+            $dateRange = "Desde $startDate";
+        } elseif ($endDate) {
+            $dateRange = "Hasta $endDate";
+        }
+
+        $this->assign('user_info',    $user);
+        $this->assign('records',      $records);
+        $this->assign('stats',        $data['stats']);
+        $this->assign('date_range',   $dateRange);
+        $this->assign('report_date',  date('d/m/Y H:i'));
+        $this->assign('institution',  api_get_setting('Institution'));
+
+        $content = $this->fetch('attendance/pdf_individual.tpl');
+
+        $filename = 'asistencia_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $user['username'] ?? 'usuario') . '_' . date('Y-m-d_His');
+
+        $pdf = new PDF('A4', 'P');
+        $pdf->content_to_pdf($content, null, $filename, null, 'D');
+    }
+
     // ==================== EXTRA PROFILE METHODS ====================
 
     /**

@@ -229,7 +229,7 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                         </td>
                         <td class="td-metodo">{{ rec.status == 'absent' ? '-' : (rec.method == 'qr' ? 'QR' : (rec.method == 'manual' ? 'Manual' : '-')) }}</td>
                         <td class="td-observaciones">{{ rec.notes ?: '-' }}</td>
-                        <td class="td-acciones">
+                        <td class="td-acciones" style="white-space:nowrap;">
                             {% if rec.status == 'absent' %}
                             <button class="btn btn-primary btn-registrar-asistencia"
                                 style="font-size:11px;padding:2px 7px;line-height:1.5;"
@@ -239,9 +239,14 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                                 title="Registrar asistencia manual">
                                 <i class="fas fa-pencil-alt"></i> Registrar asistencia
                             </button>
-                            {% else %}
-                            -
                             {% endif %}
+                            <button class="btn btn-info btn-reporte-individual"
+                                style="font-size:11px;padding:2px 7px;line-height:1.5;"
+                                data-user-id="{{ rec.user_id }}"
+                                data-name="{{ rec.lastname }}, {{ rec.firstname }}"
+                                title="Reporte individual de asistencia">
+                                <i class="fas fa-chart-bar"></i> Reporte individual
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -255,6 +260,48 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
 {% endif %}
 
 {% endif %}
+
+<!-- Modal: Reporte Individual -->
+<div class="modal fade" id="modalReporteIndividual" tabindex="-1" role="dialog" aria-labelledby="modalReporteIndividualLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReporteIndividualLabel"><i class="fas fa-chart-bar"></i> Reporte Individual de Asistencia</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong id="modalRptIndNombre"></strong></p>
+                <input type="hidden" id="modalRptIndUserId">
+
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label class="font-weight-bold">{{ 'StartDateFilter'|get_plugin_lang('SchoolPlugin') }} <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="modalRptIndDesde">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label class="font-weight-bold">{{ 'EndDateFilter'|get_plugin_lang('SchoolPlugin') }} <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="modalRptIndHasta">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modalRptIndError" class="alert alert-danger d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnRptIndExcel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button type="button" class="btn btn-danger" id="btnRptIndPdf">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal: Registrar Asistencia Manual -->
 <div class="modal fade" id="modalRegistrarAsistencia" tabindex="-1" role="dialog" aria-labelledby="modalRegistrarLabel" aria-hidden="true">
@@ -429,7 +476,8 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                 row.querySelector('.td-metodo').textContent        = s === 'absent' ? '-' : 'Manual';
                 row.querySelector('.td-hora').textContent          = s === 'absent' ? '-' : hora + ':00';
                 row.querySelector('.td-observaciones').textContent = motivo || '-';
-                row.querySelector('.td-acciones').innerHTML        = '-';
+                var btnReg = row.querySelector('.btn-registrar-asistencia');
+                if (btnReg) btnReg.remove();
 
                 $('#modalRegistrarAsistencia').modal('hide');
             })
@@ -439,6 +487,54 @@ document.getElementById('reportUserType').addEventListener('change',   updateExp
                 errEl.textContent = 'Error de conexión. Intenta nuevamente.';
                 errEl.classList.remove('d-none');
             });
+    });
+
+    // --- Modal: Reporte Individual ---
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-reporte-individual');
+        if (!btn) return;
+
+        document.getElementById('modalRptIndUserId').value       = btn.dataset.userId;
+        document.getElementById('modalRptIndNombre').textContent = btn.dataset.name;
+        document.getElementById('modalRptIndDesde').value = '{{ report_start_date }}';
+        document.getElementById('modalRptIndHasta').value = '{{ report_end_date }}';
+        document.getElementById('modalRptIndError').classList.add('d-none');
+
+        $('#modalReporteIndividual').modal('show');
+    });
+
+    function exportarReporteIndividual(action) {
+        var userId = document.getElementById('modalRptIndUserId').value;
+        var desde  = document.getElementById('modalRptIndDesde').value;
+        var hasta  = document.getElementById('modalRptIndHasta').value;
+        var errEl  = document.getElementById('modalRptIndError');
+
+        if (!desde || !hasta) {
+            errEl.textContent = 'Debes indicar la fecha de inicio y la fecha de fin.';
+            errEl.classList.remove('d-none');
+            return;
+        }
+        if (desde > hasta) {
+            errEl.textContent = 'La fecha de inicio no puede ser mayor que la fecha de fin.';
+            errEl.classList.remove('d-none');
+            return;
+        }
+        errEl.classList.add('d-none');
+
+        var params = new URLSearchParams();
+        params.set('action',     action);
+        params.set('user_id',    userId);
+        params.set('start_date', desde);
+        params.set('end_date',   hasta);
+
+        window.open(rptAjaxUrl + '?' + params.toString(), '_blank');
+    }
+
+    document.getElementById('btnRptIndExcel').addEventListener('click', function () {
+        exportarReporteIndividual('export_excel_individual');
+    });
+    document.getElementById('btnRptIndPdf').addEventListener('click', function () {
+        exportarReporteIndividual('export_pdf_individual');
     });
 })();
 </script>

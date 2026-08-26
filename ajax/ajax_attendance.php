@@ -333,6 +333,28 @@ switch ($action) {
         $plugin->exportAttendancePDF($startDate, $endDate, $userType, $levelId, $gradeId, $sectionId);
         break;
 
+    case 'export_excel_individual':
+    case 'export_pdf_individual':
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized']);
+            exit;
+        }
+        $userId    = isset($_GET['user_id'])    ? (int) $_GET['user_id'] : 0;
+        $startDate = isset($_GET['start_date']) ? trim($_GET['start_date']) : null;
+        $endDate   = isset($_GET['end_date'])   ? trim($_GET['end_date'])   : null;
+        if ($userId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid user']);
+            exit;
+        }
+        if (!$startDate || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) $startDate = null;
+        if (!$endDate   || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate))   $endDate   = null;
+        if ($action === 'export_excel_individual') {
+            $plugin->exportAttendanceExcelIndividual($userId, $startDate, $endDate);
+        } else {
+            $plugin->exportAttendancePDFIndividual($userId, $startDate, $endDate);
+        }
+        break;
+
     case 'delete_attendance':
         if (!$isAdmin) {
             echo json_encode(['success' => false, 'message' => 'Not authorized']);
